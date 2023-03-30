@@ -1,0 +1,12 @@
+[package]
+name = "esp-mbedtls"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+esp-mbedtls-sys = { path = "../esp-mbedtls-sys" }
+log = "0.4.17"
+embedded-io = "0.4.0"
+
+[features]
+async = ["embedded-io/async"]
