@@ -355,6 +355,8 @@ pub mod asynch {
         ssl_context: *mut mbedtls_ssl_context,
         ssl_config: *mut mbedtls_ssl_config,
         crt: *mut mbedtls_x509_crt,
+        client_crt: *mut mbedtls_x509_crt,
+        private_key: *mut mbedtls_pk_context,
         eof: bool,
         tx_buffer: BufferedBytes<BUFFER_SIZE>,
         rx_buffer: BufferedBytes<BUFFER_SIZE>,
@@ -367,6 +369,8 @@ pub mod asynch {
             mode: Mode,
             min_version: TlsVersion,
             certs: Option<&str>,
+            client_cert: Option<&str>,
+            client_key: Option<&str>,
         ) -> Result<Self, TlsError> {
             unsafe {
                 error_checked!(psa_crypto_init())?;
@@ -386,6 +390,22 @@ pub mod asynch {
 
                 let crt = calloc(1, size_of::<mbedtls_x509_crt>() as u32) as *mut mbedtls_x509_crt;
                 if crt.is_null() {
+                    free(ssl_context as *const _);
+                    free(ssl_config as *const _);
+                    return Err(TlsError::OutOfMemory);
+                }
+
+                let client_crt =
+                    calloc(1, size_of::<mbedtls_x509_crt>() as u32) as *mut mbedtls_x509_crt;
+                if client_crt.is_null() {
+                    free(ssl_context as *const _);
+                    free(ssl_config as *const _);
+                    return Err(TlsError::OutOfMemory);
+                }
+
+                let private_key =
+                    calloc(1, size_of::<mbedtls_pk_context>() as u32) as *mut mbedtls_pk_context;
+                if private_key.is_null() {
                     free(ssl_context as *const _);
                     free(ssl_config as *const _);
                     return Err(TlsError::OutOfMemory);
@@ -430,6 +450,11 @@ pub mod asynch {
 
                 mbedtls_x509_crt_init(crt);
 
+                // Init client certificate
+                mbedtls_x509_crt_init(client_crt);
+                // Initialize private key
+                mbedtls_pk_init(private_key);
+
                 if let Some(certs) = certs {
                     error_checked!(mbedtls_x509_crt_parse(
                         crt,
@@ -438,7 +463,29 @@ pub mod asynch {
                     ))?;
                 }
 
+                if let Some(client_cert) = client_cert {
+                    error_checked!(mbedtls_x509_crt_parse(
+                        client_crt,
+                        client_cert.as_ptr(),
+                        client_cert.len() as u32,
+                    ))?;
+                }
+
+                if let Some(client_key) = client_key {
+                    error_checked!(mbedtls_pk_parse_key(
+                        private_key,
+                        client_key.as_ptr(),
+                        client_key.len() as u32,
+                        core::ptr::null(),
+                        0,
+                        None,
+                        core::ptr::null_mut(),
+                    ))?;
+                }
+
                 mbedtls_ssl_conf_ca_chain(ssl_config, crt, core::ptr::null_mut());
+
+                mbedtls_ssl_conf_own_cert(ssl_config, client_crt, private_key);
 
                 #[cfg(feature = "async")]
                 return Ok(Self {
@@ -446,6 +493,8 @@ pub mod asynch {
                     ssl_context,
                     ssl_config,
                     crt,
+                    client_crt,
+                    private_key,
                     eof: false,
                     tx_buffer: Default::default(),
                     rx_buffer: Default::default(),
@@ -469,6 +518,8 @@ pub mod asynch {
                 free(self.ssl_config as *const _);
                 free(self.ssl_context as *const _);
                 free(self.crt as *const _);
+                free(self.client_crt as *const _);
+                free(self.private_key as *const _);
             }
         }
     }
