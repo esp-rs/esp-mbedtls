@@ -19,6 +19,22 @@ Currently this won't work on ESP32-S2 - getting it to work will require tweaking
 The examples use one hard-coded address of `www.google.com` which might not always work.
 Also the examples include hard-coded certificates which will expire some day.
 
+## Running Examples
+
+`cd` into the directory, e.g. `examples-esp32c3`, then use
+
+```shell
+cargo run --release --example sync
+```
+
+or
+
+```shell
+cargo run --release --example async --features=async
+```
+
+This needs `espflash` version 2.x. If you are using version 1.x you need to remove the `flash` command from the runner in `.cargo/config.toml`
+
 ## License
 
 Licensed under either of:
