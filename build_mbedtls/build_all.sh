@@ -24,7 +24,7 @@ rm -rf target
 mkdir target
 cd target
 
-cmake -DCMAKE_BUILD_TYPE=Release -DUSE_SHARED_MBEDTLS_LIBRARY=OFF -DUSE_STATIC_MBEDTLS_LIBRARY=ON -DENABLE_PROGRAMS=OFF -DENABLE_TESTING=OFF -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_TOOLCHAIN_FILE=$IDF_PATH/tools/cmake/toolchain-esp32.cmake ../tmpsrc/mbedtls
+cmake -DCMAKE_BUILD_TYPE=Release -DUSE_SHARED_MBEDTLS_LIBRARY=OFF -DUSE_STATIC_MBEDTLS_LIBRARY=ON -DENABLE_PROGRAMS=OFF -DENABLE_TESTING=OFF -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_TOOLCHAIN_FILE=$IDF_PATH/tools/cmake/toolchain-clang-esp32.cmake ../tmpsrc/mbedtls
 make
 
 cp library/libmbedcrypto.a ../../libs/xtensa-esp32-none-elf/libmbedcrypto.a
@@ -36,7 +36,7 @@ rm -rf target
 mkdir target
 cd target
 
-cmake -DCMAKE_BUILD_TYPE=Release -DUSE_SHARED_MBEDTLS_LIBRARY=OFF -DUSE_STATIC_MBEDTLS_LIBRARY=ON -DENABLE_PROGRAMS=OFF -DENABLE_TESTING=OFF -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_TOOLCHAIN_FILE=$IDF_PATH/tools/cmake/toolchain-esp32s2.cmake ../tmpsrc/mbedtls
+cmake -DCMAKE_BUILD_TYPE=Release -DUSE_SHARED_MBEDTLS_LIBRARY=OFF -DUSE_STATIC_MBEDTLS_LIBRARY=ON -DENABLE_PROGRAMS=OFF -DENABLE_TESTING=OFF -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_TOOLCHAIN_FILE=$IDF_PATH/tools/cmake/toolchain-clang-esp32s2.cmake ../tmpsrc/mbedtls
 make
 
 cp library/libmbedcrypto.a ../../libs/xtensa-esp32s2-none-elf/libmbedcrypto.a
@@ -48,7 +48,7 @@ rm -rf target
 mkdir target
 cd target
 
-cmake -DCMAKE_BUILD_TYPE=Release -DUSE_SHARED_MBEDTLS_LIBRARY=OFF -DUSE_STATIC_MBEDTLS_LIBRARY=ON -DENABLE_PROGRAMS=OFF -DENABLE_TESTING=OFF -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_TOOLCHAIN_FILE=$IDF_PATH/tools/cmake/toolchain-esp32s3.cmake ../tmpsrc/mbedtls
+cmake -DCMAKE_BUILD_TYPE=Release -DUSE_SHARED_MBEDTLS_LIBRARY=OFF -DUSE_STATIC_MBEDTLS_LIBRARY=ON -DENABLE_PROGRAMS=OFF -DENABLE_TESTING=OFF -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_TOOLCHAIN_FILE=$IDF_PATH/tools/cmake/toolchain-clang-esp32s3.cmake ../tmpsrc/mbedtls
 make
 
 cp library/libmbedcrypto.a ../../libs/xtensa-esp32s3-none-elf/libmbedcrypto.a
