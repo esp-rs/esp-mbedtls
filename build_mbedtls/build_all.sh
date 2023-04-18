@@ -58,4 +58,3 @@ cp library/libmbedx509.a ../../libs/xtensa-esp32s3-none-elf/libmbedx509.a
 cd ..
 rm -rf target
 rm -rf tmpsrc
-
