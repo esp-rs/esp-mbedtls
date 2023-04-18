@@ -87,11 +87,20 @@ pub fn set_debug(level: u32) {
     }
 }
 
+pub struct Certificates<'a> {
+    pub certs: Option<&'a str>,
+    pub client_cert: Option<&'a str>,
+    pub client_key: Option<&'a str>,
+    pub password: Option<&'a str>,
+}
+
 pub struct Session<T> {
     stream: T,
     ssl_context: *mut mbedtls_ssl_context,
     ssl_config: *mut mbedtls_ssl_config,
     crt: *mut mbedtls_x509_crt,
+    client_crt: *mut mbedtls_x509_crt,
+    private_key: *mut mbedtls_pk_context,
 }
 
 impl<T> Session<T> {
@@ -100,8 +109,15 @@ impl<T> Session<T> {
         servername: &str,
         mode: Mode,
         min_version: TlsVersion,
-        certs: Option<&str>,
+        certificates: Certificates,
     ) -> Result<Self, TlsError> {
+        // Make sure that both client_cert and client_key are either Some() or None
+        assert_eq!(
+            certificates.client_cert.is_some(),
+            certificates.client_key.is_some(),
+            "Both client_cert and client_key must be Some() or None"
+        );
+
         unsafe {
             error_checked!(psa_crypto_init())?;
 
@@ -120,6 +136,22 @@ impl<T> Session<T> {
 
             let crt = calloc(1, size_of::<mbedtls_x509_crt>() as u32) as *mut mbedtls_x509_crt;
             if crt.is_null() {
+                free(ssl_context as *const _);
+                free(ssl_config as *const _);
+                return Err(TlsError::OutOfMemory);
+            }
+
+            let client_crt =
+                calloc(1, size_of::<mbedtls_x509_crt>() as u32) as *mut mbedtls_x509_crt;
+            if client_crt.is_null() {
+                free(ssl_context as *const _);
+                free(ssl_config as *const _);
+                return Err(TlsError::OutOfMemory);
+            }
+
+            let private_key =
+                calloc(1, size_of::<mbedtls_pk_context>() as u32) as *mut mbedtls_pk_context;
+            if private_key.is_null() {
                 free(ssl_context as *const _);
                 free(ssl_config as *const _);
                 return Err(TlsError::OutOfMemory);
@@ -145,7 +177,7 @@ impl<T> Session<T> {
 
             mbedtls_ssl_conf_authmode(
                 ssl_config,
-                if certs.is_some() {
+                if certificates.certs.is_some() {
                     MBEDTLS_SSL_VERIFY_REQUIRED as i32
                 } else {
                     MBEDTLS_SSL_VERIFY_NONE as i32
@@ -164,12 +196,46 @@ impl<T> Session<T> {
 
             mbedtls_x509_crt_init(crt);
 
-            if let Some(certs) = certs {
+            // Init client certificate
+            mbedtls_x509_crt_init(client_crt);
+            // Initialize private key
+            mbedtls_pk_init(private_key);
+
+            if let Some(certs) = certificates.certs {
                 error_checked!(mbedtls_x509_crt_parse(
                     crt,
                     certs.as_ptr(),
                     certs.len() as u32,
                 ))?;
+            }
+
+            if let (Some(client_cert), Some(client_key)) =
+                (certificates.client_cert, certificates.client_key)
+            {
+                // Client certificate
+                error_checked!(mbedtls_x509_crt_parse(
+                    client_crt,
+                    client_cert.as_ptr(),
+                    client_cert.len() as u32,
+                ))?;
+
+                // Client key
+                let (password_ptr, password_len) = if let Some(password) = certificates.password {
+                    (password.as_ptr(), password.len() as u32)
+                } else {
+                    (core::ptr::null(), 0)
+                };
+                error_checked!(mbedtls_pk_parse_key(
+                    private_key,
+                    client_key.as_ptr(),
+                    client_key.len() as u32,
+                    password_ptr,
+                    password_len,
+                    None,
+                    core::ptr::null_mut(),
+                ))?;
+
+                mbedtls_ssl_conf_own_cert(ssl_config, client_crt, private_key);
             }
 
             mbedtls_ssl_conf_ca_chain(ssl_config, crt, core::ptr::null_mut());
@@ -179,6 +245,8 @@ impl<T> Session<T> {
                 ssl_context,
                 ssl_config,
                 crt,
+                client_crt,
+                private_key,
             });
         }
     }
@@ -289,6 +357,8 @@ impl<T> Drop for Session<T> {
             free(self.ssl_config as *const _);
             free(self.ssl_context as *const _);
             free(self.crt as *const _);
+            free(self.client_crt as *const _);
+            free(self.private_key as *const _);
         }
     }
 }
@@ -368,10 +438,15 @@ pub mod asynch {
             servername: &str,
             mode: Mode,
             min_version: TlsVersion,
-            certs: Option<&str>,
-            client_cert: Option<&str>,
-            client_key: Option<&str>,
+            certificates: Certificates,
         ) -> Result<Self, TlsError> {
+            // Make sure that both client_cert and client_key are either Some() or None
+            assert_eq!(
+                certificates.client_cert.is_some(),
+                certificates.client_key.is_some(),
+                "Both client_cert and client_key must be Some() or None"
+            );
+
             unsafe {
                 error_checked!(psa_crypto_init())?;
 
@@ -431,7 +506,7 @@ pub mod asynch {
 
                 mbedtls_ssl_conf_authmode(
                     ssl_config,
-                    if certs.is_some() {
+                    if certificates.certs.is_some() {
                         MBEDTLS_SSL_VERIFY_REQUIRED as i32
                     } else {
                         MBEDTLS_SSL_VERIFY_NONE as i32
@@ -455,7 +530,7 @@ pub mod asynch {
                 // Initialize private key
                 mbedtls_pk_init(private_key);
 
-                if let Some(certs) = certs {
+                if let Some(certs) = certificates.certs {
                     error_checked!(mbedtls_x509_crt_parse(
                         crt,
                         certs.as_ptr(),
@@ -463,29 +538,37 @@ pub mod asynch {
                     ))?;
                 }
 
-                if let Some(client_cert) = client_cert {
+                if let (Some(client_cert), Some(client_key)) =
+                    (certificates.client_cert, certificates.client_key)
+                {
+                    // Client certificate
                     error_checked!(mbedtls_x509_crt_parse(
                         client_crt,
                         client_cert.as_ptr(),
                         client_cert.len() as u32,
                     ))?;
-                }
 
-                if let Some(client_key) = client_key {
+                    // Client key
+                    let (password_ptr, password_len) = if let Some(password) = certificates.password
+                    {
+                        (password.as_ptr(), password.len() as u32)
+                    } else {
+                        (core::ptr::null(), 0)
+                    };
                     error_checked!(mbedtls_pk_parse_key(
                         private_key,
                         client_key.as_ptr(),
                         client_key.len() as u32,
-                        core::ptr::null(),
-                        0,
+                        password_ptr,
+                        password_len,
                         None,
                         core::ptr::null_mut(),
                     ))?;
+
+                    mbedtls_ssl_conf_own_cert(ssl_config, client_crt, private_key);
                 }
 
                 mbedtls_ssl_conf_ca_chain(ssl_config, crt, core::ptr::null_mut());
-
-                mbedtls_ssl_conf_own_cert(ssl_config, client_crt, private_key);
 
                 return Ok(Self {
                     stream,
