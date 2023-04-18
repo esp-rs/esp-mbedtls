@@ -550,6 +550,7 @@ pub mod asynch {
                         .await
                         .map_err(|_| TlsError::Unknown)?;
                     log::debug!("wrote {res} bytes to stream");
+                    self.stream.flush().await.map_err(|_| TlsError::Unknown)?;
                 }
             }
 
@@ -610,6 +611,9 @@ pub mod asynch {
                     if res == MBEDTLS_ERR_SSL_WANT_READ {
                         log::debug!("<<< return 0 as read");
                         return Ok(0); // we need another read
+                    } else if res == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY {
+                        self.eof = true;
+                        return Ok(0);
                     }
                     Ok(res)
                 } else {
@@ -708,6 +712,11 @@ pub mod asynch {
         }
 
         async fn flush(&mut self) -> Result<(), Self::Error> {
+            self.session
+                .drain_tx_buffer()
+                .await
+                .map_err(|_| TlsError::Unknown)?;
+
             self.session
                 .stream
                 .flush()
