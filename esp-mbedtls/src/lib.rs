@@ -207,7 +207,7 @@ where
                 if res < 0 && res != MBEDTLS_ERR_SSL_WANT_READ && res != MBEDTLS_ERR_SSL_WANT_WRITE
                 {
                     // real error
-                    break;
+                    return Err(TlsError::MbedTlsError(res));
                 }
 
                 // try again immediately
@@ -440,7 +440,6 @@ pub mod asynch {
 
                 mbedtls_ssl_conf_ca_chain(ssl_config, crt, core::ptr::null_mut());
 
-                #[cfg(feature = "async")]
                 return Ok(Self {
                     stream,
                     ssl_context,
@@ -449,14 +448,6 @@ pub mod asynch {
                     eof: false,
                     tx_buffer: Default::default(),
                     rx_buffer: Default::default(),
-                });
-
-                #[cfg(not(feature = "async"))]
-                return Ok(Self {
-                    stream,
-                    ssl_context,
-                    ssl_config,
-                    crt,
                 });
             }
         }
@@ -577,15 +568,7 @@ pub mod asynch {
                 self.drain_tx_buffer().await?;
 
                 let len = mbedtls_ssl_write(self.ssl_context, buf.as_ptr(), buf.len() as u32);
-                log::debug!(">>> wrote {} of {} bytes to mbedtls", len, buf.len());
-
-                let encrypted = self.tx_buffer.pull(len as usize);
-                log::debug!(
-                    ">>> got {} bytes from tx_buffer, send to stream",
-                    encrypted.len()
-                );
-                let res = self.stream.write(encrypted).await;
-                log::debug!(">>> stream write result {:?}", res);
+                self.drain_tx_buffer().await?;
 
                 Ok(len)
             }

@@ -5,6 +5,10 @@ rm -rf tmpsrc
 mkdir target
 mkdir tmpsrc
 cp -r ../mbedtls tmpsrc
+
+# Remove "-Wdocumentation" since Clang will complain
+sed -i "s/-Wdocumentation//g" tmpsrc/mbedtls/library/CMakeLists.txt
+
 cp config.h tmpsrc/mbedtls/include/mbedtls/mbedtls_config.h
 cd target
 
