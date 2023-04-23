@@ -198,6 +198,9 @@ async fn task(stack: &'static Stack<WifiDevice<'static>>) {
     loop {
         let n = match tls.read(&mut buf).await {
             Ok(n) => n,
+            Err(esp_mbedtls::TlsError::Eof) => {
+                break;
+            }
             Err(e) => {
                 println!("read error: {:?}", e);
                 break;
