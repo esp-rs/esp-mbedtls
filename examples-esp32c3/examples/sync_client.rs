@@ -7,15 +7,14 @@ use embedded_svc::{
     wifi::{ClientConfiguration, Configuration, Wifi},
 };
 use esp_backtrace as _;
+use esp_mbedtls::Session;
 use esp_mbedtls::{set_debug, Mode, TlsVersion};
-use esp_mbedtls::{Certificates, Session};
 use esp_println::{logger::init_logger, print, println};
 use esp_wifi::{
-    current_millis,
+    current_millis, initialize,
     wifi::{utils::create_network_interface, WifiMode},
     wifi_interface::WifiStack,
 };
-use hal::timer::TimerGroup;
 use hal::{
     clock::{ClockControl, CpuClock},
     peripherals::Peripherals,
@@ -32,12 +31,13 @@ fn main() -> ! {
     init_logger(log::LevelFilter::Info);
 
     let peripherals = Peripherals::take();
-    let mut system = peripherals.SYSTEM.split();
-    let clocks = ClockControl::configure(system.clock_control, CpuClock::Clock240MHz).freeze();
+    let system = peripherals.SYSTEM.split();
+    let clocks = ClockControl::configure(system.clock_control, CpuClock::Clock160MHz).freeze();
 
     let mut rtc = Rtc::new(peripherals.RTC_CNTL);
 
     // Disable watchdog timers
+    rtc.swd.disable();
     rtc.rwdt.disable();
 
     let (wifi, _) = peripherals.RADIO.split();
@@ -46,13 +46,14 @@ fn main() -> ! {
         create_network_interface(wifi, WifiMode::Sta, &mut socket_set_entries);
     let wifi_stack = WifiStack::new(iface, device, sockets, current_millis);
 
-    let rngp = Rng::new(peripherals.RNG);
-    let timer = TimerGroup::new(
-        peripherals.TIMG1,
+    let timer = hal::systimer::SystemTimer::new(peripherals.SYSTIMER);
+    initialize(
+        timer.alarm0,
+        Rng::new(peripherals.RNG),
+        system.radio_clock_control,
         &clocks,
-        &mut system.peripheral_clock_control,
-    );
-    esp_wifi::initialize(timer.timer0, rngp, system.radio_clock_control, &clocks).unwrap();
+    )
+    .unwrap();
 
     println!("Call wifi_connect");
     let client_config = Configuration::Client(ClientConfiguration {

@@ -94,6 +94,17 @@ pub struct Certificates<'a> {
     pub password: Option<&'a str>,
 }
 
+impl<'a> Default for Certificates<'a> {
+    fn default() -> Self {
+        Self {
+            certs: Default::default(),
+            client_cert: Default::default(),
+            client_key: Default::default(),
+            password: Default::default(),
+        }
+    }
+}
+
 impl<'a> Certificates<'a> {
     // Initialize the SSL using this set of certificates
     fn init_ssl(

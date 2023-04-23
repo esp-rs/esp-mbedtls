@@ -10,7 +10,7 @@ use embassy_executor::Executor;
 use embassy_time::{Duration, Timer};
 use embedded_svc::wifi::{ClientConfiguration, Configuration, Wifi};
 use esp_backtrace as _;
-use esp_mbedtls::{asynch::Session, set_debug, Mode, TlsVersion};
+use esp_mbedtls::{asynch::Session, set_debug, Certificates, Mode, TlsVersion};
 use esp_println::logger::init_logger;
 use esp_println::{print, println};
 use esp_wifi::initialize;
@@ -171,7 +171,10 @@ async fn task(stack: &'static Stack<WifiDevice<'static>>) {
         "www.google.com",
         Mode::Client,
         TlsVersion::Tls1_3,
-        Some(CERT),
+        Certificates {
+            certs: Some(CERT),
+            ..Default::default()
+        },
     )
     .unwrap();
 
