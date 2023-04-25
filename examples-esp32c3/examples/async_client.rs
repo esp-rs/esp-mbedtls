@@ -10,6 +10,7 @@ use embassy_executor::Executor;
 use embassy_time::{Duration, Timer};
 use embedded_svc::wifi::{ClientConfiguration, Configuration, Wifi};
 use esp_backtrace as _;
+use esp_mbedtls::Certificates;
 use esp_mbedtls::{asynch::Session, set_debug, Mode, TlsVersion};
 use esp_println::logger::init_logger;
 use esp_println::{print, println};

@@ -7,8 +7,8 @@ use embedded_svc::{
     wifi::{ClientConfiguration, Configuration, Wifi},
 };
 use esp_backtrace as _;
-use esp_mbedtls::Session;
 use esp_mbedtls::{set_debug, Mode, TlsVersion};
+use esp_mbedtls::{Certificates, Session};
 use esp_println::{logger::init_logger, print, println};
 use esp_wifi::{
     current_millis, initialize,
