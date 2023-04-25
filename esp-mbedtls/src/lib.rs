@@ -87,21 +87,48 @@ pub fn set_debug(level: u32) {
     }
 }
 
-pub struct Session<T> {
-    stream: T,
-    ssl_context: *mut mbedtls_ssl_context,
-    ssl_config: *mut mbedtls_ssl_config,
-    crt: *mut mbedtls_x509_crt,
+pub struct Certificates<'a> {
+    pub certs: Option<&'a str>,
+    pub client_cert: Option<&'a str>,
+    pub client_key: Option<&'a str>,
+    pub password: Option<&'a str>,
 }
 
-impl<T> Session<T> {
-    pub fn new(
-        stream: T,
+impl<'a> Default for Certificates<'a> {
+    fn default() -> Self {
+        Self {
+            certs: Default::default(),
+            client_cert: Default::default(),
+            client_key: Default::default(),
+            password: Default::default(),
+        }
+    }
+}
+
+impl<'a> Certificates<'a> {
+    // Initialize the SSL using this set of certificates
+    fn init_ssl(
+        &self,
         servername: &str,
         mode: Mode,
         min_version: TlsVersion,
-        certs: Option<&str>,
-    ) -> Result<Self, TlsError> {
+    ) -> Result<
+        (
+            *mut mbedtls_ssl_context,
+            *mut mbedtls_ssl_config,
+            *mut mbedtls_x509_crt,
+            *mut mbedtls_x509_crt,
+            *mut mbedtls_pk_context,
+        ),
+        TlsError,
+    > {
+        // Make sure that both client_cert and client_key are either Some() or None
+        assert_eq!(
+            self.client_cert.is_some(),
+            self.client_key.is_some(),
+            "Both client_cert and client_key must be Some() or None"
+        );
+
         unsafe {
             error_checked!(psa_crypto_init())?;
 
@@ -125,6 +152,25 @@ impl<T> Session<T> {
                 return Err(TlsError::OutOfMemory);
             }
 
+            let client_crt =
+                calloc(1, size_of::<mbedtls_x509_crt>() as u32) as *mut mbedtls_x509_crt;
+            if client_crt.is_null() {
+                free(ssl_context as *const _);
+                free(ssl_config as *const _);
+                free(crt as *const _);
+                return Err(TlsError::OutOfMemory);
+            }
+
+            let private_key =
+                calloc(1, size_of::<mbedtls_pk_context>() as u32) as *mut mbedtls_pk_context;
+            if private_key.is_null() {
+                free(ssl_context as *const _);
+                free(ssl_config as *const _);
+                free(crt as *const _);
+                free(client_crt as *const _);
+                return Err(TlsError::OutOfMemory);
+            }
+
             mbedtls_ssl_init(ssl_context);
             mbedtls_ssl_config_init(ssl_config);
             (*ssl_config).private_f_dbg = Some(dbg_print);
@@ -145,7 +191,7 @@ impl<T> Session<T> {
 
             mbedtls_ssl_conf_authmode(
                 ssl_config,
-                if certs.is_some() {
+                if self.certs.is_some() {
                     MBEDTLS_SSL_VERIFY_REQUIRED as i32
                 } else {
                     MBEDTLS_SSL_VERIFY_NONE as i32
@@ -164,7 +210,12 @@ impl<T> Session<T> {
 
             mbedtls_x509_crt_init(crt);
 
-            if let Some(certs) = certs {
+            // Init client certificate
+            mbedtls_x509_crt_init(client_crt);
+            // Initialize private key
+            mbedtls_pk_init(private_key);
+
+            if let Some(certs) = self.certs {
                 error_checked!(mbedtls_x509_crt_parse(
                     crt,
                     certs.as_ptr(),
@@ -172,15 +223,66 @@ impl<T> Session<T> {
                 ))?;
             }
 
-            mbedtls_ssl_conf_ca_chain(ssl_config, crt, core::ptr::null_mut());
+            if let (Some(client_cert), Some(client_key)) = (self.client_cert, self.client_key) {
+                // Client certificate
+                error_checked!(mbedtls_x509_crt_parse(
+                    client_crt,
+                    client_cert.as_ptr(),
+                    client_cert.len() as u32,
+                ))?;
 
-            return Ok(Self {
-                stream,
-                ssl_context,
-                ssl_config,
-                crt,
-            });
+                // Client key
+                let (password_ptr, password_len) = if let Some(password) = self.password {
+                    (password.as_ptr(), password.len() as u32)
+                } else {
+                    (core::ptr::null(), 0)
+                };
+                error_checked!(mbedtls_pk_parse_key(
+                    private_key,
+                    client_key.as_ptr(),
+                    client_key.len() as u32,
+                    password_ptr,
+                    password_len,
+                    None,
+                    core::ptr::null_mut(),
+                ))?;
+
+                mbedtls_ssl_conf_own_cert(ssl_config, client_crt, private_key);
+            }
+
+            mbedtls_ssl_conf_ca_chain(ssl_config, crt, core::ptr::null_mut());
+            Ok((ssl_context, ssl_config, crt, client_crt, private_key))
         }
+    }
+}
+
+pub struct Session<T> {
+    stream: T,
+    ssl_context: *mut mbedtls_ssl_context,
+    ssl_config: *mut mbedtls_ssl_config,
+    crt: *mut mbedtls_x509_crt,
+    client_crt: *mut mbedtls_x509_crt,
+    private_key: *mut mbedtls_pk_context,
+}
+
+impl<T> Session<T> {
+    pub fn new(
+        stream: T,
+        servername: &str,
+        mode: Mode,
+        min_version: TlsVersion,
+        certificates: Certificates,
+    ) -> Result<Self, TlsError> {
+        let (ssl_context, ssl_config, crt, client_crt, private_key) =
+            certificates.init_ssl(servername, mode, min_version)?;
+        return Ok(Self {
+            stream,
+            ssl_context,
+            ssl_config,
+            crt,
+            client_crt,
+            private_key,
+        });
     }
 }
 
@@ -289,6 +391,8 @@ impl<T> Drop for Session<T> {
             free(self.ssl_config as *const _);
             free(self.ssl_context as *const _);
             free(self.crt as *const _);
+            free(self.client_crt as *const _);
+            free(self.private_key as *const _);
         }
     }
 }
@@ -355,6 +459,8 @@ pub mod asynch {
         ssl_context: *mut mbedtls_ssl_context,
         ssl_config: *mut mbedtls_ssl_config,
         crt: *mut mbedtls_x509_crt,
+        client_crt: *mut mbedtls_x509_crt,
+        private_key: *mut mbedtls_pk_context,
         eof: bool,
         tx_buffer: BufferedBytes<BUFFER_SIZE>,
         rx_buffer: BufferedBytes<BUFFER_SIZE>,
@@ -366,90 +472,21 @@ pub mod asynch {
             servername: &str,
             mode: Mode,
             min_version: TlsVersion,
-            certs: Option<&str>,
+            certificates: Certificates,
         ) -> Result<Self, TlsError> {
-            unsafe {
-                error_checked!(psa_crypto_init())?;
-
-                let ssl_context =
-                    calloc(1, size_of::<mbedtls_ssl_context>() as u32) as *mut mbedtls_ssl_context;
-                if ssl_context.is_null() {
-                    return Err(TlsError::OutOfMemory);
-                }
-
-                let ssl_config =
-                    calloc(1, size_of::<mbedtls_ssl_config>() as u32) as *mut mbedtls_ssl_config;
-                if ssl_config.is_null() {
-                    free(ssl_context as *const _);
-                    return Err(TlsError::OutOfMemory);
-                }
-
-                let crt = calloc(1, size_of::<mbedtls_x509_crt>() as u32) as *mut mbedtls_x509_crt;
-                if crt.is_null() {
-                    free(ssl_context as *const _);
-                    free(ssl_config as *const _);
-                    return Err(TlsError::OutOfMemory);
-                }
-
-                mbedtls_ssl_init(ssl_context);
-                mbedtls_ssl_config_init(ssl_config);
-                (*ssl_config).private_f_dbg = Some(dbg_print);
-                (*ssl_config).private_f_rng = Some(rng);
-
-                error_checked!(mbedtls_ssl_config_defaults(
-                    ssl_config,
-                    mode.to_mbed_tls(),
-                    MBEDTLS_SSL_TRANSPORT_STREAM as i32,
-                    MBEDTLS_SSL_PRESET_DEFAULT as i32,
-                ))?;
-
-                mbedtls_ssl_conf_min_version(
-                    ssl_config,
-                    MBEDTLS_SSL_MAJOR_VERSION_3 as i32,
-                    min_version.to_mbed_tls_minor(),
-                );
-
-                mbedtls_ssl_conf_authmode(
-                    ssl_config,
-                    if certs.is_some() {
-                        MBEDTLS_SSL_VERIFY_REQUIRED as i32
-                    } else {
-                        MBEDTLS_SSL_VERIFY_NONE as i32
-                    },
-                );
-
-                let mut hostname = StrBuf::new();
-                hostname.append(servername);
-                hostname.append_char('\0');
-                error_checked!(mbedtls_ssl_set_hostname(
-                    ssl_context,
-                    hostname.as_str_ref().as_ptr() as *const c_char
-                ))?;
-
-                error_checked!(mbedtls_ssl_setup(ssl_context, ssl_config))?;
-
-                mbedtls_x509_crt_init(crt);
-
-                if let Some(certs) = certs {
-                    error_checked!(mbedtls_x509_crt_parse(
-                        crt,
-                        certs.as_ptr(),
-                        certs.len() as u32,
-                    ))?;
-                }
-
-                mbedtls_ssl_conf_ca_chain(ssl_config, crt, core::ptr::null_mut());
-
-                return Ok(Self {
-                    stream,
-                    ssl_context,
-                    ssl_config,
-                    crt,
-                    eof: false,
-                    tx_buffer: Default::default(),
-                    rx_buffer: Default::default(),
-                });
-            }
+            let (ssl_context, ssl_config, crt, client_crt, private_key) =
+                certificates.init_ssl(servername, mode, min_version)?;
+            return Ok(Self {
+                stream,
+                ssl_context,
+                ssl_config,
+                crt,
+                client_crt,
+                private_key,
+                eof: false,
+                tx_buffer: Default::default(),
+                rx_buffer: Default::default(),
+            });
         }
     }
 
@@ -460,6 +497,8 @@ pub mod asynch {
                 free(self.ssl_config as *const _);
                 free(self.ssl_context as *const _);
                 free(self.crt as *const _);
+                free(self.client_crt as *const _);
+                free(self.private_key as *const _);
             }
         }
     }

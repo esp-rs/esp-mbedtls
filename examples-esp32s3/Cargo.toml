@@ -34,6 +34,8 @@ required-features = ["async"]
 
 [features]
 async = ["esp-wifi/esp32s3-async", "esp-wifi/embassy-net", "embassy-executor", "embassy-net", "embassy-time", "embedded-io/async"]
+# Use this feature to enable the private key with a password
+encrypted_private_key = []
 
 [patch.crates-io]
 esp32s3-hal = { git = "https://github.com/esp-rs/esp-hal", package = "esp32s3-hal", rev = "e5d1c603b0d4833632c2358ad3fad36964bf0ed5"}
