@@ -15,6 +15,8 @@ use embedded_io::Io;
 use esp_mbedtls_sys::bindings::*;
 use esp_mbedtls_sys::c_types::*;
 
+use crate::compat::ensure_null_terminated;
+
 // these will come from esp-wifi (i.e. this can only be used together with esp-wifi)
 extern "C" {
     fn free(ptr: *const u8);
@@ -216,31 +218,26 @@ impl<'a> Certificates<'a> {
             mbedtls_pk_init(private_key);
 
             if let Some(certs) = self.certs {
-                error_checked!(mbedtls_x509_crt_parse(
-                    crt,
-                    certs.as_ptr(),
-                    certs.len() as u32,
-                ))?;
+                let (certs, len) = ensure_null_terminated(certs);
+                error_checked!(mbedtls_x509_crt_parse(crt, certs, len,))?;
             }
 
             if let (Some(client_cert), Some(client_key)) = (self.client_cert, self.client_key) {
                 // Client certificate
-                error_checked!(mbedtls_x509_crt_parse(
-                    client_crt,
-                    client_cert.as_ptr(),
-                    client_cert.len() as u32,
-                ))?;
+                let (client_cert, len) = ensure_null_terminated(client_cert);
+                error_checked!(mbedtls_x509_crt_parse(client_crt, client_cert, len))?;
 
                 // Client key
                 let (password_ptr, password_len) = if let Some(password) = self.password {
-                    (password.as_ptr(), password.len() as u32)
+                    ensure_null_terminated(password)
                 } else {
                     (core::ptr::null(), 0)
                 };
+                let (client_key, len) = ensure_null_terminated(client_key);
                 error_checked!(mbedtls_pk_parse_key(
                     private_key,
-                    client_key.as_ptr(),
-                    client_key.len() as u32,
+                    client_key,
+                    len,
                     password_ptr,
                     password_len,
                     None,

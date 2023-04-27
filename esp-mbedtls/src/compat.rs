@@ -180,3 +180,21 @@ impl core::fmt::Write for StrBuf {
         Ok(())
     }
 }
+
+pub(crate) fn ensure_null_terminated(s: &str) -> (*const u8, u32) {
+    let bytes = s.as_bytes();
+
+    // String is already null-terminated
+    if bytes.last() == Some(&0) {
+        (s.as_ptr(), s.len() as u32)
+    } else {
+        // Create a new null-terminated string from bytes
+        let mut buffer = [0; 4096];
+        // Get the min between buffer or string
+        let len = core::cmp::min(bytes.len(), buffer.len() - 1);
+        buffer[..len].copy_from_slice(&bytes[..len]);
+        buffer[len] = 0;
+        // Bump len by 1, since we added a null terminating character
+        (buffer.as_ptr(), (len + 1) as u32)
+    }
+}
