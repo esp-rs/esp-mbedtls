@@ -15,8 +15,6 @@ use embedded_io::Io;
 use esp_mbedtls_sys::bindings::*;
 use esp_mbedtls_sys::c_types::*;
 
-use crate::compat::ensure_null_terminated;
-
 // these will come from esp-wifi (i.e. this can only be used together with esp-wifi)
 extern "C" {
     fn free(ptr: *const u8);
