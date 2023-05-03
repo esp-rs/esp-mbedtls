@@ -10,6 +10,7 @@ use embassy_executor::Executor;
 use embassy_time::{Duration, Timer};
 use embedded_svc::wifi::{ClientConfiguration, Configuration, Wifi};
 use esp_backtrace as _;
+use esp_mbedtls::X509;
 use esp_mbedtls::{asynch::Session, set_debug, Certificates, Mode, TlsVersion};
 use esp_println::logger::init_logger;
 use esp_println::{print, println};
@@ -172,7 +173,7 @@ async fn task(stack: &'static Stack<WifiDevice<'static>>) {
         Mode::Client,
         TlsVersion::Tls1_3,
         Certificates {
-            certs: Some(CERT),
+            certs: Some(X509::pem(CERT.as_bytes()).unwrap()),
             ..Default::default()
         },
     )

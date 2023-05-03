@@ -104,7 +104,6 @@ pub fn set_debug(level: u32) {
 /// ```
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub struct X509<'a> {
-
     /// The certificate in bytes
     bytes: &'a [u8],
 
@@ -113,7 +112,6 @@ pub struct X509<'a> {
 }
 
 impl<'a> X509<'a> {
-
     /// Reads certificate in pem format from bytes
     ///
     /// # Error
@@ -136,7 +134,10 @@ impl<'a> X509<'a> {
     /// *Note*: This function assumes that the size of the size is the exact
     /// length of the certificate
     pub fn der(bytes: &'a [u8]) -> Self {
-        Self { bytes, len: bytes.len() }
+        Self {
+            bytes,
+            len: bytes.len(),
+        }
     }
 
     /// Returns the bytes of the certificate
@@ -301,7 +302,7 @@ impl<'a> Certificates<'a> {
                 error_checked!(mbedtls_x509_crt_parse(
                     client_crt,
                     client_cert.as_ptr(),
-                    client_cert.len() as u32
+                    client_cert.len() as u32,
                 ))?;
 
                 // Client key
