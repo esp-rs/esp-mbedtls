@@ -73,6 +73,7 @@ pub enum TlsError {
     OutOfMemory,
     MbedTlsError(i32),
     Eof,
+    X509MissingNullTerminator,
 }
 
 impl embedded_io::Error for TlsError {
@@ -89,10 +90,82 @@ pub fn set_debug(level: u32) {
     }
 }
 
+/// Holds a X509 certificate
+///
+/// # Examples
+/// Initialize with a PEM certificate
+/// ```
+/// const CERTIFICATE: &[u8] = include_bytes!("certificate.pem");
+/// let cert = X509::pem(CERTIFICATE).unwrap();
+/// ```
+///
+/// Initialize with a DER certificate
+/// ```
+/// const CERTIFICATE: &[u8] = include_bytes!("certificate.der");
+/// let cert = X509::der(CERTIFICATE);
+/// ```
+#[derive(Copy, Clone, Eq, PartialEq)]
+pub struct X509<'a> {
+
+    /// The certificate in bytes
+    bytes: &'a [u8],
+
+    /// The lenght of the certificate
+    len: usize,
+}
+
+impl<'a> X509<'a> {
+
+    /// Reads certificate in pem format from bytes
+    ///
+    /// # Error
+    /// This function returns [TlsError::X509MissingNullTerminator] if the certificate
+    /// doesn't end with a null-byte.
+    pub fn pem(bytes: &'a [u8]) -> Result<Self, TlsError> {
+        if let Some(mut len) = X509::get_null(bytes) {
+            // Append 1 to the length, to account for the null byte
+            len = len + 1;
+            // Get a slice of only the certificate bytes
+            let slice = unsafe { core::slice::from_raw_parts(bytes.as_ptr(), len) };
+            Ok(Self { bytes: slice, len })
+        } else {
+            Err(TlsError::X509MissingNullTerminator)
+        }
+    }
+
+    /// Reads certificate in der format from bytes
+    ///
+    /// *Note*: This function assumes that the size of the size is the exact
+    /// length of the certificate
+    pub fn der(bytes: &'a [u8]) -> Self {
+        Self { bytes, len: bytes.len() }
+    }
+
+    /// Returns the bytes of the certificate
+    pub fn data(&self) -> &'a [u8] {
+        self.bytes
+    }
+
+    /// Returns the length of the certificate
+    pub(crate) fn len(&self) -> usize {
+        self.len
+    }
+
+    /// Returns a pointer to the data for parsing
+    pub(crate) fn as_ptr(&self) -> *const c_uchar {
+        self.data().as_ptr().cast()
+    }
+
+    /// Gets the first null byte in a slice
+    fn get_null(bytes: &[u8]) -> Option<usize> {
+        bytes.iter().position(|&byte| byte == 0)
+    }
+}
+
 pub struct Certificates<'a> {
-    pub certs: Option<&'a str>,
-    pub client_cert: Option<&'a str>,
-    pub client_key: Option<&'a str>,
+    pub certs: Option<X509<'a>>,
+    pub client_cert: Option<X509<'a>>,
+    pub client_key: Option<X509<'a>>,
     pub password: Option<&'a str>,
 }
 
@@ -218,26 +291,31 @@ impl<'a> Certificates<'a> {
             mbedtls_pk_init(private_key);
 
             if let Some(certs) = self.certs {
-                let (certs, len) = ensure_null_terminated(certs);
-                error_checked!(mbedtls_x509_crt_parse(crt, certs, len,))?;
+                error_checked!(mbedtls_x509_crt_parse(
+                    crt,
+                    certs.as_ptr(),
+                    certs.len() as u32,
+                ))?;
             }
 
             if let (Some(client_cert), Some(client_key)) = (self.client_cert, self.client_key) {
                 // Client certificate
-                let (client_cert, len) = ensure_null_terminated(client_cert);
-                error_checked!(mbedtls_x509_crt_parse(client_crt, client_cert, len))?;
+                error_checked!(mbedtls_x509_crt_parse(
+                    client_crt,
+                    client_cert.as_ptr(),
+                    client_cert.len() as u32
+                ))?;
 
                 // Client key
                 let (password_ptr, password_len) = if let Some(password) = self.password {
-                    ensure_null_terminated(password)
+                    (password.as_ptr(), password.len() as u32)
                 } else {
                     (core::ptr::null(), 0)
                 };
-                let (client_key, len) = ensure_null_terminated(client_key);
                 error_checked!(mbedtls_pk_parse_key(
                     private_key,
-                    client_key,
-                    len,
+                    client_key.as_ptr(),
+                    client_key.len() as u32,
                     password_ptr,
                     password_len,
                     None,
