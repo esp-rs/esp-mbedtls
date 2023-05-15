@@ -103,13 +103,7 @@ pub fn set_debug(level: u32) {
 /// let cert = X509::der(CERTIFICATE);
 /// ```
 #[derive(Copy, Clone, Eq, PartialEq)]
-pub struct X509<'a> {
-    /// The certificate in bytes
-    bytes: &'a [u8],
-
-    /// The lenght of the certificate
-    len: usize,
-}
+pub struct X509<'a>(&'a [u8]);
 
 impl<'a> X509<'a> {
     /// Reads certificate in pem format from bytes
@@ -118,12 +112,10 @@ impl<'a> X509<'a> {
     /// This function returns [TlsError::X509MissingNullTerminator] if the certificate
     /// doesn't end with a null-byte.
     pub fn pem(bytes: &'a [u8]) -> Result<Self, TlsError> {
-        if let Some(mut len) = X509::get_null(bytes) {
-            // Append 1 to the length, to account for the null byte
-            len = len + 1;
-            // Get a slice of only the certificate bytes
-            let slice = unsafe { core::slice::from_raw_parts(bytes.as_ptr(), len) };
-            Ok(Self { bytes: slice, len })
+        if let Some(len) = X509::get_null(bytes) {
+            // Get a slice of only the certificate bytes including the \0
+            let slice = unsafe { core::slice::from_raw_parts(bytes.as_ptr(), len + 1) };
+            Ok(Self(slice))
         } else {
             Err(TlsError::X509MissingNullTerminator)
         }
@@ -134,20 +126,17 @@ impl<'a> X509<'a> {
     /// *Note*: This function assumes that the size of the size is the exact
     /// length of the certificate
     pub fn der(bytes: &'a [u8]) -> Self {
-        Self {
-            bytes,
-            len: bytes.len(),
-        }
+        Self(bytes)
     }
 
     /// Returns the bytes of the certificate
     pub fn data(&self) -> &'a [u8] {
-        self.bytes
+        self.0
     }
 
     /// Returns the length of the certificate
     pub(crate) fn len(&self) -> usize {
-        self.len
+        self.data().len()
     }
 
     /// Returns a pointer to the data for parsing
