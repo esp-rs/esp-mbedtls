@@ -10,8 +10,8 @@ use embassy_executor::Executor;
 use embassy_time::{Duration, Timer};
 use embedded_svc::wifi::{ClientConfiguration, Configuration, Wifi};
 use esp_backtrace as _;
-use esp_mbedtls::Certificates;
 use esp_mbedtls::{asynch::Session, set_debug, Mode, TlsVersion};
+use esp_mbedtls::{Certificates, X509};
 use esp_println::logger::init_logger;
 use esp_println::{print, println};
 use esp_wifi::initialize;
@@ -166,17 +166,17 @@ async fn task(stack: &'static Stack<WifiDevice<'static>>) {
 
     #[cfg(not(feature = "encrypted_private_key"))]
     let certificates = Certificates {
-        certs: Some(CERT),
-        client_cert: Some(CLIENT_CERT),
-        client_key: Some(PRIVATE_KEY),
+        certs: Some(X509::pem(CERT.as_bytes()).unwrap()),
+        client_cert: Some(X509::pem(CLIENT_CERT.as_bytes()).unwrap()),
+        client_key: Some(X509::pem(PRIVATE_KEY.as_bytes()).unwrap()),
         password: None,
     };
 
     #[cfg(feature = "encrypted_private_key")]
     let certificates = Certificates {
-        certs: Some(CERT),
-        client_cert: Some(CLIENT_CERT_WITH_PASSWORD),
-        client_key: Some(PRIVATE_KEY_WITH_PASSWORD),
+        certs: Some(X509::pem(CERT.as_bytes()).unwrap()),
+        client_cert: Some(X509::pem(CLIENT_CERT_WITH_PASSWORD.as_bytes()).unwrap()),
+        client_key: Some(X509::pem(PRIVATE_KEY_WITH_PASSWORD.as_bytes()).unwrap()),
         password: Some("password\0"),
     };
 

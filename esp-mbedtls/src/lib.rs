@@ -71,6 +71,7 @@ pub enum TlsError {
     OutOfMemory,
     MbedTlsError(i32),
     Eof,
+    X509MissingNullTerminator,
 }
 
 impl embedded_io::Error for TlsError {
@@ -87,10 +88,72 @@ pub fn set_debug(level: u32) {
     }
 }
 
+/// Holds a X509 certificate
+///
+/// # Examples
+/// Initialize with a PEM certificate
+/// ```
+/// const CERTIFICATE: &[u8] = include_bytes!("certificate.pem");
+/// let cert = X509::pem(CERTIFICATE).unwrap();
+/// ```
+///
+/// Initialize with a DER certificate
+/// ```
+/// const CERTIFICATE: &[u8] = include_bytes!("certificate.der");
+/// let cert = X509::der(CERTIFICATE);
+/// ```
+#[derive(Copy, Clone, Eq, PartialEq)]
+pub struct X509<'a>(&'a [u8]);
+
+impl<'a> X509<'a> {
+    /// Reads certificate in pem format from bytes
+    ///
+    /// # Error
+    /// This function returns [TlsError::X509MissingNullTerminator] if the certificate
+    /// doesn't end with a null-byte.
+    pub fn pem(bytes: &'a [u8]) -> Result<Self, TlsError> {
+        if let Some(len) = X509::get_null(bytes) {
+            // Get a slice of only the certificate bytes including the \0
+            let slice = unsafe { core::slice::from_raw_parts(bytes.as_ptr(), len + 1) };
+            Ok(Self(slice))
+        } else {
+            Err(TlsError::X509MissingNullTerminator)
+        }
+    }
+
+    /// Reads certificate in der format from bytes
+    ///
+    /// *Note*: This function assumes that the size of the size is the exact
+    /// length of the certificate
+    pub fn der(bytes: &'a [u8]) -> Self {
+        Self(bytes)
+    }
+
+    /// Returns the bytes of the certificate
+    pub fn data(&self) -> &'a [u8] {
+        self.0
+    }
+
+    /// Returns the length of the certificate
+    pub(crate) fn len(&self) -> usize {
+        self.data().len()
+    }
+
+    /// Returns a pointer to the data for parsing
+    pub(crate) fn as_ptr(&self) -> *const c_uchar {
+        self.data().as_ptr().cast()
+    }
+
+    /// Gets the first null byte in a slice
+    fn get_null(bytes: &[u8]) -> Option<usize> {
+        bytes.iter().position(|&byte| byte == 0)
+    }
+}
+
 pub struct Certificates<'a> {
-    pub certs: Option<&'a str>,
-    pub client_cert: Option<&'a str>,
-    pub client_key: Option<&'a str>,
+    pub certs: Option<X509<'a>>,
+    pub client_cert: Option<X509<'a>>,
+    pub client_key: Option<X509<'a>>,
     pub password: Option<&'a str>,
 }
 

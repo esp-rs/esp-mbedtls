@@ -8,7 +8,7 @@ use embedded_svc::{
 };
 use esp_backtrace as _;
 use esp_mbedtls::{set_debug, Mode, TlsVersion};
-use esp_mbedtls::{Certificates, Session};
+use esp_mbedtls::{Certificates, Session, X509};
 use esp_println::{logger::init_logger, print, println};
 use esp_wifi::{
     current_millis,
@@ -112,7 +112,7 @@ fn main() -> ! {
         Mode::Client,
         TlsVersion::Tls1_3,
         Certificates {
-            certs: Some(CERT),
+            certs: Some(X509::pem(CERT.as_bytes()).unwrap()),
             ..Default::default()
         },
     )
