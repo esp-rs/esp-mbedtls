@@ -102,7 +102,7 @@ pub fn set_debug(level: u32) {
 /// const CERTIFICATE: &[u8] = include_bytes!("certificate.der");
 /// let cert = X509::der(CERTIFICATE);
 /// ```
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub struct X509<'a>(&'a [u8]);
 
 impl<'a> X509<'a> {
@@ -150,6 +150,7 @@ impl<'a> X509<'a> {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Certificates<'a> {
     pub certs: Option<X509<'a>>,
     pub client_cert: Option<X509<'a>>,
