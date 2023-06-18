@@ -373,6 +373,8 @@ where
                 if res < 0 && res != MBEDTLS_ERR_SSL_WANT_READ && res != MBEDTLS_ERR_SSL_WANT_WRITE
                 {
                     // real error
+                    // Reference: https://os.mbed.com/teams/sandbox/code/mbedtls/docs/tip/ssl_8h.html#a4a37e497cd08c896870a42b1b618186e
+                    mbedtls_ssl_session_reset(self.ssl_context);
                     return Err(TlsError::MbedTlsError(res));
                 }
 
@@ -452,6 +454,12 @@ impl<T> Drop for Session<T> {
     fn drop(&mut self) {
         log::debug!("session dropped - freeing memory");
         unsafe {
+            error_checked!(mbedtls_ssl_close_notify(self.ssl_context)).unwrap();
+            mbedtls_ssl_config_free(self.ssl_config);
+            mbedtls_ssl_free(self.ssl_context);
+            mbedtls_x509_crt_free(self.crt);
+            mbedtls_x509_crt_free(self.client_crt);
+            mbedtls_pk_free(self.private_key);
             free(self.ssl_config as *const _);
             free(self.ssl_context as *const _);
             free(self.crt as *const _);
@@ -558,6 +566,12 @@ pub mod asynch {
         fn drop(&mut self) {
             log::debug!("session dropped - freeing memory");
             unsafe {
+                error_checked!(mbedtls_ssl_close_notify(self.ssl_context)).unwrap();
+                mbedtls_ssl_config_free(self.ssl_config);
+                mbedtls_ssl_free(self.ssl_context);
+                mbedtls_x509_crt_free(self.crt);
+                mbedtls_x509_crt_free(self.client_crt);
+                mbedtls_pk_free(self.private_key);
                 free(self.ssl_config as *const _);
                 free(self.ssl_context as *const _);
                 free(self.crt as *const _);
@@ -595,6 +609,8 @@ pub mod asynch {
                         && res != MBEDTLS_ERR_SSL_WANT_WRITE
                     {
                         // real error
+                        // Reference: https://os.mbed.com/teams/sandbox/code/mbedtls/docs/tip/ssl_8h.html#a4a37e497cd08c896870a42b1b618186e
+                        mbedtls_ssl_session_reset(self.ssl_context);
                         return Err(TlsError::MbedTlsError(res));
                     } else {
                         if !self.tx_buffer.empty() {
