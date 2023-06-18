@@ -454,7 +454,7 @@ impl<T> Drop for Session<T> {
     fn drop(&mut self) {
         log::debug!("session dropped - freeing memory");
         unsafe {
-            error_checked!(mbedtls_ssl_close_notify(self.ssl_context)).unwrap();
+            mbedtls_ssl_close_notify(self.ssl_context);
             mbedtls_ssl_config_free(self.ssl_config);
             mbedtls_ssl_free(self.ssl_context);
             mbedtls_x509_crt_free(self.crt);
@@ -566,7 +566,7 @@ pub mod asynch {
         fn drop(&mut self) {
             log::debug!("session dropped - freeing memory");
             unsafe {
-                error_checked!(mbedtls_ssl_close_notify(self.ssl_context)).unwrap();
+                mbedtls_ssl_close_notify(self.ssl_context);
                 mbedtls_ssl_config_free(self.ssl_config);
                 mbedtls_ssl_free(self.ssl_context);
                 mbedtls_x509_crt_free(self.crt);
