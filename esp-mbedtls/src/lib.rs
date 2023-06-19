@@ -102,7 +102,7 @@ pub fn set_debug(level: u32) {
 /// const CERTIFICATE: &[u8] = include_bytes!("certificate.der");
 /// let cert = X509::der(CERTIFICATE);
 /// ```
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub struct X509<'a>(&'a [u8]);
 
 impl<'a> X509<'a> {
@@ -150,6 +150,7 @@ impl<'a> X509<'a> {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Certificates<'a> {
     pub certs: Option<X509<'a>>,
     pub client_cert: Option<X509<'a>>,
@@ -372,6 +373,8 @@ where
                 if res < 0 && res != MBEDTLS_ERR_SSL_WANT_READ && res != MBEDTLS_ERR_SSL_WANT_WRITE
                 {
                     // real error
+                    // Reference: https://os.mbed.com/teams/sandbox/code/mbedtls/docs/tip/ssl_8h.html#a4a37e497cd08c896870a42b1b618186e
+                    mbedtls_ssl_session_reset(self.ssl_context);
                     return Err(TlsError::MbedTlsError(res));
                 }
 
@@ -451,6 +454,12 @@ impl<T> Drop for Session<T> {
     fn drop(&mut self) {
         log::debug!("session dropped - freeing memory");
         unsafe {
+            mbedtls_ssl_close_notify(self.ssl_context);
+            mbedtls_ssl_config_free(self.ssl_config);
+            mbedtls_ssl_free(self.ssl_context);
+            mbedtls_x509_crt_free(self.crt);
+            mbedtls_x509_crt_free(self.client_crt);
+            mbedtls_pk_free(self.private_key);
             free(self.ssl_config as *const _);
             free(self.ssl_context as *const _);
             free(self.crt as *const _);
@@ -557,6 +566,12 @@ pub mod asynch {
         fn drop(&mut self) {
             log::debug!("session dropped - freeing memory");
             unsafe {
+                mbedtls_ssl_close_notify(self.ssl_context);
+                mbedtls_ssl_config_free(self.ssl_config);
+                mbedtls_ssl_free(self.ssl_context);
+                mbedtls_x509_crt_free(self.crt);
+                mbedtls_x509_crt_free(self.client_crt);
+                mbedtls_pk_free(self.private_key);
                 free(self.ssl_config as *const _);
                 free(self.ssl_context as *const _);
                 free(self.crt as *const _);
@@ -594,6 +609,8 @@ pub mod asynch {
                         && res != MBEDTLS_ERR_SSL_WANT_WRITE
                     {
                         // real error
+                        // Reference: https://os.mbed.com/teams/sandbox/code/mbedtls/docs/tip/ssl_8h.html#a4a37e497cd08c896870a42b1b618186e
+                        mbedtls_ssl_session_reset(self.ssl_context);
                         return Err(TlsError::MbedTlsError(res));
                     } else {
                         if !self.tx_buffer.empty() {
