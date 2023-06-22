@@ -14,6 +14,7 @@ use esp_wifi::{
     current_millis, initialize,
     wifi::{utils::create_network_interface, WifiMode},
     wifi_interface::WifiStack,
+    EspWifiInitFor,
 };
 use hal::{
     clock::{ClockControl, CpuClock},
@@ -21,7 +22,7 @@ use hal::{
     prelude::*,
     Rng, Rtc,
 };
-use smoltcp::{iface::SocketStorage, wire::Ipv4Address};
+use smoltcp::{iface::SocketStorage, wire::IpAddress};
 
 const SSID: &str = env!("SSID");
 const PASSWORD: &str = env!("PASSWORD");
@@ -40,20 +41,21 @@ fn main() -> ! {
     rtc.swd.disable();
     rtc.rwdt.disable();
 
-    let (wifi, _) = peripherals.RADIO.split();
-    let mut socket_set_entries: [SocketStorage; 3] = Default::default();
-    let (iface, device, mut controller, sockets) =
-        create_network_interface(wifi, WifiMode::Sta, &mut socket_set_entries);
-    let wifi_stack = WifiStack::new(iface, device, sockets, current_millis);
-
     let timer = hal::systimer::SystemTimer::new(peripherals.SYSTIMER);
-    initialize(
+    let init = initialize(
+        EspWifiInitFor::Wifi,
         timer.alarm0,
         Rng::new(peripherals.RNG),
         system.radio_clock_control,
         &clocks,
     )
     .unwrap();
+
+    let (wifi, _) = peripherals.RADIO.split();
+    let mut socket_set_entries: [SocketStorage; 3] = Default::default();
+    let (iface, device, mut controller, sockets) =
+        create_network_interface(&init, wifi, WifiMode::Sta, &mut socket_set_entries);
+    let wifi_stack = WifiStack::new(iface, device, sockets, current_millis);
 
     println!("Call wifi_connect");
     let client_config = Configuration::Client(ClientConfiguration {
@@ -102,7 +104,7 @@ fn main() -> ! {
     socket.work();
 
     socket
-        .open(Ipv4Address::new(62, 210, 201, 125), 443) // certauth.cryptomix.com
+        .open(IpAddress::v4(62, 210, 201, 125), 443) // certauth.cryptomix.com
         .unwrap();
 
     set_debug(0);

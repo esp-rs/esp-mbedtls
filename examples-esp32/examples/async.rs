@@ -14,8 +14,8 @@ use esp_mbedtls::X509;
 use esp_mbedtls::{asynch::Session, set_debug, Certificates, Mode, TlsVersion};
 use esp_println::logger::init_logger;
 use esp_println::{print, println};
-use esp_wifi::initialize;
 use esp_wifi::wifi::{WifiController, WifiDevice, WifiEvent, WifiMode, WifiState};
+use esp_wifi::{initialize, EspWifiInitFor};
 use hal::clock::{ClockControl, CpuClock};
 use hal::Rng;
 use hal::{embassy, peripherals::Peripherals, prelude::*, timer::TimerGroup, Rtc};
@@ -53,7 +53,8 @@ fn main() -> ! {
         &clocks,
         &mut system.peripheral_clock_control,
     );
-    initialize(
+    let init = initialize(
+        EspWifiInitFor::Wifi,
         timer.timer0,
         Rng::new(peripherals.RNG),
         system.radio_clock_control,
@@ -62,7 +63,7 @@ fn main() -> ! {
     .unwrap();
 
     let (wifi, _) = peripherals.RADIO.split();
-    let (wifi_interface, controller) = esp_wifi::wifi::new_with_mode(wifi, WifiMode::Sta);
+    let (wifi_interface, controller) = esp_wifi::wifi::new_with_mode(&init, wifi, WifiMode::Sta);
 
     let timer_group0 = TimerGroup::new(
         peripherals.TIMG0,
