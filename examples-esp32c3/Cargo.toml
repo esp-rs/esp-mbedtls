@@ -7,6 +7,16 @@ license = "MIT OR Apache-2.0"
 
 [profile.release]
 debug = true
+lto = false
+
+[profile.release.package.esp-wifi]
+opt-level = 3
+
+[profile.dev]
+lto = false
+
+[profile.dev.package.esp-wifi]
+opt-level = 3
 
 [dependencies]
 hal = { package = "esp32c3-hal", version = "0.9.0" }
