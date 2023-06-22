@@ -7,19 +7,29 @@ license = "MIT OR Apache-2.0"
 
 [profile.release]
 debug = true
+lto = false
+
+[profile.release.package.esp-wifi]
+opt-level = 3
+
+[profile.dev]
+lto = false
+
+[profile.dev.package.esp-wifi]
+opt-level = 3
 
 [dependencies]
-hal = { package = "esp32s3-hal", version = "0.8.0" }
+hal = { package = "esp32s3-hal", version = "0.9.0" }
 esp-backtrace = { version = "0.6.0", features = ["esp32s3", "panic-handler", "print-uart", "exception-handler"] }
 esp-println       = { version = "0.4.0", features = ["esp32s3","log"] }
 
 embassy-time = { version = "0.1.0", features = ["nightly"], optional = true }
-embassy-executor  = { package = "embassy-executor", git = "https://github.com/embassy-rs/embassy/", rev = "cd9a65b", features = ["nightly", "integrated-timers"], optional = true }
-embassy-net = { git = "https://github.com/embassy-rs/embassy", rev = "26474ce6eb759e5add1c137f3417845e0797df3a", features = ["nightly", "tcp", "udp", "dhcpv4", "medium-ethernet"], optional = true }
+embassy-executor = { version = "0.2.0", package = "embassy-executor", features = ["nightly", "executor-thread", "integrated-timers", "arch-xtensa"], optional = true }
+embassy-net = { git = "https://github.com/embassy-rs/embassy", rev = "fb27594", features = ["nightly", "tcp", "udp", "dhcpv4", "medium-ethernet"], optional = true }
 
-esp-wifi = { git = "https://github.com/esp-rs/esp-wifi.git", features = ["big-heap", "phy-enable-usb", "esp32s3", "embedded-svc", "wifi"], rev = "a01d075c64ddf777920344936f8bdaaddf7de288" }
+esp-wifi = { git = "https://github.com/esp-rs/esp-wifi.git", features = ["big-heap", "esp32s3", "embedded-svc", "wifi"], rev = "f80df630a887b27fa63fb2043fd2a432d431ac2f" }
 smoltcp = { version = "0.9.1", default-features=false, features = ["proto-igmp", "proto-ipv4", "socket-tcp", "socket-icmp", "socket-udp", "medium-ethernet", "proto-dhcpv4", "socket-raw", "socket-dhcpv4"] }
-embedded-svc = { version = "0.23.1", default-features = false}
+embedded-svc = { version = "0.25.0", default-features = false}
 log = "0.4.16"
 embedded-hal = "0.2"
 embedded-io = "0.4.0"
@@ -33,10 +43,7 @@ name              = "async"
 required-features = ["async"]
 
 [features]
-async = ["esp-wifi/esp32s3-async", "esp-wifi/embassy-net", "embassy-executor", "embassy-net", "embassy-time", "embedded-io/async"]
+async = ["esp-wifi/async", "esp-wifi/embassy-net", "embassy-executor", "embassy-net", "embassy-time", "embedded-io/async"]
 # Use this feature to enable the private key with a password
 encrypted_private_key = []
 
-[patch.crates-io]
-esp32s3-hal = { git = "https://github.com/esp-rs/esp-hal", package = "esp32s3-hal", rev = "e5d1c603b0d4833632c2358ad3fad36964bf0ed5"}
-esp-hal-common = { git = "https://github.com/esp-rs/esp-hal", package = "esp-hal-common", rev = "e5d1c603b0d4833632c2358ad3fad36964bf0ed5"}
