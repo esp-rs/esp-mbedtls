@@ -237,6 +237,11 @@ impl<'a> Certificates<'a> {
 
             mbedtls_ssl_init(ssl_context);
             mbedtls_ssl_config_init(ssl_config);
+            mbedtls_x509_crt_init(crt);
+            // Init client certificate
+            mbedtls_x509_crt_init(client_crt);
+            // Initialize private key
+            mbedtls_pk_init(private_key);
             (*ssl_config).private_f_dbg = Some(dbg_print);
             (*ssl_config).private_f_rng = Some(rng);
 
@@ -258,27 +263,28 @@ impl<'a> Certificates<'a> {
                 if self.certs.is_some() {
                     MBEDTLS_SSL_VERIFY_REQUIRED as i32
                 } else {
+                    // Use this config when in server mode
+                    // Ref: https://os.mbed.com/users/markrad/code/mbedtls/docs/tip/ssl_8h.html#a5695285c9dbfefec295012b566290f37
                     MBEDTLS_SSL_VERIFY_NONE as i32
                 },
             );
 
-            let mut hostname = StrBuf::new();
-            hostname.append(servername);
-            hostname.append_char('\0');
-            error_checked!(mbedtls_ssl_set_hostname(
-                ssl_context,
-                hostname.as_str_ref().as_ptr() as *const c_char
-            ))?;
+            if mode == Mode::Client {
+                log::info!("auth mode done, setting hostname");
+                let mut hostname = StrBuf::new();
+                hostname.append(servername);
+                hostname.append_char('\0');
+                error_checked!(mbedtls_ssl_set_hostname(
+                    ssl_context,
+                    hostname.as_str_ref().as_ptr() as *const c_char
+                ))?;
+            }
 
-            error_checked!(mbedtls_ssl_setup(ssl_context, ssl_config))?;
+            log::info!("hostname set");
 
-            mbedtls_x509_crt_init(crt);
+            log::info!("setup done");
 
-            // Init client certificate
-            mbedtls_x509_crt_init(client_crt);
-            // Initialize private key
-            mbedtls_pk_init(private_key);
-
+            log::info!("keys initialized, preparing to parse");
             if let Some(certs) = self.certs {
                 error_checked!(mbedtls_x509_crt_parse(
                     crt,
@@ -287,6 +293,7 @@ impl<'a> Certificates<'a> {
                 ))?;
             }
 
+            log::info!("parsing client keys");
             if let (Some(client_cert), Some(client_key)) = (self.client_cert, self.client_key) {
                 // Client certificate
                 error_checked!(mbedtls_x509_crt_parse(
@@ -311,10 +318,12 @@ impl<'a> Certificates<'a> {
                     core::ptr::null_mut(),
                 ))?;
 
+                log::info!("setting own cert");
                 mbedtls_ssl_conf_own_cert(ssl_config, client_crt, private_key);
             }
 
             mbedtls_ssl_conf_ca_chain(ssl_config, crt, core::ptr::null_mut());
+            error_checked!(mbedtls_ssl_setup(ssl_context, ssl_config))?;
             Ok((ssl_context, ssl_config, crt, client_crt, private_key))
         }
     }
