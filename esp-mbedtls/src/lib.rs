@@ -270,7 +270,6 @@ impl<'a> Certificates<'a> {
             );
 
             if mode == Mode::Client {
-                log::info!("auth mode done, setting hostname");
                 let mut hostname = StrBuf::new();
                 hostname.append(servername);
                 hostname.append_char('\0');
@@ -280,11 +279,6 @@ impl<'a> Certificates<'a> {
                 ))?;
             }
 
-            log::info!("hostname set");
-
-            log::info!("setup done");
-
-            log::info!("keys initialized, preparing to parse");
             if let Some(certs) = self.certs {
                 error_checked!(mbedtls_x509_crt_parse(
                     crt,
@@ -293,7 +287,6 @@ impl<'a> Certificates<'a> {
                 ))?;
             }
 
-            log::info!("parsing client keys");
             if let (Some(client_cert), Some(client_key)) = (self.client_cert, self.client_key) {
                 // Client certificate
                 error_checked!(mbedtls_x509_crt_parse(
@@ -318,7 +311,6 @@ impl<'a> Certificates<'a> {
                     core::ptr::null_mut(),
                 ))?;
 
-                log::info!("setting own cert");
                 mbedtls_ssl_conf_own_cert(ssl_config, client_crt, private_key);
             }
 
