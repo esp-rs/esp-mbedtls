@@ -1,6 +1,7 @@
 #![no_std]
 #![feature(c_variadic)]
 #![feature(async_fn_in_trait)]
+#![feature(impl_trait_projections)]
 #![allow(incomplete_features)]
 
 mod compat;
@@ -321,8 +322,8 @@ impl<'a> Certificates<'a> {
     }
 }
 
-pub struct Session<T> {
-    stream: T,
+pub struct Session<'a, T> {
+    stream: &'a mut T,
     ssl_context: *mut mbedtls_ssl_context,
     ssl_config: *mut mbedtls_ssl_config,
     crt: *mut mbedtls_x509_crt,
@@ -330,9 +331,9 @@ pub struct Session<T> {
     private_key: *mut mbedtls_pk_context,
 }
 
-impl<T> Session<T> {
+impl<'a, T> Session<'a, T> {
     pub fn new(
-        stream: T,
+        stream: &'a mut T,
         servername: &str,
         mode: Mode,
         min_version: TlsVersion,
@@ -351,11 +352,11 @@ impl<T> Session<T> {
     }
 }
 
-impl<T> Session<T>
+impl<'a, T> Session<'a, T>
 where
     T: Read + Write,
 {
-    pub fn connect<'a>(self) -> Result<ConnectedSession<T>, TlsError> {
+    pub fn connect<'b>(self) -> Result<ConnectedSession<'a, T>, TlsError> {
         unsafe {
             mbedtls_ssl_set_bio(
                 self.ssl_context,
@@ -451,7 +452,7 @@ where
     }
 }
 
-impl<T> Drop for Session<T> {
+impl<'a, T> Drop for Session<'a, T> {
     fn drop(&mut self) {
         log::debug!("session dropped - freeing memory");
         unsafe {
@@ -470,21 +471,21 @@ impl<T> Drop for Session<T> {
     }
 }
 
-pub struct ConnectedSession<T>
+pub struct ConnectedSession<'a, T>
 where
     T: Read + Write,
 {
-    session: Session<T>,
+    session: Session<'a, T>,
 }
 
-impl<T> Io for ConnectedSession<T>
+impl<'a, T> Io for ConnectedSession<'a, T>
 where
     T: Read + Write,
 {
     type Error = TlsError;
 }
 
-impl<T> Read for ConnectedSession<T>
+impl<'a, T> Read for ConnectedSession<'a, T>
 where
     T: Read + Write,
 {
@@ -508,7 +509,7 @@ where
     }
 }
 
-impl<T> Write for ConnectedSession<T>
+impl<'a, T> Write for ConnectedSession<'a, T>
 where
     T: Read + Write,
 {
@@ -527,8 +528,8 @@ pub mod asynch {
     use super::*;
     use embedded_io::asynch;
 
-    pub struct Session<T, const BUFFER_SIZE: usize = 4096> {
-        stream: T,
+    pub struct Session<'a, T, const BUFFER_SIZE: usize = 4096> {
+        stream: &'a mut T,
         ssl_context: *mut mbedtls_ssl_context,
         ssl_config: *mut mbedtls_ssl_config,
         crt: *mut mbedtls_x509_crt,
@@ -539,9 +540,9 @@ pub mod asynch {
         rx_buffer: BufferedBytes<BUFFER_SIZE>,
     }
 
-    impl<T, const BUFFER_SIZE: usize> Session<T, BUFFER_SIZE> {
+    impl<'a, T, const BUFFER_SIZE: usize> Session<'a, T, BUFFER_SIZE> {
         pub fn new(
-            stream: T,
+            stream: &'a mut T,
             servername: &str,
             mode: Mode,
             min_version: TlsVersion,
@@ -563,7 +564,7 @@ pub mod asynch {
         }
     }
 
-    impl<T, const BUFFER_SIZE: usize> Drop for Session<T, BUFFER_SIZE> {
+    impl<'a, T, const BUFFER_SIZE: usize> Drop for Session<'a, T, BUFFER_SIZE> {
         fn drop(&mut self) {
             log::debug!("session dropped - freeing memory");
             unsafe {
@@ -582,13 +583,13 @@ pub mod asynch {
         }
     }
 
-    impl<T, const BUFFER_SIZE: usize> Session<T, BUFFER_SIZE>
+    impl<'a, T, const BUFFER_SIZE: usize> Session<'a, T, BUFFER_SIZE>
     where
         T: asynch::Read + asynch::Write,
     {
-        pub async fn connect<'a>(
+        pub async fn connect<'b>(
             mut self,
-        ) -> Result<AsyncConnectedSession<T, BUFFER_SIZE>, TlsError> {
+        ) -> Result<AsyncConnectedSession<'a, T, BUFFER_SIZE>, TlsError> {
             unsafe {
                 mbedtls_ssl_set_bio(
                     self.ssl_context,
@@ -784,21 +785,21 @@ pub mod asynch {
         }
     }
 
-    pub struct AsyncConnectedSession<T, const BUFFER_SIZE: usize>
+    pub struct AsyncConnectedSession<'a, T, const BUFFER_SIZE: usize>
     where
         T: asynch::Read + asynch::Write,
     {
-        pub(crate) session: Session<T, BUFFER_SIZE>,
+        pub(crate) session: Session<'a, T, BUFFER_SIZE>,
     }
 
-    impl<T, const BUFFER_SIZE: usize> Io for AsyncConnectedSession<T, BUFFER_SIZE>
+    impl<'a, T, const BUFFER_SIZE: usize> Io for AsyncConnectedSession<'a, T, BUFFER_SIZE>
     where
         T: asynch::Read + asynch::Write,
     {
         type Error = TlsError;
     }
 
-    impl<T, const BUFFER_SIZE: usize> asynch::Read for AsyncConnectedSession<T, BUFFER_SIZE>
+    impl<'a, T, const BUFFER_SIZE: usize> asynch::Read for AsyncConnectedSession<'a, T, BUFFER_SIZE>
     where
         T: asynch::Read + asynch::Write,
     {
@@ -822,7 +823,7 @@ pub mod asynch {
         }
     }
 
-    impl<T, const BUFFER_SIZE: usize> asynch::Write for AsyncConnectedSession<T, BUFFER_SIZE>
+    impl<'a, T, const BUFFER_SIZE: usize> asynch::Write for AsyncConnectedSession<'a, T, BUFFER_SIZE>
     where
         T: asynch::Read + asynch::Write,
     {

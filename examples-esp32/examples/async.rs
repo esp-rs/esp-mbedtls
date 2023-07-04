@@ -169,7 +169,7 @@ async fn task(stack: &'static Stack<WifiDevice<'static>>) {
     set_debug(0);
 
     let tls: Session<_, 4096> = Session::new(
-        socket,
+        &mut socket,
         "www.google.com",
         Mode::Client,
         TlsVersion::Tls1_3,

@@ -110,7 +110,7 @@ fn main() -> ! {
     set_debug(0);
 
     let tls = Session::new(
-        socket,
+        &mut socket,
         "www.google.com",
         Mode::Client,
         TlsVersion::Tls1_3,
