@@ -131,7 +131,7 @@ fn main() -> ! {
     };
 
     let tls = Session::new(
-        socket,
+        &mut socket,
         "certauth.cryptomix.com",
         Mode::Client,
         TlsVersion::Tls1_3,

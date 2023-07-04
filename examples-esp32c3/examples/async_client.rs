@@ -182,7 +182,7 @@ async fn task(stack: &'static Stack<WifiDevice<'static>>) {
     };
 
     let tls: Session<_, 4096> = Session::new(
-        socket,
+        &mut socket,
         "certauth.cryptomix.com",
         Mode::Client,
         TlsVersion::Tls1_3,
