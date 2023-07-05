@@ -7,7 +7,7 @@ use embedded_svc::{
     wifi::{ClientConfiguration, Configuration, Wifi},
 };
 use esp_backtrace as _;
-use esp_mbedtls::{set_debug, Mode, TlsVersion, X509};
+use esp_mbedtls::{set_debug, Mode, TlsVersion, X509, TlsError};
 use esp_mbedtls::{Certificates, Session};
 use esp_println::{logger::init_logger, print, println};
 use esp_wifi::{
@@ -139,45 +139,54 @@ fn main() -> ! {
                 },
             )
             .unwrap();
-            let mut connected_session = tls.connect().unwrap();
-            loop {
-                if let Ok(len) = connected_session.read(&mut buffer[pos..]) {
-                    let to_print =
-                        unsafe { core::str::from_utf8_unchecked(&buffer[..(pos + len)]) };
+            match tls.connect() {
+                Ok(mut connected_session) => {
+                    loop {
+                        if let Ok(len) = connected_session.read(&mut buffer[pos..]) {
+                            let to_print =
+                                unsafe { core::str::from_utf8_unchecked(&buffer[..(pos + len)]) };
 
-                    if to_print.contains("\r\n\r\n") {
-                        print!("{}", to_print);
-                        println!();
-                        break;
+                            if to_print.contains("\r\n\r\n") {
+                                print!("{}", to_print);
+                                println!();
+                                break;
+                            }
+
+                            pos += len;
+                        } else {
+                            break;
+                        }
+
+                        if current_millis() > wait_end {
+                            println!("Timed out");
+                            time_out = true;
+                            break;
+                        }
                     }
 
-                    pos += len;
-                } else {
-                    break;
-                }
+                    if !time_out {
+                        connected_session
+                            .write_all(
+                                b"HTTP/1.0 200 OK\r\n\r\n\
+                                    <html>\
+                                    <body>\
+                                    <h1>Hello Rust! Hello esp-mbedtls!</h1>\
+                                    </body>\
+                                    </html>\r\n\
+                                    ",
+                            )
+                            .unwrap();
+                    }
 
-                if current_millis() > wait_end {
-                    println!("Timed out");
-                    time_out = true;
-                    break;
+                    drop(connected_session);
+                },
+                Err(TlsError::MbedTlsError(-30592)) => {
+                    println!("Fatal message: Please enable the exception for a self-signed certificate in your browser");
+                },
+                Err(error) => {
+                    panic!("{:?}", error);
                 }
             }
-
-            if !time_out {
-                connected_session
-                    .write_all(
-                        b"HTTP/1.0 200 OK\r\n\r\n\
-                    <html>\
-                        <body>\
-                            <h1>Hello Rust! Hello esp-mbedtls!</h1>\
-                        </body>\
-                    </html>\r\n\
-                    ",
-                    )
-                    .unwrap();
-            }
-
-            drop(connected_session);
 
             socket.close();
 

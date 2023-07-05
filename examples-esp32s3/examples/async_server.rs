@@ -10,7 +10,7 @@ use embassy_executor::Executor;
 use embassy_time::{Duration, Timer};
 use embedded_svc::wifi::{ClientConfiguration, Configuration, Wifi};
 use esp_backtrace as _;
-use esp_mbedtls::X509;
+use esp_mbedtls::{X509, TlsError};
 use esp_mbedtls::{asynch::Session, set_debug, Certificates, Mode, TlsVersion};
 use esp_println::logger::init_logger;
 use esp_println::{print, println};
@@ -73,7 +73,7 @@ fn main() -> ! {
     );
     embassy::init(&clocks, timer_group0.timer0);
 
-    let config = Config::Dhcp(Default::default());
+    let config = Config::dhcpv4(Default::default());
 
     let seed = 1234; // very random, very secure seed
 
@@ -148,7 +148,7 @@ async fn task(stack: &'static Stack<WifiDevice<'static>>) {
 
     println!("Waiting to get IP address...");
     loop {
-        if let Some(config) = stack.config() {
+        if let Some(config) = stack.config_v4() {
             println!("Got IP: {}", config.address);
             println!(
                 "Point your browser to https://{}/",
@@ -160,7 +160,7 @@ async fn task(stack: &'static Stack<WifiDevice<'static>>) {
     }
 
     let mut socket = TcpSocket::new(&stack, &mut rx_buffer, &mut tx_buffer);
-    socket.set_timeout(Some(embassy_net::SmolDuration::from_secs(10)));
+    socket.set_timeout(Some(Duration::from_secs(10)));
     loop {
         println!("Waiting for connection...");
         let r = socket
@@ -197,50 +197,61 @@ async fn task(stack: &'static Stack<WifiDevice<'static>>) {
         .unwrap();
 
         println!("Start tls connect");
-        let mut connected_session = tls.connect().await.unwrap();
-        loop {
-            match connected_session.read(&mut buffer).await {
-                Ok(0) => {
-                    println!("read EOF");
-                    break;
-                }
-                Ok(len) => {
-                    let to_print =
-                        unsafe { core::str::from_utf8_unchecked(&buffer[..(pos + len)]) };
+        match tls.connect().await {
+            Ok(mut connected_session) => {
+                log::info!("Got session");
+                loop {
+                    match connected_session.read(&mut buffer).await {
+                        Ok(0) => {
+                            println!("read EOF");
+                            break;
+                        }
+                        Ok(len) => {
+                            let to_print =
+                                unsafe { core::str::from_utf8_unchecked(&buffer[..(pos + len)]) };
 
-                    if to_print.contains("\r\n\r\n") {
-                        print!("{}", to_print);
-                        println!();
-                        break;
-                    }
+                            if to_print.contains("\r\n\r\n") {
+                                print!("{}", to_print);
+                                println!();
+                                break;
+                            }
 
-                    pos += len;
+                            pos += len;
+                        }
+                        Err(e) => {
+                            println!("read error: {:?}", e);
+                            break;
+                        }
+                    };
                 }
-                Err(e) => {
-                    println!("read error: {:?}", e);
-                    break;
+
+                let r = connected_session
+                    .write_all(
+                        b"HTTP/1.0 200 OK\r\n\r\n\
+                            <html>\
+                                <body>\
+                                    <h1>Hello Rust! Hello esp-mbedtls!</h1>\
+                                </body>\
+                            </html>\r\n\
+                            ",
+                    )
+                    .await;
+                if let Err(e) = r {
+                    println!("write error: {:?}", e);
                 }
-            };
+
+                Timer::after(Duration::from_millis(1000)).await;
+
+                drop(connected_session);
+            }
+            Err(TlsError::MbedTlsError(-30592)) => {
+                println!("Fatal message: Please enable the exception for a self-signed certificate in your browser");
+            }
+            Err(error) => {
+                panic!("{:?}", error);
+            }
         }
-
-        let r = connected_session
-            .write_all(
-                b"HTTP/1.0 200 OK\r\n\r\n\
-            <html>\
-                <body>\
-                    <h1>Hello Rust! Hello esp-mbedtls!</h1>\
-                </body>\
-            </html>\r\n\
-            ",
-            )
-            .await;
-        if let Err(e) = r {
-            println!("write error: {:?}", e);
-        }
-
-        Timer::after(Duration::from_millis(1000)).await;
-
-        drop(connected_session);
+        println!("Closing socket");
         socket.close();
         Timer::after(Duration::from_millis(1000)).await;
 
