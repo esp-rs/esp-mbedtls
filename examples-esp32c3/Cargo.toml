@@ -24,7 +24,7 @@ esp-backtrace = { version = "0.6.0", features = ["esp32c3", "panic-handler", "pr
 esp-println       = { version = "0.4.0", features = ["esp32c3","log"] }
 
 embassy-time = { version = "0.1.0", features = ["nightly"], optional = true }
-embassy-executor = { version = "0.2.0", package = "embassy-executor", features = ["nightly", "executor-thread", "integrated-timers", "arch-xtensa"], optional = true }
+embassy-executor = { version = "0.2.0", package = "embassy-executor", features = ["nightly", "executor-thread", "integrated-timers", "arch-riscv32"], optional = true }
 embassy-net = { version = "0.1.0", features = ["nightly", "tcp", "udp", "dhcpv4", "medium-ethernet"], optional = true }
 
 esp-wifi = { git = "https://github.com/esp-rs/esp-wifi.git", features = ["big-heap", "phy-enable-usb", "esp32c3", "embedded-svc", "wifi"], rev = "68dc11bbb2c0efa29c4acbbf134d6f142441065e" }
