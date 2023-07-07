@@ -14,8 +14,8 @@ use esp_mbedtls::X509;
 use esp_mbedtls::{asynch::Session, set_debug, Certificates, Mode, TlsVersion};
 use esp_println::logger::init_logger;
 use esp_println::{print, println};
-use esp_wifi::initialize;
 use esp_wifi::wifi::{WifiController, WifiDevice, WifiEvent, WifiMode, WifiState};
+use esp_wifi::{initialize, EspWifiInitFor};
 use hal::clock::{ClockControl, CpuClock};
 use hal::Rng;
 use hal::{embassy, peripherals::Peripherals, prelude::*, timer::TimerGroup, Rtc};
@@ -50,7 +50,8 @@ fn main() -> ! {
     rtc.rwdt.disable();
 
     let timer = hal::systimer::SystemTimer::new(peripherals.SYSTIMER);
-    initialize(
+    let init = initialize(
+        EspWifiInitFor::Wifi,
         timer.alarm0,
         Rng::new(peripherals.RNG),
         system.radio_clock_control,
@@ -59,7 +60,7 @@ fn main() -> ! {
     .unwrap();
 
     let (wifi, _) = peripherals.RADIO.split();
-    let (wifi_interface, controller) = esp_wifi::wifi::new_with_mode(wifi, WifiMode::Sta);
+    let (wifi_interface, controller) = esp_wifi::wifi::new_with_mode(&init, wifi, WifiMode::Sta);
 
     let timer_group0 = TimerGroup::new(
         peripherals.TIMG0,
@@ -68,7 +69,7 @@ fn main() -> ! {
     );
     embassy::init(&clocks, timer_group0.timer0);
 
-    let config = Config::Dhcp(Default::default());
+    let config = Config::dhcpv4(Default::default());
 
     let seed = 1234; // very random, very secure seed
 
@@ -143,7 +144,7 @@ async fn task(stack: &'static Stack<WifiDevice<'static>>) {
 
     println!("Waiting to get IP address...");
     loop {
-        if let Some(config) = stack.config() {
+        if let Some(config) = stack.config_v4() {
             println!("Got IP: {}", config.address);
             break;
         }
@@ -152,7 +153,7 @@ async fn task(stack: &'static Stack<WifiDevice<'static>>) {
 
     let mut socket = TcpSocket::new(&stack, &mut rx_buffer, &mut tx_buffer);
 
-    socket.set_timeout(Some(embassy_net::SmolDuration::from_secs(10)));
+    socket.set_timeout(Some(Duration::from_secs(10)));
 
     let remote_endpoint = (Ipv4Address::new(142, 250, 185, 68), 443); // www.google.com
     println!("connecting...");

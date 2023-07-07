@@ -14,6 +14,7 @@ use esp_wifi::{
     current_millis,
     wifi::{utils::create_network_interface, WifiMode},
     wifi_interface::WifiStack,
+    EspWifiInitFor,
 };
 use hal::timer::TimerGroup;
 use hal::{
@@ -22,7 +23,7 @@ use hal::{
     prelude::*,
     Rng, Rtc,
 };
-use smoltcp::{iface::SocketStorage, wire::Ipv4Address};
+use smoltcp::{iface::SocketStorage, wire::IpAddress};
 
 const SSID: &str = env!("SSID");
 const PASSWORD: &str = env!("PASSWORD");
@@ -40,19 +41,26 @@ fn main() -> ! {
     // Disable watchdog timers
     rtc.rwdt.disable();
 
-    let (wifi, _) = peripherals.RADIO.split();
-    let mut socket_set_entries: [SocketStorage; 3] = Default::default();
-    let (iface, device, mut controller, sockets) =
-        create_network_interface(wifi, WifiMode::Sta, &mut socket_set_entries);
-    let wifi_stack = WifiStack::new(iface, device, sockets, current_millis);
-
     let rngp = Rng::new(peripherals.RNG);
     let timer = TimerGroup::new(
         peripherals.TIMG1,
         &clocks,
         &mut system.peripheral_clock_control,
     );
-    esp_wifi::initialize(timer.timer0, rngp, system.radio_clock_control, &clocks).unwrap();
+    let init = esp_wifi::initialize(
+        EspWifiInitFor::Wifi,
+        timer.timer0,
+        rngp,
+        system.radio_clock_control,
+        &clocks,
+    )
+    .unwrap();
+
+    let (wifi, _) = peripherals.RADIO.split();
+    let mut socket_set_entries: [SocketStorage; 3] = Default::default();
+    let (iface, device, mut controller, sockets) =
+        create_network_interface(&init, wifi, WifiMode::Sta, &mut socket_set_entries);
+    let wifi_stack = WifiStack::new(iface, device, sockets, current_millis);
 
     println!("Call wifi_connect");
     let client_config = Configuration::Client(ClientConfiguration {
@@ -101,7 +109,7 @@ fn main() -> ! {
     socket.work();
 
     socket
-        .open(Ipv4Address::new(142, 250, 186, 36), 443) // google.com
+        .open(IpAddress::v4(142, 250, 186, 36), 443) // google.com
         .unwrap();
 
     set_debug(0);
