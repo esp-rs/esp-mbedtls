@@ -12,8 +12,8 @@ use embedded_svc::{
     wifi::{ClientConfiguration, Configuration, Wifi},
 };
 use esp_backtrace as _;
-use esp_mbedtls::{set_debug, Mode, TlsError, TlsVersion, X509};
-use esp_mbedtls::{Certificates, Session};
+use esp_mbedtls::{set_debug, Mode, TlsError, TlsVersion};
+use esp_mbedtls::{Certificates, Session, X509};
 use esp_println::{logger::init_logger, print, println};
 use esp_wifi::{
     current_millis,
@@ -38,7 +38,7 @@ fn main() -> ! {
     init_logger(log::LevelFilter::Info);
 
     let peripherals = Peripherals::take();
-    let mut system = peripherals.SYSTEM.split();
+    let mut system = peripherals.DPORT.split();
     let clocks = ClockControl::configure(system.clock_control, CpuClock::Clock240MHz).freeze();
 
     let mut rtc = Rtc::new(peripherals.RTC_CNTL);

@@ -73,6 +73,8 @@ pub enum TlsError {
     MbedTlsError(i32),
     Eof,
     X509MissingNullTerminator,
+    /// The client has given no certificates for the request
+    NoClientCertificate,
 }
 
 impl embedded_io::Error for TlsError {
@@ -151,20 +153,58 @@ impl<'a> X509<'a> {
     }
 }
 
+/// Certificates used for a connection.
+///
+/// # Note:
+/// Both [certificate](Certificates::certificate) and [private_key](Certificates::private_key) must be set in pair.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Certificates<'a> {
-    pub certs: Option<X509<'a>>,
-    pub client_cert: Option<X509<'a>>,
-    pub client_key: Option<X509<'a>>,
+    /// Trusted CA (Certificate Authority) chain to be used for certificate
+    /// verification during the SSL/TLS handshake.
+    ///
+    /// Certificates can be chained. When dealing with intermediate CA certificates,
+    /// make sure to include the entire chain up to the root CA.
+    ///
+    /// # Client:
+    /// In Client mode, the CA chain should contain the trusted CA certificates
+    /// that will be used to verify the server's certificate during the handshake.
+    ///
+    /// # Server:
+    /// In server mode, the CA chain should contain the trusted CA certificates
+    /// that will be used to verify the client's certificate during the handshake.
+    /// When set to [None] the server will not request nor perform any verification
+    /// on the client certificates. Only set when you want to use client authentication.
+    pub ca_chain: Option<X509<'a>>,
+
+    /// Own certificate chain used for requests
+    /// It should contain in order from the bottom up your certificate chain.
+    /// The top certificate (self-signed) can be omitted.
+    ///
+    /// # Client:
+    /// In client mode, this certificate will be used for client authentication
+    /// when communicating wiht the server. Use [None] if you don't want to use
+    /// client authentication.
+    ///
+    /// # Server:
+    /// In server mode, this will be the certificate given to the client when
+    /// performing a handshake.
+    pub certificate: Option<X509<'a>>,
+
+    /// Private key paired with the certificate. Must be set when [Certificates::certificate]
+    /// is not [None]
+    pub private_key: Option<X509<'a>>,
+
+    /// Password used for the private key.
+    /// Use [None] when the private key doesn't have a password.
     pub password: Option<&'a str>,
 }
 
 impl<'a> Default for Certificates<'a> {
     fn default() -> Self {
         Self {
-            certs: Default::default(),
-            client_cert: Default::default(),
-            client_key: Default::default(),
+            ca_chain: Default::default(),
+            certificate: Default::default(),
+            private_key: Default::default(),
             password: Default::default(),
         }
     }
@@ -187,11 +227,11 @@ impl<'a> Certificates<'a> {
         ),
         TlsError,
     > {
-        // Make sure that both client_cert and client_key are either Some() or None
+        // Make sure that both certificate and private_key are either Some() or None
         assert_eq!(
-            self.client_cert.is_some(),
-            self.client_key.is_some(),
-            "Both client_cert and client_key must be Some() or None"
+            self.certificate.is_some(),
+            self.private_key.is_some(),
+            "Both certificate and private_key must be Some() or None"
         );
 
         unsafe {
@@ -217,9 +257,9 @@ impl<'a> Certificates<'a> {
                 return Err(TlsError::OutOfMemory);
             }
 
-            let client_crt =
+            let certificate =
                 calloc(1, size_of::<mbedtls_x509_crt>() as u32) as *mut mbedtls_x509_crt;
-            if client_crt.is_null() {
+            if certificate.is_null() {
                 free(ssl_context as *const _);
                 free(ssl_config as *const _);
                 free(crt as *const _);
@@ -232,15 +272,16 @@ impl<'a> Certificates<'a> {
                 free(ssl_context as *const _);
                 free(ssl_config as *const _);
                 free(crt as *const _);
-                free(client_crt as *const _);
+                free(certificate as *const _);
                 return Err(TlsError::OutOfMemory);
             }
 
             mbedtls_ssl_init(ssl_context);
             mbedtls_ssl_config_init(ssl_config);
+            // Initialize CA chain
             mbedtls_x509_crt_init(crt);
-            // Init client certificate
-            mbedtls_x509_crt_init(client_crt);
+            // Initialize certificate
+            mbedtls_x509_crt_init(certificate);
             // Initialize private key
             mbedtls_pk_init(private_key);
             (*ssl_config).private_f_dbg = Some(dbg_print);
@@ -261,7 +302,7 @@ impl<'a> Certificates<'a> {
 
             mbedtls_ssl_conf_authmode(
                 ssl_config,
-                if self.certs.is_some() {
+                if self.ca_chain.is_some() {
                     MBEDTLS_SSL_VERIFY_REQUIRED as i32
                 } else {
                     // Use this config when in server mode
@@ -280,23 +321,23 @@ impl<'a> Certificates<'a> {
                 ))?;
             }
 
-            if let Some(certs) = self.certs {
+            if let Some(ca_chain) = self.ca_chain {
                 error_checked!(mbedtls_x509_crt_parse(
                     crt,
-                    certs.as_ptr(),
-                    certs.len() as u32,
+                    ca_chain.as_ptr(),
+                    ca_chain.len() as u32,
                 ))?;
             }
 
-            if let (Some(client_cert), Some(client_key)) = (self.client_cert, self.client_key) {
-                // Client certificate
+            if let (Some(cert), Some(key)) = (self.certificate, self.private_key) {
+                // Certificate
                 error_checked!(mbedtls_x509_crt_parse(
-                    client_crt,
-                    client_cert.as_ptr(),
-                    client_cert.len() as u32,
+                    certificate,
+                    cert.as_ptr(),
+                    cert.len() as u32,
                 ))?;
 
-                // Client key
+                // Private key
                 let (password_ptr, password_len) = if let Some(password) = self.password {
                     (password.as_ptr(), password.len() as u32)
                 } else {
@@ -304,20 +345,20 @@ impl<'a> Certificates<'a> {
                 };
                 error_checked!(mbedtls_pk_parse_key(
                     private_key,
-                    client_key.as_ptr(),
-                    client_key.len() as u32,
+                    key.as_ptr(),
+                    key.len() as u32,
                     password_ptr,
                     password_len,
                     None,
                     core::ptr::null_mut(),
                 ))?;
 
-                mbedtls_ssl_conf_own_cert(ssl_config, client_crt, private_key);
+                mbedtls_ssl_conf_own_cert(ssl_config, certificate, private_key);
             }
 
             mbedtls_ssl_conf_ca_chain(ssl_config, crt, core::ptr::null_mut());
             error_checked!(mbedtls_ssl_setup(ssl_context, ssl_config))?;
-            Ok((ssl_context, ssl_config, crt, client_crt, private_key))
+            Ok((ssl_context, ssl_config, crt, certificate, private_key))
         }
     }
 }
@@ -377,7 +418,10 @@ where
                     // real error
                     // Reference: https://os.mbed.com/teams/sandbox/code/mbedtls/docs/tip/ssl_8h.html#a4a37e497cd08c896870a42b1b618186e
                     mbedtls_ssl_session_reset(self.ssl_context);
-                    return Err(TlsError::MbedTlsError(res));
+                    return Err(match res {
+                        MBEDTLS_ERR_SSL_NO_CLIENT_CERTIFICATE => TlsError::NoClientCertificate,
+                        _ => TlsError::MbedTlsError(res),
+                    });
                 }
 
                 // try again immediately
@@ -613,7 +657,10 @@ pub mod asynch {
                         // real error
                         // Reference: https://os.mbed.com/teams/sandbox/code/mbedtls/docs/tip/ssl_8h.html#a4a37e497cd08c896870a42b1b618186e
                         mbedtls_ssl_session_reset(self.ssl_context);
-                        return Err(TlsError::MbedTlsError(res));
+                        return Err(match res {
+                            MBEDTLS_ERR_SSL_NO_CLIENT_CERTIFICATE => TlsError::NoClientCertificate,
+                            _ => TlsError::MbedTlsError(res),
+                        });
                     } else {
                         if !self.tx_buffer.empty() {
                             log::debug!("Having data to send to stream");

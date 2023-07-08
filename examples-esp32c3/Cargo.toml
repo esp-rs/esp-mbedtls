@@ -39,7 +39,19 @@ critical-section = "1.0.1"
 esp-mbedtls = { path = "../esp-mbedtls", features = ["async"] }
 
 [[example]]
-name              = "async"
+name              = "async_client"
+required-features = ["async"]
+
+[[example]]
+name              = "async_client_mTLS"
+required-features = ["async"]
+
+[[example]]
+name              = "async_server"
+required-features = ["async"]
+
+[[example]]
+name              = "async_server_mTLS"
 required-features = ["async"]
 
 [features]

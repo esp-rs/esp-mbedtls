@@ -47,21 +47,18 @@ fn main() -> ! {
     let peripherals = Peripherals::take();
 
     let mut system = peripherals.SYSTEM.split();
-    let clocks = ClockControl::configure(system.clock_control, CpuClock::Clock240MHz).freeze();
+    let clocks = ClockControl::configure(system.clock_control, CpuClock::Clock160MHz).freeze();
 
     let mut rtc = Rtc::new(peripherals.RTC_CNTL);
 
     // Disable watchdog timers
+    rtc.swd.disable();
     rtc.rwdt.disable();
 
-    let timer = TimerGroup::new(
-        peripherals.TIMG1,
-        &clocks,
-        &mut system.peripheral_clock_control,
-    );
+    let timer = hal::systimer::SystemTimer::new(peripherals.SYSTIMER);
     let init = initialize(
         EspWifiInitFor::Wifi,
-        timer.timer0,
+        timer.alarm0,
         Rng::new(peripherals.RNG),
         system.radio_clock_control,
         &clocks,
