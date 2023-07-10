@@ -159,8 +159,14 @@ fn main() -> ! {
                 TlsVersion::Tls1_2,
                 Certificates {
                     // Use self-signed certificates
-                    certificate: X509::pem(CERT.as_bytes()).ok(),
-                    private_key: X509::pem(PRIVATE_KEY.as_bytes()).ok(),
+                    certificate: X509::pem(
+                        concat!(include_str!("./certs/certificate.pem"), "\0").as_bytes(),
+                    )
+                    .ok(),
+                    private_key: X509::pem(
+                        concat!(include_str!("./certs/private_key.pem"), "\0").as_bytes(),
+                    )
+                    .ok(),
                     ..Default::default()
                 },
             )
@@ -221,57 +227,3 @@ fn main() -> ! {
         }
     }
 }
-
-// Self-signed certificates
-static CERT: &str = "
------BEGIN CERTIFICATE-----
-MIIDHzCCAgegAwIBAgIUWV06V4OAM8QHlylNMK/byYU86w4wDQYJKoZIhvcNAQEL
-BQAwHzELMAkGA1UEBhMCQ0ExEDAOBgNVBAgMB09udGFyaW8wHhcNMjMwNzA0MjAx
-MjMxWhcNMjQwNzAzMjAxMjMxWjAfMQswCQYDVQQGEwJDQTEQMA4GA1UECAwHT250
-YXJpbzCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALOZODOA/LXASGMj
-jzTUKMC7iHsi1/OsAS1un8BhFd3UPuDR17k334nErGoWL40Oy44PZ1r87nMR/IKf
-J4qCsCKjAtDQDoBs+9/p0VSI0QevUvbEYGpEDodKXRu/PBuS6z3dsxTuoQ7KUBTd
-BwZjCf3SMgJ4Uz9cptDdZNlc2h9RTebJtw8EyrobZQ5ExYdP8BZVJkTkomxWZlNc
-OFjPeyeMnJCKP2Dw9DK4ObYC3aawCh2TMvmv2K0yibYyh4CmAwfs/x+yIQaYmyow
-grbS1O6QJS4t7NU5SPhDywBlNKHZrECLYQC8Omzbp0X4oI2K/ehAJGy0JIC7jPGe
-D9l2E10CAwEAAaNTMFEwHQYDVR0OBBYEFPHfThLZHfB42pOcZ0dMsh26GifzMB8G
-A1UdIwQYMBaAFPHfThLZHfB42pOcZ0dMsh26GifzMA8GA1UdEwEB/wQFMAMBAf8w
-DQYJKoZIhvcNAQELBQADggEBAHdebHonjUEd36nJMI/xf2WHd9Dd1paU6HV7rB/t
-qSBXaYZcn3fA7BhH3D02i5z3b5g+Co21uF2LaKycYsD42hFOY4YYf7WP/bkkHyHL
-j7rlKkj/qQPOPa8yfTyWvdfnECPdGM/YyZE0CYr7nt3DKD7c+bgFwjH2JaoOJdPa
-HBNoqbEWFH7ftEzDykBQULbbl6aDusMIQca2sLrQ5BvQwaEMJ5A6KVMvmt3kjkmN
-Tw4Jhadscao8G9MtpPQjAbBoJlA9fYoZEWdOuieruAMjEyLJwBQVjAxdgWAyH1wZ
-hJBECkdIk2jMh4RNCnp2vHmiYIFIMIasUHWPqZGNLdgwZs4=
------END CERTIFICATE-----
-\0";
-
-static PRIVATE_KEY: &str = "
------BEGIN PRIVATE KEY-----
-MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCzmTgzgPy1wEhj
-I4801CjAu4h7ItfzrAEtbp/AYRXd1D7g0de5N9+JxKxqFi+NDsuOD2da/O5zEfyC
-nyeKgrAiowLQ0A6AbPvf6dFUiNEHr1L2xGBqRA6HSl0bvzwbkus93bMU7qEOylAU
-3QcGYwn90jICeFM/XKbQ3WTZXNofUU3mybcPBMq6G2UORMWHT/AWVSZE5KJsVmZT
-XDhYz3snjJyQij9g8PQyuDm2At2msAodkzL5r9itMom2MoeApgMH7P8fsiEGmJsq
-MIK20tTukCUuLezVOUj4Q8sAZTSh2axAi2EAvDps26dF+KCNiv3oQCRstCSAu4zx
-ng/ZdhNdAgMBAAECggEAURa+71Ivx4gXpttpTzrzY4HIr4Ad7OEebvrhmiS7kLrB
-4RQdyHzXqwZnqkZ2FcQ2V9/QlJ5asw3N6tQdMEatbBYZsVofEhEi8AhMAVT8u/GH
-De/AcHpl7OPAgkSnyPNez0IIF01e3qSt352kDFgvLLD473CQda1JjEhJvnJT8Ysr
-210UoErit/LWr1nY0U0obX7+TVFjNy9d3Yu48VQOf0SxlVIDHuDTKxwRTJ21Y9UA
-3GQ86CW8CP8mjluEKQff4N4HAEapGKixs93tS84BDUWO1Tex55ewvhX7FaVagSUB
-aHDmuwmpKR20ZqGGCX66nsKjYNbj3F/AWvbfbNMU6QKBgQDoE6SIVMO69B1dndg4
-FkpBtFwmMJrxaJiSMm/m1O5yFO5UuT2cRtGSIZn1tyQ79B8Ml7w3vAkTEzmqI9HB
-Q656fGI364vRRaJRlLK++Qw+CrwwnIhH2xChy5LhsdXx1QPKYqYTG8zLtxtK9mIJ
-TLfciLDCAVTrZGvxqn+WFtK7+wKBgQDGHLXI9LVY6BVUtp5HwHYM1bxWVS1lbfXh
-uJJJM1dxPlVBBgEJLtFPlnIPqjs0EZvv7YK9DMyT4hlEyDmLLYPRw/xba3iBxAbK
-oD1em1TL6b2HkdmhdBj5NfEl1iSsGk5OsOelub5Fw5Ygt0lg4MBE2WFxgyTnysyZ
-IENLGKo2hwKBgEFQJeHoWR1oTktmfM9sFoHfTH/C9hgyo52hbDS+gEzC70AQ0fIF
-TD2gD0BDxoLI9WQJ4AKffL5NjtD/O6z0a0o1bz7ln3fJ7SCghJ2SYYukYcocg44V
-bNzb+f5imh9xH5v5n1uJW12JrriuFnEfki8SmQxAa7HDlU1x+m43Bh+5AoGANR8b
-q2/adKV+msGA/ZJg1R42qxuZ2Zm7lbPtHc2zg70IFTBr9K9mFqYrnYGy8EpMevA/
-3ztgW8MDrYrWyzgAIa4gq87MeFc8zvZanlSeTzM0y/ZS2dUMoT5SlCewm6lOGBGd
-e7WrjH9ecRVUirKZO5ziYRKeQb0CUYjyIl/RvF8CgYEAu8pve6R4EzNLCJ1UnNpZ
-vfTiJZbxq9K9AaSKGyRV6I9C+dX8of2Q8FdXjWiavOs1NHPJn3llgZhthc13BkOz
-p1kFPp1tYHDG+i5qognKHG8czCabuzdalket/vqkBYFsQcebRULAe3c/OZzEQ5J3
-7aA6cUR9TA8wcvg4KrpoMqg=
------END PRIVATE KEY-----
-\0";

@@ -17,7 +17,12 @@ For now it's missing advanced configuration options which will be added step-by-
 Currently this won't work on ESP32-S2 - getting it to work will require tweaking the memory usage a lot!
 
 The examples use one hard-coded address of `www.google.com` which might not always work.
-Also the examples include hard-coded certificates which will expire some day.
+
+### Certificates
+
+These examples use certificates that expire after a given time.
+
+The script `genssl.sh` is there to renew expired certificates, without having to manually update them within the code.
 
 ## Running Examples
 

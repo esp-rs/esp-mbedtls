@@ -63,6 +63,4 @@ esp32 = ["esp32-hal/embassy-time-timg0", "esp-backtrace/esp32", "esp-println/esp
 esp32c3 = ["esp32c3-hal/embassy-time-timg0", "esp-backtrace/esp32c3", "esp-println/esp32c3", "embassy-executor?/arch-riscv32", "esp-wifi/esp32c3"]
 esp32s3 = ["esp32s3-hal/embassy-time-timg0", "esp-backtrace/esp32s3", "esp-println/esp32s3", "embassy-executor?/arch-xtensa", "esp-wifi/esp32s3"]
 async = ["esp-wifi/async", "esp-wifi/embassy-net", "embassy-executor", "embassy-net", "embassy-time", "embedded-io/async", "esp-mbedtls/async"]
-# Use this feature to enable the private key with a password
-encrypted_private_key = []
 
