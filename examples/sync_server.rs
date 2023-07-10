@@ -6,22 +6,31 @@
 #![no_std]
 #![no_main]
 
+#[doc(hidden)]
+#[cfg(feature = "esp32")]
+pub use esp32_hal as hal;
+#[doc(hidden)]
+#[cfg(feature = "esp32c3")]
+pub use esp32c3_hal as hal;
+#[doc(hidden)]
+#[cfg(feature = "esp32s3")]
+pub use esp32s3_hal as hal;
+
 use embedded_io::blocking::*;
 use embedded_svc::{
     ipv4::Interface,
     wifi::{ClientConfiguration, Configuration, Wifi},
 };
 use esp_backtrace as _;
-use esp_mbedtls::{set_debug, Mode, TlsError, TlsVersion};
-use esp_mbedtls::{Certificates, Session, X509};
+use esp_mbedtls::{set_debug, Mode, TlsError, TlsVersion, X509};
+use esp_mbedtls::{Certificates, Session};
 use esp_println::{logger::init_logger, print, println};
 use esp_wifi::{
-    current_millis,
+    current_millis, initialize,
     wifi::{utils::create_network_interface, WifiMode},
     wifi_interface::WifiStack,
     EspWifiInitFor,
 };
-use hal::timer::TimerGroup;
 use hal::{
     clock::{ClockControl, CpuClock},
     peripherals::Peripherals,
@@ -38,24 +47,36 @@ fn main() -> ! {
     init_logger(log::LevelFilter::Info);
 
     let peripherals = Peripherals::take();
+    #[cfg(feature = "esp32")]
     let mut system = peripherals.DPORT.split();
+    #[cfg(not(feature = "esp32"))]
+    #[allow(unused_mut)]
+    let mut system = peripherals.SYSTEM.split();
+    #[cfg(feature = "esp32c3")]
+    let clocks = ClockControl::configure(system.clock_control, CpuClock::Clock160MHz).freeze();
+    #[cfg(any(feature = "esp32", feature = "esp32s3"))]
     let clocks = ClockControl::configure(system.clock_control, CpuClock::Clock240MHz).freeze();
 
     let mut rtc = Rtc::new(peripherals.RTC_CNTL);
 
     // Disable watchdog timers
+    #[cfg(not(feature = "esp32"))]
+    rtc.swd.disable();
     rtc.rwdt.disable();
 
-    let rngp = Rng::new(peripherals.RNG);
-    let timer = TimerGroup::new(
+    #[cfg(feature = "esp32c3")]
+    let timer = hal::systimer::SystemTimer::new(peripherals.SYSTIMER).alarm0;
+    #[cfg(any(feature = "esp32", feature = "esp32s3"))]
+    let timer = hal::timer::TimerGroup::new(
         peripherals.TIMG1,
         &clocks,
         &mut system.peripheral_clock_control,
-    );
-    let init = esp_wifi::initialize(
+    )
+    .timer0;
+    let init = initialize(
         EspWifiInitFor::Wifi,
-        timer.timer0,
-        rngp,
+        timer,
+        Rng::new(peripherals.RNG),
         system.radio_clock_control,
         &clocks,
     )

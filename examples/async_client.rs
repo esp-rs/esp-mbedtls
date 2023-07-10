@@ -4,6 +4,16 @@
 #![no_main]
 #![feature(type_alias_impl_trait)]
 
+#[doc(hidden)]
+#[cfg(feature = "esp32")]
+pub use esp32_hal as hal;
+#[doc(hidden)]
+#[cfg(feature = "esp32c3")]
+pub use esp32c3_hal as hal;
+#[doc(hidden)]
+#[cfg(feature = "esp32s3")]
+pub use esp32s3_hal as hal;
+
 use embassy_executor::_export::StaticCell;
 use embassy_net::tcp::TcpSocket;
 use embassy_net::{Config, Ipv4Address, Stack, StackResources};
@@ -41,20 +51,35 @@ fn main() -> ! {
     init_logger(log::LevelFilter::Info);
 
     let peripherals = Peripherals::take();
-
+    #[cfg(feature = "esp32")]
+    let mut system = peripherals.DPORT.split();
+    #[cfg(not(feature = "esp32"))]
+    #[allow(unused_mut)]
     let mut system = peripherals.SYSTEM.split();
+    #[cfg(feature = "esp32c3")]
     let clocks = ClockControl::configure(system.clock_control, CpuClock::Clock160MHz).freeze();
+    #[cfg(any(feature = "esp32", feature = "esp32s3"))]
+    let clocks = ClockControl::configure(system.clock_control, CpuClock::Clock240MHz).freeze();
 
     let mut rtc = Rtc::new(peripherals.RTC_CNTL);
 
     // Disable watchdog timers
+    #[cfg(not(feature = "esp32"))]
     rtc.swd.disable();
     rtc.rwdt.disable();
 
-    let timer = hal::systimer::SystemTimer::new(peripherals.SYSTIMER);
+    #[cfg(feature = "esp32c3")]
+    let timer = hal::systimer::SystemTimer::new(peripherals.SYSTIMER).alarm0;
+    #[cfg(any(feature = "esp32", feature = "esp32s3"))]
+    let timer = hal::timer::TimerGroup::new(
+        peripherals.TIMG1,
+        &clocks,
+        &mut system.peripheral_clock_control,
+    )
+    .timer0;
     let init = initialize(
         EspWifiInitFor::Wifi,
-        timer.alarm0,
+        timer,
         Rng::new(peripherals.RNG),
         system.radio_clock_control,
         &clocks,
