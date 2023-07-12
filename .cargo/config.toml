@@ -37,7 +37,7 @@ rustflags = [
 ]
 
 [target.xtensa-esp32s3-none-elf]
-runner = "espflash flash --baud 921600 --monitor --port /dev/ttyUSB1"
+runner = "espflash flash --monitor"
 
 rustflags = [
   "-C", "link-arg=-Tlinkall.x",
