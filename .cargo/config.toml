@@ -1,7 +1,16 @@
+[target.xtensa-esp32-none-elf]
+runner = "espflash flash --monitor"
+
+rustflags = [
+  "-C", "link-arg=-Tlinkall.x",
+  "-C", "link-arg=-nostartfiles",
+  "-C", "link-arg=-Trom_functions.x",
+  "-C", "target-feature=-loop",
+]
+
 [target.riscv32imc-unknown-none-elf]
 runner = "espflash flash --monitor"
 
-[build]
 rustflags = [
   "-C", "link-arg=-Tlinkall.x",
   "-C", "link-arg=-Trom_functions.x",
@@ -27,7 +36,15 @@ rustflags = [
   "--cfg", 'target_has_atomic="ptr"',
 ]
 
-target = "riscv32imc-unknown-none-elf"
+[target.xtensa-esp32s3-none-elf]
+runner = "espflash flash --monitor"
+
+rustflags = [
+  "-C", "link-arg=-Tlinkall.x",
+  "-C", "link-arg=-nostartfiles",
+  "-C", "link-arg=-Trom_functions.x",
+  "-C", "target-feature=-loop",
+]
 
 [unstable]
 build-std = ["core"]

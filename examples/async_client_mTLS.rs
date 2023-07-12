@@ -1,6 +1,18 @@
+//! Example for a client connection using certificate authentication (mTLS)
 #![no_std]
 #![no_main]
 #![feature(type_alias_impl_trait)]
+#![allow(non_snake_case)]
+
+#[doc(hidden)]
+#[cfg(feature = "esp32")]
+pub use esp32_hal as hal;
+#[doc(hidden)]
+#[cfg(feature = "esp32c3")]
+pub use esp32c3_hal as hal;
+#[doc(hidden)]
+#[cfg(feature = "esp32s3")]
+pub use esp32s3_hal as hal;
 
 use embassy_executor::_export::StaticCell;
 use embassy_net::tcp::TcpSocket;
@@ -10,8 +22,8 @@ use embassy_executor::Executor;
 use embassy_time::{Duration, Timer};
 use embedded_svc::wifi::{ClientConfiguration, Configuration, Wifi};
 use esp_backtrace as _;
-use esp_mbedtls::X509;
-use esp_mbedtls::{asynch::Session, set_debug, Certificates, Mode, TlsVersion};
+use esp_mbedtls::{asynch::Session, set_debug, Mode, TlsVersion};
+use esp_mbedtls::{Certificates, X509};
 use esp_println::logger::init_logger;
 use esp_println::{print, println};
 use esp_wifi::wifi::{WifiController, WifiDevice, WifiEvent, WifiMode, WifiState};
@@ -39,23 +51,35 @@ fn main() -> ! {
     init_logger(log::LevelFilter::Info);
 
     let peripherals = Peripherals::take();
-
+    #[cfg(feature = "esp32")]
     let mut system = peripherals.DPORT.split();
+    #[cfg(not(feature = "esp32"))]
+    #[allow(unused_mut)]
+    let mut system = peripherals.SYSTEM.split();
+    #[cfg(feature = "esp32c3")]
+    let clocks = ClockControl::configure(system.clock_control, CpuClock::Clock160MHz).freeze();
+    #[cfg(any(feature = "esp32", feature = "esp32s3"))]
     let clocks = ClockControl::configure(system.clock_control, CpuClock::Clock240MHz).freeze();
 
     let mut rtc = Rtc::new(peripherals.RTC_CNTL);
 
     // Disable watchdog timers
+    #[cfg(not(feature = "esp32"))]
+    rtc.swd.disable();
     rtc.rwdt.disable();
 
-    let timer = TimerGroup::new(
+    #[cfg(feature = "esp32c3")]
+    let timer = hal::systimer::SystemTimer::new(peripherals.SYSTIMER).alarm0;
+    #[cfg(any(feature = "esp32", feature = "esp32s3"))]
+    let timer = hal::timer::TimerGroup::new(
         peripherals.TIMG1,
         &clocks,
         &mut system.peripheral_clock_control,
-    );
+    )
+    .timer0;
     let init = initialize(
         EspWifiInitFor::Wifi,
-        timer.timer0,
+        timer,
         Rng::new(peripherals.RNG),
         system.radio_clock_control,
         &clocks,
@@ -158,7 +182,7 @@ async fn task(stack: &'static Stack<WifiDevice<'static>>) {
 
     socket.set_timeout(Some(Duration::from_secs(10)));
 
-    let remote_endpoint = (Ipv4Address::new(142, 250, 185, 68), 443); // www.google.com
+    let remote_endpoint = (Ipv4Address::new(62, 210, 201, 125), 443); // certauth.cryptomix.com
     println!("connecting...");
     let r = socket.connect(remote_endpoint).await;
     if let Err(e) = r {
@@ -168,15 +192,24 @@ async fn task(stack: &'static Stack<WifiDevice<'static>>) {
 
     set_debug(0);
 
+    let certificates = Certificates {
+        ca_chain: X509::pem(
+            concat!(include_str!("./certs/certauth.cryptomix.com.pem"), "\0").as_bytes(),
+        )
+        .ok(),
+        certificate: X509::pem(concat!(include_str!("./certs/certificate.pem"), "\0").as_bytes())
+            .ok(),
+        private_key: X509::pem(concat!(include_str!("./certs/private_key.pem"), "\0").as_bytes())
+            .ok(),
+        password: None,
+    };
+
     let tls: Session<_, 4096> = Session::new(
-        socket,
-        "www.google.com",
+        &mut socket,
+        "certauth.cryptomix.com",
         Mode::Client,
         TlsVersion::Tls1_3,
-        Certificates {
-            certs: Some(X509::pem(CERT.as_bytes()).unwrap()),
-            ..Default::default()
-        },
+        certificates,
     )
     .unwrap();
 
@@ -190,7 +223,7 @@ async fn task(stack: &'static Stack<WifiDevice<'static>>) {
     use embedded_io::asynch::Write;
 
     let r = tls
-        .write_all(b"GET /notfound HTTP/1.0\r\nHost: www.google.com\r\n\r\n")
+        .write_all(b"GET /json/ HTTP/1.0\r\nHost: certauth.cryptomix.com\r\n\r\n")
         .await;
     if let Err(e) = r {
         println!("write error: {:?}", e);
@@ -210,73 +243,7 @@ async fn task(stack: &'static Stack<WifiDevice<'static>>) {
         };
         print!("{}", core::str::from_utf8(&buf[..n]).unwrap());
     }
-    println!();
+    println!("Done");
 
     loop {}
 }
-
-static CERT: &str = "
------BEGIN CERTIFICATE-----
-MIIFVzCCAz+gAwIBAgINAgPlk28xsBNJiGuiFzANBgkqhkiG9w0BAQwFADBHMQsw
-CQYDVQQGEwJVUzEiMCAGA1UEChMZR29vZ2xlIFRydXN0IFNlcnZpY2VzIExMQzEU
-MBIGA1UEAxMLR1RTIFJvb3QgUjEwHhcNMTYwNjIyMDAwMDAwWhcNMzYwNjIyMDAw
-MDAwWjBHMQswCQYDVQQGEwJVUzEiMCAGA1UEChMZR29vZ2xlIFRydXN0IFNlcnZp
-Y2VzIExMQzEUMBIGA1UEAxMLR1RTIFJvb3QgUjEwggIiMA0GCSqGSIb3DQEBAQUA
-A4ICDwAwggIKAoICAQC2EQKLHuOhd5s73L+UPreVp0A8of2C+X0yBoJx9vaMf/vo
-27xqLpeXo4xL+Sv2sfnOhB2x+cWX3u+58qPpvBKJXqeqUqv4IyfLpLGcY9vXmX7w
-Cl7raKb0xlpHDU0QM+NOsROjyBhsS+z8CZDfnWQpJSMHobTSPS5g4M/SCYe7zUjw
-TcLCeoiKu7rPWRnWr4+wB7CeMfGCwcDfLqZtbBkOtdh+JhpFAz2weaSUKK0Pfybl
-qAj+lug8aJRT7oM6iCsVlgmy4HqMLnXWnOunVmSPlk9orj2XwoSPwLxAwAtcvfaH
-szVsrBhQf4TgTM2S0yDpM7xSma8ytSmzJSq0SPly4cpk9+aCEI3oncKKiPo4Zor8
-Y/kB+Xj9e1x3+naH+uzfsQ55lVe0vSbv1gHR6xYKu44LtcXFilWr06zqkUspzBmk
-MiVOKvFlRNACzqrOSbTqn3yDsEB750Orp2yjj32JgfpMpf/VjsPOS+C12LOORc92
-wO1AK/1TD7Cn1TsNsYqiA94xrcx36m97PtbfkSIS5r762DL8EGMUUXLeXdYWk70p
-aDPvOmbsB4om3xPXV2V4J95eSRQAogB/mqghtqmxlbCluQ0WEdrHbEg8QOB+DVrN
-VjzRlwW5y0vtOUucxD/SVRNuJLDWcfr0wbrM7Rv1/oFB2ACYPTrIrnqYNxgFlQID
-AQABo0IwQDAOBgNVHQ8BAf8EBAMCAYYwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4E
-FgQU5K8rJnEaK0gnhS9SZizv8IkTcT4wDQYJKoZIhvcNAQEMBQADggIBAJ+qQibb
-C5u+/x6Wki4+omVKapi6Ist9wTrYggoGxval3sBOh2Z5ofmmWJyq+bXmYOfg6LEe
-QkEzCzc9zolwFcq1JKjPa7XSQCGYzyI0zzvFIoTgxQ6KfF2I5DUkzps+GlQebtuy
-h6f88/qBVRRiClmpIgUxPoLW7ttXNLwzldMXG+gnoot7TiYaelpkttGsN/H9oPM4
-7HLwEXWdyzRSjeZ2axfG34arJ45JK3VmgRAhpuo+9K4l/3wV3s6MJT/KYnAK9y8J
-ZgfIPxz88NtFMN9iiMG1D53Dn0reWVlHxYciNuaCp+0KueIHoI17eko8cdLiA6Ef
-MgfdG+RCzgwARWGAtQsgWSl4vflVy2PFPEz0tv/bal8xa5meLMFrUKTX5hgUvYU/
-Z6tGn6D/Qqc6f1zLXbBwHSs09dR2CQzreExZBfMzQsNhFRAbd03OIozUhfJFfbdT
-6u9AWpQKXCBfTkBdYiJ23//OYb2MI3jSNwLgjt7RETeJ9r/tSQdirpLsQBqvFAnZ
-0E6yove+7u7Y/9waLd64NnHi/Hm3lCXRSHNboTXns5lndcEZOitHTtNCjv0xyBZm
-2tIMPNuzjsmhDYAPexZ3FL//2wmUspO8IFgV6dtxQ/PeEMMA3KgqlbbC1j+Qa3bb
-bP6MvPJwNQzcmRk13NfIRmPVNnGuV/u3gm3c
------END CERTIFICATE-----
------BEGIN CERTIFICATE-----
-MIIFljCCA36gAwIBAgINAgO8U1lrNMcY9QFQZjANBgkqhkiG9w0BAQsFADBHMQsw
-CQYDVQQGEwJVUzEiMCAGA1UEChMZR29vZ2xlIFRydXN0IFNlcnZpY2VzIExMQzEU
-MBIGA1UEAxMLR1RTIFJvb3QgUjEwHhcNMjAwODEzMDAwMDQyWhcNMjcwOTMwMDAw
-MDQyWjBGMQswCQYDVQQGEwJVUzEiMCAGA1UEChMZR29vZ2xlIFRydXN0IFNlcnZp
-Y2VzIExMQzETMBEGA1UEAxMKR1RTIENBIDFDMzCCASIwDQYJKoZIhvcNAQEBBQAD
-ggEPADCCAQoCggEBAPWI3+dijB43+DdCkH9sh9D7ZYIl/ejLa6T/belaI+KZ9hzp
-kgOZE3wJCor6QtZeViSqejOEH9Hpabu5dOxXTGZok3c3VVP+ORBNtzS7XyV3NzsX
-lOo85Z3VvMO0Q+sup0fvsEQRY9i0QYXdQTBIkxu/t/bgRQIh4JZCF8/ZK2VWNAcm
-BA2o/X3KLu/qSHw3TT8An4Pf73WELnlXXPxXbhqW//yMmqaZviXZf5YsBvcRKgKA
-gOtjGDxQSYflispfGStZloEAoPtR28p3CwvJlk/vcEnHXG0g/Zm0tOLKLnf9LdwL
-tmsTDIwZKxeWmLnwi/agJ7u2441Rj72ux5uxiZ0CAwEAAaOCAYAwggF8MA4GA1Ud
-DwEB/wQEAwIBhjAdBgNVHSUEFjAUBggrBgEFBQcDAQYIKwYBBQUHAwIwEgYDVR0T
-AQH/BAgwBgEB/wIBADAdBgNVHQ4EFgQUinR/r4XN7pXNPZzQ4kYU83E1HScwHwYD
-VR0jBBgwFoAU5K8rJnEaK0gnhS9SZizv8IkTcT4waAYIKwYBBQUHAQEEXDBaMCYG
-CCsGAQUFBzABhhpodHRwOi8vb2NzcC5wa2kuZ29vZy9ndHNyMTAwBggrBgEFBQcw
-AoYkaHR0cDovL3BraS5nb29nL3JlcG8vY2VydHMvZ3RzcjEuZGVyMDQGA1UdHwQt
-MCswKaAnoCWGI2h0dHA6Ly9jcmwucGtpLmdvb2cvZ3RzcjEvZ3RzcjEuY3JsMFcG
-A1UdIARQME4wOAYKKwYBBAHWeQIFAzAqMCgGCCsGAQUFBwIBFhxodHRwczovL3Br
-aS5nb29nL3JlcG9zaXRvcnkvMAgGBmeBDAECATAIBgZngQwBAgIwDQYJKoZIhvcN
-AQELBQADggIBAIl9rCBcDDy+mqhXlRu0rvqrpXJxtDaV/d9AEQNMwkYUuxQkq/BQ
-cSLbrcRuf8/xam/IgxvYzolfh2yHuKkMo5uhYpSTld9brmYZCwKWnvy15xBpPnrL
-RklfRuFBsdeYTWU0AIAaP0+fbH9JAIFTQaSSIYKCGvGjRFsqUBITTcFTNvNCCK9U
-+o53UxtkOCcXCb1YyRt8OS1b887U7ZfbFAO/CVMkH8IMBHmYJvJh8VNS/UKMG2Yr
-PxWhu//2m+OBmgEGcYk1KCTd4b3rGS3hSMs9WYNRtHTGnXzGsYZbr8w0xNPM1IER
-lQCh9BIiAfq0g3GvjLeMcySsN1PCAJA/Ef5c7TaUEDu9Ka7ixzpiO2xj2YC/WXGs
-Yye5TBeg2vZzFb8q3o/zpWwygTMD0IZRcZk0upONXbVRWPeyk+gB9lm+cZv9TSjO
-z23HFtz30dZGm6fKa+l3D/2gthsjgx0QGtkJAITgRNOidSOzNIb2ILCkXhAd4FJG
-AJ2xDx8hcFH1mt0G/FX0Kw4zd8NLQsLxdxP8c4CU6x+7Nz/OAipmsHMdMqUybDKw
-juDEI/9bfU1lcKwrmz3O2+BtjjKAvpafkmO8l7tdufThcV4q5O8DIrGKZTqPwJNl
-1IXNDw9bg1kWRxYtnCQ6yICmJhSFm/Y3m6xv+cXDBlHz4n/FsRC6UfTd
------END CERTIFICATE-----
-\0";
