@@ -38,7 +38,7 @@ extern "C" fn vsnprintf(
                     res_str.append_char(c);
                 }
             } else {
-                if c.is_numeric() || c == '-' || c == 'l' || c == 'z' {
+                if c.is_numeric() || c == '-' || c == 'l' || c == 'z' || c == '#' {
                     if c == 'l' {
                         is_long = true;
                     }
