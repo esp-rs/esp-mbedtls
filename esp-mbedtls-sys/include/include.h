@@ -1,6 +1,6 @@
-#define MBEDTLS_CONFIG_FILE "config.h"
+#define MBEDTLS_CONFIG_FILE "mbedtls_config.h"
 
-#include "config.h"
+#include "mbedtls_config.h"
 
 #include "mbedtls/ssl.h"
 #include "mbedtls/x509.h"
