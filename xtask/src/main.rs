@@ -1,5 +1,6 @@
 use std::{
-    env, fs,
+    env,
+    fs::{self, rename},
     path::{Path, PathBuf},
     process::Command,
 };
@@ -58,9 +59,6 @@ struct CompilationTarget<'a> {
     /// Path for headers files for compiling (where mbedtls_config.h is stored)
     compile_include_path: PathBuf,
 
-    /// Path for includes for binding
-    binding_include_path: PathBuf,
-
     /// Sysroot path for bindings
     sysroot_path: PathBuf,
 }
@@ -78,21 +76,58 @@ fn main() -> Result<()> {
     // Determine the $HOME directory, and subsequently the Espressif tools
     // directory:
     let home = UserDirs::new().unwrap().home_dir().to_path_buf();
-    let tools = home.join(".espressif").join("tools");
+    // We use the tools that come installed with the toolchain
+    let toolchain_dir = home.join(".rustup").join("toolchains").join("esp");
 
-    let compilation_targets: Vec<CompilationTarget> = vec![CompilationTarget {
-        soc: Soc::ESP32C3,
-        target: "riscv32imc-unknown-none-elf",
-        toolchain_file: workspace
-            .join("xtask/toolchains/toolchain-esp32c3.cmake")
-            .canonicalize()
-            .unwrap(),
-        compile_include_path: workspace.join("xtask/include/esp32c3/"),
-        binding_include_path: tools.join(
-            "riscv32-esp-elf/esp-2021r2-patch5-8_4_0/riscv32-esp-elf/riscv32-esp-elf/include/",
-        ),
-        sysroot_path: tools.join("riscv32-esp-elf/esp-2021r2-patch5-8_4_0/riscv32-esp-elf/"),
-    }];
+    let compilation_targets: Vec<CompilationTarget> = vec![
+        CompilationTarget {
+            soc: Soc::ESP32,
+            target: "xtensa-esp32-none-elf",
+            toolchain_file: workspace
+                .join("xtask/toolchains/toolchain-esp32.cmake")
+                .canonicalize()
+                .unwrap(),
+            compile_include_path: workspace.join("xtask/include/esp32/"),
+            sysroot_path: toolchain_dir.join(
+                "xtensa-esp32-elf/esp-2021r2-patch5-8_4_0/xtensa-esp32-elf/xtensa-esp32-elf/",
+            ),
+        },
+        CompilationTarget {
+            soc: Soc::ESP32C3,
+            target: "riscv32imc-unknown-none-elf",
+            toolchain_file: workspace
+                .join("xtask/toolchains/toolchain-esp32c3.cmake")
+                .canonicalize()
+                .unwrap(),
+            compile_include_path: workspace.join("xtask/include/esp32c3/"),
+            sysroot_path: toolchain_dir
+                .join("riscv32-esp-elf/esp-2021r2-patch5-8_4_0/riscv32-esp-elf/riscv32-esp-elf/"),
+        },
+        CompilationTarget {
+            soc: Soc::ESP32S2,
+            target: "xtensa-esp32s2-none-elf",
+            toolchain_file: workspace
+                .join("xtask/toolchains/toolchain-esp32s2.cmake")
+                .canonicalize()
+                .unwrap(),
+            compile_include_path: workspace.join("xtask/include/esp32s2/"),
+            sysroot_path: toolchain_dir.join(
+                "xtensa-esp32s2-elf/esp-2021r2-patch5-8_4_0/xtensa-esp32s2-elf/xtensa-esp32s2-elf/",
+            ),
+        },
+        CompilationTarget {
+            soc: Soc::ESP32S3,
+            target: "xtensa-esp32s3-none-elf",
+            toolchain_file: workspace
+                .join("xtask/toolchains/toolchain-esp32s3.cmake")
+                .canonicalize()
+                .unwrap(),
+            compile_include_path: workspace.join("xtask/include/esp32s3/"),
+            sysroot_path: toolchain_dir.join(
+                "xtensa-esp32s3-elf/esp-2021r2-patch5-8_4_0/xtensa-esp32s3-elf/xtensa-esp32s3-elf/",
+            ),
+        },
+    ];
     let args = Args::parse();
 
     match args.command {
@@ -146,7 +181,8 @@ fn generate_bindings(workspace: &Path, compilation_target: &CompilationTarget) -
         .clang_args([
             &format!(
                 "-I{}",
-                &compilation_target.compile_include_path
+                &compilation_target
+                    .compile_include_path
                     .display()
                     .to_string()
                     .replace('\\', "/")
@@ -173,7 +209,8 @@ fn generate_bindings(workspace: &Path, compilation_target: &CompilationTarget) -
             &format!(
                 "-I{}",
                 compilation_target
-                    .binding_include_path
+                    .sysroot_path
+                    .join("include")
                     .display()
                     .to_string()
                     .replace('\\', "/")
@@ -238,6 +275,21 @@ fn compile(workspace: &Path, compilation_target: &CompilationTarget) -> Result<(
             .join("include")
             .join("mbedtls"),
         &copy_options.content_only(true),
+    )?;
+    // Move config.h back to mbedtls_config.h
+    rename(
+        tmpsrc
+            .path()
+            .join("mbedtls")
+            .join("include")
+            .join("mbedtls")
+            .join("config.h"),
+        tmpsrc
+            .path()
+            .join("mbedtls")
+            .join("include")
+            .join("mbedtls")
+            .join("mbedtls_config.h"),
     )?;
 
     // Compile mbedtls and generate libraries to link against
