@@ -1,6 +1,7 @@
 use std::{
     env,
     fs::{self, rename},
+    io::{Read, Write},
     path::{Path, PathBuf},
     process::Command,
 };
@@ -45,10 +46,30 @@ enum Soc {
     ESP32S3,
 }
 
+impl core::fmt::Display for Soc {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        match self {
+            Soc::ESP32 => write!(f, "esp32"),
+            Soc::ESP32C3 => write!(f, "esp32c3"),
+            Soc::ESP32S2 => write!(f, "esp32s2"),
+            Soc::ESP32S3 => write!(f, "esp32s3"),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+enum Arch {
+    RiscV,
+    Xtensa,
+}
+
 /// Data for binding compiling on a target
 struct CompilationTarget<'a> {
     /// Chip of the target
     soc: Soc,
+
+    /// The chip architecture
+    arch: Arch,
 
     /// Target triple
     target: &'a str,
@@ -82,47 +103,51 @@ fn main() -> Result<()> {
     let compilation_targets: Vec<CompilationTarget> = vec![
         CompilationTarget {
             soc: Soc::ESP32,
+            arch: Arch::Xtensa,
             target: "xtensa-esp32-none-elf",
             toolchain_file: workspace
                 .join("xtask/toolchains/toolchain-esp32.cmake")
                 .canonicalize()
                 .unwrap(),
-            compile_include_path: workspace.join("xtask/include/esp32/"),
+            compile_include_path: workspace.join("esp-mbedtls-sys").join("headers/esp32/"),
             sysroot_path: toolchain_dir.join(
                 "xtensa-esp32-elf/esp-2021r2-patch5-8_4_0/xtensa-esp32-elf/xtensa-esp32-elf/",
             ),
         },
         CompilationTarget {
             soc: Soc::ESP32C3,
+            arch: Arch::RiscV,
             target: "riscv32imc-unknown-none-elf",
             toolchain_file: workspace
                 .join("xtask/toolchains/toolchain-esp32c3.cmake")
                 .canonicalize()
                 .unwrap(),
-            compile_include_path: workspace.join("xtask/include/esp32c3/"),
+            compile_include_path: workspace.join("esp-mbedtls-sys").join("headers/esp32c3/"),
             sysroot_path: toolchain_dir
                 .join("riscv32-esp-elf/esp-2021r2-patch5-8_4_0/riscv32-esp-elf/riscv32-esp-elf/"),
         },
         CompilationTarget {
             soc: Soc::ESP32S2,
+            arch: Arch::Xtensa,
             target: "xtensa-esp32s2-none-elf",
             toolchain_file: workspace
                 .join("xtask/toolchains/toolchain-esp32s2.cmake")
                 .canonicalize()
                 .unwrap(),
-            compile_include_path: workspace.join("xtask/include/esp32s2/"),
+            compile_include_path: workspace.join("esp-mbedtls-sys").join("headers/esp32s2/"),
             sysroot_path: toolchain_dir.join(
                 "xtensa-esp32s2-elf/esp-2021r2-patch5-8_4_0/xtensa-esp32s2-elf/xtensa-esp32s2-elf/",
             ),
         },
         CompilationTarget {
             soc: Soc::ESP32S3,
+            arch: Arch::Xtensa,
             target: "xtensa-esp32s3-none-elf",
             toolchain_file: workspace
                 .join("xtask/toolchains/toolchain-esp32s3.cmake")
                 .canonicalize()
                 .unwrap(),
-            compile_include_path: workspace.join("xtask/include/esp32s3/"),
+            compile_include_path: workspace.join("esp-mbedtls-sys").join("headers/esp32s3/"),
             sysroot_path: toolchain_dir.join(
                 "xtensa-esp32s3-elf/esp-2021r2-patch5-8_4_0/xtensa-esp32s3-elf/xtensa-esp32s3-elf/",
             ),
@@ -225,7 +250,14 @@ fn generate_bindings(workspace: &Path, compilation_target: &CompilationTarget) -
                     .replace('\\', "/")
                     .replace("//?/C:", "")
             ),
-            "--target=riscv32",
+            &format!(
+                "--target={}",
+                if compilation_target.arch == Arch::Xtensa {
+                    "xtensa"
+                } else {
+                    "riscv32"
+                }
+            ),
         ])
         .ctypes_prefix("crate::c_types")
         .derive_debug(false)
@@ -237,7 +269,10 @@ fn generate_bindings(workspace: &Path, compilation_target: &CompilationTarget) -
         .map_err(|_| anyhow!("Failed to generate bindings"))?;
 
     // Write out the bindings to the appropriate path:
-    let path = sys_path.join("src").join("bindings.rs");
+    let path = sys_path
+        .join("src")
+        .join("include")
+        .join(format!("{}.rs", compilation_target.soc.to_string()));
     log::info!("Writing out bindings to: {}", path.display());
     bindings.write_to_file(&path)?;
 
@@ -291,6 +326,25 @@ fn compile(workspace: &Path, compilation_target: &CompilationTarget) -> Result<(
             .join("mbedtls")
             .join("mbedtls_config.h"),
     )?;
+
+    // Remove "-Wdocumentation" since Clang will complain
+    let mut file = fs::File::open(
+        tmpsrc
+            .path()
+            .join("mbedtls")
+            .join("library")
+            .join("CMakeLists.txt"),
+    )?;
+    let mut content = String::new();
+    file.read_to_string(&mut content)?;
+    let mut file = fs::File::create(
+        tmpsrc
+            .path()
+            .join("mbedtls")
+            .join("library")
+            .join("CMakeLists.txt"),
+    )?;
+    file.write_all(content.replace("-Wdocumentation", "").as_bytes())?;
 
     // Compile mbedtls and generate libraries to link against
     log::info!("Compiling mbedtls");

@@ -7,3 +7,12 @@ edition = "2021"
 anyhow = "1.0.68"
 
 [dependencies]
+
+[features]
+default = []
+
+# Exactly *one* chip MUST be selected via its feature:
+esp32 = []
+esp32c3 = []
+esp32s2 = []
+esp32s3 = []

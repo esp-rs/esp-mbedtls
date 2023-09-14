@@ -38,7 +38,7 @@ openssl x509 \
     -CA $CERTS_DIR/ca_cert.pem \
     -CAkey $CERTS_DIR/ca_key.pem \
     -out $CERTS_DIR/certificate.pem \
-    -set_serial 01 \
+    -CAcreateserial \
     -days 365
 
 # Remove csr

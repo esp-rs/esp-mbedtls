@@ -7,6 +7,14 @@ edition = "2021"
 esp-mbedtls-sys = { path = "../esp-mbedtls-sys" }
 log = "0.4.17"
 embedded-io = "0.4.0"
+esp32-hal = { version = "0.15.0", optional = true }
+esp32c3-hal = { version = "0.12.0", optional = true }
+esp32s2-hal = { version = "0.12.0", optional = true }
+esp32s3-hal = { version = "0.12.0", optional = true }
 
 [features]
 async = ["embedded-io/async"]
+esp32 = ["esp32-hal", "esp-mbedtls-sys/esp32"]
+esp32c3 = ["esp32c3-hal", "esp-mbedtls-sys/esp32c3"]
+esp32s2 = ["esp32s2-hal", "esp-mbedtls-sys/esp32s2"]
+esp32s3 = ["esp32s3-hal", "esp-mbedtls-sys/esp32s3"]

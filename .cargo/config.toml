@@ -1,5 +1,5 @@
 [target.xtensa-esp32-none-elf]
-runner = "espflash flash --monitor"
+runner = "espflash flash --monitor --baud 921600"
 
 rustflags = [
   "-C", "link-arg=-Tlinkall.x",
@@ -9,7 +9,7 @@ rustflags = [
 ]
 
 [target.riscv32imc-unknown-none-elf]
-runner = "espflash flash --monitor"
+runner = "espflash flash --monitor --baud 921600"
 
 rustflags = [
   "-C", "link-arg=-Tlinkall.x",
@@ -36,8 +36,34 @@ rustflags = [
   "--cfg", 'target_has_atomic="ptr"',
 ]
 
+[target.xtensa-esp32s2-none-elf]
+runner = "espflash flash --monitor --baud 921600"
+
+rustflags = [
+    #"-C", "linker=rust-lld",    
+    
+    "-C", "link-arg=-Tlinkall.x",
+    "-C", "link-arg=-Trom_functions.x",
+
+    # Enable the atomic codegen option for Xtensa
+    "-C", "target-feature=+s32c1i",
+
+  # tell the core library have atomics even though it's not specified in the target definition
+  "--cfg", "target_has_atomic_load_store",
+  "--cfg", 'target_has_atomic_load_store="8"',
+  "--cfg", 'target_has_atomic_load_store="16"',
+  "--cfg", 'target_has_atomic_load_store="32"',
+  "--cfg", 'target_has_atomic_load_store="ptr"',
+  # enable cas
+  "--cfg", "target_has_atomic",
+  "--cfg", 'target_has_atomic="8"',
+  "--cfg", 'target_has_atomic="16"',
+  "--cfg", 'target_has_atomic="32"',
+  "--cfg", 'target_has_atomic="ptr"',
+]
+
 [target.xtensa-esp32s3-none-elf]
-runner = "espflash flash --monitor"
+runner = "espflash flash --monitor --baud 921600"
 
 rustflags = [
   "-C", "link-arg=-Tlinkall.x",
@@ -48,3 +74,6 @@ rustflags = [
 
 [unstable]
 build-std = ["core"]
+
+[alias]
+xtask = "run --manifest-path ./xtask/Cargo.toml --"
