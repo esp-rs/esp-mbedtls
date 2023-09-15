@@ -534,21 +534,15 @@ where
     T: Read + Write,
 {
     fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error> {
-        let res = self.session.internal_read(buf);
-        if res <= 0 {
-            if res == MBEDTLS_ERR_SSL_WANT_READ
-                || res == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET
-            {
-                Ok(0)
-            } else {
-                if res == 0 {
-                    Err(TlsError::Eof)
-                } else {
-                    Err(TlsError::MbedTlsError(res))
-                }
+        loop {
+            let res = self.session.internal_read(buf);
+            match res {
+                0 | MBEDTLS_ERR_SSL_WANT_READ | MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET => {
+                    continue
+                } // no data
+                1_i32..=i32::MAX => return Ok(res as usize), // data
+                i32::MIN..=-1_i32 => return Err(TlsError::MbedTlsError(res)), // error
             }
-        } else {
-            Ok(res as usize)
         }
     }
 }
@@ -852,20 +846,18 @@ pub mod asynch {
     {
         async fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error> {
             log::debug!("async read called");
-            if self.session.eof && self.session.rx_buffer.empty() {
-                return Err(TlsError::Eof);
-            }
-
-            let res = self.session.async_internal_read(buf).await?;
-            if res < 0 {
-                if res == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET {
-                    log::debug!("MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET");
-                    Ok(0)
-                } else {
-                    Err(TlsError::MbedTlsError(res))
+            loop {
+                if self.session.eof && self.session.rx_buffer.empty() {
+                    return Err(TlsError::Eof);
                 }
-            } else {
-                Ok(res as usize)
+                let res = self.session.async_internal_read(buf).await?;
+                match res {
+                    0 | MBEDTLS_ERR_SSL_WANT_READ | MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET => {
+                        continue
+                    } // no data
+                    1_i32..=i32::MAX => return Ok(res as usize), // data
+                    i32::MIN..=-1_i32 => return Err(TlsError::MbedTlsError(res)), // error
+                }
             }
         }
     }
