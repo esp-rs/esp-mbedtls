@@ -32,6 +32,8 @@ Examples are available for:
 - esp32c3
 - esp32s3
 
+Limited support is also available for `esp32s2` but it won't compile for async.
+
 To run examples, you need to specify the architecture as a feature, the example name, the target and the toolchain.
 
 You also need to set `SSID` and `PASSWORD` as your environment variables

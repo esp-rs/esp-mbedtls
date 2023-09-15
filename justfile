@@ -1,7 +1,7 @@
 export SSID := "Dummy"
 export PASSWORD := "Dummy"
 
-all: (check "xtensa-esp32-none-elf" "esp32" "esp") (check "xtensa-esp32s2-none-elf" "esp32s2" "esp") (check "xtensa-esp32s3-none-elf" "esp32s3" "esp") (check "riscv32imc-unknown-none-elf" "esp32c3" "nightly-2023-03-09")
+all: (check "xtensa-esp32-none-elf" "esp32" "esp") (check "xtensa-esp32s3-none-elf" "esp32s3" "esp") (check "riscv32imc-unknown-none-elf" "esp32c3" "nightly-2023-03-09")
     cd esp-mbedtls && cargo +nightly-2023-03-09 fmt --all -- --check
     
 [private]
