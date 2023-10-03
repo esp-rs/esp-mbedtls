@@ -279,6 +279,8 @@ fn generate_bindings(workspace: &Path, compilation_target: &CompilationTarget) -
     // Format the bindings:
     Command::new("rustfmt")
         .arg(path.to_string_lossy().to_string())
+        .arg("--config")
+        .arg("normalize_doc_attributes=true")
         .output()?;
 
     Ok(())
