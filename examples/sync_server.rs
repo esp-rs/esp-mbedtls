@@ -13,6 +13,9 @@ pub use esp32_hal as hal;
 #[cfg(feature = "esp32c3")]
 pub use esp32c3_hal as hal;
 #[doc(hidden)]
+#[cfg(feature = "esp32s2")]
+pub use esp32s2_hal as hal;
+#[doc(hidden)]
 #[cfg(feature = "esp32s3")]
 pub use esp32s3_hal as hal;
 
@@ -31,12 +34,7 @@ use esp_wifi::{
     wifi_interface::WifiStack,
     EspWifiInitFor,
 };
-use hal::{
-    clock::{ClockControl, CpuClock},
-    peripherals::Peripherals,
-    prelude::*,
-    Rng, Rtc,
-};
+use hal::{clock::ClockControl, peripherals::Peripherals, prelude::*, Rng};
 use smoltcp::iface::SocketStorage;
 
 const SSID: &str = env!("SSID");
@@ -52,21 +50,11 @@ fn main() -> ! {
     #[cfg(not(feature = "esp32"))]
     #[allow(unused_mut)]
     let mut system = peripherals.SYSTEM.split();
-    #[cfg(feature = "esp32c3")]
-    let clocks = ClockControl::configure(system.clock_control, CpuClock::Clock160MHz).freeze();
-    #[cfg(any(feature = "esp32", feature = "esp32s3"))]
-    let clocks = ClockControl::configure(system.clock_control, CpuClock::Clock240MHz).freeze();
-
-    let mut rtc = Rtc::new(peripherals.RTC_CNTL);
-
-    // Disable watchdog timers
-    #[cfg(not(feature = "esp32"))]
-    rtc.swd.disable();
-    rtc.rwdt.disable();
+    let clocks = ClockControl::max(system.clock_control).freeze();
 
     #[cfg(feature = "esp32c3")]
     let timer = hal::systimer::SystemTimer::new(peripherals.SYSTIMER).alarm0;
-    #[cfg(any(feature = "esp32", feature = "esp32s3"))]
+    #[cfg(any(feature = "esp32", feature = "esp32s2", feature = "esp32s3"))]
     let timer = hal::timer::TimerGroup::new(
         peripherals.TIMG1,
         &clocks,
@@ -82,10 +70,13 @@ fn main() -> ! {
     )
     .unwrap();
 
+    #[cfg(feature = "esp32s2")]
+    let wifi = peripherals.RADIO.split();
+    #[cfg(not(feature = "esp32s2"))]
     let (wifi, _) = peripherals.RADIO.split();
     let mut socket_set_entries: [SocketStorage; 3] = Default::default();
     let (iface, device, mut controller, sockets) =
-        create_network_interface(&init, wifi, WifiMode::Sta, &mut socket_set_entries);
+        create_network_interface(&init, wifi, WifiMode::Sta, &mut socket_set_entries).unwrap();
     let wifi_stack = WifiStack::new(iface, device, sockets, current_millis);
 
     println!("Call wifi_connect");

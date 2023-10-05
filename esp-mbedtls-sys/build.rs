@@ -88,7 +88,7 @@ fn main() -> Result<()> {
     println!("cargo:rustc-link-lib={}", "mbedx509");
     println!("cargo:rustc-link-lib={}", "mbedcrypto");
     println!("cargo:rustc-link-search={}", out.display());
-
+    println!("cargo:rerun-if-changed=../libs");
     Ok(())
 }
 

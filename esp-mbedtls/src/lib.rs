@@ -4,6 +4,19 @@
 #![feature(impl_trait_projections)]
 #![allow(incomplete_features)]
 
+#[doc(hidden)]
+#[cfg(feature = "esp32")]
+pub use esp32_hal as hal;
+#[doc(hidden)]
+#[cfg(feature = "esp32c3")]
+pub use esp32c3_hal as hal;
+#[doc(hidden)]
+#[cfg(feature = "esp32s2")]
+pub use esp32s2_hal as hal;
+#[doc(hidden)]
+#[cfg(feature = "esp32s3")]
+pub use esp32s3_hal as hal;
+
 mod compat;
 
 use core::ffi::CStr;
@@ -325,7 +338,7 @@ impl<'a> Certificates<'a> {
                 error_checked!(mbedtls_x509_crt_parse(
                     crt,
                     ca_chain.as_ptr(),
-                    ca_chain.len() as u32,
+                    ca_chain.len(),
                 ))?;
             }
 
@@ -334,19 +347,19 @@ impl<'a> Certificates<'a> {
                 error_checked!(mbedtls_x509_crt_parse(
                     certificate,
                     cert.as_ptr(),
-                    cert.len() as u32,
+                    cert.len(),
                 ))?;
 
                 // Private key
                 let (password_ptr, password_len) = if let Some(password) = self.password {
-                    (password.as_ptr(), password.len() as u32)
+                    (password.as_ptr(), password.len())
                 } else {
                     (core::ptr::null(), 0)
                 };
                 error_checked!(mbedtls_pk_parse_key(
                     private_key,
                     key.as_ptr(),
-                    key.len() as u32,
+                    key.len(),
                     password_ptr,
                     password_len,
                     None,
@@ -441,7 +454,7 @@ where
                 None,
             );
 
-            mbedtls_ssl_write(self.ssl_context, buf.as_ptr(), buf.len() as u32)
+            mbedtls_ssl_write(self.ssl_context, buf.as_ptr(), buf.len())
         }
     }
 
@@ -455,11 +468,11 @@ where
                 None,
             );
 
-            mbedtls_ssl_read(self.ssl_context, buf.as_mut_ptr(), buf.len() as u32)
+            mbedtls_ssl_read(self.ssl_context, buf.as_mut_ptr(), buf.len())
         }
     }
 
-    unsafe extern "C" fn send(ctx: *mut c_void, buf: *const c_uchar, len: u32) -> c_int {
+    unsafe extern "C" fn send(ctx: *mut c_void, buf: *const c_uchar, len: usize) -> c_int {
         let session = ctx as *mut Session<T>;
         let stream = &mut (*session).stream;
         let slice = core::ptr::slice_from_raw_parts(buf as *const u8, len as usize);
@@ -477,7 +490,7 @@ where
         }
     }
 
-    unsafe extern "C" fn receive(ctx: *mut c_void, buf: *mut c_uchar, len: u32) -> c_int {
+    unsafe extern "C" fn receive(ctx: *mut c_void, buf: *mut c_uchar, len: usize) -> c_int {
         let session = ctx as *mut Session<T>;
         let stream = &mut (*session).stream;
         let mut buffer = core::slice::from_raw_parts_mut(buf as *mut u8, len as usize);
@@ -730,7 +743,7 @@ pub mod asynch {
                 );
                 self.drain_tx_buffer().await?;
 
-                let len = mbedtls_ssl_write(self.ssl_context, buf.as_ptr(), buf.len() as u32);
+                let len = mbedtls_ssl_write(self.ssl_context, buf.as_ptr(), buf.len());
                 self.drain_tx_buffer().await?;
 
                 Ok(len)
@@ -766,8 +779,7 @@ pub mod asynch {
 
                 if !self.rx_buffer.empty() {
                     log::debug!("<<< read data from mbedtls");
-                    let res =
-                        mbedtls_ssl_read(self.ssl_context, buf.as_mut_ptr(), buf.len() as u32);
+                    let res = mbedtls_ssl_read(self.ssl_context, buf.as_mut_ptr(), buf.len());
                     log::debug!("<<< mbedtls returned {res}");
 
                     if res == MBEDTLS_ERR_SSL_WANT_READ {
@@ -784,7 +796,7 @@ pub mod asynch {
             }
         }
 
-        unsafe extern "C" fn sync_send(ctx: *mut c_void, buf: *const c_uchar, len: u32) -> c_int {
+        unsafe extern "C" fn sync_send(ctx: *mut c_void, buf: *const c_uchar, len: usize) -> c_int {
             log::debug!("*** sync send called, bytes={len}");
             let session = ctx as *mut Session<T, BUFFER_SIZE>;
             let slice = core::ptr::slice_from_raw_parts(
@@ -802,7 +814,11 @@ pub mod asynch {
             }
         }
 
-        unsafe extern "C" fn sync_receive(ctx: *mut c_void, buf: *mut c_uchar, len: u32) -> c_int {
+        unsafe extern "C" fn sync_receive(
+            ctx: *mut c_void,
+            buf: *mut c_uchar,
+            len: usize,
+        ) -> c_int {
             log::debug!("*** sync rcv, len={}", len);
             let session = ctx as *mut Session<T, BUFFER_SIZE>;
 
@@ -966,7 +982,7 @@ unsafe extern "C" fn dbg_print(
     );
 }
 
-unsafe extern "C" fn rng(_param: *mut c_void, buffer: *mut c_uchar, len: u32) -> c_int {
+unsafe extern "C" fn rng(_param: *mut c_void, buffer: *mut c_uchar, len: usize) -> c_int {
     for i in 0..len {
         buffer
             .offset(i as isize)
@@ -987,8 +1003,8 @@ unsafe extern "C" fn mbedtls_platform_zeroize(dst: *mut u8, len: u32) {
 unsafe extern "C" fn mbedtls_psa_external_get_random(
     _ctx: *mut (),
     output: *mut u8,
-    out_size: u32,
-    output_len: *mut u32,
+    out_size: usize,
+    output_len: *mut usize,
 ) -> i32 {
     *output_len = out_size;
     rng(core::ptr::null_mut(), output, out_size);

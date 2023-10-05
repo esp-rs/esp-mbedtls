@@ -14,6 +14,9 @@ pub use esp32_hal as hal;
 #[cfg(feature = "esp32c3")]
 pub use esp32c3_hal as hal;
 #[doc(hidden)]
+#[cfg(feature = "esp32s2")]
+pub use esp32s2_hal as hal;
+#[doc(hidden)]
 #[cfg(feature = "esp32s3")]
 pub use esp32s3_hal as hal;
 
@@ -31,9 +34,9 @@ use esp_println::logger::init_logger;
 use esp_println::{print, println};
 use esp_wifi::wifi::{WifiController, WifiDevice, WifiEvent, WifiMode, WifiState};
 use esp_wifi::{initialize, EspWifiInitFor};
-use hal::clock::{ClockControl, CpuClock};
+use hal::clock::ClockControl;
 use hal::Rng;
-use hal::{embassy, peripherals::Peripherals, prelude::*, timer::TimerGroup, Rtc};
+use hal::{embassy, peripherals::Peripherals, prelude::*, timer::TimerGroup};
 use smoltcp::wire::IpListenEndpoint;
 
 const SSID: &str = env!("SSID");
@@ -60,21 +63,11 @@ fn main() -> ! {
     #[cfg(not(feature = "esp32"))]
     #[allow(unused_mut)]
     let mut system = peripherals.SYSTEM.split();
-    #[cfg(feature = "esp32c3")]
-    let clocks = ClockControl::configure(system.clock_control, CpuClock::Clock160MHz).freeze();
-    #[cfg(any(feature = "esp32", feature = "esp32s3"))]
-    let clocks = ClockControl::configure(system.clock_control, CpuClock::Clock240MHz).freeze();
-
-    let mut rtc = Rtc::new(peripherals.RTC_CNTL);
-
-    // Disable watchdog timers
-    #[cfg(not(feature = "esp32"))]
-    rtc.swd.disable();
-    rtc.rwdt.disable();
+    let clocks = ClockControl::max(system.clock_control).freeze();
 
     #[cfg(feature = "esp32c3")]
     let timer = hal::systimer::SystemTimer::new(peripherals.SYSTIMER).alarm0;
-    #[cfg(any(feature = "esp32", feature = "esp32s3"))]
+    #[cfg(any(feature = "esp32", feature = "esp32s2", feature = "esp32s3"))]
     let timer = hal::timer::TimerGroup::new(
         peripherals.TIMG1,
         &clocks,
@@ -90,8 +83,12 @@ fn main() -> ! {
     )
     .unwrap();
 
+    #[cfg(feature = "esp32s2")]
+    let wifi = peripherals.RADIO.split();
+    #[cfg(not(feature = "esp32s2"))]
     let (wifi, _) = peripherals.RADIO.split();
-    let (wifi_interface, controller) = esp_wifi::wifi::new_with_mode(&init, wifi, WifiMode::Sta);
+    let (wifi_interface, controller) =
+        esp_wifi::wifi::new_with_mode(&init, wifi, WifiMode::Sta).unwrap();
 
     let timer_group0 = TimerGroup::new(
         peripherals.TIMG0,
