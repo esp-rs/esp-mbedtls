@@ -29,6 +29,26 @@ use embedded_io::Io;
 use esp_mbedtls_sys::bindings::*;
 use esp_mbedtls_sys::c_types::*;
 
+/// Re-export self-tests
+pub use esp_mbedtls_sys::bindings::{
+    // AES
+    mbedtls_aes_self_test,
+    // MD5
+    mbedtls_md5_self_test,
+    // RSA
+    mbedtls_rsa_self_test,
+    // SHA
+    mbedtls_sha1_self_test,
+    mbedtls_sha256_self_test,
+    mbedtls_sha384_self_test,
+    mbedtls_sha512_self_test,
+};
+
+#[cfg(not(feature = "esp32"))]
+pub use esp_mbedtls_sys::bindings::mbedtls_sha224_self_test;
+
+mod sha;
+
 // these will come from esp-wifi (i.e. this can only be used together with esp-wifi)
 extern "C" {
     fn free(ptr: *const u8);

@@ -2,8 +2,8 @@ use core::ffi::VaListImpl;
 use core::fmt::Write;
 
 #[no_mangle]
-extern "C" fn putchar() {
-    todo!()
+extern "C" fn putchar(c: crate::c_int) {
+    log::info!("{c}");
 }
 
 #[no_mangle]
