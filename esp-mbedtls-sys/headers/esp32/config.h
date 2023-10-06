@@ -3069,7 +3069,7 @@
  *
  * This module adds support for SHA-224.
  */
-#define MBEDTLS_SHA224_C
+// #define MBEDTLS_SHA224_C
 
 /**
  * \def MBEDTLS_SHA256_C

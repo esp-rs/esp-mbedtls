@@ -75,22 +75,13 @@ fn main() -> ! {
     init_logger(log::LevelFilter::Info);
 
     let peripherals = Peripherals::take();
-    #[cfg(feature = "esp32")]
-    let mut system = peripherals.DPORT.split();
-    #[cfg(not(feature = "esp32"))]
-    #[allow(unused_mut)]
-    let mut system = peripherals.SYSTEM.split();
+    let system = peripherals.SYSTEM.split();
     let clocks = ClockControl::max(system.clock_control).freeze();
 
     #[cfg(feature = "esp32c3")]
     let timer = hal::systimer::SystemTimer::new(peripherals.SYSTIMER).alarm0;
     #[cfg(any(feature = "esp32", feature = "esp32s2", feature = "esp32s3"))]
-    let timer = hal::timer::TimerGroup::new(
-        peripherals.TIMG1,
-        &clocks,
-        &mut system.peripheral_clock_control,
-    )
-    .timer0;
+    let timer = hal::timer::TimerGroup::new(peripherals.TIMG1, &clocks).timer0;
     let init = initialize(
         EspWifiInitFor::Wifi,
         timer,
@@ -107,11 +98,7 @@ fn main() -> ! {
     let (wifi_interface, controller) =
         esp_wifi::wifi::new_with_mode(&init, wifi, WifiMode::Sta).unwrap();
 
-    let timer_group0 = TimerGroup::new(
-        peripherals.TIMG0,
-        &clocks,
-        &mut system.peripheral_clock_control,
-    );
+    let timer_group0 = TimerGroup::new(peripherals.TIMG0, &clocks);
     embassy::init(&clocks, timer_group0.timer0);
 
     let config = Config::dhcpv4(Default::default());

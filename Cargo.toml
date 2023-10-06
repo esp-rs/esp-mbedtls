@@ -44,6 +44,10 @@ esp-mbedtls = { path = "./esp-mbedtls" }
 [target.xtensa-esp32s3-none-elf.dependencies]
 
 [[example]]
+name              = "crypto_self_test"
+required-features = ["esp-wifi/wifi-logs"]
+
+[[example]]
 name              = "async_client"
 required-features = ["async"]
 
@@ -66,3 +70,12 @@ esp32s2 = ["esp32s2-hal/embassy-time-timg0", "esp-backtrace/esp32s2", "esp-print
 esp32s3 = ["esp32s3-hal/embassy-time-timg0", "esp-backtrace/esp32s3", "esp-println/esp32s3", "embassy-executor?/arch-xtensa", "esp-wifi/esp32s3", "esp-mbedtls/esp32s3"]
 async = ["esp-wifi/async", "esp-wifi/embassy-net", "embassy-executor", "embassy-net", "embassy-time", "embedded-io/async", "esp-mbedtls/async"]
 
+[patch."https://github.com/esp-rs/esp-wifi.git"]
+# Change PATH and patch for interrupt changes
+esp-wifi = { package = "esp-wifi", path = "../esp-wifi/esp-wifi/" }
+
+[patch.crates-io]
+esp32-hal = { package = "esp32-hal", git = "https://github.com/esp-rs/esp-hal.git", rev = "44e968f7a83f80be43d60cdc01c10eccab4b39cf" }
+esp32c3-hal = { package = "esp32c3-hal", git = "https://github.com/esp-rs/esp-hal.git", rev = "44e968f7a83f80be43d60cdc01c10eccab4b39cf" }
+esp32s2-hal = { package = "esp32s2-hal", git = "https://github.com/esp-rs/esp-hal.git", rev = "44e968f7a83f80be43d60cdc01c10eccab4b39cf" }
+esp32s3-hal = { package = "esp32s3-hal", git = "https://github.com/esp-rs/esp-hal.git", rev = "44e968f7a83f80be43d60cdc01c10eccab4b39cf" }

@@ -152,8 +152,6 @@ pub const MBEDTLS_PSA_BUILTIN_KEY_TYPE_RSA_PUBLIC_KEY: u32 = 1;
 pub const PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY: u32 = 1;
 pub const MBEDTLS_PSA_BUILTIN_ALG_SHA_1: u32 = 1;
 pub const PSA_WANT_ALG_SHA_1: u32 = 1;
-pub const MBEDTLS_PSA_BUILTIN_ALG_SHA_224: u32 = 1;
-pub const PSA_WANT_ALG_SHA_224: u32 = 1;
 pub const MBEDTLS_PSA_BUILTIN_ALG_SHA_256: u32 = 1;
 pub const PSA_WANT_ALG_SHA_256: u32 = 1;
 pub const MBEDTLS_PSA_BUILTIN_ALG_SHA_384: u32 = 1;
@@ -13456,13 +13454,6 @@ extern "C" {
         output: *mut crate::c_types::c_uchar,
         is224: crate::c_types::c_int,
     ) -> crate::c_types::c_int;
-}
-extern "C" {
-    /// \brief          The SHA-224 checkup routine.
-    ///
-    /// \return         \c 0 on success.
-    /// \return         \c 1 on failure.
-    pub fn mbedtls_sha224_self_test(verbose: crate::c_types::c_int) -> crate::c_types::c_int;
 }
 extern "C" {
     /// \brief          The SHA-256 checkup routine.

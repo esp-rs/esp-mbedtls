@@ -13324,18 +13324,11 @@ extern "C" {
     /// \return         \c 1 on failure.
     pub fn mbedtls_sha1_self_test(verbose: crate::c_types::c_int) -> crate::c_types::c_int;
 }
-/// \brief          The SHA-256 context structure.
-///
-///                 The structure is used both for SHA-256 and for SHA-224
-///                 checksum calculations. The choice between these two is
-///                 made in the call to mbedtls_sha256_starts().
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_sha256_context {
-    pub private_total: [u32; 2usize],
-    pub private_state: [u32; 8usize],
-    pub private_buffer: [crate::c_types::c_uchar; 64usize],
-    pub private_is224: crate::c_types::c_int,
+    pub peripheral: *mut crate::c_types::c_void,
+    pub hasher: *mut crate::c_types::c_void,
 }
 extern "C" {
     /// \brief          This function initializes a SHA-256 context.
