@@ -19,50 +19,124 @@ lto = false
 opt-level = 3
 
 [dependencies]
-esp32-hal = { version = "0.15.0", optional = true }
-esp32c3-hal = { version = "0.12.0", optional = true }
-esp32s2-hal = { version = "0.12.0", optional = true }
-esp32s3-hal = { version = "0.12.0", optional = true }
-esp-backtrace = { version = "0.6.0", features = ["panic-handler", "print-uart", "exception-handler"] }
-esp-println       = { version = "0.4.0", features = ["log"] }
+esp32-hal = { version = "0.16.0", optional = true }
+esp32c3-hal = { version = "0.13.0", optional = true }
+esp32s2-hal = { version = "0.13.0", optional = true }
+esp32s3-hal = { version = "0.13.0", optional = true }
+esp-backtrace = { version = "0.9.0", features = [
+    "panic-handler",
+    "print-uart",
+    "exception-handler",
+] }
+esp-println = { version = "0.7.0", features = ["log"] }
 
-embassy-time = { version = "0.1.0", features = ["nightly"], optional = true }
-embassy-executor = { version = "0.2.0", package = "embassy-executor", features = ["nightly", "executor-thread", "integrated-timers"], optional = true }
-embassy-net = { version = "0.1.0", features = ["nightly", "tcp", "udp", "dhcpv4", "medium-ethernet"], optional = true }
+embassy-time = { version = "0.1.3", features = ["nightly"], optional = true }
+embassy-executor = { version = "0.3.0", package = "embassy-executor", features = [
+    "nightly",
+    "executor-thread",
+    "integrated-timers",
+], optional = true }
+embassy-net = { version = "0.2.1", features = [
+    "nightly",
+    "tcp",
+    "udp",
+    "dhcpv4",
+    "medium-ethernet",
+], optional = true }
 
-esp-wifi = { git = "https://github.com/esp-rs/esp-wifi.git", features = ["big-heap", "phy-enable-usb", "embedded-svc", "wifi"], rev = "fbb8417fc450ec0701067b36629770c11338231c" }
-smoltcp = { version = "0.10.0", default-features=false, features = ["proto-igmp", "proto-ipv4", "socket-tcp", "socket-icmp", "socket-udp", "medium-ethernet", "proto-dhcpv4", "socket-raw", "socket-dhcpv4"] }
-embedded-svc = { version = "0.25.0", default-features = false}
+esp-wifi = { git = "https://github.com/esp-rs/esp-wifi.git", features = [
+    "big-heap",
+    "phy-enable-usb",
+    "embedded-svc",
+    "wifi",
+], rev = "516608916e71671e99c234511df93801fde2d3a3" }
+smoltcp = { version = "0.10.0", default-features = false, features = [
+    "proto-igmp",
+    "proto-ipv4",
+    "socket-tcp",
+    "socket-icmp",
+    "socket-udp",
+    "medium-ethernet",
+    "proto-dhcpv4",
+    "socket-raw",
+    "socket-dhcpv4",
+] }
+embedded-svc = { version = "0.26.2", default-features = false }
 log = "0.4.16"
 embedded-hal = "0.2"
-embedded-io = "0.4.0"
+embedded-io = "0.6.1"
+embedded-io-async = { version = "0.6.0", optional = true }
 heapless = "0.7.16"
 critical-section = "1.0.1"
+static_cell = { version = "=1.2", features = ["nightly"] }
 
 esp-mbedtls = { path = "./esp-mbedtls" }
 
 [target.xtensa-esp32s3-none-elf.dependencies]
 
 [[example]]
-name              = "async_client"
+name = "async_client"
 required-features = ["async"]
 
 [[example]]
-name              = "async_client_mTLS"
+name = "async_client_mTLS"
 required-features = ["async"]
 
 [[example]]
-name              = "async_server"
+name = "async_server"
 required-features = ["async"]
 
 [[example]]
-name              = "async_server_mTLS"
+name = "async_server_mTLS"
 required-features = ["async"]
 
 [features]
-esp32 = ["esp32-hal/embassy-time-timg0", "esp-backtrace/esp32", "esp-println/esp32", "embassy-executor?/arch-xtensa", "esp-wifi/esp32", "esp-mbedtls/esp32"]
-esp32c3 = ["esp32c3-hal/embassy-time-timg0", "esp-backtrace/esp32c3", "esp-println/esp32c3", "embassy-executor?/arch-riscv32", "esp-wifi/esp32c3", "esp-mbedtls/esp32c3"]
-esp32s2 = ["esp32s2-hal/embassy-time-timg0", "esp-backtrace/esp32s2", "esp-println/esp32s2", "embassy-executor?/arch-xtensa", "esp-wifi/esp32s2", "esp-mbedtls/esp32s2"]
-esp32s3 = ["esp32s3-hal/embassy-time-timg0", "esp-backtrace/esp32s3", "esp-println/esp32s3", "embassy-executor?/arch-xtensa", "esp-wifi/esp32s3", "esp-mbedtls/esp32s3"]
-async = ["esp-wifi/async", "esp-wifi/embassy-net", "embassy-executor", "embassy-net", "embassy-time", "embedded-io/async", "esp-mbedtls/async"]
-
+esp32 = [
+    "esp32-hal/embassy-time-timg0",
+    "esp-backtrace/esp32",
+    "esp-println/esp32",
+    "esp-wifi/esp32",
+    "esp-mbedtls/esp32",
+]
+esp32c3 = [
+    "esp32c3-hal/embassy-time-timg0",
+    "esp-backtrace/esp32c3",
+    "esp-println/esp32c3",
+    "embassy-executor?/arch-riscv32",
+    "esp-wifi/esp32c3",
+    "esp-mbedtls/esp32c3",
+]
+esp32s2 = [
+    "esp32s2-hal/embassy-time-timg0",
+    "esp-backtrace/esp32s2",
+    "esp-println/esp32s2",
+    "esp-wifi/esp32s2",
+    "esp-mbedtls/esp32s2",
+]
+esp32s3 = [
+    "esp32s3-hal/embassy-time-timg0",
+    "esp-backtrace/esp32s3",
+    "esp-println/esp32s3",
+    "esp-wifi/esp32s3",
+    "esp-mbedtls/esp32s3",
+]
+async = [
+    "esp-wifi/async",
+    "esp-wifi/embassy-net",
+    "embassy-executor",
+    "embassy-net",
+    "embassy-time",
+    "dep:embedded-io-async",
+    "esp-mbedtls/async",
+    "esp32c3-hal?/embassy",
+    "esp32-hal?/embassy",
+    "esp32s2-hal?/embassy",
+    "esp32s3-hal?/embassy",
+    "esp32c3-hal?/async",
+    "esp32-hal?/async",
+    "esp32s2-hal?/async",
+    "esp32s3-hal?/async",
+    "esp32-hal?/embassy-executor-thread",
+    "esp32s2-hal?/embassy-executor-thread",
+    "esp32s3-hal?/embassy-executor-thread",
+]

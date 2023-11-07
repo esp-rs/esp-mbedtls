@@ -4,6 +4,7 @@
 #![feature(impl_trait_projections)]
 #![allow(incomplete_features)]
 
+use embedded_io::ErrorType;
 #[doc(hidden)]
 #[cfg(feature = "esp32")]
 pub use esp32_hal as hal;
@@ -23,9 +24,8 @@ use core::ffi::CStr;
 use core::mem::size_of;
 
 use compat::StrBuf;
-use embedded_io::blocking::Read;
-use embedded_io::blocking::Write;
-use embedded_io::Io;
+use embedded_io::Read;
+use embedded_io::Write;
 use esp_mbedtls_sys::bindings::*;
 use esp_mbedtls_sys::c_types::*;
 
@@ -535,7 +535,7 @@ where
     session: Session<'a, T>,
 }
 
-impl<'a, T> Io for ConnectedSession<'a, T>
+impl<'a, T> ErrorType for ConnectedSession<'a, T>
 where
     T: Read + Write,
 {
@@ -577,7 +577,6 @@ where
 #[cfg(feature = "async")]
 pub mod asynch {
     use super::*;
-    use embedded_io::asynch;
 
     pub struct Session<'a, T, const BUFFER_SIZE: usize = 4096> {
         stream: &'a mut T,
@@ -636,7 +635,7 @@ pub mod asynch {
 
     impl<'a, T, const BUFFER_SIZE: usize> Session<'a, T, BUFFER_SIZE>
     where
-        T: asynch::Read + asynch::Write,
+        T: embedded_io_async::Read + embedded_io_async::Write,
     {
         pub async fn connect<'b>(
             mut self,
@@ -844,21 +843,23 @@ pub mod asynch {
 
     pub struct AsyncConnectedSession<'a, T, const BUFFER_SIZE: usize>
     where
-        T: asynch::Read + asynch::Write,
+        T: embedded_io_async::Read + embedded_io_async::Write,
     {
         pub(crate) session: Session<'a, T, BUFFER_SIZE>,
     }
 
-    impl<'a, T, const BUFFER_SIZE: usize> Io for AsyncConnectedSession<'a, T, BUFFER_SIZE>
+    impl<'a, T, const BUFFER_SIZE: usize> embedded_io_async::ErrorType
+        for AsyncConnectedSession<'a, T, BUFFER_SIZE>
     where
-        T: asynch::Read + asynch::Write,
+        T: embedded_io_async::Read + embedded_io_async::Write,
     {
         type Error = TlsError;
     }
 
-    impl<'a, T, const BUFFER_SIZE: usize> asynch::Read for AsyncConnectedSession<'a, T, BUFFER_SIZE>
+    impl<'a, T, const BUFFER_SIZE: usize> embedded_io_async::Read
+        for AsyncConnectedSession<'a, T, BUFFER_SIZE>
     where
-        T: asynch::Read + asynch::Write,
+        T: embedded_io_async::Read + embedded_io_async::Write,
     {
         async fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error> {
             log::debug!("async read called");
@@ -878,9 +879,10 @@ pub mod asynch {
         }
     }
 
-    impl<'a, T, const BUFFER_SIZE: usize> asynch::Write for AsyncConnectedSession<'a, T, BUFFER_SIZE>
+    impl<'a, T, const BUFFER_SIZE: usize> embedded_io_async::Write
+        for AsyncConnectedSession<'a, T, BUFFER_SIZE>
     where
-        T: asynch::Read + asynch::Write,
+        T: embedded_io_async::Read + embedded_io_async::Write,
     {
         async fn write(&mut self, buf: &[u8]) -> Result<usize, Self::Error> {
             let res = self.session.async_internal_write(buf).await?;
