@@ -20,11 +20,10 @@ pub use esp32s2_hal as hal;
 #[cfg(feature = "esp32s3")]
 pub use esp32s3_hal as hal;
 
-use embassy_executor::_export::StaticCell;
 use embassy_net::tcp::TcpSocket;
 use embassy_net::{Config, Stack, StackResources};
 
-use embassy_executor::Executor;
+use embassy_executor::Spawner;
 use embassy_time::{Duration, Timer};
 use embedded_svc::wifi::{ClientConfiguration, Configuration, Wifi};
 use esp_backtrace as _;
@@ -32,48 +31,29 @@ use esp_mbedtls::{asynch::Session, set_debug, Certificates, Mode, TlsVersion};
 use esp_mbedtls::{TlsError, X509};
 use esp_println::logger::init_logger;
 use esp_println::{print, println};
-use esp_wifi::wifi::{WifiController, WifiDevice, WifiEvent, WifiMode, WifiState};
+use esp_wifi::wifi::{WifiController, WifiDevice, WifiEvent, WifiStaDevice, WifiState};
 use esp_wifi::{initialize, EspWifiInitFor};
 use hal::clock::ClockControl;
 use hal::Rng;
 use hal::{embassy, peripherals::Peripherals, prelude::*, timer::TimerGroup};
 use smoltcp::wire::IpListenEndpoint;
+use static_cell::make_static;
 
 const SSID: &str = env!("SSID");
 const PASSWORD: &str = env!("PASSWORD");
 
-macro_rules! singleton {
-    ($val:expr) => {{
-        type T = impl Sized;
-        static STATIC_CELL: StaticCell<T> = StaticCell::new();
-        let (x,) = STATIC_CELL.init(($val,));
-        x
-    }};
-}
-
-static EXECUTOR: StaticCell<Executor> = StaticCell::new();
-
-#[entry]
-fn main() -> ! {
+#[main]
+async fn main(spawner: Spawner) -> ! {
     init_logger(log::LevelFilter::Info);
 
     let peripherals = Peripherals::take();
-    #[cfg(feature = "esp32")]
-    let mut system = peripherals.DPORT.split();
-    #[cfg(not(feature = "esp32"))]
-    #[allow(unused_mut)]
-    let mut system = peripherals.SYSTEM.split();
+    let system = peripherals.SYSTEM.split();
     let clocks = ClockControl::max(system.clock_control).freeze();
 
     #[cfg(feature = "esp32c3")]
     let timer = hal::systimer::SystemTimer::new(peripherals.SYSTIMER).alarm0;
     #[cfg(any(feature = "esp32", feature = "esp32s2", feature = "esp32s3"))]
-    let timer = hal::timer::TimerGroup::new(
-        peripherals.TIMG1,
-        &clocks,
-        &mut system.peripheral_clock_control,
-    )
-    .timer0;
+    let timer = hal::timer::TimerGroup::new(peripherals.TIMG1, &clocks).timer0;
     let init = initialize(
         EspWifiInitFor::Wifi,
         timer,
@@ -83,18 +63,11 @@ fn main() -> ! {
     )
     .unwrap();
 
-    #[cfg(feature = "esp32s2")]
-    let wifi = peripherals.RADIO.split();
-    #[cfg(not(feature = "esp32s2"))]
-    let (wifi, _) = peripherals.RADIO.split();
+    let wifi = peripherals.WIFI;
     let (wifi_interface, controller) =
-        esp_wifi::wifi::new_with_mode(&init, wifi, WifiMode::Sta).unwrap();
+        esp_wifi::wifi::new_with_mode(&init, wifi, WifiStaDevice).unwrap();
 
-    let timer_group0 = TimerGroup::new(
-        peripherals.TIMG0,
-        &clocks,
-        &mut system.peripheral_clock_control,
-    );
+    let timer_group0 = TimerGroup::new(peripherals.TIMG0, &clocks);
     embassy::init(&clocks, timer_group0.timer0);
 
     let config = Config::dhcpv4(Default::default());
@@ -102,64 +75,16 @@ fn main() -> ! {
     let seed = 1234; // very random, very secure seed
 
     // Init network stack
-    let stack = &*singleton!(Stack::new(
+    let stack = &*make_static!(Stack::new(
         wifi_interface,
         config,
-        singleton!(StackResources::<3>::new()),
+        make_static!(StackResources::<3>::new()),
         seed
     ));
 
-    let executor = EXECUTOR.init(Executor::new());
-    executor.run(|spawner| {
-        spawner.spawn(connection(controller)).ok();
-        spawner.spawn(net_task(&stack)).ok();
-        spawner.spawn(task(&stack)).ok();
-    });
-}
+    spawner.spawn(connection(controller)).ok();
+    spawner.spawn(net_task(&stack)).ok();
 
-#[embassy_executor::task]
-async fn connection(mut controller: WifiController<'static>) {
-    println!("start connection task");
-    println!("Device capabilities: {:?}", controller.get_capabilities());
-    loop {
-        match esp_wifi::wifi::get_wifi_state() {
-            WifiState::StaConnected => {
-                // wait until we're no longer connected
-                controller.wait_for_event(WifiEvent::StaDisconnected).await;
-                Timer::after(Duration::from_millis(5000)).await
-            }
-            _ => {}
-        }
-        if !matches!(controller.is_started(), Ok(true)) {
-            let client_config = Configuration::Client(ClientConfiguration {
-                ssid: SSID.into(),
-                password: PASSWORD.into(),
-                ..Default::default()
-            });
-            controller.set_configuration(&client_config).unwrap();
-            println!("Starting wifi");
-            controller.start().await.unwrap();
-            println!("Wifi started!");
-        }
-        println!("About to connect...");
-
-        match controller.connect().await {
-            Ok(_) => println!("Wifi connected!"),
-            Err(e) => {
-                println!("Failed to connect to wifi: {e:?}");
-                Timer::after(Duration::from_millis(5000)).await
-            }
-        }
-    }
-}
-
-#[embassy_executor::task]
-async fn net_task(stack: &'static Stack<WifiDevice<'static>>) {
-    stack.run().await
-}
-
-#[embassy_executor::task]
-async fn task(stack: &'static Stack<WifiDevice<'static>>) {
     let mut rx_buffer = [0; 4096];
     let mut tx_buffer = [0; 4096];
 
@@ -201,8 +126,8 @@ async fn task(stack: &'static Stack<WifiDevice<'static>>) {
         }
 
         set_debug(0);
-        use embedded_io::asynch::Read;
-        use embedded_io::asynch::Write;
+        use embedded_io_async::Read;
+        use embedded_io_async::Write;
 
         let mut buffer = [0u8; 1024];
         let mut pos = 0;
@@ -287,4 +212,45 @@ async fn task(stack: &'static Stack<WifiDevice<'static>>) {
 
         socket.abort();
     }
+}
+
+#[embassy_executor::task]
+async fn connection(mut controller: WifiController<'static>) {
+    println!("start connection task");
+    println!("Device capabilities: {:?}", controller.get_capabilities());
+    loop {
+        match esp_wifi::wifi::get_wifi_state() {
+            WifiState::StaConnected => {
+                // wait until we're no longer connected
+                controller.wait_for_event(WifiEvent::StaDisconnected).await;
+                Timer::after(Duration::from_millis(5000)).await
+            }
+            _ => {}
+        }
+        if !matches!(controller.is_started(), Ok(true)) {
+            let client_config = Configuration::Client(ClientConfiguration {
+                ssid: SSID.into(),
+                password: PASSWORD.into(),
+                ..Default::default()
+            });
+            controller.set_configuration(&client_config).unwrap();
+            println!("Starting wifi");
+            controller.start().await.unwrap();
+            println!("Wifi started!");
+        }
+        println!("About to connect...");
+
+        match controller.connect().await {
+            Ok(_) => println!("Wifi connected!"),
+            Err(e) => {
+                println!("Failed to connect to wifi: {e:?}");
+                Timer::after(Duration::from_millis(5000)).await
+            }
+        }
+    }
+}
+
+#[embassy_executor::task]
+async fn net_task(stack: &'static Stack<WifiDevice<'static, WifiStaDevice>>) {
+    stack.run().await
 }

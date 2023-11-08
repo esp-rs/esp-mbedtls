@@ -28,7 +28,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@v1
         with:
           target: riscv32imc-unknown-none-elf
-          toolchain: nightly-2023-03-09
+          toolchain: nightly
           components: rust-src,rustfmt
       - uses: esp-rs/xtensa-toolchain@v1.5
         with:
