@@ -45,7 +45,6 @@ embassy-net = { version = "0.2.1", features = [
 ], optional = true }
 
 esp-wifi = { git = "https://github.com/esp-rs/esp-wifi.git", features = [
-    "big-heap",
     "phy-enable-usb",
     "embedded-svc",
     "wifi",

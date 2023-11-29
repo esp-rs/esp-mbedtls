@@ -1,0 +1,3 @@
+[esp-wifi]
+heap_size = 112640 # use 110k by default
+# heap_size = 73728 # uncomment this to use 72k for esp32-s2/c2

@@ -8,7 +8,7 @@ It comes with mbedtls precompiled to avoid the need for a complete C toolchain. 
 
 This should work together with `esp-wifi`. It currently won't work without. However it's not well tested yet besides the included examples.
 
-See the examples for how to use it. A key thing is to enable the feature `big-heap` in esp-wifi since more heap memory is needed to get this working.
+See the examples for how to use it. A key thing is to [set a bigger heap size](https://github.com/esp-rs/esp-wifi/blob/main/esp-wifi/docs/tuning.md) for esp-wifi since more heap memory is needed to get this working.
 
 In general this is heavy in terms of heap memory used and code size. If you can, you should prefer using something like `embedded-tls`.
 
