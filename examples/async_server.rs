@@ -21,7 +21,7 @@ pub use esp32s2_hal as hal;
 pub use esp32s3_hal as hal;
 
 use embassy_net::tcp::TcpSocket;
-use embassy_net::{Config, Stack, StackResources};
+use embassy_net::{Config, IpListenEndpoint, Stack, StackResources};
 
 use embassy_executor::Spawner;
 use embassy_time::{Duration, Timer};
@@ -38,7 +38,6 @@ use esp_wifi::{initialize, EspWifiInitFor};
 use hal::clock::ClockControl;
 use hal::Rng;
 use hal::{embassy, peripherals::Peripherals, prelude::*, timer::TimerGroup};
-use smoltcp::wire::IpListenEndpoint;
 use static_cell::make_static;
 
 const SSID: &str = env!("SSID");

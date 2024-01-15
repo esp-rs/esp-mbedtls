@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["bjoernQ <bjoern.quentin@mobile-j.de>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
+rust-version = "1.75"
 
 [profile.release]
 debug = true
@@ -33,8 +34,6 @@ esp-println = { version = "0.9.0", features = ["log"] }
 embassy-time = { version = "0.3.0", optional = true }
 embassy-executor = { version = "0.5.0", package = "embassy-executor", features = [
     "nightly",
-    "executor-thread",
-    "integrated-timers",
 ], optional = true }
 embassy-net = { version = "0.4.0", features = [
     "tcp",

@@ -106,7 +106,7 @@ fn main() -> Result<()> {
             arch: Arch::Xtensa,
             target: "xtensa-esp32-none-elf",
             toolchain_file: workspace
-                .join("xtask/toolchains/toolchain-esp32.cmake")
+                .join("xtask/toolchains/toolchain-clang-esp32.cmake")
                 .canonicalize()
                 .unwrap(),
             compile_include_path: workspace.join("esp-mbedtls-sys").join("headers/esp32/"),
@@ -119,7 +119,7 @@ fn main() -> Result<()> {
             arch: Arch::RiscV,
             target: "riscv32imc-unknown-none-elf",
             toolchain_file: workspace
-                .join("xtask/toolchains/toolchain-esp32c3.cmake")
+                .join("xtask/toolchains/toolchain-clang-esp32c3.cmake")
                 .canonicalize()
                 .unwrap(),
             compile_include_path: workspace.join("esp-mbedtls-sys").join("headers/esp32c3/"),
@@ -131,7 +131,7 @@ fn main() -> Result<()> {
             arch: Arch::Xtensa,
             target: "xtensa-esp32s2-none-elf",
             toolchain_file: workspace
-                .join("xtask/toolchains/toolchain-esp32s2.cmake")
+                .join("xtask/toolchains/toolchain-clang-esp32s2.cmake")
                 .canonicalize()
                 .unwrap(),
             compile_include_path: workspace.join("esp-mbedtls-sys").join("headers/esp32s2/"),
@@ -144,7 +144,7 @@ fn main() -> Result<()> {
             arch: Arch::Xtensa,
             target: "xtensa-esp32s3-none-elf",
             toolchain_file: workspace
-                .join("xtask/toolchains/toolchain-esp32s3.cmake")
+                .join("xtask/toolchains/toolchain-clang-esp32s3.cmake")
                 .canonicalize()
                 .unwrap(),
             compile_include_path: workspace.join("esp-mbedtls-sys").join("headers/esp32s3/"),

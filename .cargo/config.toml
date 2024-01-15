@@ -24,7 +24,6 @@ runner = "espflash flash --monitor --baud 921600"
 
 rustflags = [
     #"-C", "linker=rust-lld",    
-    
     "-C", "link-arg=-Tlinkall.x",
     "-C", "link-arg=-Trom_functions.x",
 ]
