@@ -27,7 +27,7 @@ use esp_wifi::{
     wifi_interface::WifiStack,
     EspWifiInitFor,
 };
-use hal::{clock::ClockControl, peripherals::Peripherals, prelude::*, Rng};
+use hal::{clock::ClockControl, peripherals::Peripherals, prelude::*, rsa::Rsa, Rng};
 use smoltcp::{iface::SocketStorage, wire::IpAddress};
 
 const SSID: &str = env!("SSID");
@@ -112,6 +112,8 @@ fn main() -> ! {
 
     set_debug(0);
 
+    let mut rsa = Rsa::new(peripherals.RSA);
+
     let certificates = Certificates {
         ca_chain: X509::pem(
             concat!(include_str!("./certs/certauth.cryptomix.com.pem"), "\0").as_bytes(),
@@ -130,6 +132,7 @@ fn main() -> ! {
         Mode::Client,
         TlsVersion::Tls1_3,
         certificates,
+        Some(&mut rsa),
     )
     .unwrap();
 

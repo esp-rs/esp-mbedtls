@@ -34,7 +34,7 @@ use esp_wifi::wifi::{
 use esp_wifi::{initialize, EspWifiInitFor};
 use hal::clock::ClockControl;
 use hal::Rng;
-use hal::{embassy, peripherals::Peripherals, prelude::*, timer::TimerGroup};
+use hal::{embassy, peripherals::Peripherals, prelude::*, rsa::Rsa, timer::TimerGroup};
 use static_cell::make_static;
 
 const SSID: &str = env!("SSID");
@@ -116,6 +116,8 @@ async fn main(spawner: Spawner) -> ! {
 
     set_debug(0);
 
+    let mut rsa = Rsa::new(peripherals.RSA);
+
     let certificates = Certificates {
         ca_chain: X509::pem(
             concat!(include_str!("./certs/certauth.cryptomix.com.pem"), "\0").as_bytes(),
@@ -134,6 +136,7 @@ async fn main(spawner: Spawner) -> ! {
         Mode::Client,
         TlsVersion::Tls1_3,
         certificates,
+        Some(&mut rsa),
     )
     .unwrap();
 

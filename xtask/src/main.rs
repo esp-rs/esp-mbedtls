@@ -348,6 +348,29 @@ fn compile(workspace: &Path, compilation_target: &CompilationTarget) -> Result<(
     )?;
     file.write_all(content.replace("-Wdocumentation", "").as_bytes())?;
 
+    // This add the function prototype for `mbedtls_mpi_exp_mod_soft()` since it
+    // is not provided in the espressif fork of mbedtls.
+    if let Err(error) = writeln!(
+        fs::OpenOptions::new().write(true).append(true).open(
+            tmpsrc
+                .path()
+                .join("mbedtls")
+                .join("include")
+                .join("mbedtls")
+                .join("bignum.h"),
+        )?,
+        "int mbedtls_mpi_exp_mod_soft(
+            mbedtls_mpi *X,
+            const mbedtls_mpi *A,
+            const mbedtls_mpi *E,
+            const mbedtls_mpi *N,
+            mbedtls_mpi *prec_RR
+        );"
+    ) {
+        eprintln!("Could not write function prototype to bignum.h");
+        eprintln!("{error}");
+    }
+
     // Compile mbedtls and generate libraries to link against
     log::info!("Compiling mbedtls");
     let dst = Config::new(tmpsrc.path().join("mbedtls"))

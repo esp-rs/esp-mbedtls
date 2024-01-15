@@ -68,7 +68,9 @@ static_cell = { version = "=1.2", features = ["nightly"] }
 
 esp-mbedtls = { path = "./esp-mbedtls" }
 
-[target.xtensa-esp32s3-none-elf.dependencies]
+[[example]]
+name = "crypto_self_test"
+required-features = ["esp-wifi/wifi-logs"]
 
 [[example]]
 name = "async_client"
