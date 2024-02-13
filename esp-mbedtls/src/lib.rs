@@ -1,7 +1,5 @@
 #![no_std]
 #![feature(c_variadic)]
-#![feature(async_fn_in_trait)]
-#![feature(impl_trait_projections)]
 #![allow(incomplete_features)]
 
 use embedded_io::ErrorType;

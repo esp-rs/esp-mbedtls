@@ -37,17 +37,13 @@ pub use esp32s2_hal as hal;
 pub use esp32s3_hal as hal;
 
 use embedded_io::*;
-use embedded_svc::{
-    ipv4::Interface,
-    wifi::{ClientConfiguration, Configuration, Wifi},
-};
 use esp_backtrace as _;
 use esp_mbedtls::{set_debug, Mode, TlsError, TlsVersion, X509};
 use esp_mbedtls::{Certificates, Session};
 use esp_println::{logger::init_logger, print, println};
 use esp_wifi::{
     current_millis, initialize,
-    wifi::{utils::create_network_interface, WifiStaDevice},
+    wifi::{utils::create_network_interface, ClientConfiguration, Configuration, WifiStaDevice},
     wifi_interface::WifiStack,
     EspWifiInitFor,
 };
@@ -86,8 +82,8 @@ fn main() -> ! {
 
     println!("Call wifi_connect");
     let client_config = Configuration::Client(ClientConfiguration {
-        ssid: SSID.into(),
-        password: PASSWORD.into(),
+        ssid: SSID.try_into().unwrap(),
+        password: PASSWORD.try_into().unwrap(),
         ..Default::default()
     });
     controller.set_configuration(&client_config).unwrap();
