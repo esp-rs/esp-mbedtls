@@ -2,11 +2,6 @@ use core::ffi::VaListImpl;
 use core::fmt::Write;
 
 #[no_mangle]
-extern "C" fn putchar() {
-    todo!()
-}
-
-#[no_mangle]
 pub unsafe extern "C" fn snprintf(dst: *mut u8, n: u32, format: *const u8, args: ...) -> i32 {
     vsnprintf(dst, n, format, args)
 }

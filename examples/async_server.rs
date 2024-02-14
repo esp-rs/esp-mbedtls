@@ -25,13 +25,15 @@ use embassy_net::{Config, Stack, StackResources};
 
 use embassy_executor::Spawner;
 use embassy_time::{Duration, Timer};
-use embedded_svc::wifi::{ClientConfiguration, Configuration, Wifi};
 use esp_backtrace as _;
 use esp_mbedtls::{asynch::Session, set_debug, Certificates, Mode, TlsVersion};
 use esp_mbedtls::{TlsError, X509};
 use esp_println::logger::init_logger;
 use esp_println::{print, println};
-use esp_wifi::wifi::{WifiController, WifiDevice, WifiEvent, WifiStaDevice, WifiState};
+use esp_wifi::wifi::{
+    ClientConfiguration, Configuration, WifiController, WifiDevice, WifiEvent, WifiStaDevice,
+    WifiState,
+};
 use esp_wifi::{initialize, EspWifiInitFor};
 use hal::clock::ClockControl;
 use hal::Rng;
@@ -68,7 +70,7 @@ async fn main(spawner: Spawner) -> ! {
         esp_wifi::wifi::new_with_mode(&init, wifi, WifiStaDevice).unwrap();
 
     let timer_group0 = TimerGroup::new(peripherals.TIMG0, &clocks);
-    embassy::init(&clocks, timer_group0.timer0);
+    embassy::init(&clocks, timer_group0);
 
     let config = Config::dhcpv4(Default::default());
 
@@ -229,8 +231,8 @@ async fn connection(mut controller: WifiController<'static>) {
         }
         if !matches!(controller.is_started(), Ok(true)) {
             let client_config = Configuration::Client(ClientConfiguration {
-                ssid: SSID.into(),
-                password: PASSWORD.into(),
+                ssid: SSID.try_into().unwrap(),
+                password: PASSWORD.try_into().unwrap(),
                 ..Default::default()
             });
             controller.set_configuration(&client_config).unwrap();
