@@ -16,7 +16,7 @@ pub use esp32s2_hal as hal;
 #[cfg(feature = "esp32s3")]
 pub use esp32s3_hal as hal;
 
-use crate::hal::rsa::Rsa;
+pub use crate::hal::rsa::Rsa;
 
 mod compat;
 
