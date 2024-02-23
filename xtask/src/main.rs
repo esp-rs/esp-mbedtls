@@ -106,7 +106,7 @@ fn main() -> Result<()> {
             arch: Arch::Xtensa,
             target: "xtensa-esp32-none-elf",
             toolchain_file: workspace
-                .join("xtask/toolchains/toolchain-esp32.cmake")
+                .join("xtask/toolchains/toolchain-clang-esp32.cmake")
                 .canonicalize()
                 .unwrap(),
             compile_include_path: workspace.join("esp-mbedtls-sys").join("headers/esp32/"),
@@ -119,7 +119,7 @@ fn main() -> Result<()> {
             arch: Arch::RiscV,
             target: "riscv32imc-unknown-none-elf",
             toolchain_file: workspace
-                .join("xtask/toolchains/toolchain-esp32c3.cmake")
+                .join("xtask/toolchains/toolchain-clang-esp32c3.cmake")
                 .canonicalize()
                 .unwrap(),
             compile_include_path: workspace.join("esp-mbedtls-sys").join("headers/esp32c3/"),
@@ -131,7 +131,7 @@ fn main() -> Result<()> {
             arch: Arch::Xtensa,
             target: "xtensa-esp32s2-none-elf",
             toolchain_file: workspace
-                .join("xtask/toolchains/toolchain-esp32s2.cmake")
+                .join("xtask/toolchains/toolchain-clang-esp32s2.cmake")
                 .canonicalize()
                 .unwrap(),
             compile_include_path: workspace.join("esp-mbedtls-sys").join("headers/esp32s2/"),
@@ -144,7 +144,7 @@ fn main() -> Result<()> {
             arch: Arch::Xtensa,
             target: "xtensa-esp32s3-none-elf",
             toolchain_file: workspace
-                .join("xtask/toolchains/toolchain-esp32s3.cmake")
+                .join("xtask/toolchains/toolchain-clang-esp32s3.cmake")
                 .canonicalize()
                 .unwrap(),
             compile_include_path: workspace.join("esp-mbedtls-sys").join("headers/esp32s3/"),
@@ -347,6 +347,29 @@ fn compile(workspace: &Path, compilation_target: &CompilationTarget) -> Result<(
             .join("CMakeLists.txt"),
     )?;
     file.write_all(content.replace("-Wdocumentation", "").as_bytes())?;
+
+    // This add the function prototype for `mbedtls_mpi_exp_mod_soft()` since it
+    // is not provided in the espressif fork of mbedtls.
+    if let Err(error) = writeln!(
+        fs::OpenOptions::new().write(true).append(true).open(
+            tmpsrc
+                .path()
+                .join("mbedtls")
+                .join("include")
+                .join("mbedtls")
+                .join("bignum.h"),
+        )?,
+        "int mbedtls_mpi_exp_mod_soft(
+            mbedtls_mpi *X,
+            const mbedtls_mpi *A,
+            const mbedtls_mpi *E,
+            const mbedtls_mpi *N,
+            mbedtls_mpi *prec_RR
+        );"
+    ) {
+        eprintln!("Could not write function prototype to bignum.h");
+        eprintln!("{error}");
+    }
 
     // Compile mbedtls and generate libraries to link against
     log::info!("Compiling mbedtls");

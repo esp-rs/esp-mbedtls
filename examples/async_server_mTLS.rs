@@ -38,7 +38,7 @@ pub use esp32s2_hal as hal;
 pub use esp32s3_hal as hal;
 
 use embassy_net::tcp::TcpSocket;
-use embassy_net::{Config, Stack, StackResources};
+use embassy_net::{Config, IpListenEndpoint, Stack, StackResources};
 
 use embassy_executor::Spawner;
 use embassy_time::{Duration, Timer};
@@ -54,8 +54,7 @@ use esp_wifi::wifi::{
 use esp_wifi::{initialize, EspWifiInitFor};
 use hal::clock::ClockControl;
 use hal::Rng;
-use hal::{embassy, peripherals::Peripherals, prelude::*, timer::TimerGroup};
-use smoltcp::wire::IpListenEndpoint;
+use hal::{embassy, peripherals::Peripherals, prelude::*, rsa::Rsa, timer::TimerGroup};
 use static_cell::make_static;
 
 const SSID: &str = env!("SSID");
@@ -128,6 +127,7 @@ async fn main(spawner: Spawner) -> ! {
     }
 
     let mut socket = TcpSocket::new(&stack, &mut rx_buffer, &mut tx_buffer);
+    let mut rsa = Rsa::new(peripherals.RSA);
     socket.set_timeout(Some(Duration::from_secs(10)));
     loop {
         println!("Waiting for connection...");
@@ -169,6 +169,7 @@ async fn main(spawner: Spawner) -> ! {
                 .ok(),
                 ..Default::default()
             },
+            Some(&mut rsa),
         )
         .unwrap();
 

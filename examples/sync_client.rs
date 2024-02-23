@@ -27,7 +27,7 @@ use esp_wifi::{
     wifi_interface::WifiStack,
     EspWifiInitFor,
 };
-use hal::{clock::ClockControl, peripherals::Peripherals, prelude::*, Rng};
+use hal::{clock::ClockControl, peripherals::Peripherals, prelude::*, rsa::Rsa, Rng};
 use smoltcp::{iface::SocketStorage, wire::IpAddress};
 
 const SSID: &str = env!("SSID");
@@ -112,6 +112,8 @@ fn main() -> ! {
 
     set_debug(0);
 
+    let mut rsa = Rsa::new(peripherals.RSA);
+
     let tls = Session::new(
         &mut socket,
         "www.google.com",
@@ -124,6 +126,7 @@ fn main() -> ! {
             .ok(),
             ..Default::default()
         },
+        Some(&mut rsa),
     )
     .unwrap();
 

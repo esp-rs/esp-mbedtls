@@ -34,7 +34,7 @@ use esp_wifi::wifi::{
 use esp_wifi::{initialize, EspWifiInitFor};
 use hal::clock::ClockControl;
 use hal::Rng;
-use hal::{embassy, peripherals::Peripherals, prelude::*, timer::TimerGroup};
+use hal::{embassy, peripherals::Peripherals, prelude::*, rsa::Rsa, timer::TimerGroup};
 use static_cell::make_static;
 
 const SSID: &str = env!("SSID");
@@ -116,6 +116,8 @@ async fn main(spawner: Spawner) -> ! {
 
     set_debug(0);
 
+    let mut rsa = Rsa::new(peripherals.RSA);
+
     let tls: Session<_, 4096> = Session::new(
         &mut socket,
         "www.google.com",
@@ -128,6 +130,7 @@ async fn main(spawner: Spawner) -> ! {
             .ok(),
             ..Default::default()
         },
+        Some(&mut rsa),
     )
     .unwrap();
 

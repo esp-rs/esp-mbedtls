@@ -115,8 +115,8 @@ extern "C" fn vsnprintf(
 }
 
 #[no_mangle]
-extern "C" fn rand() {
-    todo!()
+extern "C" fn rand() -> crate::c_ulong {
+    unsafe { crate::random() }
 }
 
 pub struct StrBuf {

@@ -16,7 +16,12 @@ pub use esp32s2_hal as hal;
 #[cfg(feature = "esp32s3")]
 pub use esp32s3_hal as hal;
 
+use crate::hal::rsa::Rsa;
+
 mod compat;
+
+#[cfg(any(feature = "esp32c3", feature = "esp32s2", feature = "esp32s3"))]
+mod bignum;
 
 use core::ffi::CStr;
 use core::mem::size_of;
@@ -25,7 +30,17 @@ use compat::StrBuf;
 use embedded_io::Read;
 use embedded_io::Write;
 use esp_mbedtls_sys::bindings::*;
+/// Re-export self-tests
+pub use esp_mbedtls_sys::bindings::{
+    // Bignum
+    mbedtls_mpi_self_test,
+    // RSA
+    mbedtls_rsa_self_test,
+};
 use esp_mbedtls_sys::c_types::*;
+
+/// Hold the RSA peripheral for cryptographic operations.
+static mut RSA_REF: Option<&mut Rsa> = None;
 
 // these will come from esp-wifi (i.e. this can only be used together with esp-wifi)
 extern "C" {
@@ -384,15 +399,36 @@ pub struct Session<T> {
 }
 
 impl<T> Session<T> {
+    /// Create a session for a TLS stream.
+    ///
+    /// # Arguments
+    ///
+    /// * `stream` - The stream for the connection.
+    /// * `servername` - The hostname to check against the received server certificate. It sets the ServerName TLS extension, too, if that extension is enabled. (client-side only)
+    /// * `mode` - Use [Mode::Client] if you are running a client. [Mode::Server] if you are
+    /// running a server.
+    /// * `min_version` - The minimum TLS version for the connection, that will be accepted.
+    /// * `certificates` - Certificate chain for the connection. Will play a different role
+    /// depending on if running as client or server. See [Certificates] for more information.
+    /// * `rsa` - Optionally take an RSA driver instance. This session will use the hardware rsa crypto
+    /// accelerators for the session. Passing None will use the software implementation of RSA which is slower.
+    ///
+    /// # Errors
+    ///
+    /// This will return a [TlsError] if there were an error during the initialization of the
+    /// session. This can happen if there is not enough memory of if the certificates are in an
+    /// invalid format.
     pub fn new(
         stream: T,
         servername: &str,
         mode: Mode,
         min_version: TlsVersion,
         certificates: Certificates,
+        rsa: Option<&mut Rsa>,
     ) -> Result<Self, TlsError> {
         let (ssl_context, ssl_config, crt, client_crt, private_key) =
             certificates.init_ssl(servername, mode, min_version)?;
+        unsafe { RSA_REF = core::mem::transmute(rsa) }
         return Ok(Self {
             stream,
             ssl_context,
@@ -589,15 +625,36 @@ pub mod asynch {
     }
 
     impl<T, const BUFFER_SIZE: usize> Session<T, BUFFER_SIZE> {
+        /// Create a session for a TLS stream.
+        ///
+        /// # Arguments
+        ///
+        /// * `stream` - The stream for the connection.
+        /// * `servername` - The hostname to check against the received server certificate. It sets the ServerName TLS extension, too, if that extension is enabled. (client-side only)
+        /// * `mode` - Use [Mode::Client] if you are running a client. [Mode::Server] if you are
+        /// running a server.
+        /// * `min_version` - The minimum TLS version for the connection, that will be accepted.
+        /// * `certificates` - Certificate chain for the connection. Will play a different role
+        /// depending on if running as client or server. See [Certificates] for more information.
+        /// * `rsa` - Optionally take an RSA driver instance. This session will use the hardware rsa crypto
+        /// accelerators for the session. Passing None will use the software implementation of RSA which is slower.
+        ///
+        /// # Errors
+        ///
+        /// This will return a [TlsError] if there were an error during the initialization of the
+        /// session. This can happen if there is not enough memory of if the certificates are in an
+        /// invalid format.
         pub fn new(
             stream: T,
             servername: &str,
             mode: Mode,
             min_version: TlsVersion,
             certificates: Certificates,
+            rsa: Option<&mut Rsa>,
         ) -> Result<Self, TlsError> {
             let (ssl_context, ssl_config, crt, client_crt, private_key) =
                 certificates.init_ssl(servername, mode, min_version)?;
+            unsafe { RSA_REF = core::mem::transmute(rsa) }
             return Ok(Self {
                 stream,
                 ssl_context,
