@@ -6,17 +6,7 @@
 
 use embassy_executor::Spawner;
 #[doc(hidden)]
-#[cfg(feature = "esp32")]
-pub use esp32_hal as hal;
-#[doc(hidden)]
-#[cfg(feature = "esp32c3")]
-pub use esp32c3_hal as hal;
-#[doc(hidden)]
-#[cfg(feature = "esp32s2")]
-pub use esp32s2_hal as hal;
-#[doc(hidden)]
-#[cfg(feature = "esp32s3")]
-pub use esp32s3_hal as hal;
+pub use esp_hal as hal;
 
 use embassy_net::tcp::TcpSocket;
 use embassy_net::{Config, Ipv4Address, Stack, StackResources};

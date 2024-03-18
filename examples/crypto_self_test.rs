@@ -3,17 +3,7 @@
 #![no_main]
 
 #[doc(hidden)]
-#[cfg(feature = "esp32")]
-pub use esp32_hal as hal;
-#[doc(hidden)]
-#[cfg(feature = "esp32c3")]
-pub use esp32c3_hal as hal;
-#[doc(hidden)]
-#[cfg(feature = "esp32s2")]
-pub use esp32s2_hal as hal;
-#[doc(hidden)]
-#[cfg(feature = "esp32s3")]
-pub use esp32s3_hal as hal;
+pub use esp_hal as hal;
 
 use esp_backtrace as _;
 use esp_mbedtls::set_debug;
@@ -22,7 +12,10 @@ use esp_println::{logger::init_logger, println};
 /// Only used for ROM functions
 #[allow(unused_imports)]
 use esp_wifi::{initialize, EspWifiInitFor};
-use hal::{clock::ClockControl, peripherals::Peripherals, prelude::*, systimer::SystemTimer, Rng};
+use hal::{clock::ClockControl, peripherals::Peripherals, prelude::*, Rng};
+
+#[cfg(any(feature = "esp32c3", feature = "esp32s2", feature = "esp32s3"))]
+use hal::systimer::SystemTimer;
 
 #[entry]
 fn main() -> ! {
@@ -30,11 +23,7 @@ fn main() -> ! {
 
     // Init ESP-WIFI heap for malloc
     let peripherals = Peripherals::take();
-    #[cfg(feature = "esp32")]
-    let mut system = peripherals.DPORT.split();
-    #[cfg(not(feature = "esp32"))]
-    #[allow(unused_mut)]
-    let mut system = peripherals.SYSTEM.split();
+    let system = peripherals.SYSTEM.split();
     let clocks = ClockControl::max(system.clock_control).freeze();
 
     #[cfg(feature = "esp32c3")]
@@ -131,13 +120,18 @@ fn main() -> ! {
         // Took 1325770 cycles
         // Done
 
+        #[cfg(any(feature = "esp32c3", feature = "esp32s2", feature = "esp32s3"))]
         let pre_calc = SystemTimer::now();
+        #[cfg(any(feature = "esp32c3", feature = "esp32s2", feature = "esp32s3"))]
         log::info!("pre_cal {}", pre_calc);
         esp_mbedtls::mbedtls_mpi_self_test(1i32);
-        let post_calc = SystemTimer::now();
-        let hw_time = post_calc - pre_calc;
-        log::info!("post_cal {}", post_calc);
-        println!("Took {} cycles", hw_time);
+        #[cfg(any(feature = "esp32c3", feature = "esp32s2", feature = "esp32s3"))]
+        {
+            let post_calc = SystemTimer::now();
+            let hw_time = post_calc - pre_calc;
+            log::info!("post_cal {}", post_calc);
+            println!("Took {} cycles", hw_time);
+        }
     }
 
     println!("Done");
