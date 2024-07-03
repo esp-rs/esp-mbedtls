@@ -5,6 +5,7 @@
 use embedded_io::ErrorType;
 #[doc(hidden)]
 pub use esp_hal as hal;
+use hal::{peripheral::Peripheral, peripherals::RSA};
 
 pub use crate::hal::rsa::Rsa;
 
@@ -30,7 +31,7 @@ pub use esp_mbedtls_sys::bindings::{
 use esp_mbedtls_sys::c_types::*;
 
 /// Hold the RSA peripheral for cryptographic operations.
-static mut RSA_REF: Option<&mut Rsa> = None;
+static mut RSA_REF: Option<Rsa<esp_hal::Blocking>> = None;
 
 // these will come from esp-wifi (i.e. this can only be used together with esp-wifi)
 extern "C" {
@@ -414,11 +415,11 @@ impl<T> Session<T> {
         mode: Mode,
         min_version: TlsVersion,
         certificates: Certificates,
-        rsa: Option<&mut Rsa>,
+        rsa: Option<impl Peripheral<P = RSA>>,
     ) -> Result<Self, TlsError> {
         let (ssl_context, ssl_config, crt, client_crt, private_key) =
             certificates.init_ssl(servername, mode, min_version)?;
-        unsafe { RSA_REF = core::mem::transmute(rsa) }
+        unsafe { RSA_REF = core::mem::transmute(rsa.map(|inner| Rsa::new(inner, None))) }
         return Ok(Self {
             stream,
             ssl_context,
@@ -640,11 +641,11 @@ pub mod asynch {
             mode: Mode,
             min_version: TlsVersion,
             certificates: Certificates,
-            rsa: Option<&mut Rsa>,
+            rsa: Option<impl Peripheral<P = RSA>>,
         ) -> Result<Self, TlsError> {
             let (ssl_context, ssl_config, crt, client_crt, private_key) =
                 certificates.init_ssl(servername, mode, min_version)?;
-            unsafe { RSA_REF = core::mem::transmute(rsa) }
+            unsafe { RSA_REF = core::mem::transmute(rsa.map(|inner| Rsa::new(inner, None))) }
             return Ok(Self {
                 stream,
                 ssl_context,

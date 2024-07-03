@@ -189,7 +189,10 @@ pub unsafe extern "C" fn mbedtls_mpi_exp_mod(
                         copy_bytes(Y.private_p, exponent.as_mut_ptr(), y_words);
                         copy_bytes(M.private_p, modulus.as_mut_ptr(), m_words);
                         copy_bytes(rinv.private_p, r.as_mut_ptr(), mpi_words(rinv));
-                        let mut mod_exp = RsaModularExponentiation::<operand_sizes::Op256>::new(
+                        let mut mod_exp = RsaModularExponentiation::<
+                            operand_sizes::Op256,
+                            esp_hal::Blocking,
+                        >::new(
                             rsa,
                             &exponent,         // exponent (Y) Y_MEM
                             &modulus,          // modulus (M)  M_MEM
@@ -214,7 +217,10 @@ pub unsafe extern "C" fn mbedtls_mpi_exp_mod(
                         copy_bytes(Y.private_p, exponent.as_mut_ptr(), y_words);
                         copy_bytes(M.private_p, modulus.as_mut_ptr(), m_words);
                         copy_bytes(rinv.private_p, r.as_mut_ptr(), mpi_words(rinv));
-                        let mut mod_exp = RsaModularExponentiation::<operand_sizes::Op384>::new(
+                        let mut mod_exp = RsaModularExponentiation::<
+                            operand_sizes::Op384,
+                            esp_hal::Blocking,
+                        >::new(
                             rsa,
                             &exponent,         // exponent (Y) Y_MEM
                             &modulus,          // modulus (M)  M_MEM
@@ -239,7 +245,10 @@ pub unsafe extern "C" fn mbedtls_mpi_exp_mod(
                         copy_bytes(Y.private_p, exponent.as_mut_ptr(), y_words);
                         copy_bytes(M.private_p, modulus.as_mut_ptr(), m_words);
                         copy_bytes(rinv.private_p, r.as_mut_ptr(), mpi_words(rinv));
-                        let mut mod_exp = RsaModularExponentiation::<operand_sizes::Op512>::new(
+                        let mut mod_exp = RsaModularExponentiation::<
+                            operand_sizes::Op512,
+                            esp_hal::Blocking,
+                        >::new(
                             rsa,
                             &exponent,         // exponent (Y) Y_MEM
                             &modulus,          // modulus (M)  M_MEM
@@ -264,7 +273,10 @@ pub unsafe extern "C" fn mbedtls_mpi_exp_mod(
                         copy_bytes(Y.private_p, exponent.as_mut_ptr(), y_words);
                         copy_bytes(M.private_p, modulus.as_mut_ptr(), m_words);
                         copy_bytes(rinv.private_p, r.as_mut_ptr(), mpi_words(rinv));
-                        let mut mod_exp = RsaModularExponentiation::<operand_sizes::Op1024>::new(
+                        let mut mod_exp = RsaModularExponentiation::<
+                            operand_sizes::Op1024,
+                            esp_hal::Blocking,
+                        >::new(
                             rsa,
                             &exponent,         // exponent (Y) Y_MEM
                             &modulus,          // modulus (M)  M_MEM
@@ -289,7 +301,10 @@ pub unsafe extern "C" fn mbedtls_mpi_exp_mod(
                         copy_bytes(Y.private_p, exponent.as_mut_ptr(), y_words);
                         copy_bytes(M.private_p, modulus.as_mut_ptr(), m_words);
                         copy_bytes(rinv.private_p, r.as_mut_ptr(), mpi_words(rinv));
-                        let mut mod_exp = RsaModularExponentiation::<operand_sizes::Op2048>::new(
+                        let mut mod_exp = RsaModularExponentiation::<
+                            operand_sizes::Op2048,
+                            esp_hal::Blocking,
+                        >::new(
                             rsa,
                             &exponent,         // exponent (Y) Y_MEM
                             &modulus,          // modulus (M)  M_MEM
@@ -315,7 +330,10 @@ pub unsafe extern "C" fn mbedtls_mpi_exp_mod(
                         copy_bytes(Y.private_p, exponent.as_mut_ptr(), y_words);
                         copy_bytes(M.private_p, modulus.as_mut_ptr(), m_words);
                         copy_bytes(rinv.private_p, r.as_mut_ptr(), mpi_words(rinv));
-                        let mut mod_exp = RsaModularExponentiation::<operand_sizes::Op4096>::new(
+                        let mut mod_exp = RsaModularExponentiation::<
+                            operand_sizes::Op4096,
+                            esp_hal::Blocking,
+                        >::new(
                             rsa,
                             &exponent,         // exponent (Y) Y_MEM
                             &modulus,          // modulus (M)  M_MEM

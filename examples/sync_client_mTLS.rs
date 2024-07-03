@@ -17,7 +17,9 @@ use esp_wifi::{
     wifi_interface::WifiStack,
     EspWifiInitFor,
 };
-use hal::{clock::ClockControl, peripherals::Peripherals, prelude::*, rsa::Rsa, Rng};
+use hal::{
+    clock::ClockControl, peripherals::Peripherals, prelude::*, rng::Rng, system::SystemControl,
+};
 use smoltcp::{iface::SocketStorage, wire::IpAddress};
 
 const SSID: &str = env!("SSID");
@@ -28,18 +30,18 @@ fn main() -> ! {
     init_logger(log::LevelFilter::Info);
 
     let peripherals = Peripherals::take();
-    let system = peripherals.SYSTEM.split();
+    let system = SystemControl::new(peripherals.SYSTEM);
     let clocks = ClockControl::max(system.clock_control).freeze();
 
-    #[cfg(feature = "esp32c3")]
-    let timer = hal::systimer::SystemTimer::new(peripherals.SYSTIMER).alarm0;
-    #[cfg(any(feature = "esp32", feature = "esp32s2", feature = "esp32s3"))]
-    let timer = hal::timer::TimerGroup::new(peripherals.TIMG1, &clocks).timer0;
+    #[cfg(target_arch = "xtensa")]
+    let timer = esp_hal::timer::timg::TimerGroup::new(peripherals.TIMG1, &clocks, None).timer0;
+    #[cfg(target_arch = "riscv32")]
+    let timer = esp_hal::timer::systimer::SystemTimer::new(peripherals.SYSTIMER).alarm0;
     let init = initialize(
         EspWifiInitFor::Wifi,
         timer,
         Rng::new(peripherals.RNG),
-        system.radio_clock_control,
+        peripherals.RADIO_CLK,
         &clocks,
     )
     .unwrap();
@@ -102,8 +104,6 @@ fn main() -> ! {
 
     set_debug(0);
 
-    let mut rsa = Rsa::new(peripherals.RSA);
-
     let certificates = Certificates {
         ca_chain: X509::pem(
             concat!(include_str!("./certs/certauth.cryptomix.com.pem"), "\0").as_bytes(),
@@ -122,7 +122,7 @@ fn main() -> ! {
         Mode::Client,
         TlsVersion::Tls1_3,
         certificates,
-        Some(&mut rsa),
+        Some(peripherals.RSA),
     )
     .unwrap();
 
