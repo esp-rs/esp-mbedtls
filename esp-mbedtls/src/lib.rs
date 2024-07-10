@@ -5,9 +5,7 @@
 use embedded_io::ErrorType;
 #[doc(hidden)]
 pub use esp_hal as hal;
-use hal::{peripheral::Peripheral, peripherals::RSA};
-
-pub use crate::hal::rsa::Rsa;
+use hal::{peripheral::Peripheral, peripherals::RSA, rsa::Rsa};
 
 mod compat;
 
