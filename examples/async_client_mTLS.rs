@@ -125,9 +125,9 @@ async fn main(spawner: Spawner) -> ! {
         Mode::Client,
         TlsVersion::Tls1_3,
         certificates,
-        Some(peripherals.RSA),
     )
-    .unwrap();
+    .unwrap()
+    .with_hardware_rsa(peripherals.RSA);
 
     println!("Start tls connect");
     let mut tls = tls.connect().await.unwrap();

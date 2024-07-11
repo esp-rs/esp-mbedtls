@@ -158,9 +158,10 @@ fn main() -> ! {
                     .ok(),
                     ..Default::default()
                 },
-                Some(&mut peripherals.RSA),
             )
-            .unwrap();
+            .unwrap()
+            .with_hardware_rsa(&mut peripherals.RSA);
+
             match tls.connect() {
                 Ok(mut connected_session) => {
                     loop {

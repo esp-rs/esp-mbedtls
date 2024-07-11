@@ -159,9 +159,9 @@ async fn main(spawner: Spawner) -> ! {
                 .ok(),
                 ..Default::default()
             },
-            Some(&mut peripherals.RSA),
         )
-        .unwrap();
+        .unwrap()
+        .with_hardware_rsa(&mut peripherals.RSA);
 
         println!("Start tls connect");
         match tls.connect().await {
