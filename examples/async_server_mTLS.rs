@@ -42,9 +42,10 @@ use esp_wifi::wifi::{
     WifiState,
 };
 use esp_wifi::{initialize, EspWifiInitFor};
-use hal::clock::ClockControl;
-use hal::Rng;
-use hal::{embassy, peripherals::Peripherals, prelude::*, rsa::Rsa, timer::TimerGroup};
+use hal::{
+    clock::ClockControl, peripherals::Peripherals, prelude::*, rng::Rng, system::SystemControl,
+    timer::timg::TimerGroup,
+};
 use static_cell::make_static;
 
 const SSID: &str = env!("SSID");
@@ -54,19 +55,19 @@ const PASSWORD: &str = env!("PASSWORD");
 async fn main(spawner: Spawner) -> ! {
     init_logger(log::LevelFilter::Info);
 
-    let peripherals = Peripherals::take();
-    let system = peripherals.SYSTEM.split();
+    let mut peripherals = Peripherals::take();
+    let system = SystemControl::new(peripherals.SYSTEM);
     let clocks = ClockControl::max(system.clock_control).freeze();
 
-    #[cfg(feature = "esp32c3")]
-    let timer = hal::systimer::SystemTimer::new(peripherals.SYSTIMER).alarm0;
-    #[cfg(any(feature = "esp32", feature = "esp32s2", feature = "esp32s3"))]
-    let timer = hal::timer::TimerGroup::new(peripherals.TIMG1, &clocks).timer0;
+    #[cfg(target_arch = "xtensa")]
+    let timer = esp_hal::timer::timg::TimerGroup::new(peripherals.TIMG1, &clocks, None).timer0;
+    #[cfg(target_arch = "riscv32")]
+    let timer = esp_hal::timer::systimer::SystemTimer::new(peripherals.SYSTIMER).alarm0;
     let init = initialize(
         EspWifiInitFor::Wifi,
         timer,
         Rng::new(peripherals.RNG),
-        system.radio_clock_control,
+        peripherals.RADIO_CLK,
         &clocks,
     )
     .unwrap();
@@ -75,8 +76,8 @@ async fn main(spawner: Spawner) -> ! {
     let (wifi_interface, controller) =
         esp_wifi::wifi::new_with_mode(&init, wifi, WifiStaDevice).unwrap();
 
-    let timer_group0 = TimerGroup::new(peripherals.TIMG0, &clocks);
-    embassy::init(&clocks, timer_group0);
+    let timer_group0 = TimerGroup::new_async(peripherals.TIMG0, &clocks);
+    esp_hal_embassy::init(&clocks, timer_group0);
 
     let config = Config::dhcpv4(Default::default());
 
@@ -117,7 +118,6 @@ async fn main(spawner: Spawner) -> ! {
     }
 
     let mut socket = TcpSocket::new(&stack, &mut rx_buffer, &mut tx_buffer);
-    let mut rsa = Rsa::new(peripherals.RSA);
     socket.set_timeout(Some(Duration::from_secs(10)));
     loop {
         println!("Waiting for connection...");
@@ -159,7 +159,7 @@ async fn main(spawner: Spawner) -> ! {
                 .ok(),
                 ..Default::default()
             },
-            Some(&mut rsa),
+            Some(&mut peripherals.RSA),
         )
         .unwrap();
 
