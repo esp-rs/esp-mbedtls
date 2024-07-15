@@ -573,10 +573,8 @@ where
         loop {
             let res = self.session.internal_read(buf);
             match res {
-                0 | MBEDTLS_ERR_SSL_WANT_READ | MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET => {
-                    continue
-                } // no data
-                1_i32..=i32::MAX => return Ok(res as usize), // data
+                MBEDTLS_ERR_SSL_WANT_READ | MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET => continue, // no data
+                0_i32..=i32::MAX => return Ok(res as usize), // data
                 i32::MIN..=-1_i32 => return Err(TlsError::MbedTlsError(res)), // error
             }
         }
@@ -804,7 +802,7 @@ pub mod asynch {
                 );
                 self.drain_tx_buffer().await?;
 
-                if !self.rx_buffer.can_read() {
+                if !self.rx_buffer.can_read() && mbedtls_ssl_check_pending(self.ssl_context) == 0 {
                     let mut buffer = [0u8; BUFFER_SIZE];
                     let from_socket = self
                         .stream
@@ -820,15 +818,12 @@ pub mod asynch {
                     }
                 }
 
-                if !self.rx_buffer.empty() {
+                if !self.rx_buffer.empty() || mbedtls_ssl_get_bytes_avail(self.ssl_context) > 0 {
                     log::debug!("<<< read data from mbedtls");
                     let res = mbedtls_ssl_read(self.ssl_context, buf.as_mut_ptr(), buf.len());
                     log::debug!("<<< mbedtls returned {res}");
 
-                    if res == MBEDTLS_ERR_SSL_WANT_READ {
-                        log::debug!("<<< return 0 as read");
-                        return Ok(0); // we need another read
-                    } else if res == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY {
+                    if res == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY {
                         self.eof = true;
                         return Ok(0);
                     }
@@ -871,7 +866,7 @@ pub mod asynch {
             }
 
             let buffer = core::slice::from_raw_parts_mut(buf as *mut u8, len as usize);
-            let max_len = usize::min(len as usize, (*session).tx_buffer.remaining());
+            let max_len = usize::min(len as usize, (*session).rx_buffer.remaining());
             let data = (*session).rx_buffer.pull(max_len);
             buffer[0..data.len()].copy_from_slice(data);
 
@@ -912,10 +907,10 @@ pub mod asynch {
                 }
                 let res = self.session.async_internal_read(buf).await?;
                 match res {
-                    0 | MBEDTLS_ERR_SSL_WANT_READ | MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET => {
+                    MBEDTLS_ERR_SSL_WANT_READ | MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET => {
                         continue
                     } // no data
-                    1_i32..=i32::MAX => return Ok(res as usize), // data
+                    0..=i32::MAX => return Ok(res as usize), // data
                     i32::MIN..=-1_i32 => return Err(TlsError::MbedTlsError(res)), // error
                 }
             }
