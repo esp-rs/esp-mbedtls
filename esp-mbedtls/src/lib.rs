@@ -112,6 +112,13 @@ pub fn set_debug(level: u32) {
     }
 }
 
+/// Format type for [X509]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+enum CertificateFormat {
+    PEM,
+    DER,
+}
+
 /// Holds a X509 certificate
 ///
 /// # Examples
@@ -127,7 +134,10 @@ pub fn set_debug(level: u32) {
 /// let cert = X509::der(CERTIFICATE);
 /// ```
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub struct X509<'a>(&'a [u8]);
+pub struct X509<'a> {
+    bytes: &'a [u8],
+    format: CertificateFormat,
+}
 
 impl<'a> X509<'a> {
     /// Reads certificate in pem format from bytes
@@ -138,8 +148,11 @@ impl<'a> X509<'a> {
     pub fn pem(bytes: &'a [u8]) -> Result<Self, TlsError> {
         if let Some(len) = X509::get_null(bytes) {
             // Get a slice of only the certificate bytes including the \0
-            let slice = unsafe { core::slice::from_raw_parts(bytes.as_ptr(), len + 1) };
-            Ok(Self(slice))
+            let bytes = unsafe { core::slice::from_raw_parts(bytes.as_ptr(), len + 1) };
+            Ok(Self {
+                bytes,
+                format: CertificateFormat::PEM,
+            })
         } else {
             Err(TlsError::X509MissingNullTerminator)
         }
@@ -150,12 +163,15 @@ impl<'a> X509<'a> {
     /// *Note*: This function assumes that the size of the size is the exact
     /// length of the certificate
     pub fn der(bytes: &'a [u8]) -> Self {
-        Self(bytes)
+        Self {
+            bytes,
+            format: CertificateFormat::DER,
+        }
     }
 
     /// Returns the bytes of the certificate
     pub fn data(&self) -> &'a [u8] {
-        self.0
+        self.bytes
     }
 
     /// Returns the length of the certificate
@@ -365,11 +381,22 @@ impl<'a> Certificates<'a> {
 
             if let (Some(cert), Some(key)) = (self.certificate, self.private_key) {
                 // Certificate
-                error_checked!(mbedtls_x509_crt_parse(
-                    certificate,
-                    cert.as_ptr(),
-                    cert.len(),
-                ))?;
+                match cert.format {
+                    CertificateFormat::PEM => {
+                        error_checked!(mbedtls_x509_crt_parse(
+                            certificate,
+                            cert.as_ptr(),
+                            cert.len(),
+                        ))?;
+                    }
+                    CertificateFormat::DER => {
+                        error_checked!(mbedtls_x509_crt_parse_der_nocopy(
+                            certificate,
+                            cert.as_ptr(),
+                            cert.len(),
+                        ))?;
+                    }
+                }
 
                 // Private key
                 let (password_ptr, password_len) = if let Some(password) = self.password {
