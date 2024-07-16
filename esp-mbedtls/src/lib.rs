@@ -29,6 +29,12 @@ pub use esp_mbedtls_sys::bindings::{
 use esp_mbedtls_sys::c_types::*;
 
 /// Hold the RSA peripheral for cryptographic operations.
+///
+/// This is initialized when `with_hardware_rsa()` is called on a [Session] and is set back to None
+/// when the session that called `with_hardware_rsa()` is dropped.
+///
+/// Note: Due to implementation constraints, this session and every other session will use the
+/// hardware accelerated RSA driver until the session called with this function is dropped.
 static mut RSA_REF: Option<Rsa<esp_hal::Blocking>> = None;
 
 // these will come from esp-wifi (i.e. this can only be used together with esp-wifi)
@@ -385,6 +391,8 @@ pub struct Session<T> {
     crt: *mut mbedtls_x509_crt,
     client_crt: *mut mbedtls_x509_crt,
     private_key: *mut mbedtls_pk_context,
+    // Indicate if this session is the one holding the RSA ref
+    owns_rsa: bool,
 }
 
 impl<T> Session<T> {
@@ -399,8 +407,6 @@ impl<T> Session<T> {
     /// * `min_version` - The minimum TLS version for the connection, that will be accepted.
     /// * `certificates` - Certificate chain for the connection. Will play a different role
     /// depending on if running as client or server. See [Certificates] for more information.
-    /// * `rsa` - Optionally take an RSA driver instance. This session will use the hardware rsa crypto
-    /// accelerators for the session. Passing None will use the software implementation of RSA which is slower.
     ///
     /// # Errors
     ///
@@ -413,11 +419,9 @@ impl<T> Session<T> {
         mode: Mode,
         min_version: TlsVersion,
         certificates: Certificates,
-        rsa: Option<impl Peripheral<P = RSA>>,
     ) -> Result<Self, TlsError> {
         let (ssl_context, ssl_config, crt, client_crt, private_key) =
             certificates.init_ssl(servername, mode, min_version)?;
-        unsafe { RSA_REF = core::mem::transmute(rsa.map(|inner| Rsa::new(inner, None))) }
         return Ok(Self {
             stream,
             ssl_context,
@@ -425,7 +429,22 @@ impl<T> Session<T> {
             crt,
             client_crt,
             private_key,
+            owns_rsa: false,
         });
+    }
+
+    /// Enable the use of the hardware accelerated RSA peripheral for the [Session].
+    ///
+    /// Note: Due to implementation constraints, this session and every other session will use the
+    /// hardware accelerated RSA driver until the sesssion called with this function is dropped.
+    ///
+    /// # Arguments
+    ///
+    /// * `rsa` - The RSA peripheral from the HAL
+    pub fn with_hardware_rsa(mut self, rsa: impl Peripheral<P = RSA>) -> Self {
+        unsafe { RSA_REF = core::mem::transmute(Some(Rsa::new(rsa, None))) }
+        self.owns_rsa = true;
+        self
     }
 }
 
@@ -536,6 +555,11 @@ impl<T> Drop for Session<T> {
     fn drop(&mut self) {
         log::debug!("session dropped - freeing memory");
         unsafe {
+            // If the struct that owns the RSA reference is dropped
+            // we remove RSA in static for safety
+            if self.owns_rsa {
+                RSA_REF = core::mem::transmute(None::<RSA>);
+            }
             mbedtls_ssl_close_notify(self.ssl_context);
             mbedtls_ssl_config_free(self.ssl_config);
             mbedtls_ssl_free(self.ssl_context);
@@ -611,6 +635,7 @@ pub mod asynch {
         eof: bool,
         tx_buffer: BufferedBytes<BUFFER_SIZE>,
         rx_buffer: BufferedBytes<BUFFER_SIZE>,
+        owns_rsa: bool,
     }
 
     impl<T, const BUFFER_SIZE: usize> Session<T, BUFFER_SIZE> {
@@ -625,8 +650,6 @@ pub mod asynch {
         /// * `min_version` - The minimum TLS version for the connection, that will be accepted.
         /// * `certificates` - Certificate chain for the connection. Will play a different role
         /// depending on if running as client or server. See [Certificates] for more information.
-        /// * `rsa` - Optionally take an RSA driver instance. This session will use the hardware rsa crypto
-        /// accelerators for the session. Passing None will use the software implementation of RSA which is slower.
         ///
         /// # Errors
         ///
@@ -639,11 +662,9 @@ pub mod asynch {
             mode: Mode,
             min_version: TlsVersion,
             certificates: Certificates,
-            rsa: Option<impl Peripheral<P = RSA>>,
         ) -> Result<Self, TlsError> {
             let (ssl_context, ssl_config, crt, client_crt, private_key) =
                 certificates.init_ssl(servername, mode, min_version)?;
-            unsafe { RSA_REF = core::mem::transmute(rsa.map(|inner| Rsa::new(inner, None))) }
             return Ok(Self {
                 stream,
                 ssl_context,
@@ -654,7 +675,22 @@ pub mod asynch {
                 eof: false,
                 tx_buffer: Default::default(),
                 rx_buffer: Default::default(),
+                owns_rsa: false,
             });
+        }
+
+        /// Enable the use of the hardware accelerated RSA peripheral for the [Session].
+        ///
+        /// Note: Due to implementation constraints, this session and every other session will use the
+        /// hardware accelerated RSA driver until the sesssion called with this function is dropped.
+        ///
+        /// # Arguments
+        ///
+        /// * `rsa` - The RSA peripheral from the HAL
+        pub fn with_hardware_rsa(mut self, rsa: impl Peripheral<P = RSA>) -> Self {
+            unsafe { RSA_REF = core::mem::transmute(Some(Rsa::new(rsa, None))) }
+            self.owns_rsa = true;
+            self
         }
     }
 
@@ -662,6 +698,11 @@ pub mod asynch {
         fn drop(&mut self) {
             log::debug!("session dropped - freeing memory");
             unsafe {
+                // If the struct that owns the RSA reference is dropped
+                // we remove RSA in static for safety
+                if self.owns_rsa {
+                    RSA_REF = core::mem::transmute(None::<RSA>);
+                }
                 mbedtls_ssl_close_notify(self.ssl_context);
                 mbedtls_ssl_config_free(self.ssl_config);
                 mbedtls_ssl_free(self.ssl_context);
