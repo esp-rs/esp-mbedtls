@@ -112,7 +112,7 @@ async fn main(spawner: Spawner) -> ! {
 
     set_debug(0);
 
-    let tls: Session<_, 4096> = Session::new(
+    let tls = Session::new(
         &mut socket,
         "www.google.com",
         Mode::Client,
@@ -124,6 +124,8 @@ async fn main(spawner: Spawner) -> ! {
             .ok(),
             ..Default::default()
         },
+        make_static!([0; 4096]),
+        make_static!([0; 4096]),
     )
     .unwrap()
     .with_hardware_rsa(peripherals.RSA);

@@ -674,7 +674,7 @@ where
 pub mod asynch {
     use super::*;
 
-    pub struct Session<T, const BUFFER_SIZE: usize = 4096> {
+    pub struct Session<'a, T, const BUFFER_SIZE: usize = 4096> {
         stream: T,
         drbg_context: *mut mbedtls_ctr_drbg_context,
         ssl_context: *mut mbedtls_ssl_context,
@@ -683,12 +683,12 @@ pub mod asynch {
         client_crt: *mut mbedtls_x509_crt,
         private_key: *mut mbedtls_pk_context,
         eof: bool,
-        tx_buffer: BufferedBytes<BUFFER_SIZE>,
-        rx_buffer: BufferedBytes<BUFFER_SIZE>,
+        tx_buffer: BufferedBytes<'a, BUFFER_SIZE>,
+        rx_buffer: BufferedBytes<'a, BUFFER_SIZE>,
         owns_rsa: bool,
     }
 
-    impl<T, const BUFFER_SIZE: usize> Session<T, BUFFER_SIZE> {
+    impl<'a, T, const BUFFER_SIZE: usize> Session<'a, T, BUFFER_SIZE> {
         /// Create a session for a TLS stream.
         ///
         /// # Arguments
@@ -712,6 +712,9 @@ pub mod asynch {
             mode: Mode,
             min_version: TlsVersion,
             certificates: Certificates,
+
+            tx_buffer: &'a mut [u8; BUFFER_SIZE],
+            rx_buffer: &'a mut [u8; BUFFER_SIZE],
         ) -> Result<Self, TlsError> {
             let (drbg_context, ssl_context, ssl_config, crt, client_crt, private_key) =
                 certificates.init_ssl(servername, mode, min_version)?;
@@ -724,8 +727,8 @@ pub mod asynch {
                 client_crt,
                 private_key,
                 eof: false,
-                tx_buffer: Default::default(),
-                rx_buffer: Default::default(),
+                tx_buffer: BufferedBytes::new(tx_buffer),
+                rx_buffer: BufferedBytes::new(rx_buffer),
                 owns_rsa: false,
             });
         }
@@ -745,7 +748,7 @@ pub mod asynch {
         }
     }
 
-    impl<T, const BUFFER_SIZE: usize> Drop for Session<T, BUFFER_SIZE> {
+    impl<T, const BUFFER_SIZE: usize> Drop for Session<'_, T, BUFFER_SIZE> {
         fn drop(&mut self) {
             log::debug!("session dropped - freeing memory");
             unsafe {
@@ -771,13 +774,13 @@ pub mod asynch {
         }
     }
 
-    impl<T, const BUFFER_SIZE: usize> Session<T, BUFFER_SIZE>
+    impl<'a, T, const BUFFER_SIZE: usize> Session<'a, T, BUFFER_SIZE>
     where
         T: embedded_io_async::Read + embedded_io_async::Write,
     {
-        pub async fn connect<'b>(
+        pub async fn connect(
             mut self,
-        ) -> Result<AsyncConnectedSession<T, BUFFER_SIZE>, TlsError> {
+        ) -> Result<AsyncConnectedSession<'a, T, BUFFER_SIZE>, TlsError> {
             unsafe {
                 mbedtls_ssl_set_bio(
                     self.ssl_context,
@@ -976,22 +979,23 @@ pub mod asynch {
         }
     }
 
-    pub struct AsyncConnectedSession<T, const BUFFER_SIZE: usize>
+    pub struct AsyncConnectedSession<'a, T, const BUFFER_SIZE: usize>
     where
         T: embedded_io_async::Read + embedded_io_async::Write,
     {
-        pub(crate) session: Session<T, BUFFER_SIZE>,
+        pub(crate) session: Session<'a, T, BUFFER_SIZE>,
     }
 
     impl<T, const BUFFER_SIZE: usize> embedded_io_async::ErrorType
-        for AsyncConnectedSession<T, BUFFER_SIZE>
+        for AsyncConnectedSession<'_, T, BUFFER_SIZE>
     where
         T: embedded_io_async::Read + embedded_io_async::Write,
     {
         type Error = TlsError;
     }
 
-    impl<T, const BUFFER_SIZE: usize> embedded_io_async::Read for AsyncConnectedSession<T, BUFFER_SIZE>
+    impl<T, const BUFFER_SIZE: usize> embedded_io_async::Read
+        for AsyncConnectedSession<'_, T, BUFFER_SIZE>
     where
         T: embedded_io_async::Read + embedded_io_async::Write,
     {
@@ -1013,7 +1017,8 @@ pub mod asynch {
         }
     }
 
-    impl<T, const BUFFER_SIZE: usize> embedded_io_async::Write for AsyncConnectedSession<T, BUFFER_SIZE>
+    impl<T, const BUFFER_SIZE: usize> embedded_io_async::Write
+        for AsyncConnectedSession<'_, T, BUFFER_SIZE>
     where
         T: embedded_io_async::Read + embedded_io_async::Write,
     {
@@ -1035,24 +1040,22 @@ pub mod asynch {
                 .map_err(|_| TlsError::Unknown)
         }
     }
-    pub(crate) struct BufferedBytes<const BUFFER_SIZE: usize> {
-        buffer: [u8; BUFFER_SIZE],
+    pub(crate) struct BufferedBytes<'a, const BUFFER_SIZE: usize> {
+        buffer: &'a mut [u8; BUFFER_SIZE],
         write_idx: usize,
         read_idx: usize,
     }
 
-    impl<const BUFFER_SIZE: usize> Default for BufferedBytes<BUFFER_SIZE> {
-        fn default() -> Self {
+    impl<'a, const BUFFER_SIZE: usize> BufferedBytes<'a, BUFFER_SIZE> {
+        pub fn new(buffer: &'a mut [u8; BUFFER_SIZE]) -> Self {
             Self {
-                buffer: [0u8; BUFFER_SIZE],
-                write_idx: Default::default(),
-                read_idx: Default::default(),
+                buffer,
+                write_idx: 0,
+                read_idx: 0,
             }
         }
-    }
 
-    impl<const BUFFER_SIZE: usize> BufferedBytes<BUFFER_SIZE> {
-        pub fn pull<'a>(&'a mut self, max: usize) -> &'a [u8] {
+        pub fn pull(&mut self, max: usize) -> &[u8] {
             if self.read_idx == self.write_idx {
                 self.read_idx = 0;
                 self.write_idx = 0;
