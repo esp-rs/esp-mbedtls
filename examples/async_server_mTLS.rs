@@ -43,8 +43,12 @@ use esp_wifi::wifi::{
 };
 use esp_wifi::{initialize, EspWifiInitFor};
 use hal::{
-    clock::ClockControl, peripherals::Peripherals, prelude::*, rng::Rng, system::SystemControl,
-    timer::timg::TimerGroup,
+    clock::ClockControl,
+    peripherals::Peripherals,
+    prelude::*,
+    rng::Rng,
+    system::SystemControl,
+    timer::{timg::TimerGroup, OneShotTimer, PeriodicTimer},
 };
 use static_cell::make_static;
 
@@ -65,7 +69,7 @@ async fn main(spawner: Spawner) -> ! {
     let timer = esp_hal::timer::systimer::SystemTimer::new(peripherals.SYSTIMER).alarm0;
     let init = initialize(
         EspWifiInitFor::Wifi,
-        timer,
+        PeriodicTimer::new(timer.into()),
         Rng::new(peripherals.RNG),
         peripherals.RADIO_CLK,
         &clocks,
@@ -76,8 +80,9 @@ async fn main(spawner: Spawner) -> ! {
     let (wifi_interface, controller) =
         esp_wifi::wifi::new_with_mode(&init, wifi, WifiStaDevice).unwrap();
 
-    let timer_group0 = TimerGroup::new_async(peripherals.TIMG0, &clocks);
-    esp_hal_embassy::init(&clocks, timer_group0);
+    let timer_group0 = TimerGroup::new(peripherals.TIMG0, &clocks, None);
+    let oneshot_timer = make_static!([OneShotTimer::new(timer_group0.timer0.into())]);
+    esp_hal_embassy::init(&clocks, oneshot_timer);
 
     let config = Config::dhcpv4(Default::default());
 

@@ -22,6 +22,7 @@ use esp_wifi::{
 };
 use hal::{
     clock::ClockControl, peripherals::Peripherals, prelude::*, rng::Rng, system::SystemControl,
+    timer::PeriodicTimer,
 };
 use smoltcp::iface::SocketStorage;
 
@@ -42,7 +43,7 @@ fn main() -> ! {
     let timer = esp_hal::timer::systimer::SystemTimer::new(peripherals.SYSTIMER).alarm0;
     let init = initialize(
         EspWifiInitFor::Wifi,
-        timer,
+        PeriodicTimer::new(timer.into()),
         Rng::new(peripherals.RNG),
         peripherals.RADIO_CLK,
         &clocks,
