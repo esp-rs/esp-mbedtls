@@ -14,4 +14,5 @@ check arch toolchain:
     cargo +{{ toolchain }} b{{ arch }} --release --example sync_server_mTLS
     cargo +{{ toolchain }} b{{ arch }} --release --example async_server --features="async,esp-hal-embassy"
     cargo +{{ toolchain }} b{{ arch }} --release --example async_server_mTLS --features="async,esp-hal-embassy"
+    cargo +{{ toolchain }} b{{ arch }} --release --example edge_server --features="async,esp-hal-embassy,edge-nal-embassy,edge-http,esp-mbedtls/edge-nal"
     cargo +{{ toolchain }} fmt --all -- --check
