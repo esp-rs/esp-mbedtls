@@ -67,6 +67,9 @@ static_cell = { version = "=1.2", features = ["nightly"] }
 
 esp-mbedtls = { path = "./esp-mbedtls" }
 
+edge-http = { package = "edge-http", git = "https://github.com/ivmarkov/edge-net/", optional = true }
+edge-nal-embassy = { package = "edge-nal-embassy", git = "https://github.com/ivmarkov/edge-net/", optional = true }
+
 [[example]]
 name = "crypto_self_test"
 required-features = ["esp-wifi/wifi-logs"]
@@ -86,6 +89,10 @@ required-features = ["async"]
 [[example]]
 name = "async_server_mTLS"
 required-features = ["async"]
+
+[[example]]
+name = "edge_server"
+required-features = ["async", "esp-hal-embassy", "edge-nal-embassy", "edge-http", "esp-mbedtls/edge-nal"]
 
 [features]
 esp32 = [
