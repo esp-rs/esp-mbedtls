@@ -124,12 +124,14 @@ async fn main(spawner: Spawner) -> ! {
         password: None,
     };
 
-    let tls: Session<_, 4096> = Session::new(
+    let tls = Session::new(
         &mut socket,
         "certauth.cryptomix.com",
         Mode::Client,
         TlsVersion::Tls1_3,
         certificates,
+        make_static!([0; 4096]),
+        make_static!([0; 4096]),
     )
     .unwrap()
     .with_hardware_rsa(peripherals.RSA);

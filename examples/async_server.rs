@@ -128,7 +128,7 @@ async fn main(spawner: Spawner) -> ! {
 
         let mut buffer = [0u8; 1024];
         let mut pos = 0;
-        let tls: Session<_, 4096> = Session::new(
+        let tls = Session::new(
             &mut socket,
             "",
             Mode::Server,
@@ -145,6 +145,8 @@ async fn main(spawner: Spawner) -> ! {
                 .ok(),
                 ..Default::default()
             },
+            make_static!([0; 4096]),
+            make_static!([0; 4096]),
         )
         .unwrap()
         .with_hardware_rsa(&mut peripherals.RSA);
