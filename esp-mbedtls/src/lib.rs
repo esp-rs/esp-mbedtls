@@ -5,15 +5,24 @@
 use embedded_io::ErrorType;
 #[doc(hidden)]
 pub use esp_hal as hal;
-use hal::{peripheral::Peripheral, peripherals::RSA, rsa::Rsa};
+use hal::{
+    peripheral::Peripheral,
+    peripherals::{RSA, SHA},
+    rsa::Rsa,
+    sha::Sha,
+};
 
 mod compat;
 
 #[cfg(any(feature = "esp32c3", feature = "esp32s2", feature = "esp32s3"))]
 mod bignum;
+#[cfg(not(feature = "esp32"))]
+mod sha;
 
+use core::cell::RefCell;
 use core::ffi::CStr;
 use core::mem::size_of;
+use critical_section::Mutex;
 
 use compat::StrBuf;
 use embedded_io::Read;
@@ -25,6 +34,12 @@ pub use esp_mbedtls_sys::bindings::{
     mbedtls_mpi_self_test,
     // RSA
     mbedtls_rsa_self_test,
+    // SHA,
+    mbedtls_sha1_self_test,
+    mbedtls_sha224_self_test,
+    mbedtls_sha256_self_test,
+    mbedtls_sha384_self_test,
+    mbedtls_sha512_self_test,
 };
 use esp_mbedtls_sys::c_types::*;
 
@@ -36,6 +51,9 @@ use esp_mbedtls_sys::c_types::*;
 /// Note: Due to implementation constraints, this session and every other session will use the
 /// hardware accelerated RSA driver until the session called with this function is dropped.
 static mut RSA_REF: Option<Rsa<esp_hal::Blocking>> = None;
+
+/// Hold the SHA peripheral for cryptographic operations.
+static SHARED_SHA: Mutex<RefCell<Option<Sha<'static>>>> = Mutex::new(RefCell::new(None));
 
 // these will come from esp-wifi (i.e. this can only be used together with esp-wifi)
 extern "C" {
@@ -478,6 +496,10 @@ impl<T> Session<T> {
         min_version: TlsVersion,
         certificates: Certificates,
     ) -> Result<Self, TlsError> {
+        // TODO: Take peripheral from user
+        let sha = Sha::new(unsafe { SHA::steal() });
+        critical_section::with(|cs| SHARED_SHA.borrow_ref_mut(cs).replace(sha));
+
         let (drbg_context, ssl_context, ssl_config, crt, client_crt, private_key) =
             certificates.init_ssl(servername, mode, min_version)?;
         return Ok(Self {
@@ -730,6 +752,10 @@ pub mod asynch {
             rx_buffer: &'a mut [u8; RX_SIZE],
             tx_buffer: &'a mut [u8; TX_SIZE],
         ) -> Result<Self, TlsError> {
+            // TODO: Take peripheral from user
+            let sha = Sha::new(unsafe { SHA::steal() });
+            critical_section::with(|cs| SHARED_SHA.borrow_ref_mut(cs).replace(sha));
+
             let (drbg_context, ssl_context, ssl_config, crt, client_crt, private_key) =
                 certificates.init_ssl(servername, mode, min_version)?;
             return Ok(Self {
