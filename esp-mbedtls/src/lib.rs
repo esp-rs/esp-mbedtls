@@ -11,6 +11,7 @@ mod compat;
 
 #[cfg(any(feature = "esp32c3", feature = "esp32s2", feature = "esp32s3"))]
 mod bignum;
+mod sha;
 
 use core::ffi::CStr;
 use core::mem::size_of;
@@ -25,6 +26,12 @@ pub use esp_mbedtls_sys::bindings::{
     mbedtls_mpi_self_test,
     // RSA
     mbedtls_rsa_self_test,
+    // SHA,
+    mbedtls_sha1_self_test,
+    mbedtls_sha224_self_test,
+    mbedtls_sha256_self_test,
+    mbedtls_sha384_self_test,
+    mbedtls_sha512_self_test,
 };
 use esp_mbedtls_sys::c_types::*;
 

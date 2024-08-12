@@ -93,7 +93,13 @@ required-features = ["async"]
 
 [[example]]
 name = "edge_server"
-required-features = ["async", "esp-hal-embassy", "edge-nal-embassy", "edge-http", "esp-mbedtls/edge-nal"]
+required-features = [
+    "async",
+    "esp-hal-embassy",
+    "edge-nal-embassy",
+    "edge-http",
+    "esp-mbedtls/edge-nal",
+]
 
 [features]
 esp32 = [
