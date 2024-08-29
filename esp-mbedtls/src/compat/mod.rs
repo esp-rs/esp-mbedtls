@@ -1,6 +1,10 @@
 use core::ffi::VaListImpl;
 use core::fmt::Write;
 
+/// Implements edge-nal traits
+#[cfg(feature = "edge-nal")]
+pub mod edge_nal_compat;
+
 #[no_mangle]
 pub unsafe extern "C" fn snprintf(dst: *mut u8, n: u32, format: *const u8, args: ...) -> i32 {
     vsnprintf(dst, n, format, args)

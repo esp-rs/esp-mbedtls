@@ -488,13 +488,13 @@ impl<T> Session<T> {
     /// Enable the use of the hardware accelerated RSA peripheral for the [Session].
     ///
     /// Note: Due to implementation constraints, this session and every other session will use the
-    /// hardware accelerated RSA driver until the sesssion called with this function is dropped.
+    /// hardware accelerated RSA driver until the session called with this function is dropped.
     ///
     /// # Arguments
     ///
     /// * `rsa` - The RSA peripheral from the HAL
     pub fn with_hardware_rsa(mut self, rsa: impl Peripheral<P = RSA>) -> Self {
-        unsafe { RSA_REF = core::mem::transmute(Some(Rsa::new(rsa, None))) }
+        unsafe { RSA_REF = core::mem::transmute(Some(Rsa::new(rsa))) }
         self.owns_rsa = true;
         self
     }
@@ -677,6 +677,10 @@ where
 pub mod asynch {
     use super::*;
 
+    /// Implements edge-nal traits
+    #[cfg(feature = "edge-nal")]
+    pub use crate::compat::edge_nal_compat::*;
+
     pub struct Session<'a, T, const RX_SIZE: usize = 4096, const TX_SIZE: usize = 4096> {
         stream: T,
         drbg_context: *mut mbedtls_ctr_drbg_context,
@@ -739,13 +743,13 @@ pub mod asynch {
         /// Enable the use of the hardware accelerated RSA peripheral for the [Session].
         ///
         /// Note: Due to implementation constraints, this session and every other session will use the
-        /// hardware accelerated RSA driver until the sesssion called with this function is dropped.
+        /// hardware accelerated RSA driver until the session called with this function is dropped.
         ///
         /// # Arguments
         ///
         /// * `rsa` - The RSA peripheral from the HAL
         pub fn with_hardware_rsa(mut self, rsa: impl Peripheral<P = RSA>) -> Self {
-            unsafe { RSA_REF = core::mem::transmute(Some(Rsa::new(rsa, None))) }
+            unsafe { RSA_REF = core::mem::transmute(Some(Rsa::new(rsa))) }
             self.owns_rsa = true;
             self
         }
@@ -1101,128 +1105,6 @@ pub mod asynch {
             }
 
             self.read_idx == self.write_idx
-        }
-    }
-
-    /// Implements edge-nal traits
-    #[cfg(feature = "edge-nal")]
-    pub use edge_nal_compat::*;
-
-    #[cfg(feature = "edge-nal")]
-    mod edge_nal_compat {
-
-        use super::{AsyncConnectedSession, Session};
-        use crate::{Certificates, Mode, Peripheral, Rsa, TlsError, TlsVersion, RSA, RSA_REF};
-        use core::net::{Ipv4Addr, SocketAddr, SocketAddrV4};
-
-        use edge_nal::TcpBind;
-        use edge_nal_embassy::{Tcp, TcpAccept, TcpSocket};
-
-        pub struct TlsAcceptor<
-            'd,
-            D: embassy_net::driver::Driver,
-            const N: usize,
-            const TX_SZ: usize,
-            const RX_SZ: usize,
-        > {
-            acceptor: TcpAccept<'d, D, N, TX_SZ, RX_SZ>,
-            version: TlsVersion,
-            certificates: Certificates<'d>,
-            owns_rsa: bool,
-        }
-
-        impl<'d, D, const N: usize, const TX_SZ: usize, const RX_SZ: usize> Drop
-            for TlsAcceptor<'d, D, N, TX_SZ, RX_SZ>
-        where
-            D: embassy_net::driver::Driver,
-        {
-            fn drop(&mut self) {
-                unsafe {
-                    // If the struct that owns the RSA reference is dropped
-                    // we remove RSA in static for safety
-                    if self.owns_rsa {
-                        log::debug!("Freeing RSA from acceptor");
-                        RSA_REF = core::mem::transmute(None::<RSA>);
-                    }
-                }
-            }
-        }
-
-        impl<'d, D, const N: usize, const TX_SZ: usize, const RX_SZ: usize>
-            TlsAcceptor<'d, D, N, TX_SZ, RX_SZ>
-        where
-            D: embassy_net::driver::Driver,
-        {
-            pub async fn new(
-                tcp: &'d Tcp<'d, D, N, TX_SZ, RX_SZ>,
-                port: u16,
-                version: TlsVersion,
-                certificates: Certificates<'d>,
-            ) -> Self {
-                let acceptor = tcp
-                    .bind(SocketAddr::V4(SocketAddrV4::new(
-                        Ipv4Addr::new(0, 0, 0, 0),
-                        port,
-                    )))
-                    .await
-                    .unwrap();
-                Self {
-                    acceptor,
-                    version,
-                    certificates,
-                    owns_rsa: false,
-                }
-            }
-
-            /// Enable the use of the hardware accelerated RSA peripheral for the lifetime of
-            /// [TlsAcceptor].
-            ///
-            /// # Arguments
-            ///
-            /// * `rsa` - The RSA peripheral from the HAL
-            pub fn with_hardware_rsa(mut self, rsa: impl Peripheral<P = RSA>) -> Self {
-                unsafe { RSA_REF = core::mem::transmute(Some(Rsa::new(rsa, None))) }
-                self.owns_rsa = true;
-                self
-            }
-        }
-
-        impl<T, const BUFFER_SIZE: usize> edge_nal::Readable for AsyncConnectedSession<T, BUFFER_SIZE>
-        where
-            T: embedded_io_async::Read + embedded_io_async::Write,
-        {
-            async fn readable(&mut self) -> Result<(), Self::Error> {
-                unimplemented!();
-            }
-        }
-
-        impl<'d, D, const N: usize, const TX_SZ: usize, const RX_SZ: usize> edge_nal::TcpAccept
-            for TlsAcceptor<'d, D, N, TX_SZ, RX_SZ>
-        where
-            D: embassy_net::driver::Driver,
-        {
-            type Error = TlsError;
-            type Socket<'a> = AsyncConnectedSession<TcpSocket<'a, N, TX_SZ, RX_SZ>, RX_SZ> where Self: 'a;
-
-            async fn accept(
-                &self,
-            ) -> Result<(SocketAddr, Self::Socket<'_>), <Self as edge_nal::TcpAccept>::Error>
-            {
-                let (addr, socket) = self
-                    .acceptor
-                    .accept()
-                    .await
-                    .map_err(|e| TlsError::TcpError(e))?;
-                log::debug!("Accepted new connection on socket");
-
-                let session: Session<_, RX_SZ> =
-                    Session::new(socket, "", Mode::Server, self.version, self.certificates)?;
-
-                log::debug!("Establishing SSL connection");
-                let connected_session = session.connect().await?;
-
-                Ok((addr, connected_session))
-            }
         }
     }
 }
