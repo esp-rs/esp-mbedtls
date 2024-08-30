@@ -677,7 +677,7 @@ where
 pub mod asynch {
     use super::*;
 
-    pub struct Session<'a, T, const BUFFER_SIZE: usize = 4096> {
+    pub struct Session<'a, T, const RX_SIZE: usize = 4096, const TX_SIZE: usize = 4096> {
         stream: T,
         drbg_context: *mut mbedtls_ctr_drbg_context,
         ssl_context: *mut mbedtls_ssl_context,
@@ -686,12 +686,12 @@ pub mod asynch {
         client_crt: *mut mbedtls_x509_crt,
         private_key: *mut mbedtls_pk_context,
         eof: bool,
-        tx_buffer: BufferedBytes<'a, BUFFER_SIZE>,
-        rx_buffer: BufferedBytes<'a, BUFFER_SIZE>,
+        rx_buffer: BufferedBytes<'a, RX_SIZE>,
+        tx_buffer: BufferedBytes<'a, TX_SIZE>,
         owns_rsa: bool,
     }
 
-    impl<'a, T, const BUFFER_SIZE: usize> Session<'a, T, BUFFER_SIZE> {
+    impl<'a, T, const RX_SIZE: usize, const TX_SIZE: usize> Session<'a, T, RX_SIZE, TX_SIZE> {
         /// Create a session for a TLS stream.
         ///
         /// # Arguments
@@ -716,8 +716,8 @@ pub mod asynch {
             min_version: TlsVersion,
             certificates: Certificates,
 
-            tx_buffer: &'a mut [u8; BUFFER_SIZE],
-            rx_buffer: &'a mut [u8; BUFFER_SIZE],
+            rx_buffer: &'a mut [u8; RX_SIZE],
+            tx_buffer: &'a mut [u8; TX_SIZE],
         ) -> Result<Self, TlsError> {
             let (drbg_context, ssl_context, ssl_config, crt, client_crt, private_key) =
                 certificates.init_ssl(servername, mode, min_version)?;
@@ -730,8 +730,8 @@ pub mod asynch {
                 client_crt,
                 private_key,
                 eof: false,
-                tx_buffer: BufferedBytes::new(tx_buffer),
                 rx_buffer: BufferedBytes::new(rx_buffer),
+                tx_buffer: BufferedBytes::new(tx_buffer),
                 owns_rsa: false,
             });
         }
@@ -751,7 +751,7 @@ pub mod asynch {
         }
     }
 
-    impl<T, const BUFFER_SIZE: usize> Drop for Session<'_, T, BUFFER_SIZE> {
+    impl<T, const RX_SIZE: usize, const TX_SIZE: usize> Drop for Session<'_, T, RX_SIZE, TX_SIZE> {
         fn drop(&mut self) {
             log::debug!("session dropped - freeing memory");
             unsafe {
@@ -777,13 +777,13 @@ pub mod asynch {
         }
     }
 
-    impl<'a, T, const BUFFER_SIZE: usize> Session<'a, T, BUFFER_SIZE>
+    impl<'a, T, const RX_SIZE: usize, const TX_SIZE: usize> Session<'a, T, RX_SIZE, TX_SIZE>
     where
         T: embedded_io_async::Read + embedded_io_async::Write,
     {
         pub async fn connect(
             mut self,
-        ) -> Result<AsyncConnectedSession<'a, T, BUFFER_SIZE>, TlsError> {
+        ) -> Result<AsyncConnectedSession<'a, T, RX_SIZE, TX_SIZE>, TlsError> {
             unsafe {
                 mbedtls_ssl_set_bio(
                     self.ssl_context,
@@ -814,7 +814,7 @@ pub mod asynch {
                     } else {
                         if !self.tx_buffer.empty() {
                             log::debug!("Having data to send to stream");
-                            let data = self.tx_buffer.pull(BUFFER_SIZE);
+                            let data = self.tx_buffer.pull(TX_SIZE);
                             log::debug!(
                                 "pulled {} bytes from tx_buffer ... send to stream",
                                 data.len()
@@ -826,7 +826,7 @@ pub mod asynch {
                         }
 
                         if res == MBEDTLS_ERR_SSL_WANT_READ {
-                            let mut buf = [0u8; BUFFER_SIZE];
+                            let mut buf = [0u8; RX_SIZE];
                             let res = self
                                 .stream
                                 .read(&mut buf[..self.rx_buffer.remaining()])
@@ -856,7 +856,7 @@ pub mod asynch {
                 );
                 if !self.tx_buffer.empty() {
                     log::debug!("Drain tx buffer");
-                    let data = self.tx_buffer.pull(BUFFER_SIZE);
+                    let data = self.tx_buffer.pull(TX_SIZE);
                     log::debug!(
                         "pulled {} bytes from tx_buffer ... send to stream",
                         data.len()
@@ -905,7 +905,7 @@ pub mod asynch {
                 self.drain_tx_buffer().await?;
 
                 if !self.rx_buffer.can_read() && mbedtls_ssl_check_pending(self.ssl_context) == 0 {
-                    let mut buffer = [0u8; BUFFER_SIZE];
+                    let mut buffer = [0u8; RX_SIZE];
                     let from_socket = self
                         .stream
                         .read(&mut buffer[..self.rx_buffer.remaining()])
@@ -938,7 +938,7 @@ pub mod asynch {
 
         unsafe extern "C" fn sync_send(ctx: *mut c_void, buf: *const c_uchar, len: usize) -> c_int {
             log::debug!("*** sync send called, bytes={len}");
-            let session = ctx as *mut Session<T, BUFFER_SIZE>;
+            let session = ctx as *mut Session<T, RX_SIZE, TX_SIZE>;
             let slice = core::ptr::slice_from_raw_parts(
                 buf as *const u8,
                 usize::min(len as usize, (*session).tx_buffer.remaining()),
@@ -960,7 +960,7 @@ pub mod asynch {
             len: usize,
         ) -> c_int {
             log::debug!("*** sync rcv, len={}", len);
-            let session = ctx as *mut Session<T, BUFFER_SIZE>;
+            let session = ctx as *mut Session<T, RX_SIZE, TX_SIZE>;
 
             if (*session).rx_buffer.empty() {
                 log::debug!("*** buffer empty - want read");
@@ -982,23 +982,23 @@ pub mod asynch {
         }
     }
 
-    pub struct AsyncConnectedSession<'a, T, const BUFFER_SIZE: usize>
+    pub struct AsyncConnectedSession<'a, T, const RX_SIZE: usize, const TX_SIZE: usize>
     where
         T: embedded_io_async::Read + embedded_io_async::Write,
     {
-        pub(crate) session: Session<'a, T, BUFFER_SIZE>,
+        pub(crate) session: Session<'a, T, RX_SIZE, TX_SIZE>,
     }
 
-    impl<T, const BUFFER_SIZE: usize> embedded_io_async::ErrorType
-        for AsyncConnectedSession<'_, T, BUFFER_SIZE>
+    impl<T, const RX_SIZE: usize, const TX_SIZE: usize> embedded_io_async::ErrorType
+        for AsyncConnectedSession<'_, T, RX_SIZE, TX_SIZE>
     where
         T: embedded_io_async::Read + embedded_io_async::Write,
     {
         type Error = TlsError;
     }
 
-    impl<T, const BUFFER_SIZE: usize> embedded_io_async::Read
-        for AsyncConnectedSession<'_, T, BUFFER_SIZE>
+    impl<T, const RX_SIZE: usize, const TX_SIZE: usize> embedded_io_async::Read
+        for AsyncConnectedSession<'_, T, RX_SIZE, TX_SIZE>
     where
         T: embedded_io_async::Read + embedded_io_async::Write,
     {
@@ -1020,8 +1020,8 @@ pub mod asynch {
         }
     }
 
-    impl<T, const BUFFER_SIZE: usize> embedded_io_async::Write
-        for AsyncConnectedSession<'_, T, BUFFER_SIZE>
+    impl<T, const RX_SIZE: usize, const TX_SIZE: usize> embedded_io_async::Write
+        for AsyncConnectedSession<'_, T, RX_SIZE, TX_SIZE>
     where
         T: embedded_io_async::Read + embedded_io_async::Write,
     {

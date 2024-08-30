@@ -101,6 +101,8 @@ async fn main(spawner: Spawner) -> ! {
 
     let mut rx_buffer = [0; 4096];
     let mut tx_buffer = [0; 4096];
+    let tls_rx_buffer = make_static!([0; 4096]);
+    let tls_tx_buffer = make_static!([0; 2048]);
 
     loop {
         if stack.is_link_up() {
@@ -164,8 +166,8 @@ async fn main(spawner: Spawner) -> ! {
                 .ok(),
                 ..Default::default()
             },
-            make_static!([0; 4096]),
-            make_static!([0; 4096]),
+            tls_rx_buffer,
+            tls_tx_buffer,
         )
         .unwrap()
         .with_hardware_rsa(&mut peripherals.RSA);
