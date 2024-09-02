@@ -20,17 +20,17 @@ lto = false
 opt-level = 3
 
 [dependencies]
-esp-hal = { version = "0.19.0" }
-esp-backtrace = { version = "0.13.0", features = [
+esp-hal = { version = "0.20.1" }
+esp-backtrace = { version = "0.14.0", features = [
     "panic-handler",
     "println",
     "exception-handler",
 ] }
-esp-println = { version = "0.10.0", features = ["log"] }
-esp-hal-embassy = { version = "0.2.0", optional = true }
+esp-println = { version = "0.11.0", features = ["log"] }
+esp-hal-embassy = { version = "0.3.0", optional = true }
 
 embassy-time = { version = "0.3.0", optional = true }
-embassy-executor = { version = "0.5.0", package = "embassy-executor", features = [
+embassy-executor = { version = "0.6.0", package = "embassy-executor", features = [
     "nightly",
     "integrated-timers",
 ], optional = true }
@@ -42,7 +42,7 @@ embassy-net = { version = "0.4.0", features = [
 ], optional = true }
 
 
-esp-wifi = { version = "0.7.1", features = [
+esp-wifi = { version = "0.8.0", features = [
     "phy-enable-usb",
     "embedded-svc",
     "wifi-default",
@@ -69,6 +69,7 @@ esp-mbedtls = { path = "./esp-mbedtls" }
 
 edge-http = { package = "edge-http", git = "https://github.com/ivmarkov/edge-net/", optional = true }
 edge-nal-embassy = { package = "edge-nal-embassy", git = "https://github.com/ivmarkov/edge-net/", optional = true }
+cfg-if = "1.0.0"
 
 [[example]]
 name = "crypto_self_test"

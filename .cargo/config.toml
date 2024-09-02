@@ -47,12 +47,12 @@ xtask = "run --manifest-path ./xtask/Cargo.toml --"
 # Alias' for quickly building for different chips or running examples
 # By default we enable
 #   - `default` HAL features to set up basic chip specific settings
-esp32 =   "run --features   esp32 --target xtensa-esp32-none-elf        --features esp-hal/default"
-esp32s2 = "run --features esp32s2 --target xtensa-esp32s2-none-elf      --features esp-hal/default"
-esp32s3 = "run --features esp32s3 --target xtensa-esp32s3-none-elf      --features esp-hal/default"
-esp32c3 = "run --features esp32c3 --target riscv32imc-unknown-none-elf  --features esp-hal/default"
+esp32 =   "run --release --features   esp32 --target xtensa-esp32-none-elf        --features esp-hal/default"
+esp32s2 = "run --release --features esp32s2 --target xtensa-esp32s2-none-elf      --features esp-hal/default"
+esp32s3 = "run --release --features esp32s3 --target xtensa-esp32s3-none-elf      --features esp-hal/default"
+esp32c3 = "run --release --features esp32c3 --target riscv32imc-unknown-none-elf  --features esp-hal/default"
 
-besp32 =   "build --features   esp32 --target xtensa-esp32-none-elf        --features esp-hal/default"
-besp32s2 = "build --features esp32s2 --target xtensa-esp32s2-none-elf      --features esp-hal/default"
-besp32s3 = "build --features esp32s3 --target xtensa-esp32s3-none-elf      --features esp-hal/default"
-besp32c3 = "build --features esp32c3 --target riscv32imc-unknown-none-elf  --features esp-hal/default"
+besp32 =   "build --release --features   esp32 --target xtensa-esp32-none-elf        --features esp-hal/default"
+besp32s2 = "build --release --features esp32s2 --target xtensa-esp32s2-none-elf      --features esp-hal/default"
+besp32s3 = "build --release --features esp32s3 --target xtensa-esp32s3-none-elf      --features esp-hal/default"
+besp32c3 = "build --release --features esp32c3 --target riscv32imc-unknown-none-elf  --features esp-hal/default"

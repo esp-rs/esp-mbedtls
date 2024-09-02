@@ -488,13 +488,13 @@ impl<T> Session<T> {
     /// Enable the use of the hardware accelerated RSA peripheral for the [Session].
     ///
     /// Note: Due to implementation constraints, this session and every other session will use the
-    /// hardware accelerated RSA driver until the sesssion called with this function is dropped.
+    /// hardware accelerated RSA driver until the session called with this function is dropped.
     ///
     /// # Arguments
     ///
     /// * `rsa` - The RSA peripheral from the HAL
     pub fn with_hardware_rsa(mut self, rsa: impl Peripheral<P = RSA>) -> Self {
-        unsafe { RSA_REF = core::mem::transmute(Some(Rsa::new(rsa, None))) }
+        unsafe { RSA_REF = core::mem::transmute(Some(Rsa::new(rsa))) }
         self.owns_rsa = true;
         self
     }
@@ -677,7 +677,11 @@ where
 pub mod asynch {
     use super::*;
 
-    pub struct Session<'a, T, const BUFFER_SIZE: usize = 4096> {
+    /// Implements edge-nal traits
+    #[cfg(feature = "edge-nal")]
+    pub use crate::compat::edge_nal_compat::*;
+
+    pub struct Session<'a, T, const RX_SIZE: usize = 4096, const TX_SIZE: usize = 4096> {
         stream: T,
         drbg_context: *mut mbedtls_ctr_drbg_context,
         ssl_context: *mut mbedtls_ssl_context,
@@ -686,12 +690,12 @@ pub mod asynch {
         client_crt: *mut mbedtls_x509_crt,
         private_key: *mut mbedtls_pk_context,
         eof: bool,
-        tx_buffer: BufferedBytes<'a, BUFFER_SIZE>,
-        rx_buffer: BufferedBytes<'a, BUFFER_SIZE>,
+        rx_buffer: BufferedBytes<'a, RX_SIZE>,
+        tx_buffer: BufferedBytes<'a, TX_SIZE>,
         owns_rsa: bool,
     }
 
-    impl<'a, T, const BUFFER_SIZE: usize> Session<'a, T, BUFFER_SIZE> {
+    impl<'a, T, const RX_SIZE: usize, const TX_SIZE: usize> Session<'a, T, RX_SIZE, TX_SIZE> {
         /// Create a session for a TLS stream.
         ///
         /// # Arguments
@@ -716,8 +720,8 @@ pub mod asynch {
             min_version: TlsVersion,
             certificates: Certificates,
 
-            tx_buffer: &'a mut [u8; BUFFER_SIZE],
-            rx_buffer: &'a mut [u8; BUFFER_SIZE],
+            rx_buffer: &'a mut [u8; RX_SIZE],
+            tx_buffer: &'a mut [u8; TX_SIZE],
         ) -> Result<Self, TlsError> {
             let (drbg_context, ssl_context, ssl_config, crt, client_crt, private_key) =
                 certificates.init_ssl(servername, mode, min_version)?;
@@ -730,8 +734,8 @@ pub mod asynch {
                 client_crt,
                 private_key,
                 eof: false,
-                tx_buffer: BufferedBytes::new(tx_buffer),
                 rx_buffer: BufferedBytes::new(rx_buffer),
+                tx_buffer: BufferedBytes::new(tx_buffer),
                 owns_rsa: false,
             });
         }
@@ -739,19 +743,19 @@ pub mod asynch {
         /// Enable the use of the hardware accelerated RSA peripheral for the [Session].
         ///
         /// Note: Due to implementation constraints, this session and every other session will use the
-        /// hardware accelerated RSA driver until the sesssion called with this function is dropped.
+        /// hardware accelerated RSA driver until the session called with this function is dropped.
         ///
         /// # Arguments
         ///
         /// * `rsa` - The RSA peripheral from the HAL
         pub fn with_hardware_rsa(mut self, rsa: impl Peripheral<P = RSA>) -> Self {
-            unsafe { RSA_REF = core::mem::transmute(Some(Rsa::new(rsa, None))) }
+            unsafe { RSA_REF = core::mem::transmute(Some(Rsa::new(rsa))) }
             self.owns_rsa = true;
             self
         }
     }
 
-    impl<T, const BUFFER_SIZE: usize> Drop for Session<'_, T, BUFFER_SIZE> {
+    impl<T, const RX_SIZE: usize, const TX_SIZE: usize> Drop for Session<'_, T, RX_SIZE, TX_SIZE> {
         fn drop(&mut self) {
             log::debug!("session dropped - freeing memory");
             unsafe {
@@ -777,13 +781,13 @@ pub mod asynch {
         }
     }
 
-    impl<'a, T, const BUFFER_SIZE: usize> Session<'a, T, BUFFER_SIZE>
+    impl<'a, T, const RX_SIZE: usize, const TX_SIZE: usize> Session<'a, T, RX_SIZE, TX_SIZE>
     where
         T: embedded_io_async::Read + embedded_io_async::Write,
     {
         pub async fn connect(
             mut self,
-        ) -> Result<AsyncConnectedSession<'a, T, BUFFER_SIZE>, TlsError> {
+        ) -> Result<AsyncConnectedSession<'a, T, RX_SIZE, TX_SIZE>, TlsError> {
             unsafe {
                 mbedtls_ssl_set_bio(
                     self.ssl_context,
@@ -814,7 +818,7 @@ pub mod asynch {
                     } else {
                         if !self.tx_buffer.empty() {
                             log::debug!("Having data to send to stream");
-                            let data = self.tx_buffer.pull(BUFFER_SIZE);
+                            let data = self.tx_buffer.pull(TX_SIZE);
                             log::debug!(
                                 "pulled {} bytes from tx_buffer ... send to stream",
                                 data.len()
@@ -826,7 +830,7 @@ pub mod asynch {
                         }
 
                         if res == MBEDTLS_ERR_SSL_WANT_READ {
-                            let mut buf = [0u8; BUFFER_SIZE];
+                            let mut buf = [0u8; RX_SIZE];
                             let res = self
                                 .stream
                                 .read(&mut buf[..self.rx_buffer.remaining()])
@@ -856,7 +860,7 @@ pub mod asynch {
                 );
                 if !self.tx_buffer.empty() {
                     log::debug!("Drain tx buffer");
-                    let data = self.tx_buffer.pull(BUFFER_SIZE);
+                    let data = self.tx_buffer.pull(TX_SIZE);
                     log::debug!(
                         "pulled {} bytes from tx_buffer ... send to stream",
                         data.len()
@@ -905,7 +909,7 @@ pub mod asynch {
                 self.drain_tx_buffer().await?;
 
                 if !self.rx_buffer.can_read() && mbedtls_ssl_check_pending(self.ssl_context) == 0 {
-                    let mut buffer = [0u8; BUFFER_SIZE];
+                    let mut buffer = [0u8; RX_SIZE];
                     let from_socket = self
                         .stream
                         .read(&mut buffer[..self.rx_buffer.remaining()])
@@ -938,7 +942,7 @@ pub mod asynch {
 
         unsafe extern "C" fn sync_send(ctx: *mut c_void, buf: *const c_uchar, len: usize) -> c_int {
             log::debug!("*** sync send called, bytes={len}");
-            let session = ctx as *mut Session<T, BUFFER_SIZE>;
+            let session = ctx as *mut Session<T, RX_SIZE, TX_SIZE>;
             let slice = core::ptr::slice_from_raw_parts(
                 buf as *const u8,
                 usize::min(len as usize, (*session).tx_buffer.remaining()),
@@ -960,7 +964,7 @@ pub mod asynch {
             len: usize,
         ) -> c_int {
             log::debug!("*** sync rcv, len={}", len);
-            let session = ctx as *mut Session<T, BUFFER_SIZE>;
+            let session = ctx as *mut Session<T, RX_SIZE, TX_SIZE>;
 
             if (*session).rx_buffer.empty() {
                 log::debug!("*** buffer empty - want read");
@@ -982,23 +986,23 @@ pub mod asynch {
         }
     }
 
-    pub struct AsyncConnectedSession<'a, T, const BUFFER_SIZE: usize>
+    pub struct AsyncConnectedSession<'a, T, const RX_SIZE: usize, const TX_SIZE: usize>
     where
         T: embedded_io_async::Read + embedded_io_async::Write,
     {
-        pub(crate) session: Session<'a, T, BUFFER_SIZE>,
+        pub(crate) session: Session<'a, T, RX_SIZE, TX_SIZE>,
     }
 
-    impl<T, const BUFFER_SIZE: usize> embedded_io_async::ErrorType
-        for AsyncConnectedSession<'_, T, BUFFER_SIZE>
+    impl<T, const RX_SIZE: usize, const TX_SIZE: usize> embedded_io_async::ErrorType
+        for AsyncConnectedSession<'_, T, RX_SIZE, TX_SIZE>
     where
         T: embedded_io_async::Read + embedded_io_async::Write,
     {
         type Error = TlsError;
     }
 
-    impl<T, const BUFFER_SIZE: usize> embedded_io_async::Read
-        for AsyncConnectedSession<'_, T, BUFFER_SIZE>
+    impl<T, const RX_SIZE: usize, const TX_SIZE: usize> embedded_io_async::Read
+        for AsyncConnectedSession<'_, T, RX_SIZE, TX_SIZE>
     where
         T: embedded_io_async::Read + embedded_io_async::Write,
     {
@@ -1020,8 +1024,8 @@ pub mod asynch {
         }
     }
 
-    impl<T, const BUFFER_SIZE: usize> embedded_io_async::Write
-        for AsyncConnectedSession<'_, T, BUFFER_SIZE>
+    impl<T, const RX_SIZE: usize, const TX_SIZE: usize> embedded_io_async::Write
+        for AsyncConnectedSession<'_, T, RX_SIZE, TX_SIZE>
     where
         T: embedded_io_async::Read + embedded_io_async::Write,
     {
@@ -1101,128 +1105,6 @@ pub mod asynch {
             }
 
             self.read_idx == self.write_idx
-        }
-    }
-
-    /// Implements edge-nal traits
-    #[cfg(feature = "edge-nal")]
-    pub use edge_nal_compat::*;
-
-    #[cfg(feature = "edge-nal")]
-    mod edge_nal_compat {
-
-        use super::{AsyncConnectedSession, Session};
-        use crate::{Certificates, Mode, Peripheral, Rsa, TlsError, TlsVersion, RSA, RSA_REF};
-        use core::net::{Ipv4Addr, SocketAddr, SocketAddrV4};
-
-        use edge_nal::TcpBind;
-        use edge_nal_embassy::{Tcp, TcpAccept, TcpSocket};
-
-        pub struct TlsAcceptor<
-            'd,
-            D: embassy_net::driver::Driver,
-            const N: usize,
-            const TX_SZ: usize,
-            const RX_SZ: usize,
-        > {
-            acceptor: TcpAccept<'d, D, N, TX_SZ, RX_SZ>,
-            version: TlsVersion,
-            certificates: Certificates<'d>,
-            owns_rsa: bool,
-        }
-
-        impl<'d, D, const N: usize, const TX_SZ: usize, const RX_SZ: usize> Drop
-            for TlsAcceptor<'d, D, N, TX_SZ, RX_SZ>
-        where
-            D: embassy_net::driver::Driver,
-        {
-            fn drop(&mut self) {
-                unsafe {
-                    // If the struct that owns the RSA reference is dropped
-                    // we remove RSA in static for safety
-                    if self.owns_rsa {
-                        log::debug!("Freeing RSA from acceptor");
-                        RSA_REF = core::mem::transmute(None::<RSA>);
-                    }
-                }
-            }
-        }
-
-        impl<'d, D, const N: usize, const TX_SZ: usize, const RX_SZ: usize>
-            TlsAcceptor<'d, D, N, TX_SZ, RX_SZ>
-        where
-            D: embassy_net::driver::Driver,
-        {
-            pub async fn new(
-                tcp: &'d Tcp<'d, D, N, TX_SZ, RX_SZ>,
-                port: u16,
-                version: TlsVersion,
-                certificates: Certificates<'d>,
-            ) -> Self {
-                let acceptor = tcp
-                    .bind(SocketAddr::V4(SocketAddrV4::new(
-                        Ipv4Addr::new(0, 0, 0, 0),
-                        port,
-                    )))
-                    .await
-                    .unwrap();
-                Self {
-                    acceptor,
-                    version,
-                    certificates,
-                    owns_rsa: false,
-                }
-            }
-
-            /// Enable the use of the hardware accelerated RSA peripheral for the lifetime of
-            /// [TlsAcceptor].
-            ///
-            /// # Arguments
-            ///
-            /// * `rsa` - The RSA peripheral from the HAL
-            pub fn with_hardware_rsa(mut self, rsa: impl Peripheral<P = RSA>) -> Self {
-                unsafe { RSA_REF = core::mem::transmute(Some(Rsa::new(rsa, None))) }
-                self.owns_rsa = true;
-                self
-            }
-        }
-
-        impl<T, const BUFFER_SIZE: usize> edge_nal::Readable for AsyncConnectedSession<T, BUFFER_SIZE>
-        where
-            T: embedded_io_async::Read + embedded_io_async::Write,
-        {
-            async fn readable(&mut self) -> Result<(), Self::Error> {
-                unimplemented!();
-            }
-        }
-
-        impl<'d, D, const N: usize, const TX_SZ: usize, const RX_SZ: usize> edge_nal::TcpAccept
-            for TlsAcceptor<'d, D, N, TX_SZ, RX_SZ>
-        where
-            D: embassy_net::driver::Driver,
-        {
-            type Error = TlsError;
-            type Socket<'a> = AsyncConnectedSession<TcpSocket<'a, N, TX_SZ, RX_SZ>, RX_SZ> where Self: 'a;
-
-            async fn accept(
-                &self,
-            ) -> Result<(SocketAddr, Self::Socket<'_>), <Self as edge_nal::TcpAccept>::Error>
-            {
-                let (addr, socket) = self
-                    .acceptor
-                    .accept()
-                    .await
-                    .map_err(|e| TlsError::TcpError(e))?;
-                log::debug!("Accepted new connection on socket");
-
-                let session: Session<_, RX_SZ> =
-                    Session::new(socket, "", Mode::Server, self.version, self.certificates)?;
-
-                log::debug!("Establishing SSL connection");
-                let connected_session = session.connect().await?;
-
-                Ok((addr, connected_session))
-            }
         }
     }
 }

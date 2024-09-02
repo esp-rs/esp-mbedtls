@@ -8,6 +8,7 @@
 #![no_std]
 #![no_main]
 #![feature(type_alias_impl_trait)]
+#![feature(impl_trait_in_assoc_type)]
 
 #[doc(hidden)]
 pub use esp_hal as hal;
@@ -34,12 +35,8 @@ use esp_wifi::wifi::{
 };
 use esp_wifi::{initialize, EspWifiInitFor};
 use hal::{
-    clock::ClockControl,
-    peripherals::Peripherals,
-    prelude::*,
-    rng::Rng,
-    system::SystemControl,
-    timer::{timg::TimerGroup, OneShotTimer, PeriodicTimer},
+    clock::ClockControl, peripherals::Peripherals, rng::Rng, system::SystemControl,
+    timer::timg::TimerGroup,
 };
 use static_cell::make_static;
 
@@ -52,10 +49,13 @@ const SERVER_SOCKETS: usize = 2;
 /// Total number of sockets used for the application
 const SOCKET_COUNT: usize = 1 + 1 + SERVER_SOCKETS; // DHCP + DNS + Server
 
-/// HTTPS server evaluated at compile time with socket count and buffer size.
-pub type HttpsServer = Server<SERVER_SOCKETS, 2048, 32>;
+const RX_SIZE: usize = 4096;
+const TX_SIZE: usize = 2048;
 
-#[main]
+/// HTTPS server evaluated at compile time with socket count and buffer size.
+pub type HttpsServer = Server<SERVER_SOCKETS, RX_SIZE, 32>;
+
+#[esp_hal_embassy::main]
 async fn main(spawner: Spawner) -> ! {
     init_logger(log::LevelFilter::Info);
 
@@ -63,13 +63,11 @@ async fn main(spawner: Spawner) -> ! {
     let system = SystemControl::new(peripherals.SYSTEM);
     let clocks = ClockControl::max(system.clock_control).freeze();
 
-    #[cfg(target_arch = "xtensa")]
-    let timer = esp_hal::timer::timg::TimerGroup::new(peripherals.TIMG1, &clocks, None).timer0;
-    #[cfg(target_arch = "riscv32")]
-    let timer = esp_hal::timer::systimer::SystemTimer::new(peripherals.SYSTIMER).alarm0;
+    let timg0 = TimerGroup::new(peripherals.TIMG0, &clocks);
+
     let init = initialize(
         EspWifiInitFor::Wifi,
-        PeriodicTimer::new(timer.into()),
+        timg0.timer0,
         Rng::new(peripherals.RNG),
         peripherals.RADIO_CLK,
         &clocks,
@@ -80,9 +78,16 @@ async fn main(spawner: Spawner) -> ! {
     let (wifi_interface, controller) =
         esp_wifi::wifi::new_with_mode(&init, wifi, WifiStaDevice).unwrap();
 
-    let timer_group0 = TimerGroup::new(peripherals.TIMG0, &clocks, None);
-    let oneshot_timer = make_static!([OneShotTimer::new(timer_group0.timer0.into())]);
-    esp_hal_embassy::init(&clocks, oneshot_timer);
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "esp32")] {
+            let timg1 = TimerGroup::new(peripherals.TIMG1, &clocks);
+            esp_hal_embassy::init(&clocks, timg1.timer0);
+        } else {
+            use esp_hal::timer::systimer::{SystemTimer, Target};
+            let systimer = SystemTimer::new(peripherals.SYSTIMER).split::<Target>();
+            esp_hal_embassy::init(&clocks, systimer.alarm0);
+        }
+    }
 
     let config = Config::dhcpv4(Default::default());
 
@@ -122,7 +127,8 @@ async fn main(spawner: Spawner) -> ! {
     set_debug(0);
 
     let server = make_static!(HttpsServer::new());
-    let buffers = make_static!(TcpBuffers::<SERVER_SOCKETS, 2048, 2048>::new());
+    let buffers = make_static!(TcpBuffers::<SERVER_SOCKETS, TX_SIZE, RX_SIZE>::new());
+    let tls_buffers = make_static!(esp_mbedtls::asynch::TlsBuffers::<RX_SIZE, TX_SIZE>::new());
     let tcp = make_static!(Tcp::new(stack, buffers));
 
     let certificates = Certificates {
@@ -135,17 +141,23 @@ async fn main(spawner: Spawner) -> ! {
     };
 
     loop {
-        let tls_acceptor =
-            esp_mbedtls::asynch::TlsAcceptor::new(tcp, 443, TlsVersion::Tls1_2, certificates)
-                .await
-                .with_hardware_rsa(&mut peripherals.RSA);
+        let tls_acceptor = esp_mbedtls::asynch::TlsAcceptor::new(
+            tcp,
+            tls_buffers,
+            443,
+            TlsVersion::Tls1_2,
+            certificates,
+        )
+        .await
+        .with_hardware_rsa(&mut peripherals.RSA);
         match server.run(tls_acceptor, HttpHandler, Some(15_000)).await {
             Ok(_) => {}
             Err(Error::Io(TlsError::MbedTlsError(-30592))) => {
                 println!("Fatal message: Please enable the exception for a self-signed certificate in your browser");
             }
             Err(error) => {
-                panic!("{:?}", error);
+                // panic!("{:?}", error);
+                log::error!("{:?}", error);
             }
         }
     }

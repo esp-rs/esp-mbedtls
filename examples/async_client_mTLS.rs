@@ -2,6 +2,7 @@
 #![no_std]
 #![no_main]
 #![feature(type_alias_impl_trait)]
+#![feature(impl_trait_in_assoc_type)]
 #![allow(non_snake_case)]
 
 use embassy_executor::Spawner;
@@ -23,19 +24,15 @@ use esp_wifi::wifi::{
 };
 use esp_wifi::{initialize, EspWifiInitFor};
 use hal::{
-    clock::ClockControl,
-    peripherals::Peripherals,
-    prelude::*,
-    rng::Rng,
-    system::SystemControl,
-    timer::{timg::TimerGroup, OneShotTimer, PeriodicTimer},
+    clock::ClockControl, peripherals::Peripherals, rng::Rng, system::SystemControl,
+    timer::timg::TimerGroup,
 };
 use static_cell::make_static;
 
 const SSID: &str = env!("SSID");
 const PASSWORD: &str = env!("PASSWORD");
 
-#[main]
+#[esp_hal_embassy::main]
 async fn main(spawner: Spawner) -> ! {
     init_logger(log::LevelFilter::Info);
 
@@ -43,13 +40,11 @@ async fn main(spawner: Spawner) -> ! {
     let system = SystemControl::new(peripherals.SYSTEM);
     let clocks = ClockControl::max(system.clock_control).freeze();
 
-    #[cfg(target_arch = "xtensa")]
-    let timer = esp_hal::timer::timg::TimerGroup::new(peripherals.TIMG1, &clocks, None).timer0;
-    #[cfg(target_arch = "riscv32")]
-    let timer = esp_hal::timer::systimer::SystemTimer::new(peripherals.SYSTIMER).alarm0;
+    let timg0 = TimerGroup::new(peripherals.TIMG0, &clocks);
+
     let init = initialize(
         EspWifiInitFor::Wifi,
-        PeriodicTimer::new(timer.into()),
+        timg0.timer0,
         Rng::new(peripherals.RNG),
         peripherals.RADIO_CLK,
         &clocks,
@@ -60,9 +55,16 @@ async fn main(spawner: Spawner) -> ! {
     let (wifi_interface, controller) =
         esp_wifi::wifi::new_with_mode(&init, wifi, WifiStaDevice).unwrap();
 
-    let timer_group0 = TimerGroup::new(peripherals.TIMG0, &clocks, None);
-    let oneshot_timer = make_static!([OneShotTimer::new(timer_group0.timer0.into())]);
-    esp_hal_embassy::init(&clocks, oneshot_timer);
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "esp32")] {
+            let timg1 = TimerGroup::new(peripherals.TIMG1, &clocks);
+            esp_hal_embassy::init(&clocks, timg1.timer0);
+        } else {
+            use esp_hal::timer::systimer::{SystemTimer, Target};
+            let systimer = SystemTimer::new(peripherals.SYSTIMER).split::<Target>();
+            esp_hal_embassy::init(&clocks, systimer.alarm0);
+        }
+    }
 
     let config = Config::dhcpv4(Default::default());
 
