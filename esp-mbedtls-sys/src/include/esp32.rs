@@ -13167,10 +13167,20 @@ extern "C" {
     /// \return         0 if successful, or 1 if the test failed
     pub fn mbedtls_ripemd160_self_test(verbose: crate::c_types::c_int) -> crate::c_types::c_int;
 }
+/// \brief          The SHA-1 context structure.
+///
+/// \warning        SHA-1 is considered a weak message digest and its use
+///                 constitutes a security risk. We recommend considering
+///                 stronger message digests instead.
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_sha1_context {
-    pub hasher: *mut crate::c_types::c_void,
+    ///< The number of Bytes processed.
+    pub private_total: [u32; 2usize],
+    ///< The intermediate digest state.
+    pub private_state: [u32; 5usize],
+    ///< The data block being processed.
+    pub private_buffer: [crate::c_types::c_uchar; 64usize],
 }
 extern "C" {
     /// \brief          This function initializes a SHA-1 context.
@@ -13472,12 +13482,23 @@ extern "C" {
     /// \return         \c 1 on failure.
     pub fn mbedtls_sha256_self_test(verbose: crate::c_types::c_int) -> crate::c_types::c_int;
 }
+/// \brief          The SHA-512 context structure.
+///
+///                 The structure is used both for SHA-384 and for SHA-512
+///                 checksum calculations. The choice between these two is
+///                 made in the call to mbedtls_sha512_starts().
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_sha512_context {
-    pub sha384_hasher: *mut crate::c_types::c_void,
-    pub sha512_hasher: *mut crate::c_types::c_void,
-    pub is384: crate::c_types::c_int,
+    ///< The number of Bytes processed.
+    pub private_total: [u64; 2usize],
+    ///< The intermediate digest state.
+    pub private_state: [u64; 8usize],
+    ///< The data block being processed.
+    pub private_buffer: [crate::c_types::c_uchar; 128usize],
+    ///< Determines which function to use:
+    ///0: Use SHA-512, or 1: Use SHA-384.
+    pub private_is384: crate::c_types::c_int,
 }
 extern "C" {
     /// \brief          This function initializes a SHA-512 context.

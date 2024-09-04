@@ -1,20 +1,24 @@
 use core::ffi::{c_int, c_uchar};
 
-use esp_hal::sha::{Digest, Sha224, Sha256};
+use super::{nb, Context, ShaDigest};
+use crate::{
+    hal::sha::{Sha224, Sha256},
+    SHARED_SHA,
+};
 
 #[repr(C)]
 pub struct mbedtls_sha256_context {
-    sha224_hasher: *mut Sha224<esp_hal::Blocking>,
-    sha256_hasher: *mut Sha256<esp_hal::Blocking>,
+    sha224_hasher: *mut Context<Sha224>,
+    sha256_hasher: *mut Context<Sha256>,
     is224: c_int,
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn mbedtls_sha256_init(ctx: *mut mbedtls_sha256_context) {
-    let sha224_mem = crate::calloc(1, core::mem::size_of::<Sha224<esp_hal::Blocking>>() as u32)
-        as *mut Sha224<esp_hal::Blocking>;
-    let sha256_mem = crate::calloc(1, core::mem::size_of::<Sha256<esp_hal::Blocking>>() as u32)
-        as *mut Sha256<esp_hal::Blocking>;
+    let sha224_mem =
+        crate::calloc(1, core::mem::size_of::<Context<Sha224>>() as u32) as *mut Context<Sha224>;
+    let sha256_mem =
+        crate::calloc(1, core::mem::size_of::<Context<Sha256>>() as u32) as *mut Context<Sha256>;
     (*ctx).sha224_hasher = sha224_mem;
     (*ctx).sha256_hasher = sha256_mem;
 }
@@ -51,9 +55,9 @@ pub unsafe extern "C" fn mbedtls_sha256_starts(
 ) -> c_int {
     if is224 == 1 {
         (*ctx).is224 = 1;
-        core::ptr::write((*ctx).sha224_hasher, Sha224::default());
+        core::ptr::write((*ctx).sha224_hasher, Context::new());
     } else {
-        core::ptr::write((*ctx).sha256_hasher, Sha256::default());
+        core::ptr::write((*ctx).sha256_hasher, Context::new());
     }
     0
 }
@@ -64,12 +68,29 @@ pub unsafe extern "C" fn mbedtls_sha256_update(
     input: *const c_uchar,
     ilen: usize,
 ) -> c_int {
-    let slice = core::ptr::slice_from_raw_parts(input as *const u8, ilen as usize);
-    if (*ctx).is224 == 1 {
-        (*ctx).sha224_hasher.as_mut().unwrap().update(&*slice);
-    } else {
-        (*ctx).sha256_hasher.as_mut().unwrap().update(&*slice);
-    }
+    let mut data = core::ptr::slice_from_raw_parts(input as *const u8, ilen as usize);
+    critical_section::with(|cs| {
+        let mut sha = SHARED_SHA.borrow_ref_mut(cs);
+        if (*ctx).is224 == 1 {
+            let mut hasher = ShaDigest::restore(
+                sha.as_mut().unwrap(),
+                (*ctx).sha224_hasher.as_mut().unwrap(),
+            );
+            while !data.is_empty() {
+                data = nb::block!(hasher.update(&*data)).unwrap();
+            }
+            nb::block!(hasher.save((*ctx).sha224_hasher.as_mut().unwrap())).unwrap();
+        } else {
+            let mut hasher = ShaDigest::restore(
+                sha.as_mut().unwrap(),
+                (*ctx).sha256_hasher.as_mut().unwrap(),
+            );
+            while !data.is_empty() {
+                data = nb::block!(hasher.update(&*data)).unwrap();
+            }
+            nb::block!(hasher.save((*ctx).sha256_hasher.as_mut().unwrap())).unwrap();
+        }
+    });
     0
 }
 
@@ -78,14 +99,26 @@ pub unsafe extern "C" fn mbedtls_sha256_finish(
     ctx: *mut mbedtls_sha256_context,
     output: *mut c_uchar,
 ) -> c_int {
-    if (*ctx).is224 == 1 {
-        let hasher = core::ptr::replace((*ctx).sha224_hasher, Sha224::default());
-        let data: [u8; 28] = hasher.finalize().into();
-        core::ptr::copy_nonoverlapping(data.as_ptr(), output, data.len());
-    } else {
-        let hasher = core::ptr::replace((*ctx).sha256_hasher, Sha256::default());
-        let data: [u8; 32] = hasher.finalize().into();
-        core::ptr::copy_nonoverlapping(data.as_ptr(), output, data.len());
-    }
+    let mut data: [u8; 32] = [0u8; 32];
+    critical_section::with(|cs| {
+        let mut sha = SHARED_SHA.borrow_ref_mut(cs);
+
+        if (*ctx).is224 == 1 {
+            let mut hasher = ShaDigest::restore(
+                sha.as_mut().unwrap(),
+                (*ctx).sha224_hasher.as_mut().unwrap(),
+            );
+            nb::block!(hasher.finish(&mut data)).unwrap();
+            nb::block!(hasher.save((*ctx).sha224_hasher.as_mut().unwrap())).unwrap();
+        } else {
+            let mut hasher = ShaDigest::restore(
+                sha.as_mut().unwrap(),
+                (*ctx).sha256_hasher.as_mut().unwrap(),
+            );
+            nb::block!(hasher.finish(&mut data)).unwrap();
+            nb::block!(hasher.save((*ctx).sha256_hasher.as_mut().unwrap())).unwrap();
+        }
+    });
+    core::ptr::copy_nonoverlapping(data.as_ptr(), output, data.len());
     0
 }

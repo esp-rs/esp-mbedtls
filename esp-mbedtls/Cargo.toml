@@ -15,6 +15,7 @@ cfg-if = "1.0.0"
 edge-nal = { package = "edge-nal", git = "https://github.com/ivmarkov/edge-net/", optional = true }
 edge-nal-embassy = { package = "edge-nal-embassy", git = "https://github.com/ivmarkov/edge-net/", optional = true }
 embassy-net = { version = "0.4", features = [ "tcp", "medium-ethernet"], optional = true }
+critical-section = "1.0.1"
 
 [features]
 async = ["dep:embedded-io-async"]

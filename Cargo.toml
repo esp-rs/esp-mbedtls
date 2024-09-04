@@ -140,3 +140,6 @@ async = [
     "esp-mbedtls/async",
     "esp-hal/async",
 ]
+
+[patch.crates-io]
+esp-hal = { git = "https://github.com/Dominaezzz/esp-hal", branch = "improve_sha" }

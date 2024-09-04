@@ -1,18 +1,18 @@
 use core::ffi::{c_int, c_uchar};
 
-use esp_hal::sha::Digest;
-use esp_hal::sha::Sha1;
+use super::{nb, Context, ShaDigest};
+use crate::{hal::sha::Sha1, SHARED_SHA};
 
 #[repr(C)]
 pub struct mbedtls_sha1_context {
-    hasher: *mut Sha1<esp_hal::Blocking>,
+    hasher: *mut Context<Sha1>,
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn mbedtls_sha1_init(ctx: *mut mbedtls_sha1_context) {
-    let hasher_mem = crate::calloc(1, core::mem::size_of::<Sha1<esp_hal::Blocking>>() as u32)
-        as *mut Sha1<esp_hal::Blocking>;
-    core::ptr::write(hasher_mem, Sha1::default());
+    let hasher_mem =
+        crate::calloc(1, core::mem::size_of::<Context<Sha1>>() as u32) as *mut Context<Sha1>;
+    core::ptr::write(hasher_mem, Context::<Sha1>::new());
     (*ctx).hasher = hasher_mem;
 }
 
@@ -43,8 +43,15 @@ pub unsafe extern "C" fn mbedtls_sha1_update(
     input: *const c_uchar,
     ilen: usize,
 ) -> c_int {
-    let slice = core::ptr::slice_from_raw_parts(input as *const u8, ilen as usize);
-    (*ctx).hasher.as_mut().unwrap().update(&*slice);
+    let mut data = core::ptr::slice_from_raw_parts(input as *const u8, ilen as usize);
+    critical_section::with(|cs| {
+        let mut sha = SHARED_SHA.borrow_ref_mut(cs);
+        let mut hasher = ShaDigest::restore(sha.as_mut().unwrap(), (*ctx).hasher.as_mut().unwrap());
+        while !data.is_empty() {
+            data = nb::block!(hasher.update(&*data)).unwrap();
+        }
+        nb::block!(hasher.save((*ctx).hasher.as_mut().unwrap())).unwrap();
+    });
     0
 }
 
@@ -53,8 +60,13 @@ pub unsafe extern "C" fn mbedtls_sha1_finish(
     ctx: *mut mbedtls_sha1_context,
     output: *mut c_uchar,
 ) -> c_int {
-    let hasher = core::ptr::replace((*ctx).hasher, Sha1::default());
-    let data: [u8; 20] = hasher.finalize().into();
+    let mut data: [u8; 20] = [0u8; 20];
+    critical_section::with(|cs| {
+        let mut sha = SHARED_SHA.borrow_ref_mut(cs);
+        let mut hasher = ShaDigest::restore(sha.as_mut().unwrap(), (*ctx).hasher.as_mut().unwrap());
+        nb::block!(hasher.finish(&mut data)).unwrap();
+        nb::block!(hasher.save((*ctx).hasher.as_mut().unwrap())).unwrap();
+    });
     core::ptr::copy_nonoverlapping(data.as_ptr(), output, data.len());
     0
 }
