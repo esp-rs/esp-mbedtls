@@ -38,7 +38,16 @@ use hal::{
     clock::ClockControl, peripherals::Peripherals, rng::Rng, system::SystemControl,
     timer::timg::TimerGroup,
 };
-use static_cell::make_static;
+
+// Patch until https://github.com/embassy-rs/static-cell/issues/16 is fixed
+macro_rules! mk_static {
+    ($t:ty,$val:expr) => {{
+        static STATIC_CELL: static_cell::StaticCell<$t> = static_cell::StaticCell::new();
+        #[deny(unused_attributes)]
+        let x = STATIC_CELL.uninit().write(($val));
+        x
+    }};
+}
 
 const SSID: &str = env!("SSID");
 const PASSWORD: &str = env!("PASSWORD");
@@ -94,12 +103,18 @@ async fn main(spawner: Spawner) -> ! {
     let seed = 1234; // very random, very secure seed
 
     // Init network stack
-    let stack = &*make_static!(Stack::new(
-        wifi_interface,
-        config,
-        make_static!(StackResources::<SOCKET_COUNT>::new()),
-        seed
-    ));
+    let stack = &*mk_static!(
+        Stack<WifiDevice<'_, WifiStaDevice>>,
+        Stack::new(
+            wifi_interface,
+            config,
+            mk_static!(
+                StackResources<SOCKET_COUNT>,
+                StackResources::<SOCKET_COUNT>::new()
+            ),
+            seed
+        )
+    );
 
     spawner.spawn(connection(controller)).ok();
     spawner.spawn(net_task(&stack)).ok();
@@ -126,10 +141,16 @@ async fn main(spawner: Spawner) -> ! {
 
     set_debug(0);
 
-    let server = make_static!(HttpsServer::new());
-    let buffers = make_static!(TcpBuffers::<SERVER_SOCKETS, TX_SIZE, RX_SIZE>::new());
-    let tls_buffers = make_static!(esp_mbedtls::asynch::TlsBuffers::<RX_SIZE, TX_SIZE>::new());
-    let tcp = make_static!(Tcp::new(stack, buffers));
+    let server = mk_static!(HttpsServer, HttpsServer::new());
+    let buffers = mk_static!(TcpBuffers<SERVER_SOCKETS, TX_SIZE, RX_SIZE>, TcpBuffers::<SERVER_SOCKETS, TX_SIZE, RX_SIZE>::new());
+    let tls_buffers = mk_static!(
+        esp_mbedtls::asynch::TlsBuffers::<RX_SIZE, TX_SIZE>,
+        esp_mbedtls::asynch::TlsBuffers::<RX_SIZE, TX_SIZE>::new()
+    );
+    let tcp = mk_static!(
+        Tcp<'_, WifiDevice<'_, WifiStaDevice>, SERVER_SOCKETS, TX_SIZE, RX_SIZE>,
+        Tcp::new(stack, buffers)
+    );
 
     let certificates = Certificates {
         // Use self-signed certificates

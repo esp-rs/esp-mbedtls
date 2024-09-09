@@ -30,7 +30,16 @@ use hal::{
     clock::ClockControl, peripherals::Peripherals, rng::Rng, system::SystemControl,
     timer::timg::TimerGroup,
 };
-use static_cell::make_static;
+
+// Patch until https://github.com/embassy-rs/static-cell/issues/16 is fixed
+macro_rules! mk_static {
+    ($t:ty,$val:expr) => {{
+        static STATIC_CELL: static_cell::StaticCell<$t> = static_cell::StaticCell::new();
+        #[deny(unused_attributes)]
+        let x = STATIC_CELL.uninit().write(($val));
+        x
+    }};
+}
 
 const SSID: &str = env!("SSID");
 const PASSWORD: &str = env!("PASSWORD");
@@ -74,20 +83,23 @@ async fn main(spawner: Spawner) -> ! {
     let seed = 1234; // very random, very secure seed
 
     // Init network stack
-    let stack = &*make_static!(Stack::new(
-        wifi_interface,
-        config,
-        make_static!(StackResources::<3>::new()),
-        seed
-    ));
+    let stack = &*mk_static!(
+        Stack<WifiDevice<'_, WifiStaDevice>>,
+        Stack::new(
+            wifi_interface,
+            config,
+            mk_static!(StackResources<3>, StackResources::<3>::new()),
+            seed
+        )
+    );
 
     spawner.spawn(connection(controller)).ok();
     spawner.spawn(net_task(&stack)).ok();
 
     let mut rx_buffer = [0; 4096];
     let mut tx_buffer = [0; 4096];
-    let tls_rx_buffer = make_static!([0; 4096]);
-    let tls_tx_buffer = make_static!([0; 2048]);
+    let tls_rx_buffer = mk_static!([u8; 4096], [0; 4096]);
+    let tls_tx_buffer = mk_static!([u8; 2048], [0; 2048]);
 
     loop {
         if stack.is_link_up() {
