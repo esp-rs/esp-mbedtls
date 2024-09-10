@@ -924,7 +924,10 @@ pub mod asynch {
                     }
                 }
 
-                if !self.rx_buffer.empty() || mbedtls_ssl_get_bytes_avail(self.ssl_context) > 0 {
+                if !self.rx_buffer.empty()
+                    || mbedtls_ssl_check_pending(self.ssl_context) == 1
+                    || mbedtls_ssl_get_bytes_avail(self.ssl_context) > 0
+                {
                     log::debug!("<<< read data from mbedtls");
                     let res = mbedtls_ssl_read(self.ssl_context, buf.as_mut_ptr(), buf.len());
                     log::debug!("<<< mbedtls returned {res}");
