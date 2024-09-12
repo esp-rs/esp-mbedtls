@@ -1,8 +1,8 @@
 export SSID := "Dummy"
 export PASSWORD := "Dummy"
 
-all: (check "esp32" "esp") (check "esp32s3" "esp") (check "esp32c3" "nightly-2024-06-12")
-    cd esp-mbedtls && cargo +nightly-2024-06-12 fmt --all -- --check
+all: (check "esp32" "esp") (check "esp32s3" "esp") (check "esp32c3" "nightly-2024-07-22")
+    cd esp-mbedtls && cargo +nightly-2024-07-22 fmt --all -- --check
     
 [private]
 check arch toolchain:
