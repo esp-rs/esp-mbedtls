@@ -12,8 +12,8 @@ embedded-io-async = { version = "0.6.0", optional = true }
 crypto-bigint = { version = "0.5.3", default-features = false, features = ["extra-sizes"] }
 esp-hal = { version = "0.20.1" }
 cfg-if = "1.0.0"
-edge-nal = { package = "edge-nal", git = "https://github.com/ivmarkov/edge-net/", optional = true }
-edge-nal-embassy = { package = "edge-nal-embassy", git = "https://github.com/ivmarkov/edge-net/", optional = true }
+edge-nal = { version = "0.3.0", optional = true }
+edge-nal-embassy = { version = "0.3.0", optional = true }
 embassy-net = { version = "0.4", features = [ "tcp", "medium-ethernet"], optional = true }
 
 [features]
