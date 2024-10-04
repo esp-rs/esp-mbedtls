@@ -20,22 +20,6 @@ impl StrBuf {
         }
     }
 
-    pub unsafe fn from(c_str: *const u8) -> StrBuf {
-        let mut res = StrBuf {
-            buffer: [0u8; 512],
-            len: 0,
-        };
-
-        let mut idx: usize = 0;
-        while *(c_str.offset(idx as isize)) != 0 {
-            res.buffer[idx] = *(c_str.offset(idx as isize));
-            idx += 1;
-        }
-
-        res.len = idx;
-        res
-    }
-
     pub fn append(&mut self, s: &str) {
         let mut idx: usize = self.len;
         s.chars().for_each(|c| {
