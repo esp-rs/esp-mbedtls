@@ -5,35 +5,36 @@
 #[doc(hidden)]
 pub use esp_hal as hal;
 
+use esp_alloc as _;
 use esp_backtrace as _;
 use esp_mbedtls::set_debug;
 use esp_println::{logger::init_logger, println};
 
 /// Only used for ROM functions
 #[allow(unused_imports)]
-use esp_wifi::{initialize, EspWifiInitFor};
-use hal::{
-    clock::ClockControl, peripherals::Peripherals, prelude::*, rng::Rng, system::SystemControl,
-    timer::timg::TimerGroup,
-};
+use esp_wifi::{init, EspWifiInitFor};
+use hal::{prelude::*, rng::Rng, timer::timg::TimerGroup};
 
 #[entry]
 fn main() -> ! {
     init_logger(log::LevelFilter::Info);
 
     // Init ESP-WIFI heap for malloc
-    let peripherals = Peripherals::take();
-    let system = SystemControl::new(peripherals.SYSTEM);
-    let clocks = ClockControl::max(system.clock_control).freeze();
+    let peripherals = esp_hal::init({
+        let mut config = esp_hal::Config::default();
+        config.cpu_clock = CpuClock::max();
+        config
+    });
 
-    let timg0 = TimerGroup::new(peripherals.TIMG0, &clocks);
+    esp_alloc::heap_allocator!(115 * 1024);
 
-    initialize(
+    let timg0 = TimerGroup::new(peripherals.TIMG0);
+
+    let init = init(
         EspWifiInitFor::Wifi,
         timg0.timer0,
         Rng::new(peripherals.RNG),
         peripherals.RADIO_CLK,
-        &clocks,
     )
     .unwrap();
 

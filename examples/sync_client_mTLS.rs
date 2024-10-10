@@ -7,20 +7,18 @@
 pub use esp_hal as hal;
 
 use embedded_io::*;
+use esp_alloc as _;
 use esp_backtrace as _;
 use esp_mbedtls::{set_debug, Mode, TlsVersion, X509};
 use esp_mbedtls::{Certificates, Session};
 use esp_println::{logger::init_logger, print, println};
 use esp_wifi::{
-    current_millis, initialize,
+    init,
     wifi::{utils::create_network_interface, ClientConfiguration, Configuration, WifiStaDevice},
     wifi_interface::WifiStack,
     EspWifiInitFor,
 };
-use hal::{
-    clock::ClockControl, peripherals::Peripherals, prelude::*, rng::Rng, system::SystemControl,
-    timer::timg::TimerGroup,
-};
+use hal::{prelude::*, rng::Rng, time, timer::timg::TimerGroup};
 use smoltcp::{iface::SocketStorage, wire::IpAddress};
 
 const SSID: &str = env!("SSID");
@@ -30,18 +28,21 @@ const PASSWORD: &str = env!("PASSWORD");
 fn main() -> ! {
     init_logger(log::LevelFilter::Info);
 
-    let peripherals = Peripherals::take();
-    let system = SystemControl::new(peripherals.SYSTEM);
-    let clocks = ClockControl::max(system.clock_control).freeze();
+    let peripherals = esp_hal::init({
+        let mut config = esp_hal::Config::default();
+        config.cpu_clock = CpuClock::max();
+        config
+    });
 
-    let timg0 = TimerGroup::new(peripherals.TIMG0, &clocks);
+    esp_alloc::heap_allocator!(115 * 1024);
 
-    let init = initialize(
+    let timg0 = TimerGroup::new(peripherals.TIMG0);
+
+    let init = init(
         EspWifiInitFor::Wifi,
         timg0.timer0,
         Rng::new(peripherals.RNG),
         peripherals.RADIO_CLK,
-        &clocks,
     )
     .unwrap();
 
@@ -49,7 +50,8 @@ fn main() -> ! {
     let mut socket_set_entries: [SocketStorage; 3] = Default::default();
     let (iface, device, mut controller, sockets) =
         create_network_interface(&init, wifi, WifiStaDevice, &mut socket_set_entries).unwrap();
-    let wifi_stack = WifiStack::new(iface, device, sockets, current_millis);
+    let now = || time::now().duration_since_epoch().to_millis();
+    let wifi_stack = WifiStack::new(iface, device, sockets, now);
 
     println!("Call wifi_connect");
     let client_config = Configuration::Client(ClientConfiguration {
