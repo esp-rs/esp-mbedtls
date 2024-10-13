@@ -7,7 +7,7 @@ use core::{
     ptr::NonNull,
 };
 
-use edge_nal::TcpBind;
+use edge_nal::{Close, TcpBind};
 use edge_nal_embassy::{Tcp, TcpAccept, TcpSocket};
 
 pub struct TlsAcceptor<
@@ -96,6 +96,25 @@ where
 {
     async fn readable(&mut self) -> Result<(), Self::Error> {
         unimplemented!();
+    }
+}
+
+impl<'a, T, const RX_SIZE: usize, const TX_SIZE: usize> edge_nal::TcpShutdown
+    for AsyncConnectedSession<'a, T, RX_SIZE, TX_SIZE>
+where
+    T: embedded_io_async::Read + embedded_io_async::Write + edge_nal::TcpShutdown,
+    TlsError: From<<T as embedded_io::ErrorType>::Error>,
+{
+    async fn close(&mut self, what: Close) -> Result<(), Self::Error> {
+        self.session
+            .stream
+            .close(what)
+            .await
+            .map_err(TlsError::from)
+    }
+
+    async fn abort(&mut self) -> Result<(), Self::Error> {
+        self.session.stream.abort().await.map_err(TlsError::from)
     }
 }
 

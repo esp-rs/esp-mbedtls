@@ -8,13 +8,15 @@ rust-version = "1.75"
 
 [profile.release]
 debug = true
-lto = false
+lto = "fat"
+opt-level = "s"
+
 
 [profile.release.package.esp-wifi]
 opt-level = 3
 
 [profile.dev]
-lto = false
+lto = "fat"
 
 [profile.dev.package.esp-wifi]
 opt-level = 3
@@ -42,10 +44,7 @@ embassy-net = { version = "0.4.0", features = [
 ], optional = true }
 
 
-esp-wifi = { version = "0.10.1", features = [
-    "phy-enable-usb",
-    "wifi-default",
-] }
+esp-wifi = { version = "0.10.1", features = ["phy-enable-usb", "wifi-default"] }
 smoltcp = { version = "0.11.0", default-features = false, features = [
     "proto-igmp",
     "proto-ipv4",
@@ -67,6 +66,7 @@ static_cell = { version = "2.1", features = ["nightly"] }
 esp-mbedtls = { path = "./esp-mbedtls" }
 
 edge-http = { version = "0.3.0", optional = true }
+edge-nal = { version = "0.3.0", optional = true }
 edge-nal-embassy = { version = "0.3.0", optional = true }
 cfg-if = "1.0.0"
 esp-alloc = "0.5.0"
@@ -93,7 +93,7 @@ required-features = ["async"]
 
 [[example]]
 name = "edge_server"
-required-features = ["async", "esp-hal-embassy", "edge-nal-embassy", "edge-http", "esp-mbedtls/edge-nal"]
+required-features = ["async", "edge-server"]
 
 [features]
 esp32 = [
@@ -136,5 +136,19 @@ async = [
     "embassy-time",
     "dep:embedded-io-async",
     "esp-mbedtls/async",
-    "esp-hal-embassy"
+    "esp-hal-embassy",
 ]
+
+# Helper feature to enable all dependencies required for edge-net
+edge-server = [
+    "edge-nal",
+    "edge-nal-embassy",
+    "edge-http",
+    "esp-mbedtls/edge-nal",
+]
+
+# Patch until new release
+[patch.crates-io]
+edge-http = { git = "https://github.com/ivmarkov/edge-net", rev = "f90468953aec1d476ba52fe3b63f392a07bb9daa" }
+edge-nal = { git = "https://github.com/ivmarkov/edge-net", rev = "f90468953aec1d476ba52fe3b63f392a07bb9daa" }
+edge-nal-embassy = { git = "https://github.com/ivmarkov/edge-net", rev = "f90468953aec1d476ba52fe3b63f392a07bb9daa" }

@@ -50,6 +50,9 @@ const SSID: &str = env!("SSID");
 const PASSWORD: &str = env!("PASSWORD");
 
 /// Number of sockets used for the HTTPS server
+#[cfg(feature = "esp32")]
+const SERVER_SOCKETS: usize = 1;
+#[cfg(not(feature = "esp32"))]
 const SERVER_SOCKETS: usize = 2;
 
 /// Total number of sockets used for the application
@@ -171,9 +174,15 @@ async fn main(spawner: Spawner) -> ! {
         )
         .await
         .with_hardware_rsa(&mut peripherals.RSA);
-        match server.run(tls_acceptor, HttpHandler, Some(15_000)).await {
+        match server
+            .run(
+                edge_nal::WithTimeout::new(15_000, tls_acceptor),
+                HttpHandler,
+            )
+            .await
+        {
             Ok(_) => {}
-            Err(Error::Io(TlsError::MbedTlsError(-30592))) => {
+            Err(Error::Io(edge_nal::WithTimeoutError::Error(TlsError::MbedTlsError(-30592)))) => {
                 println!("Fatal message: Please enable the exception for a self-signed certificate in your browser");
             }
             Err(error) => {
@@ -193,15 +202,19 @@ where
 {
     type Error = Error<<T as ErrorType>::Error>;
 
-    async fn handle(&self, connection: &mut Connection<'b, T, N>) -> Result<(), Self::Error> {
+    async fn handle(
+        &self,
+        _task_id: impl core::fmt::Display + Copy,
+        connection: &mut Connection<'b, T, N>,
+    ) -> Result<(), Self::Error> {
         println!("Got new connection");
         let headers = connection.headers()?;
 
-        if !matches!(headers.method, Some(Method::Get)) {
+        if headers.method != Method::Get {
             connection
                 .initiate_response(405, Some("Method Not Allowed"), &[])
                 .await?;
-        } else if !matches!(headers.path, Some("/")) {
+        } else if headers.path != "/" {
             connection
                 .initiate_response(404, Some("Not Found"), &[])
                 .await?;

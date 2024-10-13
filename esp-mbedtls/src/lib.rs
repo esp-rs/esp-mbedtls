@@ -107,6 +107,13 @@ impl embedded_io::Error for TlsError {
     }
 }
 
+#[cfg(feature = "edge-nal")]
+impl From<edge_nal_embassy::TcpError> for TlsError {
+    fn from(value: edge_nal_embassy::TcpError) -> Self {
+        TlsError::TcpError(value)
+    }
+}
+
 #[allow(unused)]
 pub fn set_debug(level: u32) {
     #[cfg(not(target_arch = "xtensa"))]
@@ -682,7 +689,7 @@ pub mod asynch {
     pub use crate::compat::edge_nal_compat::*;
 
     pub struct Session<'a, T, const RX_SIZE: usize = 4096, const TX_SIZE: usize = 4096> {
-        stream: T,
+        pub(crate) stream: T,
         drbg_context: *mut mbedtls_ctr_drbg_context,
         ssl_context: *mut mbedtls_ssl_context,
         ssl_config: *mut mbedtls_ssl_config,
