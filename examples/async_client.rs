@@ -22,11 +22,8 @@ use esp_wifi::wifi::{
     ClientConfiguration, Configuration, WifiController, WifiDevice, WifiEvent, WifiStaDevice,
     WifiState,
 };
-use esp_wifi::{initialize, EspWifiInitFor};
-use hal::{
-    clock::ClockControl, peripherals::Peripherals, rng::Rng, system::SystemControl,
-    timer::timg::TimerGroup,
-};
+use esp_wifi::{init, EspWifiInitFor};
+use hal::{prelude::*, rng::Rng, timer::timg::TimerGroup};
 
 // Patch until https://github.com/embassy-rs/static-cell/issues/16 is fixed
 macro_rules! mk_static {
@@ -45,18 +42,21 @@ const PASSWORD: &str = env!("PASSWORD");
 async fn main(spawner: Spawner) -> ! {
     init_logger(log::LevelFilter::Info);
 
-    let peripherals = Peripherals::take();
-    let system = SystemControl::new(peripherals.SYSTEM);
-    let clocks = ClockControl::max(system.clock_control).freeze();
+    let peripherals = esp_hal::init({
+        let mut config = esp_hal::Config::default();
+        config.cpu_clock = CpuClock::max();
+        config
+    });
 
-    let timg0 = TimerGroup::new(peripherals.TIMG0, &clocks);
+    esp_alloc::heap_allocator!(115 * 1024);
 
-    let init = initialize(
+    let timg0 = TimerGroup::new(peripherals.TIMG0);
+
+    let init = init(
         EspWifiInitFor::Wifi,
         timg0.timer0,
         Rng::new(peripherals.RNG),
         peripherals.RADIO_CLK,
-        &clocks,
     )
     .unwrap();
 
@@ -66,12 +66,12 @@ async fn main(spawner: Spawner) -> ! {
 
     cfg_if::cfg_if! {
         if #[cfg(feature = "esp32")] {
-            let timg1 = TimerGroup::new(peripherals.TIMG1, &clocks);
-            esp_hal_embassy::init(&clocks, timg1.timer0);
+            let timg1 = TimerGroup::new(peripherals.TIMG1);
+            esp_hal_embassy::init(timg1.timer0);
         } else {
             use esp_hal::timer::systimer::{SystemTimer, Target};
             let systimer = SystemTimer::new(peripherals.SYSTIMER).split::<Target>();
-            esp_hal_embassy::init(&clocks, systimer.alarm0);
+            esp_hal_embassy::init(systimer.alarm0);
         }
     }
 

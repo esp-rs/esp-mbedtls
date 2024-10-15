@@ -38,7 +38,7 @@ rustflags = [
 ]
 
 [unstable]
-build-std = ["core"]
+build-std = ["core", "alloc"]
 
 [alias]
 xtask = "run --manifest-path ./xtask/Cargo.toml --"

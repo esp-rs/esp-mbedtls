@@ -49,7 +49,7 @@ SSID=<your_ssid> PASSWORD=<your_password> cargo +esp run --release --example syn
 RISC-V: 
 
 ```shell
-SSID=<your_ssid> PASSWORD=<your_password> cargo +nightly-2023-03-09 run --release --example async_client -F esp32c3,async --target riscv32imc-unknown-none-elf
+SSID=<your_ssid> PASSWORD=<your_password> cargo +nightly run --release --example async_client -F esp32c3,async --target riscv32imc-unknown-none-elf
 ```
 
 Here's a table of the architectures with their corresponding target for quick reference:
@@ -57,7 +57,7 @@ Here's a table of the architectures with their corresponding target for quick re
 | Architecture | Target                      | Toolchain          |
 | ------------ | --------------------------- | ------------------ |
 | esp32        | xtensa-esp32-none-elf       | esp                |
-| esp32c3      | riscv32imc-unknown-none-elf | nightly-2023-03-09 |
+| esp32c3      | riscv32imc-unknown-none-elf | nightly            |
 | esp32s3      | xtensa-esp32s3-none-elf     | esp                |
 
 Heres's a list of all the examples with their description:
