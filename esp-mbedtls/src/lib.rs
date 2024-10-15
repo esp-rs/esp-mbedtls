@@ -495,10 +495,13 @@ impl<T> Session<T> {
         mode: Mode,
         min_version: TlsVersion,
         certificates: Certificates,
+        sha: impl Peripheral<P = SHA>,
     ) -> Result<Self, TlsError> {
-        // TODO: Take peripheral from user
-        let sha = Sha::new(unsafe { SHA::steal() });
-        critical_section::with(|cs| SHARED_SHA.borrow_ref_mut(cs).replace(sha));
+        critical_section::with(|cs| {
+            SHARED_SHA
+                .borrow_ref_mut(cs)
+                .replace(unsafe { core::mem::transmute(Sha::new(sha)) })
+        });
 
         let (drbg_context, ssl_context, ssl_config, crt, client_crt, private_key) =
             certificates.init_ssl(servername, mode, min_version)?;
@@ -641,6 +644,7 @@ impl<T> Drop for Session<T> {
             if self.owns_rsa {
                 RSA_REF = core::mem::transmute(None::<RSA>);
             }
+            critical_section::with(|cs| SHARED_SHA.borrow_ref_mut(cs).take());
             mbedtls_ssl_close_notify(self.ssl_context);
             mbedtls_ctr_drbg_free(self.drbg_context);
             mbedtls_ssl_config_free(self.ssl_config);
@@ -751,10 +755,13 @@ pub mod asynch {
 
             rx_buffer: &'a mut [u8; RX_SIZE],
             tx_buffer: &'a mut [u8; TX_SIZE],
+            sha: impl Peripheral<P = SHA>,
         ) -> Result<Self, TlsError> {
-            // TODO: Take peripheral from user
-            let sha = Sha::new(unsafe { SHA::steal() });
-            critical_section::with(|cs| SHARED_SHA.borrow_ref_mut(cs).replace(sha));
+            critical_section::with(|cs| {
+                SHARED_SHA
+                    .borrow_ref_mut(cs)
+                    .replace(unsafe { core::mem::transmute(Sha::new(sha)) })
+            });
 
             let (drbg_context, ssl_context, ssl_config, crt, client_crt, private_key) =
                 certificates.init_ssl(servername, mode, min_version)?;
@@ -797,6 +804,7 @@ pub mod asynch {
                 if self.owns_rsa {
                     RSA_REF = core::mem::transmute(None::<RSA>);
                 }
+                critical_section::with(|cs| SHARED_SHA.borrow_ref_mut(cs).take());
                 mbedtls_ssl_close_notify(self.ssl_context);
                 mbedtls_ctr_drbg_free(self.drbg_context);
                 mbedtls_ssl_config_free(self.ssl_config);

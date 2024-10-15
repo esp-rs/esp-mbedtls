@@ -116,6 +116,7 @@ fn main() -> ! {
             .ok(),
             ..Default::default()
         },
+        peripherals.SHA,
     )
     .unwrap()
     .with_hardware_rsa(peripherals.RSA);

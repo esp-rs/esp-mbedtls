@@ -10,8 +10,6 @@ pub struct mbedtls_sha1_context {
 
 #[no_mangle]
 pub unsafe extern "C" fn mbedtls_sha1_init(ctx: *mut mbedtls_sha1_context) {
-    let sha = crate::Sha::new(unsafe { crate::SHA::steal() });
-    critical_section::with(|cs| SHARED_SHA.borrow_ref_mut(cs).replace(sha));
     let hasher_mem =
         crate::calloc(1, core::mem::size_of::<Context<Sha1>>() as u32) as *mut Context<Sha1>;
     core::ptr::write(hasher_mem, Context::<Sha1>::new());
