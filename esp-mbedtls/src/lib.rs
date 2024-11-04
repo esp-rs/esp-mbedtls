@@ -73,6 +73,15 @@ macro_rules! error_checked {
             Ok(())
         }
     }};
+    ($block:expr, $err_callback:expr) => {{
+        let res = $block;
+        if res != 0 {
+            $err_callback();
+            Err(TlsError::MbedTlsError(res))
+        } else {
+            Ok(())
+        }
+    }};
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -319,6 +328,7 @@ impl<'a> Certificates<'a> {
             let ssl_config =
                 calloc(1, size_of::<mbedtls_ssl_config>() as u32) as *mut mbedtls_ssl_config;
             if ssl_config.is_null() {
+                free(drbg_context as *const _);
                 free(ssl_context as *const _);
                 return Err(TlsError::OutOfMemory);
             }
@@ -365,12 +375,31 @@ impl<'a> Certificates<'a> {
             mbedtls_ctr_drbg_init(drbg_context);
             mbedtls_ssl_conf_rng(ssl_config, Some(rng), drbg_context as *mut c_void);
 
-            error_checked!(mbedtls_ssl_config_defaults(
-                ssl_config,
-                mode.to_mbed_tls(),
-                MBEDTLS_SSL_TRANSPORT_STREAM as i32,
-                MBEDTLS_SSL_PRESET_DEFAULT as i32,
-            ))?;
+            // Closure to free all allocated resources in case of an error.
+            let cleanup = || {
+                mbedtls_ctr_drbg_free(drbg_context);
+                mbedtls_ssl_config_free(ssl_config);
+                mbedtls_ssl_free(ssl_context);
+                mbedtls_x509_crt_free(crt);
+                mbedtls_x509_crt_free(certificate);
+                mbedtls_pk_free(private_key);
+                free(drbg_context as *const _);
+                free(ssl_context as *const _);
+                free(ssl_config as *const _);
+                free(crt as *const _);
+                free(certificate as *const _);
+                free(private_key as *const _);
+            };
+
+            error_checked!(
+                mbedtls_ssl_config_defaults(
+                    ssl_config,
+                    mode.to_mbed_tls(),
+                    MBEDTLS_SSL_TRANSPORT_STREAM as i32,
+                    MBEDTLS_SSL_PRESET_DEFAULT as i32,
+                ),
+                cleanup
+            )?;
 
             mbedtls_ssl_conf_min_version(
                 ssl_config,
@@ -393,36 +422,40 @@ impl<'a> Certificates<'a> {
                 let mut hostname = StrBuf::new();
                 hostname.append(servername);
                 hostname.append_char('\0');
-                error_checked!(mbedtls_ssl_set_hostname(
-                    ssl_context,
-                    hostname.as_str_ref().as_ptr() as *const c_char
-                ))?;
+                error_checked!(
+                    mbedtls_ssl_set_hostname(
+                        ssl_context,
+                        hostname.as_str_ref().as_ptr() as *const c_char
+                    ),
+                    cleanup
+                )?;
             }
 
             if let Some(ca_chain) = self.ca_chain {
-                error_checked!(mbedtls_x509_crt_parse(
-                    crt,
-                    ca_chain.as_ptr(),
-                    ca_chain.len(),
-                ))?;
+                error_checked!(
+                    mbedtls_x509_crt_parse(crt, ca_chain.as_ptr(), ca_chain.len()),
+                    cleanup
+                )?;
             }
 
             if let (Some(cert), Some(key)) = (self.certificate, self.private_key) {
                 // Certificate
                 match cert.format {
                     CertificateFormat::PEM => {
-                        error_checked!(mbedtls_x509_crt_parse(
-                            certificate,
-                            cert.as_ptr(),
-                            cert.len(),
-                        ))?;
+                        error_checked!(
+                            mbedtls_x509_crt_parse(certificate, cert.as_ptr(), cert.len()),
+                            cleanup
+                        )?;
                     }
                     CertificateFormat::DER => {
-                        error_checked!(mbedtls_x509_crt_parse_der_nocopy(
-                            certificate,
-                            cert.as_ptr(),
-                            cert.len(),
-                        ))?;
+                        error_checked!(
+                            mbedtls_x509_crt_parse_der_nocopy(
+                                certificate,
+                                cert.as_ptr(),
+                                cert.len(),
+                            ),
+                            cleanup
+                        )?;
                     }
                 }
 
@@ -432,21 +465,24 @@ impl<'a> Certificates<'a> {
                 } else {
                     (core::ptr::null(), 0)
                 };
-                error_checked!(mbedtls_pk_parse_key(
-                    private_key,
-                    key.as_ptr(),
-                    key.len(),
-                    password_ptr,
-                    password_len,
-                    None,
-                    core::ptr::null_mut(),
-                ))?;
+                error_checked!(
+                    mbedtls_pk_parse_key(
+                        private_key,
+                        key.as_ptr(),
+                        key.len(),
+                        password_ptr,
+                        password_len,
+                        None,
+                        core::ptr::null_mut(),
+                    ),
+                    cleanup
+                )?;
 
                 mbedtls_ssl_conf_own_cert(ssl_config, certificate, private_key);
             }
 
             mbedtls_ssl_conf_ca_chain(ssl_config, crt, core::ptr::null_mut());
-            error_checked!(mbedtls_ssl_setup(ssl_context, ssl_config))?;
+            error_checked!(mbedtls_ssl_setup(ssl_context, ssl_config), cleanup)?;
             Ok((
                 drbg_context,
                 ssl_context,
