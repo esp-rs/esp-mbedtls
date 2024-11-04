@@ -32,7 +32,7 @@ esp-println = { version = "0.12.0", features = ["log"] }
 esp-hal-embassy = { version = "0.4.0", optional = true }
 
 embassy-time = { version = "0.3.0", optional = true }
-embassy-executor = { version = "0.6.0", package = "embassy-executor", features = [
+embassy-executor = { version = "=0.6.0", package = "embassy-executor", features = [
     "nightly",
     "integrated-timers",
 ], optional = true }
@@ -149,6 +149,11 @@ edge-server = [
 
 # Patch until new release
 [patch.crates-io]
-edge-http = { git = "https://github.com/ivmarkov/edge-net", rev = "f90468953aec1d476ba52fe3b63f392a07bb9daa" }
-edge-nal = { git = "https://github.com/ivmarkov/edge-net", rev = "f90468953aec1d476ba52fe3b63f392a07bb9daa" }
-edge-nal-embassy = { git = "https://github.com/ivmarkov/edge-net", rev = "f90468953aec1d476ba52fe3b63f392a07bb9daa" }
+edge-http = { git = "https://github.com/ivmarkov/edge-net", rev = "722f92ac0fffd0cb1e1ce76086cca58df6eb49ee" }
+edge-nal = { git = "https://github.com/ivmarkov/edge-net", rev = "722f92ac0fffd0cb1e1ce76086cca58df6eb49ee" }
+edge-nal-embassy = { git = "https://github.com/ivmarkov/edge-net", rev = "722f92ac0fffd0cb1e1ce76086cca58df6eb49ee" }
+
+# Patch before 0.6.0 got yanked
+embassy-executor = { git = "https://github.com/embassy-rs/embassy", rev = "886580179ff250e15b0fad6448e8ebed6cdabf2b" }
+embassy-time-driver = { git = "https://github.com/embassy-rs/embassy", rev = "886580179ff250e15b0fad6448e8ebed6cdabf2b" }
+embassy-time-queue-driver = { git = "https://github.com/embassy-rs/embassy", rev = "886580179ff250e15b0fad6448e8ebed6cdabf2b" }
