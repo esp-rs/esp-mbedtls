@@ -1004,8 +1004,22 @@ pub type mbedtls_t_udbl = u64;
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_mpi {
+    /// Sign: -1 if the mpi is negative, 1 otherwise.
+    ///
+    /// The number 0 must be represented with `s = +1`. Although many library
+    /// functions treat all-limbs-zero as equivalent to a valid representation
+    /// of 0 regardless of the sign bit, there are exceptions, so bignum
+    /// functions and external callers must always set \c s to +1 for the
+    /// number zero.
+    ///
+    /// Note that this implies that calloc() or `... = {0}` does not create
+    /// a valid MPI representation. You must call mbedtls_mpi_init().
     pub private_s: crate::c_types::c_int,
+    /// Total number of limbs in \c p.
     pub private_n: usize,
+    /// Pointer to limbs.
+    ///
+    /// This may be \c NULL if \c n is 0.
     pub private_p: *mut mbedtls_mpi_uint,
 }
 extern "C" {
@@ -1948,8 +1962,11 @@ pub struct mbedtls_ecp_curve_info {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_ecp_point {
+    ///< The X coordinate of the ECP point.
     pub private_X: mbedtls_mpi,
+    ///< The Y coordinate of the ECP point.
     pub private_Y: mbedtls_mpi,
+    ///< The Z coordinate of the ECP point.
     pub private_Z: mbedtls_mpi,
 }
 /// \brief           The ECP group structure.
@@ -2011,24 +2028,32 @@ pub struct mbedtls_ecp_group {
     ///For Montgomery curves: the number of bits in the
     ///private keys.
     pub nbits: usize,
+    ///< \internal 1 if the constants are static.
     pub private_h: crate::c_types::c_uint,
+    ///< The function for fast pseudo-reduction
+    ///mod \p P (see above).
     pub private_modp: ::core::option::Option<
         unsafe extern "C" fn(arg1: *mut mbedtls_mpi) -> crate::c_types::c_int,
     >,
+    ///< Unused.
     pub private_t_pre: ::core::option::Option<
         unsafe extern "C" fn(
             arg1: *mut mbedtls_ecp_point,
             arg2: *mut crate::c_types::c_void,
         ) -> crate::c_types::c_int,
     >,
+    ///< Unused.
     pub private_t_post: ::core::option::Option<
         unsafe extern "C" fn(
             arg1: *mut mbedtls_ecp_point,
             arg2: *mut crate::c_types::c_void,
         ) -> crate::c_types::c_int,
     >,
+    ///< Unused.
     pub private_t_data: *mut crate::c_types::c_void,
+    ///< Pre-computed points for ecp_mul_comb().
     pub private_T: *mut mbedtls_ecp_point,
+    ///< The number of dynamic allocated pre-computed points.
     pub private_T_size: usize,
 }
 pub type mbedtls_ecp_restart_ctx = crate::c_types::c_void;
@@ -2041,8 +2066,11 @@ pub type mbedtls_ecp_restart_ctx = crate::c_types::c_void;
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_ecp_keypair {
+    ///<  Elliptic curve and base point
     pub private_grp: mbedtls_ecp_group,
+    ///<  our secret value
     pub private_d: mbedtls_mpi,
+    ///<  our public value
     pub private_Q: mbedtls_ecp_point,
 }
 extern "C" {
@@ -2953,8 +2981,11 @@ pub type mbedtls_md_engine_t = crate::c_types::c_uint;
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_md_context_t {
+    /// Information about the associated message digest.
     pub private_md_info: *const mbedtls_md_info_t,
+    /// The digest-specific context (legacy) or the PSA operation.
     pub private_md_ctx: *mut crate::c_types::c_void,
+    /// The HMAC part of the context.
     pub private_hmac_ctx: *mut crate::c_types::c_void,
 }
 extern "C" {
@@ -3306,22 +3337,47 @@ extern "C" {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_rsa_context {
+    ///<  Reserved for internal purposes.
+    ///    Do not set this field in application
+    ///    code. Its meaning might change without
+    ///    notice.
     pub private_ver: crate::c_types::c_int,
+    ///<  The size of \p N in Bytes.
     pub private_len: usize,
+    ///<  The public modulus.
     pub private_N: mbedtls_mpi,
+    ///<  The public exponent.
     pub private_E: mbedtls_mpi,
+    ///<  The private exponent.
     pub private_D: mbedtls_mpi,
+    ///<  The first prime factor.
     pub private_P: mbedtls_mpi,
+    ///<  The second prime factor.
     pub private_Q: mbedtls_mpi,
+    ///<  <code>D % (P - 1)</code>.
     pub private_DP: mbedtls_mpi,
+    ///<  <code>D % (Q - 1)</code>.
     pub private_DQ: mbedtls_mpi,
+    ///<  <code>1 / (Q % P)</code>.
     pub private_QP: mbedtls_mpi,
+    ///<  cached <code>R^2 mod N</code>.
     pub private_RN: mbedtls_mpi,
+    ///<  cached <code>R^2 mod P</code>.
     pub private_RP: mbedtls_mpi,
+    ///<  cached <code>R^2 mod Q</code>.
     pub private_RQ: mbedtls_mpi,
+    ///<  The cached blinding value.
     pub private_Vi: mbedtls_mpi,
+    ///<  The cached un-blinding value.
     pub private_Vf: mbedtls_mpi,
+    ///< Selects padding mode:
+    ///#MBEDTLS_RSA_PKCS_V15 for 1.5 padding and
+    ///#MBEDTLS_RSA_PKCS_V21 for OAEP or PSS.
     pub private_padding: crate::c_types::c_int,
+    ///< Hash identifier of mbedtls_md_type_t type,
+    ///as specified in md.h for use in the MGF
+    ///mask generating function used in the
+    ///EME-OAEP and EMSA-PSS encodings.
     pub private_hash_id: crate::c_types::c_int,
 }
 extern "C" {
@@ -5099,7 +5155,9 @@ pub struct mbedtls_pk_info_t {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_pk_context {
+    ///< Public key information
     pub private_pk_info: *const mbedtls_pk_info_t,
+    ///< Underlying public key context
     pub private_pk_ctx: *mut crate::c_types::c_void,
 }
 pub type mbedtls_pk_restart_ctx = crate::c_types::c_void;
@@ -6043,22 +6101,43 @@ pub struct mbedtls_cipher_base_t {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_cipher_info_t {
+    /// Full cipher identifier. For example,
+    /// MBEDTLS_CIPHER_AES_256_CBC.
     pub private_type: mbedtls_cipher_type_t,
+    /// The cipher mode. For example, MBEDTLS_MODE_CBC.
     pub private_mode: mbedtls_cipher_mode_t,
+    /// The cipher key length, in bits. This is the
+    /// default length for variable sized ciphers.
+    /// Includes parity bits for ciphers like DES.
     pub private_key_bitlen: crate::c_types::c_uint,
+    /// Name of the cipher.
     pub private_name: *const crate::c_types::c_char,
+    /// IV or nonce size, in Bytes.
+    /// For ciphers that accept variable IV sizes,
+    /// this is the recommended size.
     pub private_iv_size: crate::c_types::c_uint,
+    /// Bitflag comprised of MBEDTLS_CIPHER_VARIABLE_IV_LEN and
+    ///  MBEDTLS_CIPHER_VARIABLE_KEY_LEN indicating whether the
+    ///  cipher supports variable IV or variable key sizes, respectively.
     pub private_flags: crate::c_types::c_int,
+    /// The block size, in Bytes.
     pub private_block_size: crate::c_types::c_uint,
+    /// Struct for base cipher information and functions.
     pub private_base: *const mbedtls_cipher_base_t,
 }
 /// Generic cipher context.
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_cipher_context_t {
+    /// Information about the associated cipher.
     pub private_cipher_info: *const mbedtls_cipher_info_t,
+    /// Key length to use.
     pub private_key_bitlen: crate::c_types::c_int,
+    /// Operation that the key of the context has been
+    /// initialized for.
     pub private_operation: mbedtls_operation_t,
+    /// Padding functions to use, if relevant for
+    /// the specific cipher mode.
     pub private_add_padding: ::core::option::Option<
         unsafe extern "C" fn(output: *mut crate::c_types::c_uchar, olen: usize, data_len: usize),
     >,
@@ -6069,11 +6148,18 @@ pub struct mbedtls_cipher_context_t {
             data_len: *mut usize,
         ) -> crate::c_types::c_int,
     >,
+    /// Buffer for input that has not been processed yet.
     pub private_unprocessed_data: [crate::c_types::c_uchar; 16usize],
+    /// Number of Bytes that have not been processed yet.
     pub private_unprocessed_len: usize,
+    /// Current IV or NONCE_COUNTER for CTR-mode, data unit (or sector) number
+    /// for XTS-mode.
     pub private_iv: [crate::c_types::c_uchar; 16usize],
+    /// IV size in Bytes, for ciphers with variable-length IVs.
     pub private_iv_size: usize,
+    /// The cipher-specific context.
     pub private_cipher_ctx: *mut crate::c_types::c_void,
+    /// CMAC-specific context.
     pub private_cmac_ctx: *mut mbedtls_cmac_context_t,
 }
 extern "C" {
@@ -11268,8 +11354,12 @@ extern "C" {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_cmac_context_t {
+    /// The internal state of the CMAC algorithm.
     pub private_state: [crate::c_types::c_uchar; 16usize],
+    /// Unprocessed data - either data that was not block aligned and is still
+    ///  pending processing, or the final block.
     pub private_unprocessed_block: [crate::c_types::c_uchar; 16usize],
+    /// The length of data pending processing.
     pub private_unprocessed_len: usize,
 }
 extern "C" {
@@ -11448,14 +11538,25 @@ extern "C" {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_gcm_context {
+    ///< The cipher context used.
     pub private_cipher_ctx: mbedtls_cipher_context_t,
+    ///< Precalculated HTable low.
     pub private_HL: [u64; 16usize],
+    ///< Precalculated HTable high.
     pub private_HH: [u64; 16usize],
+    ///< The total length of the encrypted data.
     pub private_len: u64,
+    ///< The total length of the additional data.
     pub private_add_len: u64,
+    ///< The first ECTR for tag.
     pub private_base_ectr: [crate::c_types::c_uchar; 16usize],
+    ///< The Y working value.
     pub private_y: [crate::c_types::c_uchar; 16usize],
+    ///< The buf working value.
     pub private_buf: [crate::c_types::c_uchar; 16usize],
+    ///< The operation to perform:
+    ///#MBEDTLS_GCM_ENCRYPT or
+    ///#MBEDTLS_GCM_DECRYPT.
     pub private_mode: crate::c_types::c_int,
 }
 extern "C" {
@@ -11765,15 +11866,36 @@ extern "C" {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_ccm_context {
+    ///< The Y working buffer
     pub private_y: [crate::c_types::c_uchar; 16usize],
+    ///< The counter buffer
     pub private_ctr: [crate::c_types::c_uchar; 16usize],
+    ///< The cipher context used.
     pub private_cipher_ctx: mbedtls_cipher_context_t,
+    ///< Total plaintext length
     pub private_plaintext_len: usize,
+    ///< Total authentication data length
     pub private_add_len: usize,
+    ///< Total tag length
     pub private_tag_len: usize,
+    ///< Track how many bytes of input data
+    ///were processed (chunked input).
+    ///Used independently for both auth data
+    ///and plaintext/ciphertext.
+    ///This variable is set to zero after
+    ///auth data input is finished.
     pub private_processed: usize,
+    ///< The Q working value
     pub private_q: crate::c_types::c_uchar,
+    ///< The operation to perform:
+    ///#MBEDTLS_CCM_ENCRYPT or
+    ///#MBEDTLS_CCM_DECRYPT or
+    ///#MBEDTLS_CCM_STAR_ENCRYPT or
+    ///#MBEDTLS_CCM_STAR_DECRYPT.
     pub private_mode: crate::c_types::c_uchar,
+    ///< Working value holding context's
+    ///state. Used for chunked data
+    ///input
     pub private_state: crate::c_types::c_int,
 }
 extern "C" {
@@ -12229,9 +12351,13 @@ extern "C" {
 #[derive(Copy, Clone)]
 pub struct mbedtls_poly1305_context {
     pub private_r: [u32; 4usize],
+    /// The value for 'r' (low 128 bits of the key).
     pub private_s: [u32; 4usize],
+    /// The value for 's' (high 128 bits of the key).
     pub private_acc: [u32; 5usize],
+    /// The accumulator number.
     pub private_queue: [u8; 16usize],
+    /// The current partial block of data.
     pub private_queue_len: usize,
 }
 extern "C" {
@@ -12355,7 +12481,9 @@ pub type mbedtls_chachapoly_mode_t = crate::c_types::c_uint;
 #[derive(Copy, Clone)]
 pub struct mbedtls_chacha20_context {
     pub private_state: [u32; 16usize],
+    /// The state (before round operations).
     pub private_keystream8: [u8; 64usize],
+    /// Leftover keystream bytes.
     pub private_keystream_bytes_used: usize,
 }
 extern "C" {
@@ -12508,11 +12636,17 @@ extern "C" {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_chachapoly_context {
+    ///< The ChaCha20 context.
     pub private_chacha20_ctx: mbedtls_chacha20_context,
+    ///< The Poly1305 context.
     pub private_poly1305_ctx: mbedtls_poly1305_context,
+    ///< The length (bytes) of the Additional Authenticated Data.
     pub private_aad_len: u64,
+    ///< The length (bytes) of the ciphertext.
     pub private_ciphertext_len: u64,
+    ///< The current state of the context.
     pub private_state: crate::c_types::c_int,
+    ///< Cipher mode (encrypt or decrypt).
     pub private_mode: mbedtls_chachapoly_mode_t,
 }
 extern "C" {
@@ -12806,8 +12940,11 @@ pub type psa_encrypt_or_decrypt_t = crate::c_types::c_uint;
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_md5_context {
+    ///< number of bytes processed
     pub private_total: [u32; 2usize],
+    ///< intermediate digest state
     pub private_state: [u32; 4usize],
+    ///< data block being processed
     pub private_buffer: [crate::c_types::c_uchar; 64usize],
 }
 extern "C" {
@@ -12935,8 +13072,11 @@ extern "C" {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_ripemd160_context {
+    ///< number of bytes processed
     pub private_total: [u32; 2usize],
+    ///< intermediate digest state
     pub private_state: [u32; 5usize],
+    ///< data block being processed
     pub private_buffer: [crate::c_types::c_uchar; 64usize],
 }
 extern "C" {
@@ -13027,17 +13167,10 @@ extern "C" {
     /// \return         0 if successful, or 1 if the test failed
     pub fn mbedtls_ripemd160_self_test(verbose: crate::c_types::c_int) -> crate::c_types::c_int;
 }
-/// \brief          The SHA-1 context structure.
-///
-/// \warning        SHA-1 is considered a weak message digest and its use
-///                 constitutes a security risk. We recommend considering
-///                 stronger message digests instead.
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_sha1_context {
-    pub private_total: [u32; 2usize],
-    pub private_state: [u32; 5usize],
-    pub private_buffer: [crate::c_types::c_uchar; 64usize],
+    pub hasher: *mut crate::c_types::c_void,
 }
 extern "C" {
     /// \brief          This function initializes a SHA-1 context.
@@ -13185,18 +13318,12 @@ extern "C" {
     /// \return         \c 1 on failure.
     pub fn mbedtls_sha1_self_test(verbose: crate::c_types::c_int) -> crate::c_types::c_int;
 }
-/// \brief          The SHA-256 context structure.
-///
-///                 The structure is used both for SHA-256 and for SHA-224
-///                 checksum calculations. The choice between these two is
-///                 made in the call to mbedtls_sha256_starts().
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_sha256_context {
-    pub private_total: [u32; 2usize],
-    pub private_state: [u32; 8usize],
-    pub private_buffer: [crate::c_types::c_uchar; 64usize],
-    pub private_is224: crate::c_types::c_int,
+    pub sha224_hasher: *mut crate::c_types::c_void,
+    pub sha256_hasher: *mut crate::c_types::c_void,
+    pub is224: crate::c_types::c_int,
 }
 extern "C" {
     /// \brief          This function initializes a SHA-256 context.
@@ -13334,18 +13461,12 @@ extern "C" {
     /// \return         \c 1 on failure.
     pub fn mbedtls_sha256_self_test(verbose: crate::c_types::c_int) -> crate::c_types::c_int;
 }
-/// \brief          The SHA-512 context structure.
-///
-///                 The structure is used both for SHA-384 and for SHA-512
-///                 checksum calculations. The choice between these two is
-///                 made in the call to mbedtls_sha512_starts().
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_sha512_context {
-    pub private_total: [u64; 2usize],
-    pub private_state: [u64; 8usize],
-    pub private_buffer: [crate::c_types::c_uchar; 128usize],
-    pub private_is384: crate::c_types::c_int,
+    pub sha384_hasher: *mut crate::c_types::c_void,
+    pub sha512_hasher: *mut crate::c_types::c_void,
+    pub is384: crate::c_types::c_int,
 }
 extern "C" {
     /// \brief          This function initializes a SHA-512 context.
@@ -13537,12 +13658,24 @@ pub union psa_driver_cipher_context_t {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct psa_hash_operation_s {
+    /// Unique ID indicating which driver got assigned to do the
+    /// operation. Since driver contexts are driver-specific, swapping
+    /// drivers halfway through the operation is not supported.
+    /// ID values are auto-generated in psa_driver_wrappers.h.
+    /// ID value zero means the context is not valid or not assigned to
+    /// any driver (i.e. the driver context is not active, in use).
     pub private_id: crate::c_types::c_uint,
     pub private_ctx: psa_driver_hash_context_t,
 }
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct psa_cipher_operation_s {
+    /// Unique ID indicating which driver got assigned to do the
+    /// operation. Since driver contexts are driver-specific, swapping
+    /// drivers halfway through the operation is not supported.
+    /// ID values are auto-generated in psa_crypto_driver_wrappers.h
+    /// ID value zero means the context is not valid or not assigned to
+    /// any driver (i.e. none of the driver contexts are active).
     pub private_id: crate::c_types::c_uint,
     pub _bitfield_align_1: [u8; 0],
     pub _bitfield_1: __BindgenBitfieldUnit<[u8; 1usize]>,
@@ -13592,9 +13725,11 @@ impl psa_cipher_operation_s {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_psa_hmac_operation_t {
+    /// The HMAC algorithm in use
     pub private_alg: psa_algorithm_t,
     /// The hash context.
     pub hash_ctx: psa_hash_operation_s,
+    /// The HMAC part of the context.
     pub private_opad: [u8; 128usize],
 }
 #[repr(C)]
@@ -13680,17 +13815,29 @@ pub type mbedtls_ecjpake_role = crate::c_types::c_uint;
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_ecjpake_context {
+    ///< Hash to use
     pub private_md_type: mbedtls_md_type_t,
+    ///< Elliptic curve
     pub private_grp: mbedtls_ecp_group,
+    ///< Are we client or server?
     pub private_role: mbedtls_ecjpake_role,
+    ///< Format for point export
     pub private_point_format: crate::c_types::c_int,
+    ///< My public key 1   C: X1, S: X3
     pub private_Xm1: mbedtls_ecp_point,
+    ///< My public key 2   C: X2, S: X4
     pub private_Xm2: mbedtls_ecp_point,
+    ///< Peer public key 1 C: X3, S: X1
     pub private_Xp1: mbedtls_ecp_point,
+    ///< Peer public key 2 C: X4, S: X2
     pub private_Xp2: mbedtls_ecp_point,
+    ///< Peer public key   C: Xs, S: Xc
     pub private_Xp: mbedtls_ecp_point,
+    ///< My private key 1  C: x1, S: x3
     pub private_xm1: mbedtls_mpi,
+    ///< My private key 2  C: x2, S: x4
     pub private_xm2: mbedtls_mpi,
+    ///< Pre-shared secret (passphrase)
     pub private_s: mbedtls_mpi,
 }
 extern "C" {
@@ -13987,6 +14134,12 @@ pub union psa_driver_pake_context_t {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct psa_mac_operation_s {
+    /// Unique ID indicating which driver got assigned to do the
+    /// operation. Since driver contexts are driver-specific, swapping
+    /// drivers halfway through the operation is not supported.
+    /// ID values are auto-generated in psa_driver_wrappers.h
+    /// ID value zero means the context is not valid or not assigned to
+    /// any driver (i.e. none of the driver contexts are active).
     pub private_id: crate::c_types::c_uint,
     pub private_mac_size: u8,
     pub _bitfield_align_1: [u8; 0],
@@ -14020,6 +14173,12 @@ impl psa_mac_operation_s {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct psa_aead_operation_s {
+    /// Unique ID indicating which driver got assigned to do the
+    /// operation. Since driver contexts are driver-specific, swapping
+    /// drivers halfway through the operation is not supported.
+    /// ID values are auto-generated in psa_crypto_driver_wrappers.h
+    /// ID value zero means the context is not valid or not assigned to
+    /// any driver (i.e. none of the driver contexts are active).
     pub private_id: crate::c_types::c_uint,
     pub private_alg: psa_algorithm_t,
     pub private_key_type: psa_key_type_t,
@@ -14357,6 +14516,12 @@ extern "C" {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct psa_sign_hash_interruptible_operation_s {
+    /// Unique ID indicating which driver got assigned to do the
+    /// operation. Since driver contexts are driver-specific, swapping
+    /// drivers halfway through the operation is not supported.
+    /// ID values are auto-generated in psa_crypto_driver_wrappers.h
+    /// ID value zero means the context is not valid or not assigned to
+    /// any driver (i.e. none of the driver contexts are active).
     pub private_id: crate::c_types::c_uint,
     pub private_ctx: psa_driver_sign_hash_interruptible_context_t,
     pub _bitfield_align_1: [u8; 0],
@@ -14392,6 +14557,12 @@ impl psa_sign_hash_interruptible_operation_s {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct psa_verify_hash_interruptible_operation_s {
+    /// Unique ID indicating which driver got assigned to do the
+    /// operation. Since driver contexts are driver-specific, swapping
+    /// drivers halfway through the operation is not supported.
+    /// ID values are auto-generated in psa_crypto_driver_wrappers.h
+    /// ID value zero means the context is not valid or not assigned to
+    /// any driver (i.e. none of the driver contexts are active).
     pub private_id: crate::c_types::c_uint,
     pub private_ctx: psa_driver_verify_hash_interruptible_context_t,
     pub _bitfield_align_1: [u8; 0],
@@ -14543,14 +14714,26 @@ extern "C" {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_psa_stats_s {
+    /// Number of slots containing key material for a volatile key.
     pub private_volatile_slots: usize,
+    /// Number of slots containing key material for a key which is in
+    /// internal persistent storage.
     pub private_persistent_slots: usize,
+    /// Number of slots containing a reference to a key in a
+    /// secure element.
     pub private_external_slots: usize,
+    /// Number of slots which are occupied, but do not contain
+    /// key material yet.
     pub private_half_filled_slots: usize,
+    /// Number of slots that contain cache data.
     pub private_cache_slots: usize,
+    /// Number of slots that are not used for anything.
     pub private_empty_slots: usize,
+    /// Number of slots that are locked.
     pub private_locked_slots: usize,
+    /// Largest key id value among open keys in internal persistent storage.
     pub private_max_open_internal_key_id: psa_key_id_t,
+    /// Largest key id value among open keys in secure elements.
     pub private_max_open_external_key_id: psa_key_id_t,
 }
 /// \brief Statistics about
@@ -15486,6 +15669,12 @@ pub struct psa_jpake_computation_stage_s {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct psa_pake_operation_s {
+    /// Unique ID indicating which driver got assigned to do the
+    /// operation. Since driver contexts are driver-specific, swapping
+    /// drivers halfway through the operation is not supported.
+    /// ID values are auto-generated in psa_crypto_driver_wrappers.h
+    /// ID value zero means the context is not valid or not assigned to
+    /// any driver (i.e. none of the driver contexts are active).
     pub private_id: crate::c_types::c_uint,
     pub private_alg: psa_algorithm_t,
     pub private_stage: u8,
@@ -15555,6 +15744,10 @@ pub struct mbedtls_asn1_named_data {
     /// when initializing a structure, and do not modify it except via Mbed TLS
     /// library functions.
     pub next: *mut mbedtls_asn1_named_data,
+    /// Merge next item into the current one?
+    ///
+    /// This field exists for the sake of Mbed TLS's X.509 certificate parsing
+    /// code and may change in future versions of the library.
     pub private_next_merged: crate::c_types::c_uchar,
 }
 extern "C" {
@@ -16390,8 +16583,11 @@ pub struct mbedtls_x509_crl {
     pub crl_ext: mbedtls_x509_buf,
     pub private_sig_oid2: mbedtls_x509_buf,
     pub private_sig: mbedtls_x509_buf,
+    ///< Internal representation of the MD algorithm of the signature algorithm, e.g. MBEDTLS_MD_SHA256
     pub private_sig_md: mbedtls_md_type_t,
+    ///< Internal representation of the Public Key algorithm of the signature algorithm, e.g. MBEDTLS_PK_RSA
     pub private_sig_pk: mbedtls_pk_type_t,
+    ///< Signature options to be passed to mbedtls_pk_verify_ext(), e.g. for RSASSA-PSS
     pub private_sig_opts: *mut crate::c_types::c_void,
     /// Next element in the linked list of CRL.
     /// \p NULL indicates the end of the list.
@@ -16475,6 +16671,8 @@ extern "C" {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_x509_crt {
+    ///< Indicates if \c raw is owned
+    ///   by the structure or not.
     pub private_own_buffer: crate::c_types::c_int,
     ///< The raw certificate data (DER).
     pub raw: mbedtls_x509_buf,
@@ -16511,16 +16709,25 @@ pub struct mbedtls_x509_crt {
     pub subject_alt_names: mbedtls_x509_sequence,
     ///< Optional list of certificate policies (Only anyPolicy is printed and enforced, however the rest of the policies are still listed).
     pub certificate_policies: mbedtls_x509_sequence,
+    ///< Bit string containing detected and parsed extensions
     pub private_ext_types: crate::c_types::c_int,
+    ///< Optional Basic Constraint extension value: 1 if this certificate belongs to a CA, 0 otherwise.
     pub private_ca_istrue: crate::c_types::c_int,
+    ///< Optional Basic Constraint extension value: The maximum path length to the root certificate. Path length is 1 higher than RFC 5280 'meaning', so 1+
     pub private_max_pathlen: crate::c_types::c_int,
+    ///< Optional key usage extension value: See the values in x509.h
     pub private_key_usage: crate::c_types::c_uint,
     ///< Optional list of extended key usage OIDs.
     pub ext_key_usage: mbedtls_x509_sequence,
+    ///< Optional Netscape certificate type extension value: See the values in x509.h
     pub private_ns_cert_type: crate::c_types::c_uchar,
+    ///< Signature: hash of the tbs part signed with the private key.
     pub private_sig: mbedtls_x509_buf,
+    ///< Internal representation of the MD algorithm of the signature algorithm, e.g. MBEDTLS_MD_SHA256
     pub private_sig_md: mbedtls_md_type_t,
+    ///< Internal representation of the Public Key algorithm of the signature algorithm, e.g. MBEDTLS_PK_RSA
     pub private_sig_pk: mbedtls_pk_type_t,
+    ///< Signature options to be passed to mbedtls_pk_verify_ext(), e.g. for RSASSA-PSS
     pub private_sig_opts: *mut crate::c_types::c_void,
     /// Next certificate in the linked list that constitutes the CA chain.
     /// \p NULL indicates the end of the list.
@@ -17452,15 +17659,25 @@ pub type mbedtls_dhm_parameter = crate::c_types::c_uint;
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_dhm_context {
+    ///<  The prime modulus.
     pub private_P: mbedtls_mpi,
+    ///<  The generator.
     pub private_G: mbedtls_mpi,
+    ///<  Our secret value.
     pub private_X: mbedtls_mpi,
+    ///<  Our public key = \c G^X mod \c P.
     pub private_GX: mbedtls_mpi,
+    ///<  The public key of the peer = \c G^Y mod \c P.
     pub private_GY: mbedtls_mpi,
+    ///<  The shared secret = \c G^(XY) mod \c P.
     pub private_K: mbedtls_mpi,
+    ///<  The cached value = \c R^2 mod \c P.
     pub private_RP: mbedtls_mpi,
+    ///<  The blinding value.
     pub private_Vi: mbedtls_mpi,
+    ///<  The unblinding value.
     pub private_Vf: mbedtls_mpi,
+    ///<  The previous \c X.
     pub private_pX: mbedtls_mpi,
 }
 extern "C" {
@@ -17754,10 +17971,15 @@ pub type mbedtls_ecdh_variant = crate::c_types::c_uint;
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_ecdh_context_mbed {
+    ///< The elliptic curve used.
     pub private_grp: mbedtls_ecp_group,
+    ///< The private key.
     pub private_d: mbedtls_mpi,
+    ///< The public key.
     pub private_Q: mbedtls_ecp_point,
+    ///< The value of the public key of the peer.
     pub private_Qp: mbedtls_ecp_point,
+    ///< The shared secret.
     pub private_z: mbedtls_mpi,
 }
 /// \warning         Performing multiple operations concurrently on the same
@@ -17767,8 +17989,12 @@ pub struct mbedtls_ecdh_context_mbed {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_ecdh_context {
+    ///< The format of point export in TLS messages
+    ///as defined in RFC 4492.
     pub private_point_format: u8,
+    ///< The elliptic curve used.
     pub private_grp_id: mbedtls_ecp_group_id,
+    ///< The ECDH implementation/structure used.
     pub private_var: mbedtls_ecdh_variant,
     pub private_ctx: mbedtls_ecdh_context__bindgen_ty_1,
 }
@@ -18352,24 +18578,42 @@ pub type mbedtls_ssl_protocol_version = crate::c_types::c_uint;
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_ssl_session {
+    ///< MaxFragmentLength negotiated by peer
     pub private_mfl_code: crate::c_types::c_uchar,
     pub private_exported: crate::c_types::c_uchar,
+    /// TLS version negotiated in the session. Used if and when renegotiating
+    ///  or resuming a session instead of the configured minor TLS version.
     pub private_tls_version: mbedtls_ssl_protocol_version,
+    ///< chosen ciphersuite
     pub private_ciphersuite: crate::c_types::c_int,
+    ///< session id length
     pub private_id_len: usize,
+    ///< session identifier
     pub private_id: [crate::c_types::c_uchar; 32usize],
+    ///< the master secret
     pub private_master: [crate::c_types::c_uchar; 48usize],
+    ///< peer X.509 cert chain
     pub private_peer_cert: *mut mbedtls_x509_crt,
+    ///<  verification result
     pub private_verify_result: u32,
+    ///< RFC 5077 session ticket
     pub private_ticket: *mut crate::c_types::c_uchar,
+    ///< session ticket length
     pub private_ticket_len: usize,
+    ///< ticket lifetime hint
     pub private_ticket_lifetime: u32,
+    ///< 0: client, 1: server
     pub private_endpoint: u8,
+    ///< Ticket flags
     pub private_ticket_flags: u8,
+    ///< Randomly generated value used to obscure the age of the ticket
     pub private_ticket_age_add: u32,
+    ///< resumption_key length
     pub private_resumption_key_len: u8,
     pub private_resumption_key: [crate::c_types::c_uchar; 48usize],
+    ///< host name binded with tickets
     pub private_hostname: *mut crate::c_types::c_char,
+    ///< flag for EtM activation
     pub private_encrypt_then_mac: crate::c_types::c_int,
     pub private_app_secrets: mbedtls_ssl_tls13_application_secrets,
 }
@@ -18440,24 +18684,49 @@ pub union mbedtls_ssl_user_data_t {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_ssl_config {
+    ///< max. TLS version used
     pub private_max_tls_version: mbedtls_ssl_protocol_version,
+    ///< min. TLS version used
     pub private_min_tls_version: mbedtls_ssl_protocol_version,
+    ///< 0: client, 1: server
     pub private_endpoint: u8,
+    ///< 0: stream (TLS), 1: datagram (DTLS)
     pub private_transport: u8,
+    ///< MBEDTLS_SSL_VERIFY_XXX
     pub private_authmode: u8,
+    ///< MBEDTLS_LEGACY_XXX
     pub private_allow_legacy_renegotiation: u8,
+    ///< desired fragment length indicator
+    ///(MBEDTLS_SSL_MAX_FRAG_LEN_XXX)
     pub private_mfl_code: u8,
+    ///< negotiate encrypt-then-mac?
     pub private_encrypt_then_mac: u8,
+    ///< negotiate extended master secret?
     pub private_extended_ms: u8,
+    ///< detect and prevent replay?
     pub private_anti_replay: u8,
+    ///< disable renegotiation?
     pub private_disable_renegotiation: u8,
+    ///< use session tickets?
     pub private_session_tickets: u8,
+    ///< number of NewSessionTicket
     pub private_new_session_tickets_count: u16,
+    ///< enable sending CA list in
+    ///Certificate Request messages?
     pub private_cert_req_ca_list: u8,
+    ///< pick the ciphersuite according to
+    ///the client's preferences rather
+    ///than ours?
     pub private_respect_cli_pref: u8,
+    ///< Should DTLS record with
+    ///   unexpected CID
+    ///   lead to failure?
     pub private_ignore_unexpected_cid: u8,
+    /// Allowed ciphersuites for (D)TLS 1.2 (0-terminated)
     pub private_ciphersuite_list: *const crate::c_types::c_int,
+    /// Allowed TLS 1.3 key exchange modes.
     pub private_tls13_kex_modes: crate::c_types::c_int,
+    /// Callback for printing debug output
     pub private_f_dbg: ::core::option::Option<
         unsafe extern "C" fn(
             arg1: *mut crate::c_types::c_void,
@@ -18467,7 +18736,9 @@ pub struct mbedtls_ssl_config {
             arg5: *const crate::c_types::c_char,
         ),
     >,
+    ///< context for the debug function
     pub private_p_dbg: *mut crate::c_types::c_void,
+    /// Callback for getting (pseudo-)random numbers
     pub private_f_rng: ::core::option::Option<
         unsafe extern "C" fn(
             arg1: *mut crate::c_types::c_void,
@@ -18475,10 +18746,15 @@ pub struct mbedtls_ssl_config {
             arg3: usize,
         ) -> crate::c_types::c_int,
     >,
+    ///< context for the RNG function
     pub private_p_rng: *mut crate::c_types::c_void,
+    /// Callback to retrieve a session from the cache
     pub private_f_get_cache: mbedtls_ssl_cache_get_t,
+    /// Callback to store a session into the cache
     pub private_f_set_cache: mbedtls_ssl_cache_set_t,
+    ///< context for cache callbacks
     pub private_p_cache: *mut crate::c_types::c_void,
+    /// Callback for setting cert according to SNI extension
     pub private_f_sni: ::core::option::Option<
         unsafe extern "C" fn(
             arg1: *mut crate::c_types::c_void,
@@ -18487,7 +18763,9 @@ pub struct mbedtls_ssl_config {
             arg4: usize,
         ) -> crate::c_types::c_int,
     >,
+    ///< context for SNI callback
     pub private_p_sni: *mut crate::c_types::c_void,
+    /// Callback to customize X.509 certificate chain verification
     pub private_f_vrfy: ::core::option::Option<
         unsafe extern "C" fn(
             arg1: *mut crate::c_types::c_void,
@@ -18496,7 +18774,9 @@ pub struct mbedtls_ssl_config {
             arg4: *mut u32,
         ) -> crate::c_types::c_int,
     >,
+    ///< context for X.509 verify calllback
     pub private_p_vrfy: *mut crate::c_types::c_void,
+    /// Callback to retrieve PSK key from identity
     pub private_f_psk: ::core::option::Option<
         unsafe extern "C" fn(
             arg1: *mut crate::c_types::c_void,
@@ -18505,7 +18785,9 @@ pub struct mbedtls_ssl_config {
             arg4: usize,
         ) -> crate::c_types::c_int,
     >,
+    ///< context for PSK callback
     pub private_p_psk: *mut crate::c_types::c_void,
+    /// Callback to create & write a cookie for ClientHello verification
     pub private_f_cookie_write: ::core::option::Option<
         unsafe extern "C" fn(
             arg1: *mut crate::c_types::c_void,
@@ -18515,6 +18797,7 @@ pub struct mbedtls_ssl_config {
             arg5: usize,
         ) -> crate::c_types::c_int,
     >,
+    /// Callback to verify validity of a ClientHello cookie
     pub private_f_cookie_check: ::core::option::Option<
         unsafe extern "C" fn(
             arg1: *mut crate::c_types::c_void,
@@ -18524,7 +18807,9 @@ pub struct mbedtls_ssl_config {
             arg5: usize,
         ) -> crate::c_types::c_int,
     >,
+    ///< context for the cookie callbacks
     pub private_p_cookie: *mut crate::c_types::c_void,
+    /// Callback to create & write a session ticket
     pub private_f_ticket_write: ::core::option::Option<
         unsafe extern "C" fn(
             arg1: *mut crate::c_types::c_void,
@@ -18535,6 +18820,7 @@ pub struct mbedtls_ssl_config {
             arg6: *mut u32,
         ) -> crate::c_types::c_int,
     >,
+    /// Callback to parse a session ticket into a session structure
     pub private_f_ticket_parse: ::core::option::Option<
         unsafe extern "C" fn(
             arg1: *mut crate::c_types::c_void,
@@ -18543,43 +18829,113 @@ pub struct mbedtls_ssl_config {
             arg4: usize,
         ) -> crate::c_types::c_int,
     >,
+    ///< context for the ticket callbacks
     pub private_p_ticket: *mut crate::c_types::c_void,
+    ///< The length of CIDs for incoming DTLS records.
     pub private_cid_len: usize,
+    ///< verification profile
     pub private_cert_profile: *const mbedtls_x509_crt_profile,
+    ///< own certificate/key pair(s)
     pub private_key_cert: *mut mbedtls_ssl_key_cert,
+    ///< trusted CAs
     pub private_ca_chain: *mut mbedtls_x509_crt,
+    ///< trusted CAs CRLs
     pub private_ca_crl: *mut mbedtls_x509_crl,
+    ///< allowed signature hashes
     pub private_sig_hashes: *const crate::c_types::c_int,
+    ///< allowed signature algorithms
     pub private_sig_algs: *const u16,
+    ///< allowed curves
     pub private_curve_list: *const mbedtls_ecp_group_id,
+    ///< allowed IANA NamedGroups
     pub private_group_list: *const u16,
+    ///< prime modulus for DHM
     pub private_dhm_P: mbedtls_mpi,
+    ///< generator for DHM
     pub private_dhm_G: mbedtls_mpi,
+    ///< The raw pre-shared key. This field should
+    ///   only be set via mbedtls_ssl_conf_psk().
+    ///   If either no PSK or an opaque PSK
+    ///   have been configured, this has value NULL.
     pub private_psk: *mut crate::c_types::c_uchar,
+    ///< The length of the raw pre-shared key.
+    ///   This field should only be set via
+    ///   mbedtls_ssl_conf_psk().
+    ///   Its value is non-zero if and only if
+    ///   \c psk is not \c NULL.
     pub private_psk_len: usize,
+    ///< The PSK identity for PSK negotiation.
+    ///   This field should only be set via
+    ///   mbedtls_ssl_conf_psk().
+    ///   This is set if and only if either
+    ///   \c psk or \c psk_opaque are set.
     pub private_psk_identity: *mut crate::c_types::c_uchar,
+    ///< The length of PSK identity.
+    ///   This field should only be set via
+    ///   mbedtls_ssl_conf_psk().
+    ///   Its value is non-zero if and only if
+    ///   \c psk is not \c NULL or \c psk_opaque
+    ///   is not \c 0.
     pub private_psk_identity_len: usize,
+    ///< ordered list of protocols
     pub private_alpn_list: *mut *const crate::c_types::c_char,
+    ///< timeout for mbedtls_ssl_read (ms)
     pub private_read_timeout: u32,
+    ///< initial value of the handshake
+    ///retransmission timeout (ms)
     pub private_hs_timeout_min: u32,
+    ///< maximum value of the handshake
+    ///retransmission timeout (ms)
     pub private_hs_timeout_max: u32,
+    ///< grace period for renegotiation
     pub private_renego_max_records: crate::c_types::c_int,
+    ///< value of the record counters
+    ///that triggers renegotiation
     pub private_renego_period: [crate::c_types::c_uchar; 8usize],
+    ///< limit of records with a bad MAC
     pub private_badmac_limit: crate::c_types::c_uint,
+    ///< min. bit length of the DHM prime
     pub private_dhm_min_bitlen: crate::c_types::c_uint,
+    /// User data pointer or handle.
+    ///
+    /// The library sets this to \p 0 when creating a context and does not
+    /// access it afterwards.
     pub private_user_data: mbedtls_ssl_user_data_t,
+    ///< certificate selection callback
     pub private_f_cert_cb: mbedtls_ssl_hs_cb_t,
+    ///< acceptable client cert issuers
     pub private_dn_hints: *const mbedtls_x509_crt,
 }
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_ssl_context {
+    ///< configuration information
     pub private_conf: *const mbedtls_ssl_config,
+    ///< SSL handshake: current state
     pub private_state: crate::c_types::c_int,
+    ///< Initial, in progress, pending?
     pub private_renego_status: crate::c_types::c_int,
+    ///< Records since renego request, or with DTLS,
+    ///number of retransmissions of request if
+    ///renego_max_records is < 0
     pub private_renego_records_seen: crate::c_types::c_int,
+    /// Server: Negotiated TLS protocol version.
+    ///  Client: Maximum TLS version to be negotiated, then negotiated TLS
+    ///          version.
+    ///
+    ///  It is initialized as the maximum TLS version to be negotiated in the
+    ///  ClientHello writing preparation stage and used throughout the
+    ///  ClientHello writing. For a fresh handshake not linked to any previous
+    ///  handshake, it is initialized to the configured maximum TLS version
+    ///  to be negotiated. When renegotiating or resuming a session, it is
+    ///  initialized to the previously negotiated TLS version.
+    ///
+    ///  Updated to the negotiated TLS version as soon as the ServerHello is
+    ///  received.
     pub private_tls_version: mbedtls_ssl_protocol_version,
+    ///< records with a bad MAC received
     pub private_badmac_seen: crate::c_types::c_uint,
+    /// Callback to customize X.509 certificate chain verification
     pub private_f_vrfy: ::core::option::Option<
         unsafe extern "C" fn(
             arg1: *mut crate::c_types::c_void,
@@ -18588,71 +18944,175 @@ pub struct mbedtls_ssl_context {
             arg4: *mut u32,
         ) -> crate::c_types::c_int,
     >,
+    ///< context for X.509 verify callback
     pub private_p_vrfy: *mut crate::c_types::c_void,
+    ///< Callback for network send
     pub private_f_send: mbedtls_ssl_send_t,
+    ///< Callback for network receive
     pub private_f_recv: mbedtls_ssl_recv_t,
     pub private_f_recv_timeout: mbedtls_ssl_recv_timeout_t,
+    ///< context for I/O operations
     pub private_p_bio: *mut crate::c_types::c_void,
+    ///<  current session data (in)
     pub private_session_in: *mut mbedtls_ssl_session,
+    ///<  current session data (out)
     pub private_session_out: *mut mbedtls_ssl_session,
+    ///<  negotiated session data
     pub private_session: *mut mbedtls_ssl_session,
+    ///<  session data in negotiation
     pub private_session_negotiate: *mut mbedtls_ssl_session,
+    ///<  params required only during
+    ///the handshake process
     pub private_handshake: *mut mbedtls_ssl_handshake_params,
+    ///<  current transform params (in)
+    ///    This is always a reference,
+    ///    never an owning pointer.
     pub private_transform_in: *mut mbedtls_ssl_transform,
+    ///<  current transform params (out)
+    ///    This is always a reference,
+    ///    never an owning pointer.
     pub private_transform_out: *mut mbedtls_ssl_transform,
+    ///<  negotiated transform params
+    ///    This pointer owns the transform
+    ///    it references.
     pub private_transform: *mut mbedtls_ssl_transform,
+    ///<  transform params in negotiation
+    ///    This pointer owns the transform
+    ///    it references.
     pub private_transform_negotiate: *mut mbedtls_ssl_transform,
+    /// The application data transform in TLS 1.3.
+    ///  This pointer owns the transform it references.
     pub private_transform_application: *mut mbedtls_ssl_transform,
+    ///< context for the timer callbacks
     pub private_p_timer: *mut crate::c_types::c_void,
+    ///< set timer callback
     pub private_f_set_timer: mbedtls_ssl_set_timer_t,
+    ///< get timer callback
     pub private_f_get_timer: mbedtls_ssl_get_timer_t,
+    ///< input buffer
     pub private_in_buf: *mut crate::c_types::c_uchar,
+    ///< 64-bit incoming message counter
+    ///TLS: maintained by us
+    ///DTLS: read from peer
     pub private_in_ctr: *mut crate::c_types::c_uchar,
+    ///< start of record header
     pub private_in_hdr: *mut crate::c_types::c_uchar,
+    ///< The start of the CID;
+    ///   (the end is marked by in_len).
     pub private_in_cid: *mut crate::c_types::c_uchar,
+    ///< two-bytes message length field
     pub private_in_len: *mut crate::c_types::c_uchar,
+    ///< ivlen-byte IV
     pub private_in_iv: *mut crate::c_types::c_uchar,
+    ///< message contents (in_iv+ivlen)
     pub private_in_msg: *mut crate::c_types::c_uchar,
+    ///< read offset in application data
     pub private_in_offt: *mut crate::c_types::c_uchar,
+    ///< record header: message type
     pub private_in_msgtype: crate::c_types::c_int,
+    ///< record header: message length
     pub private_in_msglen: usize,
+    ///< amount of data read so far
     pub private_in_left: usize,
+    ///< DTLS epoch for incoming records
     pub private_in_epoch: u16,
+    ///< offset of the next record in datagram
+    ///(equal to in_left if none)
     pub private_next_record_offset: usize,
+    ///< last validated record seq_num
     pub private_in_window_top: u64,
+    ///< bitmask for replay detection
     pub private_in_window: u64,
+    ///< current handshake message length,
+    ///including the handshake header
     pub private_in_hslen: usize,
+    ///< # of 0-length encrypted messages
     pub private_nb_zero: crate::c_types::c_int,
+    ///< drop or reuse current message
+    ///on next call to record layer?
     pub private_keep_current_message: crate::c_types::c_int,
+    ///< Determines if a fatal alert
+    ///should be sent. Values:
+    ///- \c 0 , no alert is to be sent.
+    ///- \c 1 , alert is to be sent.
     pub private_send_alert: crate::c_types::c_uchar,
+    ///< Type of alert if send_alert
+    ///= 0
     pub private_alert_type: crate::c_types::c_uchar,
+    ///< The error code to be returned
+    ///to the user once the fatal alert
+    ///has been sent.
     pub private_alert_reason: crate::c_types::c_int,
+    ///< Disable packing multiple records
+    ///   within a single datagram.
     pub private_disable_datagram_packing: u8,
+    ///< output buffer
     pub private_out_buf: *mut crate::c_types::c_uchar,
+    ///< 64-bit outgoing message counter
     pub private_out_ctr: *mut crate::c_types::c_uchar,
+    ///< start of record header
     pub private_out_hdr: *mut crate::c_types::c_uchar,
+    ///< The start of the CID;
+    ///   (the end is marked by in_len).
     pub private_out_cid: *mut crate::c_types::c_uchar,
+    ///< two-bytes message length field
     pub private_out_len: *mut crate::c_types::c_uchar,
+    ///< ivlen-byte IV
     pub private_out_iv: *mut crate::c_types::c_uchar,
+    ///< message contents (out_iv+ivlen)
     pub private_out_msg: *mut crate::c_types::c_uchar,
+    ///< record header: message type
     pub private_out_msgtype: crate::c_types::c_int,
+    ///< record header: message length
     pub private_out_msglen: usize,
+    ///< amount of data not yet written
     pub private_out_left: usize,
+    ///<  Outgoing record sequence  number.
     pub private_cur_out_ctr: [crate::c_types::c_uchar; 8usize],
+    ///< path mtu, used to fragment outgoing messages
     pub private_mtu: u16,
+    ///< expected peer CN for verification
+    ///(and SNI if available)
     pub private_hostname: *mut crate::c_types::c_char,
+    ///<  negotiated protocol
     pub private_alpn_chosen: *const crate::c_types::c_char,
+    ///<  transport-level ID of the client
     pub private_cli_id: *mut crate::c_types::c_uchar,
+    ///<  length of cli_id
     pub private_cli_id_len: usize,
+    ///<  does peer support legacy or
+    ///secure renegotiation
     pub private_secure_renegotiation: crate::c_types::c_int,
+    ///<  length of verify data stored
     pub private_verify_data_len: usize,
+    ///<  previous handshake verify data
     pub private_own_verify_data: [crate::c_types::c_char; 12usize],
+    ///<  previous handshake verify data
     pub private_peer_verify_data: [crate::c_types::c_char; 12usize],
+    /// The next incoming CID, chosen by the user and applying to
+    ///  all subsequent handshakes. This may be different from the
+    ///  CID currently used in case the user has re-configured the CID
+    ///  after an initial handshake.
     pub private_own_cid: [crate::c_types::c_uchar; 32usize],
+    ///< The length of \c own_cid.
     pub private_own_cid_len: u8,
+    ///< This indicates whether the CID extension should
+    ///   be negotiated in the next handshake or not.
+    ///   Possible values are #MBEDTLS_SSL_CID_ENABLED
+    ///   and #MBEDTLS_SSL_CID_DISABLED.
     pub private_negotiate_cid: u8,
+    /// Callback to export key block and master secret
     pub private_f_export_keys: mbedtls_ssl_export_keys_t,
+    ///< context for key export callback
     pub private_p_export_keys: *mut crate::c_types::c_void,
+    /// User data pointer or handle.
+    ///
+    /// The library sets this to \p 0 when creating a context and does not
+    /// access it afterwards.
+    ///
+    /// \warning Serializing and restoring an SSL context with
+    ///          mbedtls_ssl_context_save() and mbedtls_ssl_context_load()
+    ///          does not currently restore the user data.
     pub private_user_data: mbedtls_ssl_user_data_t,
 }
 extern "C" {
@@ -21400,10 +21860,15 @@ pub type mbedtls_entropy_f_source_ptr = ::core::option::Option<
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_entropy_source_state {
+    ///< The entropy source callback
     pub private_f_source: mbedtls_entropy_f_source_ptr,
+    ///< The callback data pointer
     pub private_p_source: *mut crate::c_types::c_void,
+    ///< Amount received in bytes
     pub private_size: usize,
+    ///< Minimum bytes required before release
     pub private_threshold: usize,
+    ///< Is the source strong?
     pub private_strong: crate::c_types::c_int,
 }
 /// \brief           Entropy context structure
@@ -21691,15 +22156,30 @@ extern "C" {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_aes_context {
+    ///< The number of rounds.
     pub private_nr: crate::c_types::c_int,
+    ///< The offset in array elements to AES
+    ///round keys in the buffer.
     pub private_rk_offset: usize,
+    ///< Unaligned data buffer. This buffer can
+    ///hold 32 extra Bytes, which can be used for
+    ///one of the following purposes:
+    ///<ul><li>Alignment if VIA padlock is
+    ///used.</li>
+    ///<li>Simplifying key expansion in the 256-bit
+    ///case by generating an extra round key.
+    ///</li></ul>
     pub private_buf: [u32; 68usize],
 }
 /// \brief The AES XTS context-type definition.
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_aes_xts_context {
+    ///< The AES context to use for AES block
+    ///encryption or decryption.
     pub private_crypt: mbedtls_aes_context,
+    ///< The AES context used for tweak
+    ///computation.
     pub private_tweak: mbedtls_aes_context,
 }
 extern "C" {
@@ -22208,11 +22688,31 @@ extern "C" {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_ctr_drbg_context {
+    ///< The counter (V).
     pub private_counter: [crate::c_types::c_uchar; 16usize],
+    ///< The reseed counter.
+    /// This is the number of requests that have
+    /// been made since the last (re)seeding,
+    /// minus one.
+    /// Before the initial seeding, this field
+    /// contains the amount of entropy in bytes
+    /// to use as a nonce for the initial seeding,
+    /// or -1 if no nonce length has been explicitly
+    /// set (see mbedtls_ctr_drbg_set_nonce_len()).
     pub private_reseed_counter: crate::c_types::c_int,
+    ///< This determines whether prediction
+    ///resistance is enabled, that is
+    ///whether to systematically reseed before
+    ///each random generation.
     pub private_prediction_resistance: crate::c_types::c_int,
+    ///< The amount of entropy grabbed on each
+    ///seed or reseed operation, in bytes.
     pub private_entropy_len: usize,
+    ///< The reseed interval.
+    /// This is the maximum number of requests
+    /// that can be made between reseedings.
     pub private_reseed_interval: crate::c_types::c_int,
+    ///< The AES context.
     pub private_aes_ctx: mbedtls_aes_context,
     pub private_f_entropy: ::core::option::Option<
         unsafe extern "C" fn(
@@ -22221,6 +22721,7 @@ pub struct mbedtls_ctr_drbg_context {
             arg3: usize,
         ) -> crate::c_types::c_int,
     >,
+    ///< The context for the entropy function.
     pub private_p_entropy: *mut crate::c_types::c_void,
 }
 extern "C" {

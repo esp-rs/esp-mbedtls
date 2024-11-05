@@ -123,6 +123,7 @@ fn main() -> ! {
         Mode::Client,
         TlsVersion::Tls1_3,
         certificates,
+        peripherals.SHA,
     )
     .unwrap()
     .with_hardware_rsa(peripherals.RSA);

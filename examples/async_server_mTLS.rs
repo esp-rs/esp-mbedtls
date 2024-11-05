@@ -182,6 +182,7 @@ async fn main(spawner: Spawner) -> ! {
             },
             tls_rx_buffer,
             tls_tx_buffer,
+            &mut peripherals.SHA,
         )
         .unwrap()
         .with_hardware_rsa(&mut peripherals.RSA);

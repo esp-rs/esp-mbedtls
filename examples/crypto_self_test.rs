@@ -15,6 +15,20 @@ use esp_println::{logger::init_logger, println};
 use esp_wifi::{init, EspWifiInitFor};
 use hal::{prelude::*, rng::Rng, timer::timg::TimerGroup};
 
+use log::warn;
+
+pub fn cycles() -> u64 {
+    #[cfg(feature = "esp32")]
+    {
+        esp_hal::xtensa_lx::timer::get_cycle_count() as u64
+    }
+
+    #[cfg(not(feature = "esp32"))]
+    {
+        esp_hal::timer::systimer::SystemTimer::now()
+    }
+}
+
 #[entry]
 fn main() -> ! {
     init_logger(log::LevelFilter::Info);
@@ -52,14 +66,38 @@ fn main() -> ! {
     unsafe {
         esp_mbedtls::mbedtls_rsa_self_test(1i32);
     }
-    // println!("Testing SHA");
+    println!("Testing SHA");
+
+    // | Hash Algorithm | Software (cycles) | Hardware (cycles) | Hardware Faster (x times) |
+    // |----------------|-------------------|-------------------|---------------------------|
+    // | SHA-1          |      3,390,785    |         896,889   |           3.78            |
+    // | SHA-224        |      8,251,799    |         898,344   |           9.19            |
+    // | SHA-256        |      8,237,932    |         901,709   |           9.14            |
+    // | SHA-384        |     13,605,806    |         799,532   |           17.02           |
+    // | SHA-512        |     13,588,104    |         801,556   |           16.95           |
+
     unsafe {
-        // esp_mbedtls::mbedtls_sha1_self_test(1i32);
-        // #[cfg(not(feature = "esp32"))]
-        // esp_mbedtls::mbedtls_sha224_self_test(1i32);
-        // esp_mbedtls::mbedtls_sha256_self_test(1i32);
-        // esp_mbedtls::mbedtls_sha384_self_test(1i32);
-        // esp_mbedtls::mbedtls_sha512_self_test(1i32);
+        let before = cycles();
+        esp_mbedtls::mbedtls_sha1_self_test(1i32);
+        let after = cycles();
+        warn!("SHA 1 took {} cycles", after - before);
+        #[cfg(not(feature = "esp32"))]
+        let before = cycles();
+        esp_mbedtls::mbedtls_sha224_self_test(1i32);
+        let after = cycles();
+        warn!("SHA 224 took {} cycles", after - before);
+        let before = cycles();
+        esp_mbedtls::mbedtls_sha256_self_test(1i32);
+        let after = cycles();
+        warn!("SHA 256 took {} cycles", after - before);
+        let before = cycles();
+        esp_mbedtls::mbedtls_sha384_self_test(1i32);
+        let after = cycles();
+        warn!("SHA 384 took {} cycles", after - before);
+        let before = cycles();
+        esp_mbedtls::mbedtls_sha512_self_test(1i32);
+        let after = cycles();
+        warn!("SHA 512 took {} cycles", after - before);
 
         // HW Crypto:
         // Testing RSA
@@ -119,7 +157,7 @@ fn main() -> ! {
         // Took 1325770 cycles
         // Done
 
-        esp_mbedtls::mbedtls_mpi_self_test(1i32);
+        // esp_mbedtls::mbedtls_mpi_self_test(1i32);
     }
 
     println!("Done");

@@ -18,7 +18,7 @@ use edge_http::io::Error;
 use edge_http::Method;
 use edge_nal_embassy::{Tcp, TcpBuffers};
 
-use embedded_io_async::{ErrorType, Read, Write};
+use embedded_io_async::{Read, Write};
 
 use embassy_net::{Config, Stack, StackResources};
 
@@ -144,16 +144,10 @@ async fn main(spawner: Spawner) -> ! {
 
     set_debug(0);
 
-    let server = mk_static!(HttpsServer, HttpsServer::new());
-    let buffers = mk_static!(TcpBuffers<SERVER_SOCKETS, TX_SIZE, RX_SIZE>, TcpBuffers::<SERVER_SOCKETS, TX_SIZE, RX_SIZE>::new());
-    let tls_buffers = mk_static!(
-        esp_mbedtls::asynch::TlsBuffers::<RX_SIZE, TX_SIZE>,
-        esp_mbedtls::asynch::TlsBuffers::<RX_SIZE, TX_SIZE>::new()
-    );
-    let tcp = mk_static!(
-        Tcp<'_, WifiDevice<'_, WifiStaDevice>, SERVER_SOCKETS, TX_SIZE, RX_SIZE>,
-        Tcp::new(stack, buffers)
-    );
+    let mut server = HttpsServer::new();
+    let buffers = TcpBuffers::<SERVER_SOCKETS, TX_SIZE, RX_SIZE>::new();
+    let tls_buffers = esp_mbedtls::asynch::TlsBuffers::<RX_SIZE, TX_SIZE>::new();
+    let tcp = Tcp::new(stack, &buffers);
 
     let certificates = Certificates {
         // Use self-signed certificates
@@ -166,11 +160,12 @@ async fn main(spawner: Spawner) -> ! {
 
     loop {
         let tls_acceptor = esp_mbedtls::asynch::TlsAcceptor::new(
-            tcp,
-            tls_buffers,
+            &tcp,
+            &tls_buffers,
             443,
             TlsVersion::Tls1_2,
             certificates,
+            &mut peripherals.SHA,
         )
         .await
         .with_hardware_rsa(&mut peripherals.RSA);
@@ -195,18 +190,17 @@ async fn main(spawner: Spawner) -> ! {
 
 struct HttpHandler;
 
-impl<'b, T, const N: usize> Handler<'b, T, N> for HttpHandler
-where
-    T: Read + Write,
-    T::Error: Send + Sync,
-{
-    type Error = Error<<T as ErrorType>::Error>;
+impl Handler for HttpHandler {
+    type Error<E> = Error<E> where E: core::fmt::Debug;
 
-    async fn handle(
+    async fn handle<T, const N: usize>(
         &self,
         _task_id: impl core::fmt::Display + Copy,
-        connection: &mut Connection<'b, T, N>,
-    ) -> Result<(), Self::Error> {
+        connection: &mut Connection<'_, T, N>,
+    ) -> Result<(), Self::Error<T::Error>>
+    where
+        T: Read + Write,
+    {
         println!("Got new connection");
         let headers = connection.headers()?;
 

@@ -5,15 +5,24 @@
 use embedded_io::ErrorType;
 #[doc(hidden)]
 pub use esp_hal as hal;
-use hal::{peripheral::Peripheral, peripherals::RSA, rsa::Rsa};
+use hal::{
+    peripheral::Peripheral,
+    peripherals::{RSA, SHA},
+    rsa::Rsa,
+    sha::Sha,
+};
 
 mod compat;
 
 #[cfg(any(feature = "esp32c3", feature = "esp32s2", feature = "esp32s3"))]
 mod bignum;
+#[cfg(not(feature = "esp32"))]
+mod sha;
 
+use core::cell::RefCell;
 use core::ffi::CStr;
 use core::mem::size_of;
+use critical_section::Mutex;
 
 use compat::StrBuf;
 use embedded_io::Read;
@@ -25,6 +34,12 @@ pub use esp_mbedtls_sys::bindings::{
     mbedtls_mpi_self_test,
     // RSA
     mbedtls_rsa_self_test,
+    // SHA,
+    mbedtls_sha1_self_test,
+    mbedtls_sha224_self_test,
+    mbedtls_sha256_self_test,
+    mbedtls_sha384_self_test,
+    mbedtls_sha512_self_test,
 };
 use esp_mbedtls_sys::c_types::*;
 
@@ -36,6 +51,9 @@ use esp_mbedtls_sys::c_types::*;
 /// Note: Due to implementation constraints, this session and every other session will use the
 /// hardware accelerated RSA driver until the session called with this function is dropped.
 static mut RSA_REF: Option<Rsa<esp_hal::Blocking>> = None;
+
+/// Hold the SHA peripheral for cryptographic operations.
+static SHARED_SHA: Mutex<RefCell<Option<Sha<'static>>>> = Mutex::new(RefCell::new(None));
 
 // these will come from esp-wifi (i.e. this can only be used together with esp-wifi)
 extern "C" {
@@ -50,6 +68,15 @@ macro_rules! error_checked {
     ($block:expr) => {{
         let res = $block;
         if res != 0 {
+            Err(TlsError::MbedTlsError(res))
+        } else {
+            Ok(())
+        }
+    }};
+    ($block:expr, $err_callback:expr) => {{
+        let res = $block;
+        if res != 0 {
+            $err_callback();
             Err(TlsError::MbedTlsError(res))
         } else {
             Ok(())
@@ -301,6 +328,7 @@ impl<'a> Certificates<'a> {
             let ssl_config =
                 calloc(1, size_of::<mbedtls_ssl_config>() as u32) as *mut mbedtls_ssl_config;
             if ssl_config.is_null() {
+                free(drbg_context as *const _);
                 free(ssl_context as *const _);
                 return Err(TlsError::OutOfMemory);
             }
@@ -347,12 +375,31 @@ impl<'a> Certificates<'a> {
             mbedtls_ctr_drbg_init(drbg_context);
             mbedtls_ssl_conf_rng(ssl_config, Some(rng), drbg_context as *mut c_void);
 
-            error_checked!(mbedtls_ssl_config_defaults(
-                ssl_config,
-                mode.to_mbed_tls(),
-                MBEDTLS_SSL_TRANSPORT_STREAM as i32,
-                MBEDTLS_SSL_PRESET_DEFAULT as i32,
-            ))?;
+            // Closure to free all allocated resources in case of an error.
+            let cleanup = || {
+                mbedtls_ctr_drbg_free(drbg_context);
+                mbedtls_ssl_config_free(ssl_config);
+                mbedtls_ssl_free(ssl_context);
+                mbedtls_x509_crt_free(crt);
+                mbedtls_x509_crt_free(certificate);
+                mbedtls_pk_free(private_key);
+                free(drbg_context as *const _);
+                free(ssl_context as *const _);
+                free(ssl_config as *const _);
+                free(crt as *const _);
+                free(certificate as *const _);
+                free(private_key as *const _);
+            };
+
+            error_checked!(
+                mbedtls_ssl_config_defaults(
+                    ssl_config,
+                    mode.to_mbed_tls(),
+                    MBEDTLS_SSL_TRANSPORT_STREAM as i32,
+                    MBEDTLS_SSL_PRESET_DEFAULT as i32,
+                ),
+                cleanup
+            )?;
 
             mbedtls_ssl_conf_min_version(
                 ssl_config,
@@ -375,36 +422,40 @@ impl<'a> Certificates<'a> {
                 let mut hostname = StrBuf::new();
                 hostname.append(servername);
                 hostname.append_char('\0');
-                error_checked!(mbedtls_ssl_set_hostname(
-                    ssl_context,
-                    hostname.as_str_ref().as_ptr() as *const c_char
-                ))?;
+                error_checked!(
+                    mbedtls_ssl_set_hostname(
+                        ssl_context,
+                        hostname.as_str_ref().as_ptr() as *const c_char
+                    ),
+                    cleanup
+                )?;
             }
 
             if let Some(ca_chain) = self.ca_chain {
-                error_checked!(mbedtls_x509_crt_parse(
-                    crt,
-                    ca_chain.as_ptr(),
-                    ca_chain.len(),
-                ))?;
+                error_checked!(
+                    mbedtls_x509_crt_parse(crt, ca_chain.as_ptr(), ca_chain.len()),
+                    cleanup
+                )?;
             }
 
             if let (Some(cert), Some(key)) = (self.certificate, self.private_key) {
                 // Certificate
                 match cert.format {
                     CertificateFormat::PEM => {
-                        error_checked!(mbedtls_x509_crt_parse(
-                            certificate,
-                            cert.as_ptr(),
-                            cert.len(),
-                        ))?;
+                        error_checked!(
+                            mbedtls_x509_crt_parse(certificate, cert.as_ptr(), cert.len()),
+                            cleanup
+                        )?;
                     }
                     CertificateFormat::DER => {
-                        error_checked!(mbedtls_x509_crt_parse_der_nocopy(
-                            certificate,
-                            cert.as_ptr(),
-                            cert.len(),
-                        ))?;
+                        error_checked!(
+                            mbedtls_x509_crt_parse_der_nocopy(
+                                certificate,
+                                cert.as_ptr(),
+                                cert.len(),
+                            ),
+                            cleanup
+                        )?;
                     }
                 }
 
@@ -414,21 +465,24 @@ impl<'a> Certificates<'a> {
                 } else {
                     (core::ptr::null(), 0)
                 };
-                error_checked!(mbedtls_pk_parse_key(
-                    private_key,
-                    key.as_ptr(),
-                    key.len(),
-                    password_ptr,
-                    password_len,
-                    None,
-                    core::ptr::null_mut(),
-                ))?;
+                error_checked!(
+                    mbedtls_pk_parse_key(
+                        private_key,
+                        key.as_ptr(),
+                        key.len(),
+                        password_ptr,
+                        password_len,
+                        None,
+                        core::ptr::null_mut(),
+                    ),
+                    cleanup
+                )?;
 
                 mbedtls_ssl_conf_own_cert(ssl_config, certificate, private_key);
             }
 
             mbedtls_ssl_conf_ca_chain(ssl_config, crt, core::ptr::null_mut());
-            error_checked!(mbedtls_ssl_setup(ssl_context, ssl_config))?;
+            error_checked!(mbedtls_ssl_setup(ssl_context, ssl_config), cleanup)?;
             Ok((
                 drbg_context,
                 ssl_context,
@@ -477,7 +531,14 @@ impl<T> Session<T> {
         mode: Mode,
         min_version: TlsVersion,
         certificates: Certificates,
+        sha: impl Peripheral<P = SHA>,
     ) -> Result<Self, TlsError> {
+        critical_section::with(|cs| {
+            SHARED_SHA
+                .borrow_ref_mut(cs)
+                .replace(unsafe { core::mem::transmute(Sha::new(sha)) })
+        });
+
         let (drbg_context, ssl_context, ssl_config, crt, client_crt, private_key) =
             certificates.init_ssl(servername, mode, min_version)?;
         return Ok(Self {
@@ -619,6 +680,7 @@ impl<T> Drop for Session<T> {
             if self.owns_rsa {
                 RSA_REF = core::mem::transmute(None::<RSA>);
             }
+            critical_section::with(|cs| SHARED_SHA.borrow_ref_mut(cs).take());
             mbedtls_ssl_close_notify(self.ssl_context);
             mbedtls_ctr_drbg_free(self.drbg_context);
             mbedtls_ssl_config_free(self.ssl_config);
@@ -729,7 +791,14 @@ pub mod asynch {
 
             rx_buffer: &'a mut [u8; RX_SIZE],
             tx_buffer: &'a mut [u8; TX_SIZE],
+            sha: impl Peripheral<P = SHA>,
         ) -> Result<Self, TlsError> {
+            critical_section::with(|cs| {
+                SHARED_SHA
+                    .borrow_ref_mut(cs)
+                    .replace(unsafe { core::mem::transmute(Sha::new(sha)) })
+            });
+
             let (drbg_context, ssl_context, ssl_config, crt, client_crt, private_key) =
                 certificates.init_ssl(servername, mode, min_version)?;
             return Ok(Self {
@@ -771,6 +840,7 @@ pub mod asynch {
                 if self.owns_rsa {
                     RSA_REF = core::mem::transmute(None::<RSA>);
                 }
+                critical_section::with(|cs| SHARED_SHA.borrow_ref_mut(cs).take());
                 mbedtls_ssl_close_notify(self.ssl_context);
                 mbedtls_ctr_drbg_free(self.drbg_context);
                 mbedtls_ssl_config_free(self.ssl_config);

@@ -4,10 +4,13 @@ use core::{
     cell::{Cell, RefCell, UnsafeCell},
     mem::MaybeUninit,
     net::{Ipv4Addr, SocketAddr, SocketAddrV4},
+    ops::DerefMut,
     ptr::NonNull,
 };
 
+use crate::{hal::peripheral::PeripheralRef, SHA};
 use edge_nal::{Close, TcpBind};
+
 use edge_nal_embassy::{Tcp, TcpAccept, TcpSocket};
 
 pub struct TlsAcceptor<
@@ -23,6 +26,7 @@ pub struct TlsAcceptor<
     owns_rsa: bool,
     tls_buffers: &'d TlsBuffers<RX_SZ, TX_SZ>,
     tls_buffers_ptr: RefCell<NonNull<([u8; RX_SZ], [u8; TX_SZ])>>,
+    sha: RefCell<PeripheralRef<'d, SHA>>,
 }
 
 impl<'d, D, const N: usize, const RX_SZ: usize, const TX_SZ: usize> Drop
@@ -55,6 +59,7 @@ where
         port: u16,
         version: TlsVersion,
         certificates: Certificates<'d>,
+        sha: impl Peripheral<P = SHA> + 'd,
     ) -> Self {
         let acceptor = tcp
             .bind(SocketAddr::V4(SocketAddrV4::new(
@@ -73,6 +78,7 @@ where
             owns_rsa: false,
             tls_buffers,
             tls_buffers_ptr: RefCell::new(socket_buffers),
+            sha: sha.into_ref().into(),
         }
     }
 
@@ -146,6 +152,7 @@ where
             self.certificates,
             rx,
             tx,
+            self.sha.borrow_mut().reborrow().deref_mut(),
         )?;
 
         log::debug!("Establishing SSL connection");

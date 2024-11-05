@@ -140,6 +140,7 @@ async fn main(spawner: Spawner) -> ! {
         },
         mk_static!([u8; 4096], [0; 4096]),
         mk_static!([u8; 4096], [0; 4096]),
+        peripherals.SHA,
     )
     .unwrap()
     .with_hardware_rsa(peripherals.RSA);
