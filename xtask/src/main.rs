@@ -155,49 +155,57 @@ fn main() -> Result<()> {
     ];
     let args = Args::parse();
 
-    match args.command {
-        Some(Commands::Compile { chip }) => match chip {
-            Some(chip) => {
-                compile(
-                    &workspace,
-                    compilation_targets
-                        .iter()
-                        .find(|&target| target.soc == chip)
-                        .expect("Compilation target not found"),
-                )?;
-            }
-            None => {
-                for target in compilation_targets {
-                    compile(&workspace, &target)?;
-                }
-            }
-        },
-        Some(Commands::Bindings { chip }) => match chip {
-            Some(chip) => {
-                generate_bindings(
-                    &workspace,
-                    compilation_targets
-                        .iter()
-                        .find(|&target| target.soc == chip)
-                        .expect("Compilation target not found"),
-                )?;
-            }
-            None => {
-                for target in compilation_targets {
-                    generate_bindings(&workspace, &target)?;
-                }
-            }
-        },
-        _ => {
-            unreachable!();
-        }
-    }
+    // match args.command {
+        // Some(Commands::Compile { chip }) => match chip {
+        //     Some(chip) => {
+        //         compile(
+        //             &workspace,
+        //             compilation_targets
+        //                 .iter()
+        //                 .find(|&target| target.soc == chip)
+        //                 .expect("Compilation target not found"),
+        //         )?;
+        //     }
+        //     None => {
+        //         for target in compilation_targets {
+        //             compile(&workspace, &target)?;
+        //         }
+        //     }
+        // },
+        // Some(Commands::Bindings { chip }) => match chip {
+        //     Some(chip) => {
+        //         generate_bindings(
+        //             &workspace,
+        //             compilation_targets
+        //                 .iter()
+        //                 .find(|&target| target.soc == chip)
+        //                 .expect("Compilation target not found"),
+        //         )?;
+        //     }
+        //     None => {
+                //for target in compilation_targets {
+                    generate_bindings(
+                        &workspace, 
+                        "host", 
+                        &workspace.join("esp-mbedtls-sys").join("headers/host/"),
+                        &toolchain_dir.join(
+                            "/usr/include",
+                        ),
+                    )?;
+                //}
+    //         }
+    //     },
+    //     _ => {
+    //         unreachable!();
+    //     }
+    // }
 
     Ok(())
 }
 
 /// Generate bindings for esp-mbedtls-sys
-fn generate_bindings(workspace: &Path, compilation_target: &CompilationTarget) -> Result<()> {
+//fn generate_bindings(workspace: &Path, compilation_target: &CompilationTarget) -> Result<()> {
+fn generate_bindings(workspace: &Path, soc: &str, compile_include_path: &std::path::Path, sysroot_path: &Path) -> Result<()> {
     let sys_path = workspace.join("esp-mbedtls-sys");
 
     // Generate the bindings using `bindgen`:
@@ -206,8 +214,7 @@ fn generate_bindings(workspace: &Path, compilation_target: &CompilationTarget) -
         .clang_args([
             &format!(
                 "-I{}",
-                &compilation_target
-                    .compile_include_path
+                compile_include_path
                     .display()
                     .to_string()
                     .replace('\\', "/")
@@ -233,8 +240,7 @@ fn generate_bindings(workspace: &Path, compilation_target: &CompilationTarget) -
             ),
             &format!(
                 "-I{}",
-                compilation_target
-                    .sysroot_path
+                sysroot_path
                     .join("include")
                     .display()
                     .to_string()
@@ -243,21 +249,20 @@ fn generate_bindings(workspace: &Path, compilation_target: &CompilationTarget) -
             ),
             &format!(
                 "--sysroot={}",
-                compilation_target
-                    .sysroot_path
+                sysroot_path
                     .display()
                     .to_string()
                     .replace('\\', "/")
                     .replace("//?/C:", "")
             ),
-            &format!(
-                "--target={}",
-                if compilation_target.arch == Arch::Xtensa {
-                    "xtensa"
-                } else {
-                    "riscv32"
-                }
-            ),
+            // &format!(
+            //     "--target={}",
+            //     if compilation_target.arch == Arch::Xtensa {
+            //         "xtensa"
+            //     } else {
+            //         "riscv32"
+            //     }
+            // ),
         ])
         .ctypes_prefix("crate::c_types")
         .derive_debug(false)
@@ -272,7 +277,8 @@ fn generate_bindings(workspace: &Path, compilation_target: &CompilationTarget) -
     let path = sys_path
         .join("src")
         .join("include")
-        .join(format!("{}.rs", compilation_target.soc.to_string()));
+        //.join(format!("{}.rs", compilation_target.soc.to_string()));
+        .join(format!("{}.rs", soc));
     log::info!("Writing out bindings to: {}", path.display());
     bindings.write_to_file(&path)?;
 

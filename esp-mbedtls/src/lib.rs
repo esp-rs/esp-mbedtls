@@ -2,27 +2,18 @@
 #![feature(c_variadic)]
 #![allow(incomplete_features)]
 
+#[cfg(target_os = "none")]
+pub use esp_hal::Crypto;
+
 use embedded_io::ErrorType;
-#[doc(hidden)]
-pub use esp_hal as hal;
-use hal::{
-    peripheral::Peripheral,
-    peripherals::{RSA, SHA},
-    rsa::Rsa,
-    sha::Sha,
-};
 
 mod compat;
+#[cfg(target_os = "none")]
+mod esp_hal;
 
-#[cfg(any(feature = "esp32c3", feature = "esp32s2", feature = "esp32s3"))]
-mod bignum;
-#[cfg(not(feature = "esp32"))]
-mod sha;
-
-use core::cell::RefCell;
 use core::ffi::CStr;
+use core::marker::PhantomData;
 use core::mem::size_of;
-use critical_section::Mutex;
 
 use compat::StrBuf;
 use embedded_io::Read;
@@ -43,25 +34,13 @@ pub use esp_mbedtls_sys::bindings::{
 };
 use esp_mbedtls_sys::c_types::*;
 
-/// Hold the RSA peripheral for cryptographic operations.
-///
-/// This is initialized when `with_hardware_rsa()` is called on a [Session] and is set back to None
-/// when the session that called `with_hardware_rsa()` is dropped.
-///
-/// Note: Due to implementation constraints, this session and every other session will use the
-/// hardware accelerated RSA driver until the session called with this function is dropped.
-static mut RSA_REF: Option<Rsa<esp_hal::Blocking>> = None;
-
-/// Hold the SHA peripheral for cryptographic operations.
-static SHARED_SHA: Mutex<RefCell<Option<Sha<'static>>>> = Mutex::new(RefCell::new(None));
-
 // these will come from esp-wifi (i.e. this can only be used together with esp-wifi)
 extern "C" {
     fn free(ptr: *const u8);
 
     fn calloc(number: u32, size: u32) -> *const u8;
 
-    fn random() -> u32;
+    fn random() -> crate::c_ulong;
 }
 
 macro_rules! error_checked {
@@ -108,8 +87,8 @@ pub enum TlsVersion {
 impl TlsVersion {
     fn to_mbed_tls_minor(&self) -> i32 {
         match self {
-            TlsVersion::Tls1_2 => MBEDTLS_SSL_MINOR_VERSION_3 as i32,
-            TlsVersion::Tls1_3 => MBEDTLS_SSL_MINOR_VERSION_4 as i32,
+            TlsVersion::Tls1_2 => 3 as _, // %%% TODO MBEDTLS_SSL_MINOR_VERSION_3 as i32,
+            TlsVersion::Tls1_3 => 4 as _, // %%% TODO MBEDTLS_SSL_MINOR_VERSION_4 as i32,
         }
     }
 }
@@ -495,7 +474,16 @@ impl<'a> Certificates<'a> {
     }
 }
 
-pub struct Session<T> {
+#[allow(unused)]
+pub struct CryptoToken<'a>(PhantomData<&'a ()>);
+
+impl<'a> CryptoToken<'a> {
+    pub const unsafe fn new() -> Self {
+        CryptoToken(PhantomData)
+    }
+}
+
+pub struct Session<'a, T> {
     stream: T,
     drbg_context: *mut mbedtls_ctr_drbg_context,
     ssl_context: *mut mbedtls_ssl_context,
@@ -503,11 +491,10 @@ pub struct Session<T> {
     crt: *mut mbedtls_x509_crt,
     client_crt: *mut mbedtls_x509_crt,
     private_key: *mut mbedtls_pk_context,
-    // Indicate if this session is the one holding the RSA ref
-    owns_rsa: bool,
+    _token: CryptoToken<'a>,
 }
 
-impl<T> Session<T> {
+impl<'a, T> Session<'a, T> {
     /// Create a session for a TLS stream.
     ///
     /// # Arguments
@@ -531,14 +518,8 @@ impl<T> Session<T> {
         mode: Mode,
         min_version: TlsVersion,
         certificates: Certificates,
-        sha: impl Peripheral<P = SHA>,
+        token: CryptoToken<'a>,
     ) -> Result<Self, TlsError> {
-        critical_section::with(|cs| {
-            SHARED_SHA
-                .borrow_ref_mut(cs)
-                .replace(unsafe { core::mem::transmute(Sha::new(sha)) })
-        });
-
         let (drbg_context, ssl_context, ssl_config, crt, client_crt, private_key) =
             certificates.init_ssl(servername, mode, min_version)?;
         return Ok(Self {
@@ -549,30 +530,16 @@ impl<T> Session<T> {
             crt,
             client_crt,
             private_key,
-            owns_rsa: false,
+            _token: token,
         });
-    }
-
-    /// Enable the use of the hardware accelerated RSA peripheral for the [Session].
-    ///
-    /// Note: Due to implementation constraints, this session and every other session will use the
-    /// hardware accelerated RSA driver until the session called with this function is dropped.
-    ///
-    /// # Arguments
-    ///
-    /// * `rsa` - The RSA peripheral from the HAL
-    pub fn with_hardware_rsa(mut self, rsa: impl Peripheral<P = RSA>) -> Self {
-        unsafe { RSA_REF = core::mem::transmute(Some(Rsa::new(rsa))) }
-        self.owns_rsa = true;
-        self
     }
 }
 
-impl<T> Session<T>
+impl<'a, T> Session<'a, T>
 where
     T: Read + Write,
 {
-    pub fn connect<'b>(self) -> Result<ConnectedSession<T>, TlsError> {
+    pub fn connect<'b>(self) -> Result<ConnectedSession<'a, T>, TlsError> {
         unsafe {
             mbedtls_ssl_set_bio(
                 self.ssl_context,
@@ -671,16 +638,10 @@ where
     }
 }
 
-impl<T> Drop for Session<T> {
+impl<T> Drop for Session<'_, T> {
     fn drop(&mut self) {
         log::debug!("session dropped - freeing memory");
         unsafe {
-            // If the struct that owns the RSA reference is dropped
-            // we remove RSA in static for safety
-            if self.owns_rsa {
-                RSA_REF = core::mem::transmute(None::<RSA>);
-            }
-            critical_section::with(|cs| SHARED_SHA.borrow_ref_mut(cs).take());
             mbedtls_ssl_close_notify(self.ssl_context);
             mbedtls_ctr_drbg_free(self.drbg_context);
             mbedtls_ssl_config_free(self.ssl_config);
@@ -698,21 +659,21 @@ impl<T> Drop for Session<T> {
     }
 }
 
-pub struct ConnectedSession<T>
+pub struct ConnectedSession<'a, T>
 where
     T: Read + Write,
 {
-    session: Session<T>,
+    session: Session<'a, T>,
 }
 
-impl<T> ErrorType for ConnectedSession<T>
+impl<T> ErrorType for ConnectedSession<'_, T>
 where
     T: Read + Write,
 {
     type Error = TlsError;
 }
 
-impl<T> Read for ConnectedSession<T>
+impl<T> Read for ConnectedSession<'_, T>
 where
     T: Read + Write,
 {
@@ -728,7 +689,7 @@ where
     }
 }
 
-impl<T> Write for ConnectedSession<T>
+impl<T> Write for ConnectedSession<'_, T>
 where
     T: Read + Write,
 {
@@ -750,7 +711,7 @@ pub mod asynch {
     #[cfg(feature = "edge-nal")]
     pub use crate::compat::edge_nal_compat::*;
 
-    pub struct Session<'a, T, const RX_SIZE: usize = 4096, const TX_SIZE: usize = 4096> {
+    pub struct Session<'a, 'e, T, const RX_SIZE: usize = 4096, const TX_SIZE: usize = 4096> {
         pub(crate) stream: T,
         drbg_context: *mut mbedtls_ctr_drbg_context,
         ssl_context: *mut mbedtls_ssl_context,
@@ -761,10 +722,10 @@ pub mod asynch {
         eof: bool,
         rx_buffer: BufferedBytes<'a, RX_SIZE>,
         tx_buffer: BufferedBytes<'a, TX_SIZE>,
-        owns_rsa: bool,
+        _token: CryptoToken<'e>,
     }
 
-    impl<'a, T, const RX_SIZE: usize, const TX_SIZE: usize> Session<'a, T, RX_SIZE, TX_SIZE> {
+    impl<'a, 'e, T, const RX_SIZE: usize, const TX_SIZE: usize> Session<'a, 'e, T, RX_SIZE, TX_SIZE> {
         /// Create a session for a TLS stream.
         ///
         /// # Arguments
@@ -791,14 +752,8 @@ pub mod asynch {
 
             rx_buffer: &'a mut [u8; RX_SIZE],
             tx_buffer: &'a mut [u8; TX_SIZE],
-            sha: impl Peripheral<P = SHA>,
+            token: CryptoToken<'e>,
         ) -> Result<Self, TlsError> {
-            critical_section::with(|cs| {
-                SHARED_SHA
-                    .borrow_ref_mut(cs)
-                    .replace(unsafe { core::mem::transmute(Sha::new(sha)) })
-            });
-
             let (drbg_context, ssl_context, ssl_config, crt, client_crt, private_key) =
                 certificates.init_ssl(servername, mode, min_version)?;
             return Ok(Self {
@@ -812,35 +767,15 @@ pub mod asynch {
                 eof: false,
                 rx_buffer: BufferedBytes::new(rx_buffer),
                 tx_buffer: BufferedBytes::new(tx_buffer),
-                owns_rsa: false,
+                _token: token,
             });
-        }
-
-        /// Enable the use of the hardware accelerated RSA peripheral for the [Session].
-        ///
-        /// Note: Due to implementation constraints, this session and every other session will use the
-        /// hardware accelerated RSA driver until the session called with this function is dropped.
-        ///
-        /// # Arguments
-        ///
-        /// * `rsa` - The RSA peripheral from the HAL
-        pub fn with_hardware_rsa(mut self, rsa: impl Peripheral<P = RSA>) -> Self {
-            unsafe { RSA_REF = core::mem::transmute(Some(Rsa::new(rsa))) }
-            self.owns_rsa = true;
-            self
         }
     }
 
-    impl<T, const RX_SIZE: usize, const TX_SIZE: usize> Drop for Session<'_, T, RX_SIZE, TX_SIZE> {
+    impl<T, const RX_SIZE: usize, const TX_SIZE: usize> Drop for Session<'_, '_, T, RX_SIZE, TX_SIZE> {
         fn drop(&mut self) {
             log::debug!("session dropped - freeing memory");
             unsafe {
-                // If the struct that owns the RSA reference is dropped
-                // we remove RSA in static for safety
-                if self.owns_rsa {
-                    RSA_REF = core::mem::transmute(None::<RSA>);
-                }
-                critical_section::with(|cs| SHARED_SHA.borrow_ref_mut(cs).take());
                 mbedtls_ssl_close_notify(self.ssl_context);
                 mbedtls_ctr_drbg_free(self.drbg_context);
                 mbedtls_ssl_config_free(self.ssl_config);
@@ -858,13 +793,13 @@ pub mod asynch {
         }
     }
 
-    impl<'a, T, const RX_SIZE: usize, const TX_SIZE: usize> Session<'a, T, RX_SIZE, TX_SIZE>
+    impl<'a, 'r, T, const RX_SIZE: usize, const TX_SIZE: usize> Session<'a, 'r, T, RX_SIZE, TX_SIZE>
     where
         T: embedded_io_async::Read + embedded_io_async::Write,
     {
         pub async fn connect(
             mut self,
-        ) -> Result<AsyncConnectedSession<'a, T, RX_SIZE, TX_SIZE>, TlsError> {
+        ) -> Result<AsyncConnectedSession<'a, 'r, T, RX_SIZE, TX_SIZE>, TlsError> {
             unsafe {
                 mbedtls_ssl_set_bio(
                     self.ssl_context,
@@ -1066,15 +1001,15 @@ pub mod asynch {
         }
     }
 
-    pub struct AsyncConnectedSession<'a, T, const RX_SIZE: usize, const TX_SIZE: usize>
+    pub struct AsyncConnectedSession<'a, 'r, T, const RX_SIZE: usize, const TX_SIZE: usize>
     where
         T: embedded_io_async::Read + embedded_io_async::Write,
     {
-        pub(crate) session: Session<'a, T, RX_SIZE, TX_SIZE>,
+        pub(crate) session: Session<'a, 'r, T, RX_SIZE, TX_SIZE>,
     }
 
     impl<T, const RX_SIZE: usize, const TX_SIZE: usize> embedded_io_async::ErrorType
-        for AsyncConnectedSession<'_, T, RX_SIZE, TX_SIZE>
+        for AsyncConnectedSession<'_, '_, T, RX_SIZE, TX_SIZE>
     where
         T: embedded_io_async::Read + embedded_io_async::Write,
     {
@@ -1082,7 +1017,7 @@ pub mod asynch {
     }
 
     impl<T, const RX_SIZE: usize, const TX_SIZE: usize> embedded_io_async::Read
-        for AsyncConnectedSession<'_, T, RX_SIZE, TX_SIZE>
+        for AsyncConnectedSession<'_, '_, T, RX_SIZE, TX_SIZE>
     where
         T: embedded_io_async::Read + embedded_io_async::Write,
     {
@@ -1105,7 +1040,7 @@ pub mod asynch {
     }
 
     impl<T, const RX_SIZE: usize, const TX_SIZE: usize> embedded_io_async::Write
-        for AsyncConnectedSession<'_, T, RX_SIZE, TX_SIZE>
+        for AsyncConnectedSession<'_, '_, T, RX_SIZE, TX_SIZE>
     where
         T: embedded_io_async::Read + embedded_io_async::Write,
     {

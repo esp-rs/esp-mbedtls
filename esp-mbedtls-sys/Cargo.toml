@@ -11,8 +11,11 @@ anyhow = "1.0.68"
 [features]
 default = []
 
-# Exactly *one* chip MUST be selected via its feature:
+# ESP-baremetal: Exactly *one* chip MUST be selected via its feature:
 esp32 = []
 esp32c3 = []
 esp32s2 = []
 esp32s3 = []
+
+[target.'cfg(target_os = "espidf")'.dependencies]
+esp-idf-sys = { version = "0.35", default-features = false }

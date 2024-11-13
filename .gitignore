@@ -7,4 +7,6 @@ Cargo.lock
 # You should copy the template and not modify `settings.json`
 .vscode/settings.json
 
+.embuild
+
 tmpsrc
