@@ -2,14 +2,10 @@
 #![feature(c_variadic)]
 #![allow(incomplete_features)]
 
-#[cfg(target_os = "none")]
+use embedded_io::{ErrorKind, ErrorType};
+
+#[cfg(any(feature = "esp32", feature = "esp32c3", feature = "esp32s2", feature = "esp32s3"))]
 pub use esp_hal::Crypto;
-
-use embedded_io::ErrorType;
-
-mod compat;
-#[cfg(target_os = "none")]
-mod esp_hal;
 
 use core::ffi::CStr;
 use core::marker::PhantomData;
@@ -33,6 +29,10 @@ pub use esp_mbedtls_sys::bindings::{
     mbedtls_sha512_self_test,
 };
 use esp_mbedtls_sys::c_types::*;
+
+mod compat;
+#[cfg(any(feature = "esp32", feature = "esp32c3", feature = "esp32s2", feature = "esp32s3"))]
+mod esp_hal;
 
 // these will come from esp-wifi (i.e. this can only be used together with esp-wifi)
 extern "C" {
@@ -104,19 +104,15 @@ pub enum TlsError {
     NoClientCertificate,
     /// Errors from the edge-nal-embassy crate
     #[cfg(feature = "edge-nal")]
-    TcpError(edge_nal_embassy::TcpError),
+    TcpError(ErrorKind),
 }
 
 impl embedded_io::Error for TlsError {
     fn kind(&self) -> embedded_io::ErrorKind {
-        embedded_io::ErrorKind::Other
-    }
-}
-
-#[cfg(feature = "edge-nal")]
-impl From<edge_nal_embassy::TcpError> for TlsError {
-    fn from(value: edge_nal_embassy::TcpError) -> Self {
-        TlsError::TcpError(value)
+        match self {
+            Self::TcpError(e) => *e,
+            _ => embedded_io::ErrorKind::Other,
+        }
     }
 }
 
@@ -475,6 +471,7 @@ impl<'a> Certificates<'a> {
 }
 
 #[allow(unused)]
+#[derive(Debug, Copy, Clone)]
 pub struct CryptoToken<'a>(PhantomData<&'a ()>);
 
 impl<'a> CryptoToken<'a> {
@@ -797,9 +794,9 @@ pub mod asynch {
     where
         T: embedded_io_async::Read + embedded_io_async::Write,
     {
-        pub async fn connect(
+        pub async fn connect_async(
             mut self,
-        ) -> Result<AsyncConnectedSession<'a, 'r, T, RX_SIZE, TX_SIZE>, TlsError> {
+        ) -> Result<Self, TlsError> {
             unsafe {
                 mbedtls_ssl_set_bio(
                     self.ssl_context,
@@ -857,7 +854,7 @@ pub mod asynch {
                 }
                 self.drain_tx_buffer().await?;
 
-                Ok(AsyncConnectedSession { session: self })
+                Ok(self)
             }
         }
 
@@ -1001,33 +998,26 @@ pub mod asynch {
         }
     }
 
-    pub struct AsyncConnectedSession<'a, 'r, T, const RX_SIZE: usize, const TX_SIZE: usize>
-    where
-        T: embedded_io_async::Read + embedded_io_async::Write,
-    {
-        pub(crate) session: Session<'a, 'r, T, RX_SIZE, TX_SIZE>,
-    }
-
     impl<T, const RX_SIZE: usize, const TX_SIZE: usize> embedded_io_async::ErrorType
-        for AsyncConnectedSession<'_, '_, T, RX_SIZE, TX_SIZE>
+        for Session<'_, '_, T, RX_SIZE, TX_SIZE>
     where
-        T: embedded_io_async::Read + embedded_io_async::Write,
+        T: embedded_io_async::ErrorType,
     {
         type Error = TlsError;
     }
 
     impl<T, const RX_SIZE: usize, const TX_SIZE: usize> embedded_io_async::Read
-        for AsyncConnectedSession<'_, '_, T, RX_SIZE, TX_SIZE>
+        for Session<'_, '_, T, RX_SIZE, TX_SIZE>
     where
         T: embedded_io_async::Read + embedded_io_async::Write,
     {
         async fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error> {
             log::debug!("async read called");
             loop {
-                if self.session.eof && self.session.rx_buffer.empty() {
+                if self.eof && self.rx_buffer.empty() {
                     return Err(TlsError::Eof);
                 }
-                let res = self.session.async_internal_read(buf).await?;
+                let res = self.async_internal_read(buf).await?;
                 match res {
                     MBEDTLS_ERR_SSL_WANT_READ | MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET => {
                         continue
@@ -1040,23 +1030,21 @@ pub mod asynch {
     }
 
     impl<T, const RX_SIZE: usize, const TX_SIZE: usize> embedded_io_async::Write
-        for AsyncConnectedSession<'_, '_, T, RX_SIZE, TX_SIZE>
+        for Session<'_, '_, T, RX_SIZE, TX_SIZE>
     where
         T: embedded_io_async::Read + embedded_io_async::Write,
     {
         async fn write(&mut self, buf: &[u8]) -> Result<usize, Self::Error> {
-            let res = self.session.async_internal_write(buf).await?;
+            let res = self.async_internal_write(buf).await?;
             Ok(res as usize)
         }
 
         async fn flush(&mut self) -> Result<(), Self::Error> {
-            self.session
-                .drain_tx_buffer()
+            self.drain_tx_buffer()
                 .await
                 .map_err(|_| TlsError::Unknown)?;
 
-            self.session
-                .stream
+            self.stream
                 .flush()
                 .await
                 .map_err(|_| TlsError::Unknown)

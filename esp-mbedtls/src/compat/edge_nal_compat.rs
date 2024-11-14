@@ -1,136 +1,69 @@
-use crate::asynch::{AsyncConnectedSession, Session};
-use crate::{Certificates, Mode, Peripheral, Rsa, TlsError, TlsVersion, RSA, RSA_REF};
+use embedded_io::Error;
+
+use crate::asynch::Session;
+use crate::{Certificates, CryptoToken, Mode, TlsError, TlsVersion};
 use core::{
     cell::{Cell, RefCell, UnsafeCell},
     mem::MaybeUninit,
-    net::{Ipv4Addr, SocketAddr, SocketAddrV4},
-    ops::DerefMut,
+    net::SocketAddr,
     ptr::NonNull,
 };
 
-use crate::{hal::peripheral::PeripheralRef, SHA};
-use edge_nal::{Close, TcpBind};
-
-use edge_nal_embassy::{Tcp, TcpAccept, TcpSocket};
-
 pub struct TlsAcceptor<
     'd,
-    D: embassy_net::driver::Driver,
+    T,
     const N: usize,
     const RX_SZ: usize,
     const TX_SZ: usize,
 > {
-    acceptor: TcpAccept<'d, D, N, TX_SZ, RX_SZ>,
+    acceptor: T,
     version: TlsVersion,
     certificates: Certificates<'d>,
-    owns_rsa: bool,
     tls_buffers: &'d TlsBuffers<RX_SZ, TX_SZ>,
     tls_buffers_ptr: RefCell<NonNull<([u8; RX_SZ], [u8; TX_SZ])>>,
-    sha: RefCell<PeripheralRef<'d, SHA>>,
+    crypto_token: CryptoToken<'d>,
 }
 
-impl<'d, D, const N: usize, const RX_SZ: usize, const TX_SZ: usize> Drop
-    for TlsAcceptor<'d, D, N, RX_SZ, TX_SZ>
-where
-    D: embassy_net::driver::Driver,
-{
+impl<'d, T, const N: usize, const RX_SZ: usize, const TX_SZ: usize> Drop for TlsAcceptor<'d, T, N, RX_SZ, TX_SZ> {
     fn drop(&mut self) {
         unsafe {
-            // If the struct that owns the RSA reference is dropped
-            // we remove RSA in static for safety
-            if self.owns_rsa {
-                log::debug!("Freeing RSA from acceptor");
-                RSA_REF = core::mem::transmute(None::<RSA>);
-            }
-
             self.tls_buffers.pool.free(*self.tls_buffers_ptr.get_mut());
         }
     }
 }
 
-impl<'d, D, const N: usize, const RX_SZ: usize, const TX_SZ: usize>
-    TlsAcceptor<'d, D, N, RX_SZ, TX_SZ>
+impl<'d, T, const N: usize, const RX_SZ: usize, const TX_SZ: usize>
+    TlsAcceptor<'d, T, N, RX_SZ, TX_SZ>
 where
-    D: embassy_net::driver::Driver,
+    T: edge_nal::TcpAccept,
 {
     pub async fn new(
-        tcp: &'d Tcp<'d, D, N, TX_SZ, RX_SZ>,
+        acceptor: T,
         tls_buffers: &'d TlsBuffers<RX_SZ, TX_SZ>,
-        port: u16,
         version: TlsVersion,
         certificates: Certificates<'d>,
-        sha: impl Peripheral<P = SHA> + 'd,
+        crypto_token: CryptoToken<'d>,
     ) -> Self {
-        let acceptor = tcp
-            .bind(SocketAddr::V4(SocketAddrV4::new(
-                Ipv4Addr::new(0, 0, 0, 0),
-                port,
-            )))
-            .await
-            .unwrap();
-
         let socket_buffers = tls_buffers.pool.alloc().unwrap();
 
         Self {
             acceptor,
             version,
             certificates,
-            owns_rsa: false,
             tls_buffers,
             tls_buffers_ptr: RefCell::new(socket_buffers),
-            sha: sha.into_ref().into(),
+            crypto_token,
         }
     }
-
-    /// Enable the use of the hardware accelerated RSA peripheral for the lifetime of
-    /// [TlsAcceptor].
-    ///
-    /// # Arguments
-    ///
-    /// * `rsa` - The RSA peripheral from the HAL
-    pub fn with_hardware_rsa(mut self, rsa: impl Peripheral<P = RSA>) -> Self {
-        unsafe { RSA_REF = core::mem::transmute(Some(Rsa::new(rsa))) }
-        self.owns_rsa = true;
-        self
-    }
 }
 
-impl<'a, T, const RX_SIZE: usize, const TX_SIZE: usize> edge_nal::Readable
-    for AsyncConnectedSession<'a, T, RX_SIZE, TX_SIZE>
+impl<T, const N: usize, const RX_SZ: usize, const TX_SZ: usize> edge_nal::TcpAccept
+    for TlsAcceptor<'_, T, N, RX_SZ, TX_SZ>
 where
-    T: embedded_io_async::Read + embedded_io_async::Write,
-{
-    async fn readable(&mut self) -> Result<(), Self::Error> {
-        unimplemented!();
-    }
-}
-
-impl<'a, T, const RX_SIZE: usize, const TX_SIZE: usize> edge_nal::TcpShutdown
-    for AsyncConnectedSession<'a, T, RX_SIZE, TX_SIZE>
-where
-    T: embedded_io_async::Read + embedded_io_async::Write + edge_nal::TcpShutdown,
-    TlsError: From<<T as embedded_io::ErrorType>::Error>,
-{
-    async fn close(&mut self, what: Close) -> Result<(), Self::Error> {
-        self.session
-            .stream
-            .close(what)
-            .await
-            .map_err(TlsError::from)
-    }
-
-    async fn abort(&mut self) -> Result<(), Self::Error> {
-        self.session.stream.abort().await.map_err(TlsError::from)
-    }
-}
-
-impl<'d, D, const N: usize, const RX_SZ: usize, const TX_SZ: usize> edge_nal::TcpAccept
-    for TlsAcceptor<'d, D, N, RX_SZ, TX_SZ>
-where
-    D: embassy_net::driver::Driver,
+    T: edge_nal::TcpAccept,
 {
     type Error = TlsError;
-    type Socket<'a> = AsyncConnectedSession<'a, TcpSocket<'a, N, TX_SZ, RX_SZ>, RX_SZ, TX_SZ> where Self: 'a;
+    type Socket<'a> = Session<'a, 'a, T::Socket<'a>, RX_SZ, TX_SZ> where Self: 'a;
 
     async fn accept(
         &self,
@@ -139,7 +72,7 @@ where
             .acceptor
             .accept()
             .await
-            .map_err(|e| TlsError::TcpError(e))?;
+            .map_err(|e| TlsError::TcpError(e.kind()))?;
         log::debug!("Accepted new connection on socket");
 
         let (rx, tx) = unsafe { self.tls_buffers_ptr.borrow_mut().as_mut() };
@@ -152,13 +85,40 @@ where
             self.certificates,
             rx,
             tx,
-            self.sha.borrow_mut().reborrow().deref_mut(),
+            self.crypto_token,
         )?;
 
         log::debug!("Establishing SSL connection");
         let connected_session = session.connect().await?;
 
         Ok((addr, connected_session))
+    }
+}
+
+impl<T, const RX_SIZE: usize, const TX_SIZE: usize> edge_nal::Readable
+for Session<'_, '_, T, RX_SIZE, TX_SIZE>
+where
+    T: edge_nal::Readable,
+{
+    async fn readable(&mut self) -> Result<(), Self::Error> {
+        self.stream.readable().await.map_err(|e| TlsError::TcpError(e.kind()))
+    }
+}
+
+impl<T, const RX_SIZE: usize, const TX_SIZE: usize> edge_nal::TcpShutdown
+for Session<'_, '_, T, RX_SIZE, TX_SIZE>
+where
+    T: edge_nal::TcpShutdown,
+{
+    async fn close(&mut self, what: edge_nal::Close) -> Result<(), Self::Error> {
+        self.stream
+            .close(what)
+            .await
+            .map_err(|e| TlsError::TcpError(e.kind()))
+    }
+
+    async fn abort(&mut self) -> Result<(), Self::Error> {
+        self.stream.abort().await.map_err(|e| TlsError::TcpError(e.kind()))
     }
 }
 

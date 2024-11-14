@@ -4,18 +4,27 @@ version = "0.1.0"
 edition = "2021"
 
 [build-dependencies]
-anyhow = "1.0.68"
+anyhow      = "1.0.68"
+bindgen     = "0.68.1"
+env_logger  = "0.10.0"
+log         = "0.4.17"
+cmake       = "0.1.50"
+fs_extra    = "1.3.0"
+embuild     = "0.36"
 
 [dependencies]
 
 [features]
 default = []
 
-# ESP-baremetal: Exactly *one* chip MUST be selected via its feature:
+# ESP-HAL: Exactly *one* chip MUST be selected via its feature:
 esp32 = []
 esp32c3 = []
 esp32s2 = []
 esp32s3 = []
 
+# ESP-IDF: The mbedtls lib distributed with ESP-IDF is used
 [target.'cfg(target_os = "espidf")'.dependencies]
 esp-idf-sys = { version = "0.35", default-features = false }
+
+# All other platforms: mbedtls libs and bindings are created on the fly

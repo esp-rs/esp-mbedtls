@@ -238,23 +238,23 @@ fn generate_bindings(workspace: &Path, soc: &str, compile_include_path: &std::pa
                     .replace('\\', "/")
                     .replace("//?/C:", "")
             ),
-            &format!(
-                "-I{}",
-                sysroot_path
-                    .join("include")
-                    .display()
-                    .to_string()
-                    .replace('\\', "/")
-                    .replace("//?/C:", "")
-            ),
-            &format!(
-                "--sysroot={}",
-                sysroot_path
-                    .display()
-                    .to_string()
-                    .replace('\\', "/")
-                    .replace("//?/C:", "")
-            ),
+            // &format!(
+            //     "-I{}",
+            //     sysroot_path
+            //         .join("include")
+            //         .display()
+            //         .to_string()
+            //         .replace('\\', "/")
+            //         .replace("//?/C:", "")
+            // ),
+            // &format!(
+            //     "--sysroot={}",
+            //     sysroot_path
+            //         .display()
+            //         .to_string()
+            //         .replace('\\', "/")
+            //         .replace("//?/C:", "")
+            // ),
             // &format!(
             //     "--target={}",
             //     if compilation_target.arch == Arch::Xtensa {
