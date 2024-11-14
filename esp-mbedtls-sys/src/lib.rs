@@ -2,12 +2,16 @@
 
 pub mod c_types;
 
-#[cfg(not(target_os = "espidf"))]
+#[allow(
+    non_camel_case_types,
+    non_snake_case,
+    non_upper_case_globals,
+    dead_code
+)]
 pub mod bindings {
-    include_str!(env!("ESP_MBEDTLS_SYS_BINDINGS"));
-}
+    #[cfg(not(target_os = "espidf"))]
+    include!(env!("ESP_MBEDTLS_SYS_GENERATED_BINDINGS_FILE"));
 
-#[cfg(target_os = "espidf")]
-pub mod bindings {
+    #[cfg(target_os = "espidf")]
     pub use esp_idf_sys::*;
 }

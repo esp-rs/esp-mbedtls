@@ -16,6 +16,9 @@ fn main() -> Result<()> {
     let esp32s3 = env::var("CARGO_FEATURE_ESP32S3").is_ok();
 
     let target = env::var("TARGET").unwrap();
+
+    // If we're building for ESP32, ESP32C3, ESP32S2, or ESP32S3, we don't need to do anything
+    // Just link against the pre-built libraries and use the pre-generated bindings
     let bindings_dir = crate_root_path.join("src").join("include");
     let libs_dir = crate_root_path.join("libs");
 
@@ -36,14 +39,14 @@ fn main() -> Result<()> {
 
         let builder = builder::MbedtlsBuilder::new(crate_root_path.clone(), "generic".to_string(), None, None);
 
-        let bindings = builder.compile(&out)?;
-        let libs_dir = builder.generate_bindings(&out)?;
+        let libs_dir = builder.compile(&out, None)?;
+        let bindings = builder.generate_bindings(&out, None)?;
 
         Some((bindings, libs_dir))
     };
 
     if let Some((bindings, libs_dir)) = dirs {
-        println!("cargo::rustc-env=ESP_MBEDTLS_SYS_BINDINGS={}", bindings.display());
+        println!("cargo::rustc-env=ESP_MBEDTLS_SYS_GENERATED_BINDINGS_FILE={}", bindings.display());
 
         println!("cargo:rustc-link-lib={}", "mbedtls");
         println!("cargo:rustc-link-lib={}", "mbedx509");

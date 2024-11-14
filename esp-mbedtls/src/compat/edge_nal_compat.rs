@@ -89,7 +89,7 @@ where
         )?;
 
         log::debug!("Establishing SSL connection");
-        let connected_session = session.connect().await?;
+        let connected_session = session.connect_async().await?;
 
         Ok((addr, connected_session))
     }
