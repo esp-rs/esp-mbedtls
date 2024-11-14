@@ -8,6 +8,9 @@ mod builder;
 fn main() -> Result<()> {
     let crate_root_path = PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").unwrap());
 
+    builder::MbedtlsBuilder::track(&crate_root_path.join("gen"));
+    builder::MbedtlsBuilder::track(&crate_root_path.join("mbedtls"));
+
     // If any one of these features is selected, we don't build anything
     // and just use the pre-generated baremetal ESP bindings and libraries
     let esp32 = env::var("CARGO_FEATURE_ESP32").is_ok();
@@ -52,7 +55,6 @@ fn main() -> Result<()> {
         println!("cargo:rustc-link-lib={}", "mbedx509");
         println!("cargo:rustc-link-lib={}", "mbedcrypto");
         println!("cargo:rustc-link-search={}", libs_dir.display());
-        println!("cargo:rerun-if-changed={}", libs_dir.display());
     }
 
     Ok(())

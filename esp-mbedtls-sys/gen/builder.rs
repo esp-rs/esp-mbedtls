@@ -221,4 +221,9 @@ impl MbedtlsBuilder {
 
         Ok(target_dir)
     }
+
+    /// Re-run the build script if the file or directory has changed.
+    pub fn track(file_or_dir: &Path) {
+        println!("cargo:rerun-if-changed={}", file_or_dir.display())
+    }
 }
