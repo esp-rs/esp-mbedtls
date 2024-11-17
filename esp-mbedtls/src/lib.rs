@@ -720,13 +720,195 @@ where
 
 #[cfg(feature = "async")]
 pub mod asynch {
+    use core::future::Future;
+    use core::pin::pin;
+    use core::task::{Context, Poll};
+
+    use embedded_io::Error;
+
     use super::*;
 
     /// Implements edge-nal traits
     #[cfg(feature = "edge-nal")]
     pub use crate::compat::edge_nal_compat::*;
 
-    pub struct Session<'a, 'e, T, const RX_SIZE: usize = 4096, const TX_SIZE: usize = 4096> {
+    #[derive(Copy, Clone, Debug)]
+    pub enum PollOutcome {
+        Success(i32),
+        WantRead,
+        WantWrite,
+    }
+
+    struct PollCtx<'s, 'a, 'c, 'q, T> {
+        session: &'s mut Session<'a, T>,
+        context: &'c mut Context<'q>,
+        io_result: Option<Result<(), TlsError>>,
+    }
+
+    impl<'s, 'a, 'c, 'q, T> PollCtx<'s, 'a, 'c, 'q, T> 
+    where 
+        T: embedded_io_async::Read + embedded_io_async::Write,
+    {
+        fn poll<F>(session: &'s mut Session<'a, T>, context: &'c mut Context<'q>, f: F) -> Poll<Result<PollOutcome, TlsError>>
+        where 
+            F: FnOnce(*mut mbedtls_ssl_context) -> i32,
+        {
+            Self::new(session, context).poll_mut(f)
+        }
+
+        fn new(session: &'s mut Session<'a, T>, context: &'c mut Context<'q>) -> Self {
+            Self {
+                session,
+                context,
+                io_result: None,
+            }
+        }
+
+        fn poll_mut<F>(&mut self, f: F) -> Poll<Result<PollOutcome, TlsError>>
+        where 
+            F: FnOnce(*mut mbedtls_ssl_context) -> i32,
+        {
+            unsafe {
+                mbedtls_ssl_set_bio(
+                    self.session.ssl_context,
+                    core::ptr::addr_of!(self) as *mut c_void,
+                    Some(Self::sync_send),
+                    Some(Self::sync_receive),
+                    None,
+                );
+            }
+
+            let res = f(self.session.ssl_context);
+
+            unsafe {
+                mbedtls_ssl_set_bio(
+                    self.session.ssl_context,
+                    core::ptr::null_mut(),
+                    None,
+                    None,
+                    None,
+                );
+            }
+
+            if let Some(Err(e)) = self.io_result.take() {
+                Err(e)?;
+            }
+
+            Poll::Ready(match res {
+                MBEDTLS_ERR_SSL_WANT_READ => Ok(PollOutcome::WantRead),
+                MBEDTLS_ERR_SSL_WANT_WRITE => Ok(PollOutcome::WantWrite),
+                res if res < 0 => Err(TlsError::MbedTlsError(res)),
+                len => Ok(PollOutcome::Success(len))
+            })
+        }
+        
+        fn send(&mut self, buf: &[u8]) -> i32 {
+            if buf.is_empty() {
+                return 0;
+            }
+
+            if self.session.write_byte.is_some() {
+                return MBEDTLS_ERR_SSL_WANT_WRITE;
+            }
+
+            let fut = pin!(self.session.stream.write(buf));
+
+            if let Poll::Ready(result) = fut.poll(self.context) {
+                match result {
+                    Ok(len) => {
+                        if len == 0 {
+                            self.session.state = SessionState::Eof;
+                            self.io_result = Some(Err(TlsError::Eof));
+                        } else {
+                            self.io_result = Some(Ok(()));
+                        }
+
+                        len as _
+                    }
+                    Err(err) => {
+                        self.io_result = Some(Err(TlsError::TcpError(err.kind())));
+                        MBEDTLS_ERR_SSL_WANT_WRITE
+                    }
+                }
+            } else {
+                self.session.write_byte = Some(buf[0]);
+                log::debug!("*** buffer empty - want write");
+
+                1
+            }
+        }
+
+        fn receive(&mut self, buf: &mut [u8]) -> i32 {
+            if buf.is_empty() {
+                return 0;
+            }
+
+            let offset = if let Some(byte) = self.session.read_byte.take() {
+                buf[0] = byte;
+                1
+            } else {
+                0
+            };
+
+            if buf.len() == offset {
+                return offset as _;
+            }
+
+            let fut = pin!(self.session.stream.read(&mut buf[..offset]));
+
+            if let Poll::Ready(result) = fut.poll(self.context) {
+                match result {
+                    Ok(len) => {
+                        let len = len + offset;
+
+                        if len == 0 {
+                            self.session.state = SessionState::Eof;
+                            self.io_result = Some(Err(TlsError::Eof));
+                        } else {
+                            self.io_result = Some(Ok(()));
+                        }
+
+                        len as _
+                    }
+                    Err(err) => {
+                        self.io_result = Some(Err(TlsError::TcpError(err.kind())));
+                        MBEDTLS_ERR_SSL_WANT_READ
+                    }
+                }
+            } else {
+                log::debug!("*** buffer empty - want read");
+
+                if offset == 0 { MBEDTLS_ERR_SSL_WANT_READ } else { offset as _ }
+            }
+        }
+        
+        unsafe extern "C" fn sync_send(ctx: *mut c_void, buf: *const c_uchar, len: usize) -> c_int {
+            log::debug!("*** sync send called, bytes={len}");
+            let ctx = (ctx as *mut PollCtx<'s, 'a, 'c, 'q, T>).as_mut().unwrap();
+
+            ctx.send(core::slice::from_raw_parts(buf as *const _, len))
+        }
+
+        unsafe extern "C" fn sync_receive(
+            ctx: *mut c_void,
+            buf: *mut c_uchar,
+            len: usize,
+        ) -> c_int {
+            log::debug!("*** sync rcv, len={}", len);
+            let ctx = (ctx as *mut PollCtx<'s, 'a, 'c, 'q, T>).as_mut().unwrap();
+
+            ctx.receive(core::slice::from_raw_parts_mut(buf as *mut _, len))
+        }
+    }
+
+    #[derive(Copy, Clone, Debug)]
+    enum SessionState {
+        Initial,
+        Connected,
+        Eof,
+    }
+
+    pub struct Session<'a, T> {
         pub(crate) stream: T,
         drbg_context: *mut mbedtls_ctr_drbg_context,
         ssl_context: *mut mbedtls_ssl_context,
@@ -734,13 +916,13 @@ pub mod asynch {
         crt: *mut mbedtls_x509_crt,
         client_crt: *mut mbedtls_x509_crt,
         private_key: *mut mbedtls_pk_context,
-        eof: bool,
-        rx_buffer: BufferedBytes<'a, RX_SIZE>,
-        tx_buffer: BufferedBytes<'a, TX_SIZE>,
-        _token: CryptoToken<'e>,
+        state: SessionState,
+        read_byte: Option<u8>,
+        write_byte: Option<u8>,
+        _token: CryptoToken<'a>,
     }
 
-    impl<'a, 'e, T, const RX_SIZE: usize, const TX_SIZE: usize> Session<'a, 'e, T, RX_SIZE, TX_SIZE> {
+    impl<'a, T> Session<'a, T> {
         /// Create a session for a TLS stream.
         ///
         /// # Arguments
@@ -764,10 +946,7 @@ pub mod asynch {
             mode: Mode,
             min_version: TlsVersion,
             certificates: Certificates,
-
-            rx_buffer: &'a mut [u8; RX_SIZE],
-            tx_buffer: &'a mut [u8; TX_SIZE],
-            token: CryptoToken<'e>,
+            token: CryptoToken<'a>,
         ) -> Result<Self, TlsError> {
             let (drbg_context, ssl_context, ssl_config, crt, client_crt, private_key) =
                 certificates.init_ssl(servername, mode, min_version)?;
@@ -779,15 +958,15 @@ pub mod asynch {
                 crt,
                 client_crt,
                 private_key,
-                eof: false,
-                rx_buffer: BufferedBytes::new(rx_buffer),
-                tx_buffer: BufferedBytes::new(tx_buffer),
+                state: SessionState::Initial,
+                read_byte: None,
+                write_byte: None,
                 _token: token,
             });
         }
     }
 
-    impl<T, const RX_SIZE: usize, const TX_SIZE: usize> Drop for Session<'_, '_, T, RX_SIZE, TX_SIZE> {
+    impl<T> Drop for Session<'_, T> {
         fn drop(&mut self) {
             log::debug!("session dropped - freeing memory");
             unsafe {
@@ -808,324 +987,112 @@ pub mod asynch {
         }
     }
 
-    impl<'a, 'r, T, const RX_SIZE: usize, const TX_SIZE: usize> Session<'a, 'r, T, RX_SIZE, TX_SIZE>
+    impl<'a, T> Session<'a, T>
     where
         T: embedded_io_async::Read + embedded_io_async::Write,
     {
-        pub async fn connect_async(
-            &mut self,
-        ) -> Result<(), TlsError> {
-            unsafe {
-                mbedtls_ssl_set_bio(
-                    self.ssl_context,
-                    core::ptr::addr_of!(self) as *mut c_void,
-                    Some(Self::sync_send),
-                    Some(Self::sync_receive),
-                    None,
-                );
+        pub async fn read_async(&mut self, buf: &mut [u8]) -> Result<usize, TlsError> {
+            self.connect_async().await?;
 
-                loop {
-                    let res = mbedtls_ssl_handshake(self.ssl_context);
-                    log::debug!("mbedtls_ssl_handshake: {res}");
-                    if res == 0 {
-                        // success
-                        break;
-                    }
-                    if res < 0
-                        && res != MBEDTLS_ERR_SSL_WANT_READ
-                        && res != MBEDTLS_ERR_SSL_WANT_WRITE
-                    {
-                        // real error
-                        // Reference: https://os.mbed.com/teams/sandbox/code/mbedtls/docs/tip/ssl_8h.html#a4a37e497cd08c896870a42b1b618186e
-                        mbedtls_ssl_session_reset(self.ssl_context);
-                        return Err(match res {
-                            MBEDTLS_ERR_SSL_NO_CLIENT_CERTIFICATE => TlsError::NoClientCertificate,
-                            _ => TlsError::MbedTlsError(res),
-                        });
-                    } else {
-                        if !self.tx_buffer.empty() {
-                            log::debug!("Having data to send to stream");
-                            let data = self.tx_buffer.pull(TX_SIZE);
-                            log::debug!(
-                                "pulled {} bytes from tx_buffer ... send to stream",
-                                data.len()
-                            );
-                            self.stream
-                                .write(data)
-                                .await
-                                .map_err(|_| TlsError::Unknown)?;
-                        }
+            let len = self.io(|ssl| unsafe { mbedtls_ssl_read(ssl, buf.as_mut_ptr() as *mut _, buf.len() as _) }).await?;
 
-                        if res == MBEDTLS_ERR_SSL_WANT_READ {
-                            let mut buf = [0u8; RX_SIZE];
-                            let res = self
-                                .stream
-                                .read(&mut buf[..self.rx_buffer.remaining()])
-                                .await
-                                .map_err(|_| TlsError::Unknown)?;
-                            if res > 0 {
-                                log::debug!("push {} bytes to rx-buffer", res);
-                                self.rx_buffer.push(&buf[..res]).ok();
-                            }
-                        }
-                    }
-                }
-                self.drain_tx_buffer().await?;
-
-                Ok(())
-            }
+            Ok(len as _)
         }
 
-        async fn drain_tx_buffer(&mut self) -> Result<(), TlsError> {
-            unsafe {
-                mbedtls_ssl_set_bio(
-                    self.ssl_context,
-                    self as *mut _ as *mut c_void,
-                    Some(Self::sync_send),
-                    Some(Self::sync_receive),
-                    None,
-                );
-                if !self.tx_buffer.empty() {
-                    log::debug!("Drain tx buffer");
-                    let data = self.tx_buffer.pull(TX_SIZE);
-                    log::debug!(
-                        "pulled {} bytes from tx_buffer ... send to stream",
-                        data.len()
-                    );
-                    log::debug!("{:02x?}", &data);
-                    let res = self
-                        .stream
-                        .write(data)
-                        .await
-                        .map_err(|_| TlsError::Unknown)?;
-                    log::debug!("wrote {res} bytes to stream");
-                    self.stream.flush().await.map_err(|_| TlsError::Unknown)?;
+        pub async fn write_async(&mut self, data: &[u8]) -> Result<usize, TlsError> {
+            self.connect_async().await?;
+
+            let len = self.io(|ssl| unsafe { mbedtls_ssl_write(ssl, data.as_ptr() as *const _, data.len() as _) }).await?;
+
+            Ok(len as _)
+        }
+
+        pub async fn flush_async(&mut self) -> Result<(), TlsError> {
+            self.connect_async().await?;
+
+            if let Some(write_byte) = self.write_byte.as_ref().copied() {
+                let data = [write_byte];
+                let len = self.stream.write(&data).await.map_err(|e| TlsError::TcpError(e.kind()))?;
+                if len > 0 {
+                    self.write_byte.take();
                 }
+            }
+
+            self.stream.flush().await.map_err(|e| TlsError::TcpError(e.kind()))?;
+
+            Ok(())
+        }
+
+        async fn connect_async(&mut self) -> Result<(), TlsError> {
+            if matches!(self.state, SessionState::Initial) {
+                log::debug!("Establishing SSL connection");
+        
+                self.io(|ssl| unsafe { mbedtls_ssl_handshake(ssl) }).await?;
+                self.state = SessionState::Connected;
             }
 
             Ok(())
         }
 
-        async fn async_internal_write(&mut self, buf: &[u8]) -> Result<i32, TlsError> {
-            unsafe {
-                mbedtls_ssl_set_bio(
-                    self.ssl_context,
-                    self as *mut _ as *mut c_void,
-                    Some(Self::sync_send),
-                    Some(Self::sync_receive),
-                    None,
-                );
-                self.drain_tx_buffer().await?;
+        async fn io<F>(&mut self, mut f: F) -> Result<i32, TlsError> 
+        where
+            F: FnMut(*mut mbedtls_ssl_context) -> i32,
+        {
+            loop {
+                let outcome = core::future::poll_fn(|cx| PollCtx::poll(self, cx, |ssl| f(ssl))).await?;
 
-                let len = mbedtls_ssl_write(self.ssl_context, buf.as_ptr(), buf.len());
-                self.drain_tx_buffer().await?;
+                match outcome {
+                    PollOutcome::Success(res) => break Ok(res),
+                    PollOutcome::WantRead => {
+                        if self.read_byte.is_none() {
+                            let mut buf = [0];
 
-                Ok(len)
-            }
-        }
-
-        async fn async_internal_read(&mut self, buf: &mut [u8]) -> Result<i32, TlsError> {
-            unsafe {
-                mbedtls_ssl_set_bio(
-                    self.ssl_context,
-                    self as *mut _ as *mut c_void,
-                    Some(Self::sync_send),
-                    Some(Self::sync_receive),
-                    None,
-                );
-                self.drain_tx_buffer().await?;
-
-                if !self.rx_buffer.can_read() && mbedtls_ssl_check_pending(self.ssl_context) == 0 {
-                    let mut buffer = [0u8; RX_SIZE];
-                    let from_socket = self
-                        .stream
-                        .read(&mut buffer[..self.rx_buffer.remaining()])
-                        .await
-                        .map_err(|_| TlsError::Unknown)?;
-                    if from_socket > 0 {
-                        log::debug!("<<< got {} bytes from socket", from_socket);
-                        self.rx_buffer.push(&buffer[..from_socket]).ok();
-                    } else {
-                        // the socket is in EOF state but there might be still data to process
-                        self.eof = true;
+                            let len = self.stream.read(&mut buf).await.map_err(|e| TlsError::TcpError(e.kind()))?;
+                            if len > 0 {
+                                self.write_byte = Some(buf[0]);
+                            }
+                        }
+                    }
+                    PollOutcome::WantWrite => {
+                        if let Some(byte) = self.write_byte.as_ref().copied() {
+                            let data = [byte];
+                            let len = self.stream.write(&data).await.map_err(|e| TlsError::TcpError(e.kind()))?;
+                            if len > 0 {
+                                self.write_byte.take();
+                            }
+                        }
                     }
                 }
-
-                if !self.rx_buffer.empty()
-                    || mbedtls_ssl_check_pending(self.ssl_context) == 1
-                    || mbedtls_ssl_get_bytes_avail(self.ssl_context) > 0
-                {
-                    log::debug!("<<< read data from mbedtls");
-                    let res = mbedtls_ssl_read(self.ssl_context, buf.as_mut_ptr(), buf.len());
-                    log::debug!("<<< mbedtls returned {res}");
-
-                    if res == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY {
-                        self.eof = true;
-                        return Ok(0);
-                    }
-                    Ok(res)
-                } else {
-                    Ok(0)
-                }
-            }
-        }
-
-        unsafe extern "C" fn sync_send(ctx: *mut c_void, buf: *const c_uchar, len: usize) -> c_int {
-            log::debug!("*** sync send called, bytes={len}");
-            let session = ctx as *mut Session<T, RX_SIZE, TX_SIZE>;
-            let slice = core::ptr::slice_from_raw_parts(
-                buf as *const u8,
-                usize::min(len as usize, (*session).tx_buffer.remaining()),
-            );
-            (*session).tx_buffer.push(&*slice).ok();
-            let written = (&*slice).len();
-            log::debug!("*** put {} bytes into tx_buffer", written);
-
-            if written == 0 {
-                MBEDTLS_ERR_SSL_WANT_WRITE
-            } else {
-                written as c_int
-            }
-        }
-
-        unsafe extern "C" fn sync_receive(
-            ctx: *mut c_void,
-            buf: *mut c_uchar,
-            len: usize,
-        ) -> c_int {
-            log::debug!("*** sync rcv, len={}", len);
-            let session = ctx as *mut Session<T, RX_SIZE, TX_SIZE>;
-
-            if (*session).rx_buffer.empty() {
-                log::debug!("*** buffer empty - want read");
-                return MBEDTLS_ERR_SSL_WANT_READ;
-            }
-
-            let buffer = core::slice::from_raw_parts_mut(buf as *mut u8, len as usize);
-            let max_len = usize::min(len as usize, (*session).rx_buffer.remaining());
-            let data = (*session).rx_buffer.pull(max_len);
-            buffer[0..data.len()].copy_from_slice(data);
-
-            log::debug!("*** pulled {} bytes from rx-buffer", data.len());
-
-            if data.len() == 0 {
-                MBEDTLS_ERR_SSL_WANT_READ
-            } else {
-                data.len() as c_int
             }
         }
     }
 
-    impl<T, const RX_SIZE: usize, const TX_SIZE: usize> embedded_io_async::ErrorType
-        for Session<'_, '_, T, RX_SIZE, TX_SIZE>
+    impl<T> embedded_io_async::ErrorType for Session<'_, T>
     where
         T: embedded_io_async::ErrorType,
     {
         type Error = TlsError;
     }
 
-    impl<T, const RX_SIZE: usize, const TX_SIZE: usize> embedded_io_async::Read
-        for Session<'_, '_, T, RX_SIZE, TX_SIZE>
+    impl<T> embedded_io_async::Read for Session<'_, T>
     where
         T: embedded_io_async::Read + embedded_io_async::Write,
     {
         async fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error> {
-            log::debug!("async read called");
-            loop {
-                if self.eof && self.rx_buffer.empty() {
-                    return Err(TlsError::Eof);
-                }
-                let res = self.async_internal_read(buf).await?;
-                match res {
-                    MBEDTLS_ERR_SSL_WANT_READ | MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET => {
-                        continue
-                    } // no data
-                    0..=i32::MAX => return Ok(res as usize), // data
-                    i32::MIN..=-1_i32 => return Err(TlsError::MbedTlsError(res)), // error
-                }
-            }
+            self.read_async(buf).await
         }
     }
 
-    impl<T, const RX_SIZE: usize, const TX_SIZE: usize> embedded_io_async::Write
-        for Session<'_, '_, T, RX_SIZE, TX_SIZE>
+    impl<T> embedded_io_async::Write for Session<'_, T>
     where
         T: embedded_io_async::Read + embedded_io_async::Write,
     {
         async fn write(&mut self, buf: &[u8]) -> Result<usize, Self::Error> {
-            let res = self.async_internal_write(buf).await?;
-            Ok(res as usize)
+            self.write_async(buf).await
         }
 
         async fn flush(&mut self) -> Result<(), Self::Error> {
-            self.drain_tx_buffer()
-                .await
-                .map_err(|_| TlsError::Unknown)?;
-
-            self.stream
-                .flush()
-                .await
-                .map_err(|_| TlsError::Unknown)
-        }
-    }
-    pub(crate) struct BufferedBytes<'a, const BUFFER_SIZE: usize> {
-        buffer: &'a mut [u8; BUFFER_SIZE],
-        write_idx: usize,
-        read_idx: usize,
-    }
-
-    impl<'a, const BUFFER_SIZE: usize> BufferedBytes<'a, BUFFER_SIZE> {
-        pub fn new(buffer: &'a mut [u8; BUFFER_SIZE]) -> Self {
-            Self {
-                buffer,
-                write_idx: 0,
-                read_idx: 0,
-            }
-        }
-
-        pub fn pull(&mut self, max: usize) -> &[u8] {
-            if self.read_idx == self.write_idx {
-                self.read_idx = 0;
-                self.write_idx = 0;
-            }
-
-            let len = usize::min(max, self.write_idx - self.read_idx);
-            let res = &self.buffer[self.read_idx..][..len];
-            self.read_idx += len;
-            res
-        }
-
-        pub fn push(&mut self, data: &[u8]) -> Result<(), ()> {
-            if self.read_idx == self.write_idx {
-                self.read_idx = 0;
-                self.write_idx = 0;
-            }
-
-            if self.buffer.len() - self.write_idx < data.len() {
-                return Err(());
-            }
-
-            self.buffer[self.write_idx..][..data.len()].copy_from_slice(data);
-            self.write_idx += data.len();
-
-            Ok(())
-        }
-
-        pub fn remaining(&self) -> usize {
-            self.buffer.len() - self.write_idx
-        }
-
-        pub fn can_read(&self) -> bool {
-            self.read_idx < self.write_idx
-        }
-
-        pub fn empty(&mut self) -> bool {
-            if self.read_idx == self.write_idx {
-                self.read_idx = 0;
-                self.write_idx = 0;
-            }
-
-            self.read_idx == self.write_idx
+            self.flush_async().await
         }
     }
 }
