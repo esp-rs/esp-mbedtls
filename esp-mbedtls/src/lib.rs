@@ -2,20 +2,23 @@
 #![feature(c_variadic)]
 #![allow(incomplete_features)]
 
+use core::cell::Cell;
+use core::ffi::{c_int, c_uchar, c_ulong, c_void, CStr};
+use core::marker::PhantomData;
+use core::mem::size_of;
+
 use critical_section::Mutex;
+
 use embedded_io::{ErrorKind, ErrorType};
 
 #[cfg(any(feature = "esp32", feature = "esp32c3", feature = "esp32s2", feature = "esp32s3"))]
 pub use esp_hal::Crypto;
 
-use core::cell::Cell;
-use core::ffi::CStr;
-use core::marker::PhantomData;
-use core::mem::size_of;
+use log::Level;
 
-use compat::StrBuf;
 use embedded_io::Read;
 use embedded_io::Write;
+
 use esp_mbedtls_sys::bindings::*;
 /// Re-export self-tests
 pub use esp_mbedtls_sys::bindings::{
@@ -30,19 +33,19 @@ pub use esp_mbedtls_sys::bindings::{
     mbedtls_sha384_self_test,
     mbedtls_sha512_self_test,
 };
-use esp_mbedtls_sys::c_types::*;
 
-mod compat;
+#[cfg(feature = "edge-nal")]
+mod edge_nal;
 #[cfg(any(feature = "esp32", feature = "esp32c3", feature = "esp32s2", feature = "esp32s3"))]
 mod esp_hal;
 
 // these will come from esp-wifi (i.e. this can only be used together with esp-wifi)
 extern "C" {
-    fn free(ptr: *const u8);
+    fn free(ptr: *const c_void);
 
-    fn calloc(number: u32, size: u32) -> *const u8;
+    fn calloc(number: usize, size: usize) -> *const c_void;
 
-    fn random() -> crate::c_ulong;
+    fn random() -> c_ulong;
 }
 
 macro_rules! error_checked {
@@ -265,7 +268,7 @@ impl<'a> Certificates<'a> {
     // Initialize the SSL using this set of certificates
     fn init_ssl(
         &self,
-        servername: &str,
+        servername: &CStr,
         mode: Mode,
         min_version: TlsVersion,
     ) -> Result<
@@ -286,31 +289,41 @@ impl<'a> Certificates<'a> {
             "Both certificate and private_key must be Some() or None"
         );
 
+        // TODO: Allocate a lot of these things:
+        // - In one chunk
+        // - With a `Box`, which is safer
+        // - Consider reconfiguring mbedtls with the custom malloc/free
+        //   callbacks that we can actually redirect to `Box`
+        //
+        // This way the lib would become completely independent from `esp-wifi`
+        // and would simply requre a Rust global allocator to be set.
+        // (Or we can even implement a mode of operation of the lib where
+        //  it uses a fixed memory pool, and then we layer on top our own little allocator)
         unsafe {
             error_checked!(psa_crypto_init())?;
 
-            let drbg_context = calloc(1, size_of::<mbedtls_ctr_drbg_context>() as u32)
+            let drbg_context = calloc(1, size_of::<mbedtls_ctr_drbg_context>())
                 as *mut mbedtls_ctr_drbg_context;
             if drbg_context.is_null() {
                 return Err(TlsError::OutOfMemory);
             }
 
             let ssl_context =
-                calloc(1, size_of::<mbedtls_ssl_context>() as u32) as *mut mbedtls_ssl_context;
+                calloc(1, size_of::<mbedtls_ssl_context>()) as *mut mbedtls_ssl_context;
             if ssl_context.is_null() {
                 free(drbg_context as *const _);
                 return Err(TlsError::OutOfMemory);
             }
 
             let ssl_config =
-                calloc(1, size_of::<mbedtls_ssl_config>() as u32) as *mut mbedtls_ssl_config;
+                calloc(1, size_of::<mbedtls_ssl_config>()) as *mut mbedtls_ssl_config;
             if ssl_config.is_null() {
                 free(drbg_context as *const _);
                 free(ssl_context as *const _);
                 return Err(TlsError::OutOfMemory);
             }
 
-            let crt = calloc(1, size_of::<mbedtls_x509_crt>() as u32) as *mut mbedtls_x509_crt;
+            let crt = calloc(1, size_of::<mbedtls_x509_crt>()) as *mut mbedtls_x509_crt;
             if crt.is_null() {
                 free(drbg_context as *const _);
                 free(ssl_context as *const _);
@@ -319,7 +332,7 @@ impl<'a> Certificates<'a> {
             }
 
             let certificate =
-                calloc(1, size_of::<mbedtls_x509_crt>() as u32) as *mut mbedtls_x509_crt;
+                calloc(1, size_of::<mbedtls_x509_crt>()) as *mut mbedtls_x509_crt;
             if certificate.is_null() {
                 free(drbg_context as *const _);
                 free(ssl_context as *const _);
@@ -329,7 +342,7 @@ impl<'a> Certificates<'a> {
             }
 
             let private_key =
-                calloc(1, size_of::<mbedtls_pk_context>() as u32) as *mut mbedtls_pk_context;
+                calloc(1, size_of::<mbedtls_pk_context>()) as *mut mbedtls_pk_context;
             if private_key.is_null() {
                 free(drbg_context as *const _);
                 free(ssl_context as *const _);
@@ -339,6 +352,7 @@ impl<'a> Certificates<'a> {
                 return Err(TlsError::OutOfMemory);
             }
 
+            mbedtls_debug_set_threshold(5);
             mbedtls_ssl_init(ssl_context);
             mbedtls_ssl_config_init(ssl_config);
             // Initialize CA chain
@@ -347,9 +361,13 @@ impl<'a> Certificates<'a> {
             mbedtls_x509_crt_init(certificate);
             // Initialize private key
             mbedtls_pk_init(private_key);
-            (*ssl_config).private_f_dbg = Some(dbg_print);
-            // Init RNG
+
+            //(*ssl_config).private_f_dbg = Some(dbg_print);
+            mbedtls_ssl_conf_dbg(ssl_config, Some(dbg_print), core::ptr::null_mut());
+
             mbedtls_ctr_drbg_init(drbg_context);
+
+            // Init RNG
             mbedtls_ssl_conf_rng(ssl_config, Some(rng), drbg_context as *mut c_void);
 
             // Closure to free all allocated resources in case of an error.
@@ -396,13 +414,10 @@ impl<'a> Certificates<'a> {
             );
 
             if mode == Mode::Client {
-                let mut hostname = StrBuf::new(); // TODO: Makes the future large
-                hostname.append(servername);
-                hostname.append_char('\0');
                 error_checked!(
                     mbedtls_ssl_set_hostname(
                         ssl_context,
-                        hostname.as_str_ref().as_ptr() as *const c_char
+                        servername.as_ptr(),
                     ),
                     cleanup
                 )?;
@@ -535,7 +550,7 @@ impl<'a, T> Session<'a, T> {
     /// invalid format.
     pub fn new(
         stream: T,
-        servername: &str,
+        servername: &CStr,
         mode: Mode,
         min_version: TlsVersion,
         certificates: Certificates,
@@ -730,7 +745,7 @@ pub mod asynch {
 
     /// Implements edge-nal traits
     #[cfg(feature = "edge-nal")]
-    pub use crate::compat::edge_nal_compat::*;
+    pub use crate::edge_nal::*;
 
     #[derive(Copy, Clone, Debug)]
     pub enum PollOutcome {
@@ -771,9 +786,9 @@ pub mod asynch {
             unsafe {
                 mbedtls_ssl_set_bio(
                     self.session.ssl_context,
-                    core::ptr::addr_of!(self) as *mut c_void,
-                    Some(Self::sync_send),
-                    Some(Self::sync_receive),
+                    self as *mut _ as *mut c_void,
+                    Some(Self::raw_send),
+                    Some(Self::raw_receive),
                     None,
                 );
             }
@@ -797,12 +812,17 @@ pub mod asynch {
             Poll::Ready(match res {
                 MBEDTLS_ERR_SSL_WANT_READ => Ok(PollOutcome::WantRead),
                 MBEDTLS_ERR_SSL_WANT_WRITE => Ok(PollOutcome::WantWrite),
-                res if res < 0 => Err(TlsError::MbedTlsError(res)),
+                res if res < 0 => {
+                    ::log::warn!("MbedTLS error: {res} / {res:x}");
+                    Err(TlsError::MbedTlsError(res))
+                }
                 len => Ok(PollOutcome::Success(len))
             })
         }
         
         fn send(&mut self, buf: &[u8]) -> i32 {
+            ::log::debug!("Send {}B", buf.len());
+
             if buf.is_empty() {
                 return 0;
             }
@@ -819,6 +839,7 @@ pub mod asynch {
                         if len == 0 {
                             self.session.state = SessionState::Eof;
                             self.io_result = Some(Err(TlsError::Eof));
+                            ::log::warn!("IO error: EOF");
                         } else {
                             self.io_result = Some(Ok(()));
                         }
@@ -826,19 +847,20 @@ pub mod asynch {
                         len as _
                     }
                     Err(err) => {
+                        ::log::warn!("TCP error: {:?}", err.kind());
                         self.io_result = Some(Err(TlsError::TcpError(err.kind())));
                         MBEDTLS_ERR_SSL_WANT_WRITE
                     }
                 }
             } else {
                 self.session.write_byte = Some(buf[0]);
-                log::debug!("*** buffer empty - want write");
-
                 1
             }
         }
 
         fn receive(&mut self, buf: &mut [u8]) -> i32 {
+            ::log::debug!("Recv {}B", buf.len());
+
             if buf.is_empty() {
                 return 0;
             }
@@ -854,7 +876,7 @@ pub mod asynch {
                 return offset as _;
             }
 
-            let fut = pin!(self.session.stream.read(&mut buf[..offset]));
+            let fut = pin!(self.session.stream.read(&mut buf[offset..]));
 
             if let Poll::Ready(result) = fut.poll(self.context) {
                 match result {
@@ -864,6 +886,7 @@ pub mod asynch {
                         if len == 0 {
                             self.session.state = SessionState::Eof;
                             self.io_result = Some(Err(TlsError::Eof));
+                            ::log::warn!("IO error: EOF");
                         } else {
                             self.io_result = Some(Ok(()));
                         }
@@ -871,37 +894,34 @@ pub mod asynch {
                         len as _
                     }
                     Err(err) => {
+                        ::log::warn!("TCP error: {:?}", err.kind());
                         self.io_result = Some(Err(TlsError::TcpError(err.kind())));
                         MBEDTLS_ERR_SSL_WANT_READ
                     }
                 }
             } else {
-                log::debug!("*** buffer empty - want read");
-
                 if offset == 0 { MBEDTLS_ERR_SSL_WANT_READ } else { offset as _ }
             }
         }
         
-        unsafe extern "C" fn sync_send(ctx: *mut c_void, buf: *const c_uchar, len: usize) -> c_int {
-            log::debug!("*** sync send called, bytes={len}");
+        unsafe extern "C" fn raw_send(ctx: *mut c_void, buf: *const c_uchar, len: usize) -> c_int {
             let ctx = (ctx as *mut PollCtx<'s, 'a, 'c, 'q, T>).as_mut().unwrap();
 
             ctx.send(core::slice::from_raw_parts(buf as *const _, len))
         }
 
-        unsafe extern "C" fn sync_receive(
+        unsafe extern "C" fn raw_receive(
             ctx: *mut c_void,
             buf: *mut c_uchar,
             len: usize,
         ) -> c_int {
-            log::debug!("*** sync rcv, len={}", len);
             let ctx = (ctx as *mut PollCtx<'s, 'a, 'c, 'q, T>).as_mut().unwrap();
 
             ctx.receive(core::slice::from_raw_parts_mut(buf as *mut _, len))
         }
     }
 
-    #[derive(Copy, Clone, Debug)]
+    #[derive(Copy, Clone, Debug, Eq, PartialEq)]
     enum SessionState {
         Initial,
         Connected,
@@ -942,7 +962,7 @@ pub mod asynch {
         /// invalid format.
         pub fn new(
             stream: T,
-            servername: &str,
+            servername: &CStr,
             mode: Mode,
             min_version: TlsVersion,
             certificates: Certificates,
@@ -991,47 +1011,54 @@ pub mod asynch {
     where
         T: embedded_io_async::Read + embedded_io_async::Write,
     {
-        pub async fn read_async(&mut self, buf: &mut [u8]) -> Result<usize, TlsError> {
-            self.connect_async().await?;
+        pub async fn read(&mut self, buf: &mut [u8]) -> Result<usize, TlsError> {
+            self.connect().await?;
 
             let len = self.io(|ssl| unsafe { mbedtls_ssl_read(ssl, buf.as_mut_ptr() as *mut _, buf.len() as _) }).await?;
 
             Ok(len as _)
         }
 
-        pub async fn write_async(&mut self, data: &[u8]) -> Result<usize, TlsError> {
-            self.connect_async().await?;
+        pub async fn write(&mut self, data: &[u8]) -> Result<usize, TlsError> {
+            self.connect().await?;
 
             let len = self.io(|ssl| unsafe { mbedtls_ssl_write(ssl, data.as_ptr() as *const _, data.len() as _) }).await?;
 
             Ok(len as _)
         }
 
-        pub async fn flush_async(&mut self) -> Result<(), TlsError> {
-            self.connect_async().await?;
-
-            if let Some(write_byte) = self.write_byte.as_ref().copied() {
-                let data = [write_byte];
-                let len = self.stream.write(&data).await.map_err(|e| TlsError::TcpError(e.kind()))?;
-                if len > 0 {
-                    self.write_byte.take();
-                }
-            }
+        pub async fn flush(&mut self) -> Result<(), TlsError> {
+            self.connect().await?;
+            self.flush_write().await?;
 
             self.stream.flush().await.map_err(|e| TlsError::TcpError(e.kind()))?;
 
             Ok(())
         }
 
-        async fn connect_async(&mut self) -> Result<(), TlsError> {
-            if matches!(self.state, SessionState::Initial) {
-                log::debug!("Establishing SSL connection");
-        
-                self.io(|ssl| unsafe { mbedtls_ssl_handshake(ssl) }).await?;
-                self.state = SessionState::Connected;
-            }
+        pub async fn close(&mut self) -> Result<(), TlsError> {
+            self.connect().await?;
+            self.io(|ssl| unsafe { mbedtls_ssl_close_notify(ssl) }).await?;
+            self.flush().await?;
+
+            self.state = SessionState::Eof;
 
             Ok(())
+        }
+
+        async fn connect(&mut self) -> Result<(), TlsError> {
+            match self.state {
+                SessionState::Initial => {
+                    log::debug!("Establishing SSL connection");
+        
+                    self.io(|ssl| unsafe { mbedtls_ssl_handshake(ssl) }).await?;
+                    self.state = SessionState::Connected;
+
+                    Ok(())
+                }
+                SessionState::Connected => Ok(()),
+                SessionState::Eof => Err(TlsError::Eof),
+            }
         }
 
         async fn io<F>(&mut self, mut f: F) -> Result<i32, TlsError> 
@@ -1041,29 +1068,39 @@ pub mod asynch {
             loop {
                 let outcome = core::future::poll_fn(|cx| PollCtx::poll(self, cx, |ssl| f(ssl))).await?;
 
+                self.flush_write().await?;
+
                 match outcome {
                     PollOutcome::Success(res) => break Ok(res),
-                    PollOutcome::WantRead => {
-                        if self.read_byte.is_none() {
-                            let mut buf = [0];
-
-                            let len = self.stream.read(&mut buf).await.map_err(|e| TlsError::TcpError(e.kind()))?;
-                            if len > 0 {
-                                self.write_byte = Some(buf[0]);
-                            }
-                        }
-                    }
-                    PollOutcome::WantWrite => {
-                        if let Some(byte) = self.write_byte.as_ref().copied() {
-                            let data = [byte];
-                            let len = self.stream.write(&data).await.map_err(|e| TlsError::TcpError(e.kind()))?;
-                            if len > 0 {
-                                self.write_byte.take();
-                            }
-                        }
-                    }
+                    PollOutcome::WantRead => self.wait_read().await?,
+                    PollOutcome::WantWrite => self.flush_write().await?,
                 }
             }
+        }
+
+        async fn wait_read(&mut self) -> Result<(), TlsError> {
+            if self.read_byte.is_none() {
+                let mut buf = [0];
+
+                let len = self.stream.read(&mut buf).await.map_err(|e| TlsError::TcpError(e.kind()))?;
+                if len > 0 {
+                    self.read_byte = Some(buf[0]);
+                }
+            }
+
+            Ok(())
+        }
+
+        async fn flush_write(&mut self) -> Result<(), TlsError> {
+            if let Some(byte) = self.write_byte.as_ref().copied() {
+                let data = [byte];
+                let len = self.stream.write(&data).await.map_err(|e| TlsError::TcpError(e.kind()))?;
+                if len > 0 {
+                    self.write_byte.take();
+                }
+            }
+
+            Ok(())
         }
     }
 
@@ -1079,7 +1116,7 @@ pub mod asynch {
         T: embedded_io_async::Read + embedded_io_async::Write,
     {
         async fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error> {
-            self.read_async(buf).await
+            self.read(buf).await
         }
     }
 
@@ -1088,11 +1125,11 @@ pub mod asynch {
         T: embedded_io_async::Read + embedded_io_async::Write,
     {
         async fn write(&mut self, buf: &[u8]) -> Result<usize, Self::Error> {
-            self.write_async(buf).await
+            self.write(buf).await
         }
 
         async fn flush(&mut self) -> Result<(), Self::Error> {
-            self.flush_async().await
+            self.flush().await
         }
     }
 }
@@ -1104,15 +1141,25 @@ unsafe extern "C" fn dbg_print(
     line: i32,
     msg: *const i8,
 ) {
-    let msg = CStr::from_ptr(msg as *const i8);
     let file = CStr::from_ptr(file as *const i8);
-    log::info!(
-        "{} {}:{} {}",
-        lvl,
-        file.to_str().unwrap_or("<invalid string>"),
-        line,
-        msg.to_str().unwrap_or("<invalid string>")
-    );
+    let msg = CStr::from_ptr(msg as *const i8);
+
+    let file = file.to_str().unwrap_or("???").trim();
+    let msg = msg.to_str().unwrap_or("???").trim();
+
+    let level = match lvl {
+        0 => Level::Error,
+        1 => Level::Warn,
+        2 => Level::Debug,
+        _ => Level::Trace,
+    };
+
+    log::log!(level, "{} ({}:{}) {}", lvl, file, line, msg);
+}
+
+#[no_mangle]
+extern "C" fn rand() -> crate::c_ulong {
+    unsafe { crate::random() }
 }
 
 unsafe extern "C" fn rng(_param: *mut c_void, buffer: *mut c_uchar, len: usize) -> c_int {

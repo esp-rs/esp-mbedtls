@@ -213,16 +213,18 @@ impl MbedtlsBuilder {
 
         config.build();
 
+        let lib_dir = target_dir.join("lib");
+
         if let Some(copy_path) = copy_path {
             log::info!("Copying mbedtls libraries to {}", copy_path.display());
             std::fs::create_dir_all(copy_path)?;
 
             for file in ["libmbedcrypto.a", "libmbedx509.a", "libmbedtls.a"] {
-                std::fs::copy(target_dir.join("library").join(file), copy_path.join(file))?;
+                std::fs::copy(lib_dir.join(file), copy_path.join(file))?;
             }
         }
 
-        Ok(target_dir)
+        Ok(lib_dir)
     }
 
     /// Re-run the build script if the file or directory has changed.

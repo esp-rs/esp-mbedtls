@@ -1,3 +1,4 @@
+use core::ffi::CStr;
 use core::net::SocketAddr;
 
 use embedded_io::Error;
@@ -8,7 +9,7 @@ use crate::{Certificates, CryptoToken, Mode, TlsError, TlsVersion};
 pub struct TlsAcceptor<'d, T> {
     acceptor: T,
     version: TlsVersion,
-    server_name: &'d str,
+    server_name: &'d CStr,
     certificates: Certificates<'d>,
     crypto_token: CryptoToken<'d>,
 }
@@ -19,7 +20,7 @@ where
 {
     pub const fn new(
         acceptor: T,
-        server_name: &'d str,
+        server_name: &'d CStr,
         version: TlsVersion,
         certificates: Certificates<'d>,
         crypto_token: CryptoToken<'d>,
@@ -66,7 +67,7 @@ where
 
 pub struct TlsConnector<'d, T> {
     connector: T,
-    server_name: &'d str,
+    server_name: &'d CStr,
     version: TlsVersion,
     certificates: Certificates<'d>,
     crypto_token: CryptoToken<'d>,
@@ -78,7 +79,7 @@ where
 {
     pub const fn new(
         connector: T,
-        server_name: &'d str,
+        server_name: &'d CStr,
         version: TlsVersion,
         certificates: Certificates<'d>,
         crypto_token: CryptoToken<'d>,
@@ -133,9 +134,11 @@ where
 
 impl<T> edge_nal::TcpShutdown for Session<'_, T>
 where
-    T: edge_nal::TcpShutdown,
+    T: embedded_io_async::Read + embedded_io_async::Write + edge_nal::TcpShutdown,
 {
     async fn close(&mut self, what: edge_nal::Close) -> Result<(), Self::Error> {
+        Session::close(self).await?;
+
         self.stream
             .close(what)
             .await

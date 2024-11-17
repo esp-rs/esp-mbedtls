@@ -51,9 +51,9 @@ fn main() -> Result<()> {
     if let Some((bindings, libs_dir)) = dirs {
         println!("cargo::rustc-env=ESP_MBEDTLS_SYS_GENERATED_BINDINGS_FILE={}", bindings.display());
 
-        println!("cargo:rustc-link-lib={}", "mbedtls");
-        println!("cargo:rustc-link-lib={}", "mbedx509");
-        println!("cargo:rustc-link-lib={}", "mbedcrypto");
+        println!("cargo:rustc-link-lib=static={}", "mbedtls");
+        println!("cargo:rustc-link-lib=static={}", "mbedx509");
+        println!("cargo:rustc-link-lib=static={}", "mbedcrypto");
         println!("cargo:rustc-link-search={}", libs_dir.display());
     }
 

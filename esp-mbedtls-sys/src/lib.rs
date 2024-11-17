@@ -1,6 +1,6 @@
 #![no_std]
 
-pub mod c_types;
+mod c_types;
 
 #[allow(
     non_camel_case_types,
