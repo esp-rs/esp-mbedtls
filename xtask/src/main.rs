@@ -81,7 +81,7 @@ impl CompilationTarget<'_> {
             sys_crate_root_path.clone(),
             format!("{}", self.soc),
             None,
-            None,
+            Some(self.target.into()),
         );
 
         let out = TempDir::new("mbedtls-sys")?;
@@ -103,7 +103,7 @@ impl CompilationTarget<'_> {
             sys_crate_root_path.clone(),
             format!("{}", self.soc),
             None,
-            None,
+            Some(self.target.into()),
         );
 
         let out = TempDir::new("mbedtls-sys")?;

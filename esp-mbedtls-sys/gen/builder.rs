@@ -80,9 +80,9 @@ impl MbedtlsBuilder {
             ]);
         }
 
-        if let Some(target) = &self.clang_target {
-            builder = builder.clang_arg(&format!("--target={target}"));
-        }
+        // if let Some(target) = &self.clang_target {
+        //     builder = builder.clang_arg(&format!("--target={target}"));
+        // }
 
         let bindings = builder
             .ctypes_prefix("crate::c_types")
@@ -182,6 +182,8 @@ impl MbedtlsBuilder {
             .define("ENABLE_PROGRAMS", "OFF")
             .define("ENABLE_TESTING", "OFF")
             .define("CMAKE_EXPORT_COMPILE_COMMANDS", "ON")
+            // Clang will complain about some documentation formatting in mbedtls
+            .define("MBEDTLS_FATAL_WARNINGS", "OFF")
             .define(
                 "CMAKE_TOOLCHAIN_FILE",
                 &self
@@ -200,7 +202,8 @@ impl MbedtlsBuilder {
                     .display()
             ))
             .cflag(&format!("-DMBEDTLS_CONFIG_FILE='<config.h>'"))
-            .host("riscv32")
+            .cxxflag(&format!("-DMBEDTLS_CONFIG_FILE='<config.h>'"))
+            //.host("riscv32")
             .profile("Release")
             .out_dir(&target_dir);
 
@@ -223,6 +226,7 @@ impl MbedtlsBuilder {
     }
 
     /// Re-run the build script if the file or directory has changed.
+    #[allow(unused)]
     pub fn track(file_or_dir: &Path) {
         println!("cargo:rerun-if-changed={}", file_or_dir.display())
     }

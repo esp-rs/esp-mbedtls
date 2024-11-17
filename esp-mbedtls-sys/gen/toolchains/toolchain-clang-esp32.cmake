@@ -7,14 +7,14 @@ set(CMAKE_AR llvm-ar)
 set(CMAKE_RANLIB llvm-ranlib)
 set(CMAKE_OBJDUMP xtensa-esp32-elf-objdump)
 
-set(CMAKE_C_FLAGS "--target=xtensa-esp-elf -mcpu=esp32"
+set(CMAKE_C_FLAGS, string(APPEND CMAKE_C_FLAGS "--target=xtensa-esp-elf -mcpu=esp32")
   CACHE STRING "C Compiler Base Flags"
   FORCE)
 
-set(CMAKE_CXX_FLAGS "--target=xtensa-esp-elf -mcpu=esp32 "
+set(CMAKE_CXX_FLAGS string(APPEND CMAKE_CXX_FLAGS "--target=xtensa-esp-elf -mcpu=esp32")
   CACHE STRING "C++ Compiler Base Flags"
   FORCE)
 
-set(CMAKE_ASM_FLAGS "--target=xtensa-esp-elf -mcpu=esp32 -Xassembler --longcalls"
+set(CMAKE_ASM_FLAGS string(APPEND CMAKE_ASM_FLAGS "--target=xtensa-esp-elf -mcpu=esp32 -Xassembler --longcalls")
   CACHE STRING "Assembler Base Flags"
   FORCE)

@@ -1,13 +1,14 @@
-use embedded_io::Error;
-
-use crate::asynch::Session;
-use crate::{Certificates, CryptoToken, Mode, TlsError, TlsVersion};
 use core::{
-    cell::{Cell, RefCell, UnsafeCell},
+    cell::{Cell, UnsafeCell},
     mem::MaybeUninit,
     net::SocketAddr,
     ptr::NonNull,
 };
+
+use embedded_io::{Error, ErrorType};
+
+use crate::asynch::Session;
+use crate::{Certificates, CryptoToken, Mode, TlsError, TlsVersion};
 
 pub struct TlsAcceptor<
     'd,
@@ -18,18 +19,10 @@ pub struct TlsAcceptor<
 > {
     acceptor: T,
     version: TlsVersion,
+    server_name: &'d str,
     certificates: Certificates<'d>,
-    tls_buffers: &'d TlsBuffers<RX_SZ, TX_SZ>,
-    tls_buffers_ptr: RefCell<NonNull<([u8; RX_SZ], [u8; TX_SZ])>>,
+    tls_buffers: &'d TlsBuffers<N, RX_SZ, TX_SZ>,
     crypto_token: CryptoToken<'d>,
-}
-
-impl<'d, T, const N: usize, const RX_SZ: usize, const TX_SZ: usize> Drop for TlsAcceptor<'d, T, N, RX_SZ, TX_SZ> {
-    fn drop(&mut self) {
-        unsafe {
-            self.tls_buffers.pool.free(*self.tls_buffers_ptr.get_mut());
-        }
-    }
 }
 
 impl<'d, T, const N: usize, const RX_SZ: usize, const TX_SZ: usize>
@@ -37,21 +30,20 @@ impl<'d, T, const N: usize, const RX_SZ: usize, const TX_SZ: usize>
 where
     T: edge_nal::TcpAccept,
 {
-    pub async fn new(
+    pub const fn new(
         acceptor: T,
-        tls_buffers: &'d TlsBuffers<RX_SZ, TX_SZ>,
+        server_name: &'d str,
+        tls_buffers: &'d TlsBuffers<N, RX_SZ, TX_SZ>,
         version: TlsVersion,
         certificates: Certificates<'d>,
         crypto_token: CryptoToken<'d>,
     ) -> Self {
-        let socket_buffers = tls_buffers.pool.alloc().unwrap();
-
         Self {
             acceptor,
+            server_name,
             version,
             certificates,
             tls_buffers,
-            tls_buffers_ptr: RefCell::new(socket_buffers),
             crypto_token,
         }
     }
@@ -63,7 +55,7 @@ where
     T: edge_nal::TcpAccept,
 {
     type Error = TlsError;
-    type Socket<'a> = Session<'a, 'a, T::Socket<'a>, RX_SZ, TX_SZ> where Self: 'a;
+    type Socket<'a> = BufferedSession<'a, T::Socket<'a>, N, RX_SZ, TX_SZ> where Self: 'a;
 
     async fn accept(
         &self,
@@ -75,11 +67,13 @@ where
             .map_err(|e| TlsError::TcpError(e.kind()))?;
         log::debug!("Accepted new connection on socket");
 
-        let (rx, tx) = unsafe { self.tls_buffers_ptr.borrow_mut().as_mut() };
+        let mut socket_buffers = self.tls_buffers.pool.alloc().unwrap(); // TODO: Error handling
+
+        let (rx, tx) = unsafe { socket_buffers.as_mut() };
 
         let session: Session<_, RX_SZ, TX_SZ> = Session::new(
             socket,
-            "",
+            self.server_name,
             Mode::Server,
             self.version,
             self.certificates,
@@ -88,10 +82,143 @@ where
             self.crypto_token,
         )?;
 
-        log::debug!("Establishing SSL connection");
-        let connected_session = session.connect_async().await?;
+        let mut this = BufferedSession {
+            session: Some(session),
+            tls_buffers: self.tls_buffers,
+            tls_buffers_ptr: socket_buffers,
+        };
 
-        Ok((addr, connected_session))
+        log::debug!("Establishing SSL connection");
+        this.session.as_mut().unwrap().connect_async().await?;
+
+        
+        Ok((addr, this))
+    }
+}
+
+pub struct TlsConnector<'d, T, const N: usize, const RX_SZ: usize, const TX_SZ: usize> {
+    connector: T,
+    server_name: &'d str,
+    version: TlsVersion,
+    certificates: Certificates<'d>,
+    tls_buffers: &'d TlsBuffers<N, RX_SZ, TX_SZ>,
+    crypto_token: CryptoToken<'d>,
+}
+
+impl<'d, T, const N: usize, const RX_SZ: usize, const TX_SZ: usize> TlsConnector<'d, T, N, RX_SZ, TX_SZ>
+where
+    T: edge_nal::TcpConnect,
+{
+    pub const fn new(
+        connector: T,
+        server_name: &'d str,
+        tls_buffers: &'d TlsBuffers<N, RX_SZ, TX_SZ>,
+        version: TlsVersion,
+        certificates: Certificates<'d>,
+        crypto_token: CryptoToken<'d>,
+    ) -> Self {
+        Self {
+            connector,
+            server_name,
+            version,
+            certificates,
+            tls_buffers,
+            crypto_token,
+        }
+    }
+}
+
+impl<T, const N: usize, const RX_SZ: usize, const TX_SZ: usize> edge_nal::TcpConnect for TlsConnector<'_, T, N, RX_SZ, TX_SZ>
+where
+    T: edge_nal::TcpConnect,
+{
+    type Error = TlsError;
+    
+    type Socket<'a> = BufferedSession<'a, T::Socket<'a>, N, RX_SZ, TX_SZ> where Self: 'a;
+    
+    async fn connect(&self, remote: SocketAddr) -> Result<Self::Socket<'_>, Self::Error> {
+        let mut socket_buffers = self.tls_buffers.pool.alloc().unwrap(); // TODO: Error handling
+
+        let socket = self
+            .connector
+            .connect(remote)
+            .await
+            .map_err(|e| TlsError::TcpError(e.kind()))?;
+        log::debug!("Connected to {remote}");
+
+        let (rx, tx) = unsafe { socket_buffers.as_mut() };
+
+        let session: Session<_, RX_SZ, TX_SZ> = Session::new(
+            socket,
+            self.server_name,
+            Mode::Client,
+            self.version,
+            self.certificates,
+            rx,
+            tx,
+            self.crypto_token,
+        )?;
+
+        let mut this = BufferedSession {
+            session: Some(session),
+            tls_buffers: self.tls_buffers,
+            tls_buffers_ptr: socket_buffers,
+        };
+
+        log::debug!("Establishing SSL connection");
+        this.session.as_mut().unwrap().connect_async().await?;
+
+        
+        Ok(this)
+    }
+}
+
+pub struct BufferedSession<'d, T, const N: usize, const RX_SZ: usize, const TX_SZ: usize> {
+    session: Option<Session<'d, 'd, T, RX_SZ, TX_SZ>>,
+    tls_buffers: &'d TlsBuffers<N, RX_SZ, TX_SZ>,
+    tls_buffers_ptr: NonNull<([u8; RX_SZ], [u8; TX_SZ])>,
+}
+
+impl<'d, T, const N: usize, const RX_SZ: usize, const TX_SZ: usize> Drop for BufferedSession<'d, T, N, RX_SZ, TX_SZ> {
+    fn drop(&mut self) {
+        // First drop the session, and only then the buffers
+        self.session = None;
+
+        unsafe {
+            self.tls_buffers.pool.free(self.tls_buffers_ptr);
+        }
+    }
+}
+
+impl<T, const N: usize, const RX_SIZE: usize, const TX_SIZE: usize> ErrorType
+for BufferedSession<'_, T, N, RX_SIZE, TX_SIZE>
+where
+    T: ErrorType,
+{
+    type Error = TlsError;
+}
+
+impl<T, const N: usize, const RX_SIZE: usize, const TX_SIZE: usize> edge_nal::Readable
+for BufferedSession<'_, T, N, RX_SIZE, TX_SIZE>
+where
+    T: edge_nal::Readable,
+{
+    async fn readable(&mut self) -> Result<(), Self::Error> {
+        self.session.as_mut().unwrap().readable().await
+    }
+}
+
+impl<T, const N: usize, const RX_SIZE: usize, const TX_SIZE: usize> edge_nal::TcpShutdown
+for BufferedSession<'_, T, N, RX_SIZE, TX_SIZE>
+where
+    T: edge_nal::TcpShutdown,
+{
+    async fn close(&mut self, what: edge_nal::Close) -> Result<(), Self::Error> {
+        self.session.as_mut().unwrap().close(what).await
+    }
+
+    async fn abort(&mut self) -> Result<(), Self::Error> {
+        self.session.as_mut().unwrap().abort().await
     }
 }
 
@@ -122,12 +249,36 @@ where
     }
 }
 
-/// A struct that holds a pool of TLS buffers
-pub struct TlsBuffers<const RX_SZ: usize, const TX_SZ: usize> {
-    pool: Pool<([u8; RX_SZ], [u8; TX_SZ]), 1>,
+impl<T, const N: usize, const RX_SIZE: usize, const TX_SIZE: usize> embedded_io_async::Read
+for BufferedSession<'_, T, N, RX_SIZE, TX_SIZE>
+where
+    T: embedded_io_async::Read + embedded_io_async::Write,
+{
+    async fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error> {
+        self.session.as_mut().unwrap().read(buf).await
+    }
 }
 
-impl<const RX_SZ: usize, const TX_SZ: usize> TlsBuffers<RX_SZ, TX_SZ> {
+impl<T, const N: usize, const RX_SIZE: usize, const TX_SIZE: usize> embedded_io_async::Write
+for BufferedSession<'_, T, N, RX_SIZE, TX_SIZE>
+where
+    T: embedded_io_async::Read + embedded_io_async::Write,
+{
+    async fn write(&mut self, buf: &[u8]) -> Result<usize, Self::Error> {
+        self.session.as_mut().unwrap().write(buf).await
+    }
+
+    async fn flush(&mut self) -> Result<(), Self::Error> {
+        self.session.as_mut().unwrap().flush().await
+    }
+}
+
+/// A struct that holds a pool of TLS buffers
+pub struct TlsBuffers<const N: usize, const RX_SZ: usize, const TX_SZ: usize> {
+    pool: Pool<([u8; RX_SZ], [u8; TX_SZ]), N>,
+}
+
+impl<const N: usize, const RX_SZ: usize, const TX_SZ: usize> TlsBuffers<N, RX_SZ, TX_SZ> {
     /// Create a new `TlsBuffers` instance
     pub const fn new() -> Self {
         Self { pool: Pool::new() }

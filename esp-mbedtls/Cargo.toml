@@ -26,4 +26,4 @@ esp32s2 = ["esp-hal/esp32s2", "esp-mbedtls-sys/esp32s2"]
 esp32s3 = ["esp-hal/esp32s3", "esp-mbedtls-sys/esp32s3"]
 
 # Implement the traits defined in the latest HEAD of `edge-nal`
-edge-nal = ["dep:edge-nal"]
+edge-nal = ["dep:edge-nal", "async"]

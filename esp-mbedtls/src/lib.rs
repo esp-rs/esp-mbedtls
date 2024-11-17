@@ -2,11 +2,13 @@
 #![feature(c_variadic)]
 #![allow(incomplete_features)]
 
+use critical_section::Mutex;
 use embedded_io::{ErrorKind, ErrorType};
 
 #[cfg(any(feature = "esp32", feature = "esp32c3", feature = "esp32s2", feature = "esp32s3"))]
 pub use esp_hal::Crypto;
 
+use core::cell::Cell;
 use core::ffi::CStr;
 use core::marker::PhantomData;
 use core::mem::size_of;
@@ -394,7 +396,7 @@ impl<'a> Certificates<'a> {
             );
 
             if mode == Mode::Client {
-                let mut hostname = StrBuf::new();
+                let mut hostname = StrBuf::new(); // TODO: Makes the future large
                 hostname.append(servername);
                 hostname.append_char('\0');
                 error_checked!(
@@ -470,6 +472,28 @@ impl<'a> Certificates<'a> {
     }
 }
 
+static CRYPTO_CREATED: Mutex<Cell<bool>> = Mutex::new(Cell::new(false));
+
+pub struct Crypto<'d>(PhantomData<&'d mut ()>);
+
+impl<'d> Crypto<'d> {
+    pub fn new() -> Self {
+        critical_section::with(|cs| {
+            let created = CRYPTO_CREATED.borrow(cs).get();
+
+            assert!(!created); // TODO: Error handling
+
+            CRYPTO_CREATED.borrow(cs).set(true);
+        });
+
+        Self(PhantomData)
+    }
+
+    pub fn token(&self) -> CryptoToken<'_> {
+        unsafe { CryptoToken::new() }
+    }
+}
+
 #[allow(unused)]
 #[derive(Debug, Copy, Clone)]
 pub struct CryptoToken<'a>(PhantomData<&'a ()>);
@@ -536,7 +560,7 @@ impl<'a, T> Session<'a, T>
 where
     T: Read + Write,
 {
-    pub fn connect<'b>(self) -> Result<ConnectedSession<'a, T>, TlsError> {
+    pub fn connect<'b>(&mut self) -> Result<(), TlsError> {
         unsafe {
             mbedtls_ssl_set_bio(
                 self.ssl_context,
@@ -548,6 +572,7 @@ where
 
             loop {
                 let res = mbedtls_ssl_handshake(self.ssl_context);
+                log::debug!("mbedtls_ssl_handshake: {res:x}");
                 if res == 0 {
                     // success
                     break;
@@ -566,7 +591,7 @@ where
                 // try again immediately
             }
 
-            Ok(ConnectedSession { session: self })
+            Ok(())
         }
     }
 
@@ -656,27 +681,20 @@ impl<T> Drop for Session<'_, T> {
     }
 }
 
-pub struct ConnectedSession<'a, T>
-where
-    T: Read + Write,
-{
-    session: Session<'a, T>,
-}
-
-impl<T> ErrorType for ConnectedSession<'_, T>
+impl<T> ErrorType for Session<'_, T>
 where
     T: Read + Write,
 {
     type Error = TlsError;
 }
 
-impl<T> Read for ConnectedSession<'_, T>
+impl<T> Read for Session<'_, T>
 where
     T: Read + Write,
 {
     fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error> {
         loop {
-            let res = self.session.internal_read(buf);
+            let res = self.internal_read(buf);
             match res {
                 MBEDTLS_ERR_SSL_WANT_READ | MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET => continue, // no data
                 0_i32..=i32::MAX => return Ok(res as usize), // data
@@ -686,17 +704,17 @@ where
     }
 }
 
-impl<T> Write for ConnectedSession<'_, T>
+impl<T> Write for Session<'_, T>
 where
     T: Read + Write,
 {
     fn write(&mut self, buf: &[u8]) -> Result<usize, Self::Error> {
-        let res = self.session.internal_write(buf);
+        let res = self.internal_write(buf);
         Ok(res as usize)
     }
 
     fn flush(&mut self) -> Result<(), Self::Error> {
-        self.session.stream.flush().map_err(|_| TlsError::Unknown)
+        self.stream.flush().map_err(|_| TlsError::Unknown)
     }
 }
 
@@ -795,8 +813,8 @@ pub mod asynch {
         T: embedded_io_async::Read + embedded_io_async::Write,
     {
         pub async fn connect_async(
-            mut self,
-        ) -> Result<Self, TlsError> {
+            &mut self,
+        ) -> Result<(), TlsError> {
             unsafe {
                 mbedtls_ssl_set_bio(
                     self.ssl_context,
@@ -854,7 +872,7 @@ pub mod asynch {
                 }
                 self.drain_tx_buffer().await?;
 
-                Ok(self)
+                Ok(())
             }
         }
 
