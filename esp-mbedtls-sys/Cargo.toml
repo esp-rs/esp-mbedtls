@@ -2,6 +2,7 @@
 name = "esp-mbedtls-sys"
 version = "0.1.0"
 edition = "2021"
+links = "mbedtls"
 
 [build-dependencies]
 anyhow      = "1.0.68"
@@ -13,18 +14,22 @@ fs_extra    = "1.3.0"
 embuild     = "0.32"
 
 [dependencies]
-
-[features]
-default = []
-
-# ESP-HAL: Exactly *one* chip MUST be selected via its feature:
-esp32 = []
-esp32c3 = []
-esp32s2 = []
-esp32s3 = []
+# For malloc/free
+# TODO: Replace with `esp-alloc` once `esp-alloc` starts to provide `malloc` and `free` in future
+# ... or switch to our own `mbedtls_malloc/free`
+esp-wifi = { version = "0.10.1", default-features = false, optional = true }
 
 # ESP-IDF: The mbedtls lib distributed with ESP-IDF is used
 [target.'cfg(target_os = "espidf")'.dependencies]
 esp-idf-sys = { version = "0.35", default-features = false }
 
 # All other platforms: mbedtls libs and bindings are created on the fly
+
+[features]
+default = []
+
+# ESP-HAL: Exactly *one* chip MUST be selected via its feature:
+esp32 = ["esp-wifi/esp32"]
+esp32c3 = ["esp-wifi/esp32c3"]
+esp32s2 = ["esp-wifi/esp32s2"]
+esp32s3 = ["esp-wifi/esp32s3"]

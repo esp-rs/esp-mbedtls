@@ -1,5 +1,9 @@
 #![no_std]
 
+// For `malloc`, `calloc` and `free` which are provided by `esp-wifi` on baremetal
+#[cfg(any(feature = "esp32", feature = "esp32c3", feature = "esp32s2", feature = "esp32s3"))]
+use esp_wifi as _;
+
 #[cfg(not(target_os = "espidf"))]
 mod c_types;
 

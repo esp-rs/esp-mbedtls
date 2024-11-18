@@ -31,12 +31,17 @@ pub use esp_mbedtls_sys::bindings::{
     mbedtls_sha512_self_test,
 };
 
+// For `malloc`, `calloc` and `free` which are provided by `esp-wifi` on baremetal
+#[cfg(any(feature = "esp32", feature = "esp32c3", feature = "esp32s2", feature = "esp32s3"))]
+use esp_wifi as _;
+
 #[cfg(feature = "edge-nal")]
 mod edge_nal;
 #[cfg(any(feature = "esp32", feature = "esp32c3", feature = "esp32s2", feature = "esp32s3"))]
 mod esp_hal;
 
-// these will come from esp-wifi (i.e. this can only be used together with esp-wifi)
+// Baremetal: these will come from `esp-wifi` (i.e. this can only be used together with esp-wifi)
+// STD: these will come from `libc` indirectly via the Rust standard library
 extern "C" {
     fn free(ptr: *const c_void);
 
