@@ -8,7 +8,7 @@ use esp_hal::peripherals::{RSA, SHA};
 use esp_hal::rsa::Rsa;
 use esp_hal::sha::Sha;
 
-use crate::Crypto;
+use crate::Tls;
 
 #[cfg(any(feature = "esp32c3", feature = "esp32s2", feature = "esp32s3"))]
 mod bignum;
@@ -27,7 +27,7 @@ static mut RSA_REF: Option<Rsa<esp_hal::Blocking>> = None;
 /// Hold the SHA peripheral for cryptographic operations.
 static SHARED_SHA: Mutex<RefCell<Option<Sha<'static>>>> = Mutex::new(RefCell::new(None));
 
-impl<'d> Crypto<'d> {
+impl<'d> Tls<'d> {
     pub fn with_hardware_sha(self, sha: impl Peripheral<P = SHA> + 'd) -> Self {
         critical_section::with(|cs| {
             SHARED_SHA
@@ -52,7 +52,7 @@ impl<'d> Crypto<'d> {
     }
 }
 
-impl Drop for Crypto<'_> {
+impl Drop for Tls<'_> {
     fn drop(&mut self) {
         unsafe { RSA_REF = core::mem::transmute(None::<RSA>); }
         critical_section::with(|cs| SHARED_SHA.borrow_ref_mut(cs).take());

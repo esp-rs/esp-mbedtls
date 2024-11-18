@@ -486,35 +486,35 @@ impl<'a> Certificates<'a> {
     }
 }
 
-static CRYPTO_CREATED: Mutex<Cell<bool>> = Mutex::new(Cell::new(false));
+static TLS_CREATED: Mutex<Cell<bool>> = Mutex::new(Cell::new(false));
 
-pub struct Crypto<'d>(PhantomData<&'d mut ()>);
+pub struct Tls<'d>(PhantomData<&'d mut ()>);
 
-impl<'d> Crypto<'d> {
+impl<'d> Tls<'d> {
     pub fn new() -> Self {
         critical_section::with(|cs| {
-            let created = CRYPTO_CREATED.borrow(cs).get();
+            let created = TLS_CREATED.borrow(cs).get();
 
             assert!(!created); // TODO: Error handling
 
-            CRYPTO_CREATED.borrow(cs).set(true);
+            TLS_CREATED.borrow(cs).set(true);
         });
 
         Self(PhantomData)
     }
 
-    pub fn token(&self) -> CryptoToken<'_> {
-        unsafe { CryptoToken::new() }
+    pub fn token(&self) -> TlsToken<'_> {
+        unsafe { TlsToken::new() }
     }
 }
 
 #[allow(unused)]
 #[derive(Debug, Copy, Clone)]
-pub struct CryptoToken<'a>(PhantomData<&'a ()>);
+pub struct TlsToken<'a>(PhantomData<&'a ()>);
 
-impl<'a> CryptoToken<'a> {
+impl<'a> TlsToken<'a> {
     pub const unsafe fn new() -> Self {
-        CryptoToken(PhantomData)
+        TlsToken(PhantomData)
     }
 }
 
@@ -526,7 +526,7 @@ pub struct Session<'a, T> {
     crt: *mut mbedtls_x509_crt,
     client_crt: *mut mbedtls_x509_crt,
     private_key: *mut mbedtls_pk_context,
-    _token: CryptoToken<'a>,
+    _token: TlsToken<'a>,
 }
 
 impl<'a, T> Session<'a, T> {
@@ -553,7 +553,7 @@ impl<'a, T> Session<'a, T> {
         mode: Mode,
         min_version: TlsVersion,
         certificates: Certificates,
-        token: CryptoToken<'a>,
+        token: TlsToken<'a>,
     ) -> Result<Self, TlsError> {
         let (drbg_context, ssl_context, ssl_config, crt, client_crt, private_key) =
             certificates.init_ssl(servername, mode, min_version)?;
@@ -575,6 +575,8 @@ where
     T: Read + Write,
 {
     pub fn connect<'b>(&mut self) -> Result<(), TlsError> {
+        // TODO: Keep info that we are connected now
+
         unsafe {
             mbedtls_ssl_set_bio(
                 self.ssl_context,
@@ -608,6 +610,27 @@ where
 
             Ok(())
         }
+    }
+
+    pub fn read(&mut self, buf: &mut [u8]) -> Result<usize, TlsError> {
+        loop {
+            let res = self.internal_read(buf);
+            #[allow(non_snake_case)]
+            match res {
+                MBEDTLS_ERR_SSL_WANT_READ | MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET => continue, // no data
+                0_i32..=i32::MAX => return Ok(res as usize), // data
+                i32::MIN..=-1_i32 => return Err(TlsError::MbedTlsError(res)), // error
+            }
+        }
+    }
+
+    pub fn write(&mut self, buf: &[u8]) -> Result<usize, TlsError> {
+        let res = self.internal_write(buf);
+        Ok(res as usize)
+    }
+
+    pub fn flush(&mut self) -> Result<(), TlsError> {
+        self.stream.flush().map_err(|_| TlsError::Unknown)
     }
 
     fn internal_write(&mut self, buf: &[u8]) -> i32 {
@@ -708,15 +731,7 @@ where
     T: Read + Write,
 {
     fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error> {
-        loop {
-            let res = self.internal_read(buf);
-            #[allow(non_snake_case)]
-            match res {
-                MBEDTLS_ERR_SSL_WANT_READ | MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET => continue, // no data
-                0_i32..=i32::MAX => return Ok(res as usize), // data
-                i32::MIN..=-1_i32 => return Err(TlsError::MbedTlsError(res)), // error
-            }
-        }
+        Session::read(self, buf)
     }
 }
 
@@ -725,12 +740,11 @@ where
     T: Read + Write,
 {
     fn write(&mut self, buf: &[u8]) -> Result<usize, Self::Error> {
-        let res = self.internal_write(buf);
-        Ok(res as usize)
+        Session::write(self, buf)
     }
 
     fn flush(&mut self) -> Result<(), Self::Error> {
-        self.stream.flush().map_err(|_| TlsError::Unknown)
+        Session::flush(self)
     }
 }
 
@@ -941,7 +955,7 @@ pub mod asynch {
         state: SessionState,
         read_byte: Option<u8>,
         write_byte: Option<u8>,
-        _token: CryptoToken<'a>,
+        _token: TlsToken<'a>,
     }
 
     impl<'a, T> Session<'a, T> {
@@ -968,7 +982,7 @@ pub mod asynch {
             mode: Mode,
             min_version: TlsVersion,
             certificates: Certificates,
-            token: CryptoToken<'a>,
+            token: TlsToken<'a>,
         ) -> Result<Self, TlsError> {
             let (drbg_context, ssl_context, ssl_config, crt, client_crt, private_key) =
                 certificates.init_ssl(servername, mode, min_version)?;
@@ -1013,6 +1027,21 @@ pub mod asynch {
     where
         T: embedded_io_async::Read + embedded_io_async::Write,
     {
+        pub async fn connect(&mut self) -> Result<(), TlsError> {
+            match self.state {
+                SessionState::Initial => {
+                    log::debug!("Establishing SSL connection");
+        
+                    self.io(|ssl| unsafe { mbedtls_ssl_handshake(ssl) }).await?;
+                    self.state = SessionState::Connected;
+
+                    Ok(())
+                }
+                SessionState::Connected => Ok(()),
+                SessionState::Eof => Err(TlsError::Eof),
+            }
+        }
+
         pub async fn read(&mut self, buf: &mut [u8]) -> Result<usize, TlsError> {
             self.connect().await?;
 
@@ -1046,21 +1075,6 @@ pub mod asynch {
             self.state = SessionState::Eof;
 
             Ok(())
-        }
-
-        async fn connect(&mut self) -> Result<(), TlsError> {
-            match self.state {
-                SessionState::Initial => {
-                    log::debug!("Establishing SSL connection");
-        
-                    self.io(|ssl| unsafe { mbedtls_ssl_handshake(ssl) }).await?;
-                    self.state = SessionState::Connected;
-
-                    Ok(())
-                }
-                SessionState::Connected => Ok(()),
-                SessionState::Eof => Err(TlsError::Eof),
-            }
         }
 
         async fn io<F>(&mut self, mut f: F) -> Result<i32, TlsError> 

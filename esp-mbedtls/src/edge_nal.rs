@@ -4,14 +4,14 @@ use core::net::SocketAddr;
 use embedded_io::Error;
 
 use crate::asynch::Session;
-use crate::{Certificates, CryptoToken, Mode, TlsError, TlsVersion};
+use crate::{Certificates, TlsToken, Mode, TlsError, TlsVersion};
 
 pub struct TlsAcceptor<'d, T> {
     acceptor: T,
     version: TlsVersion,
     server_name: &'d CStr,
     certificates: Certificates<'d>,
-    crypto_token: CryptoToken<'d>,
+    crypto_token: TlsToken<'d>,
 }
 
 impl<'d, T> TlsAcceptor<'d, T>
@@ -23,7 +23,7 @@ where
         server_name: &'d CStr,
         version: TlsVersion,
         certificates: Certificates<'d>,
-        crypto_token: CryptoToken<'d>,
+        crypto_token: TlsToken<'d>,
     ) -> Self {
         Self {
             acceptor,
@@ -70,7 +70,7 @@ pub struct TlsConnector<'d, T> {
     server_name: &'d CStr,
     version: TlsVersion,
     certificates: Certificates<'d>,
-    crypto_token: CryptoToken<'d>,
+    crypto_token: TlsToken<'d>,
 }
 
 impl<'d, T> TlsConnector<'d, T>
@@ -82,7 +82,7 @@ where
         server_name: &'d CStr,
         version: TlsVersion,
         certificates: Certificates<'d>,
-        crypto_token: CryptoToken<'d>,
+        crypto_token: TlsToken<'d>,
     ) -> Self {
         Self {
             connector,

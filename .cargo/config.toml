@@ -1,10 +1,10 @@
 [build]
 # Build on host
-target = "x86_64-unknown-linux-gnu"
+#target = "x86_64-unknown-linux-gnu"
 # Build on target firmware with ESP IDF
 #target = "xtensa-esp32s3-espidf"
 # Build on target firmware with baremetal
-#target = "xtensa-esp32s3-none-elf"
+target = "xtensa-esp32s3-none-elf"
 
 [target.xtensa-esp32-none-elf]
 runner = "espflash flash --monitor --baud 921600"
@@ -51,8 +51,9 @@ runner = "espflash flash --monitor"
 rustflags = [ "--cfg",  "espidf_time64"]
 
 [unstable]
-#build-std = ["core", "alloc"]
-build-std = ["std", "panic_abort"]
+build-std = ["core", "alloc"]
+# Enable this when building on the host machine or for ESP-IDF
+#build-std = ["std", "panic_abort"]
 
 [alias]
 xtask = "run --manifest-path ./xtask/Cargo.toml --"

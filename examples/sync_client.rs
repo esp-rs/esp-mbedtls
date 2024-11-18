@@ -6,10 +6,9 @@
 #[doc(hidden)]
 pub use esp_hal as hal;
 
-use embedded_io::*;
 use esp_alloc as _;
 use esp_backtrace as _;
-use esp_mbedtls::{set_debug, Mode, TlsVersion, X509};
+use esp_mbedtls::{set_debug, Mode, Tls, TlsVersion, X509};
 use esp_mbedtls::{Certificates, Session};
 use esp_println::{logger::init_logger, print, println};
 use esp_wifi::{
@@ -104,9 +103,13 @@ fn main() -> ! {
 
     set_debug(0);
 
-    let tls = Session::new(
+    let tls = Tls::new()
+        .with_hardware_rsa(peripherals.RSA)
+        .with_hardware_sha(peripherals.SHA);
+
+    let mut session = Session::new(
         &mut socket,
-        "www.google.com",
+        c"www.google.com",
         Mode::Client,
         TlsVersion::Tls1_3,
         Certificates {
@@ -116,22 +119,22 @@ fn main() -> ! {
             .ok(),
             ..Default::default()
         },
-        peripherals.SHA,
+        tls.token(),
     )
-    .unwrap()
-    .with_hardware_rsa(peripherals.RSA);
+    .unwrap();
 
     println!("Start tls connect");
-    let mut tls = tls.connect().unwrap();
+    session.connect().unwrap();
 
     println!("Write to connection");
-    tls.write(b"GET /notfound HTTP/1.0\r\nHost: www.google.com\r\n\r\n")
+    session
+        .write(b"GET /notfound HTTP/1.0\r\nHost: www.google.com\r\n\r\n")
         .unwrap();
 
     println!("Read from connection");
     let mut buffer = [0u8; 4096];
     loop {
-        match tls.read(&mut buffer) {
+        match session.read(&mut buffer) {
             Ok(len) => {
                 print!("{}", unsafe {
                     core::str::from_utf8_unchecked(&buffer[..len as usize])

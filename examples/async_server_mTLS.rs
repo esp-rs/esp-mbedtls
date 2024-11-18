@@ -35,7 +35,7 @@ use embassy_executor::Spawner;
 use embassy_time::{Duration, Timer};
 use esp_backtrace as _;
 use esp_mbedtls::{asynch::Session, set_debug, Certificates, Mode, TlsVersion};
-use esp_mbedtls::{TlsError, X509};
+use esp_mbedtls::{Tls, TlsError, X509};
 use esp_println::logger::init_logger;
 use esp_println::{print, println};
 use esp_wifi::wifi::{
@@ -62,7 +62,7 @@ const PASSWORD: &str = env!("PASSWORD");
 async fn main(spawner: Spawner) -> ! {
     init_logger(log::LevelFilter::Info);
 
-    let mut peripherals = esp_hal::init({
+    let peripherals = esp_hal::init({
         let mut config = esp_hal::Config::default();
         config.cpu_clock = CpuClock::max();
         config
@@ -113,10 +113,12 @@ async fn main(spawner: Spawner) -> ! {
     spawner.spawn(connection(controller)).ok();
     spawner.spawn(net_task(&stack)).ok();
 
+    let tls = Tls::new()
+        .with_hardware_sha(peripherals.SHA)
+        .with_hardware_rsa(peripherals.RSA);
+
     let mut rx_buffer = [0; 4096];
     let mut tx_buffer = [0; 4096];
-    let tls_rx_buffer = mk_static!([u8; 4096], [0; 4096]);
-    let tls_tx_buffer = mk_static!([u8; 2048], [0; 2048]);
 
     loop {
         if stack.is_link_up() {
@@ -156,14 +158,13 @@ async fn main(spawner: Spawner) -> ! {
         }
 
         set_debug(0);
-        use embedded_io_async::Read;
         use embedded_io_async::Write;
 
         let mut buffer = [0u8; 1024];
         let mut pos = 0;
-        let tls = Session::new(
+        let mut session = Session::new(
             &mut socket,
-            "",
+            c"",
             Mode::Server,
             TlsVersion::Tls1_2,
             Certificates {
@@ -180,19 +181,16 @@ async fn main(spawner: Spawner) -> ! {
                 .ok(),
                 ..Default::default()
             },
-            tls_rx_buffer,
-            tls_tx_buffer,
-            &mut peripherals.SHA,
+            tls.token(),
         )
-        .unwrap()
-        .with_hardware_rsa(&mut peripherals.RSA);
+        .unwrap();
 
         println!("Start tls connect");
-        match tls.connect().await {
-            Ok(mut connected_session) => {
+        match session.connect().await {
+            Ok(()) => {
                 log::info!("Got session");
                 loop {
-                    match connected_session.read(&mut buffer).await {
+                    match session.read(&mut buffer).await {
                         Ok(0) => {
                             println!("read EOF");
                             break;
@@ -216,7 +214,7 @@ async fn main(spawner: Spawner) -> ! {
                     };
                 }
 
-                let r = connected_session
+                let r = session
                     .write_all(
                         b"HTTP/1.0 200 OK\r\n\r\n\
                             <html>\
@@ -232,8 +230,6 @@ async fn main(spawner: Spawner) -> ! {
                 }
 
                 Timer::after(Duration::from_millis(1000)).await;
-
-                drop(connected_session);
             }
             Err(TlsError::NoClientCertificate) => {
                 println!("Error: No client certificates given. Please provide client certificates during your request");
@@ -245,6 +241,7 @@ async fn main(spawner: Spawner) -> ! {
                 panic!("{:?}", error);
             }
         }
+        drop(session);
         println!("Closing socket");
         socket.close();
         Timer::after(Duration::from_millis(1000)).await;

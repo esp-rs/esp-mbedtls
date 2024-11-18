@@ -14,8 +14,8 @@ use embassy_net::{Config, Ipv4Address, Stack, StackResources};
 use embassy_executor::Spawner;
 use embassy_time::{Duration, Timer};
 use esp_backtrace as _;
-use esp_mbedtls::X509;
 use esp_mbedtls::{asynch::Session, set_debug, Certificates, Mode, TlsVersion};
+use esp_mbedtls::{Tls, X509};
 use esp_println::logger::init_logger;
 use esp_println::{print, println};
 use esp_wifi::wifi::{
@@ -126,9 +126,13 @@ async fn main(spawner: Spawner) -> ! {
 
     set_debug(0);
 
-    let tls = Session::new(
+    let tls = Tls::new()
+        .with_hardware_sha(peripherals.SHA)
+        .with_hardware_rsa(peripherals.RSA);
+
+    let mut session = Session::new(
         &mut socket,
-        "www.google.com",
+        c"www.google.com",
         Mode::Client,
         TlsVersion::Tls1_3,
         Certificates {
@@ -138,23 +142,19 @@ async fn main(spawner: Spawner) -> ! {
             .ok(),
             ..Default::default()
         },
-        mk_static!([u8; 4096], [0; 4096]),
-        mk_static!([u8; 4096], [0; 4096]),
-        peripherals.SHA,
+        tls.token(),
     )
-    .unwrap()
-    .with_hardware_rsa(peripherals.RSA);
+    .unwrap();
 
     println!("Start tls connect");
-    let mut tls = tls.connect().await.unwrap();
+    session.connect().await.unwrap();
 
     println!("connected!");
     let mut buf = [0; 1024];
 
-    use embedded_io_async::Read;
     use embedded_io_async::Write;
 
-    let r = tls
+    let r = session
         .write_all(b"GET /notfound HTTP/1.0\r\nHost: www.google.com\r\n\r\n")
         .await;
     if let Err(e) = r {
@@ -163,7 +163,7 @@ async fn main(spawner: Spawner) -> ! {
     }
 
     loop {
-        let n = match tls.read(&mut buf).await {
+        let n = match session.read(&mut buf).await {
             Ok(n) => n,
             Err(esp_mbedtls::TlsError::Eof) => {
                 break;

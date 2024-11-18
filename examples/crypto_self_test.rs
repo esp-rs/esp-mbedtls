@@ -7,7 +7,7 @@ pub use esp_hal as hal;
 
 use esp_alloc as _;
 use esp_backtrace as _;
-use esp_mbedtls::set_debug;
+use esp_mbedtls::{set_debug, Tls};
 use esp_println::{logger::init_logger, println};
 
 /// Only used for ROM functions
@@ -44,13 +44,17 @@ fn main() -> ! {
 
     let timg0 = TimerGroup::new(peripherals.TIMG0);
 
-    let init = init(
+    let _init = init(
         EspWifiInitFor::Wifi,
         timg0.timer0,
         Rng::new(peripherals.RNG),
         peripherals.RADIO_CLK,
     )
     .unwrap();
+
+    let _tls = Tls::new()
+        .with_hardware_sha(peripherals.SHA)
+        .with_hardware_rsa(peripherals.RSA);
 
     set_debug(1);
 

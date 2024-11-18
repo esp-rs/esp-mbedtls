@@ -28,7 +28,7 @@ pub use esp_hal as hal;
 
 use embedded_io::*;
 use esp_backtrace as _;
-use esp_mbedtls::{set_debug, Mode, TlsError, TlsVersion, X509};
+use esp_mbedtls::{set_debug, Mode, Tls, TlsError, TlsVersion, X509};
 use esp_mbedtls::{Certificates, Session};
 use esp_println::{logger::init_logger, print, println};
 use esp_wifi::{
@@ -47,7 +47,7 @@ const PASSWORD: &str = env!("PASSWORD");
 fn main() -> ! {
     init_logger(log::LevelFilter::Info);
 
-    let mut peripherals = esp_hal::init({
+    let peripherals = esp_hal::init({
         let mut config = esp_hal::Config::default();
         config.cpu_clock = CpuClock::max();
         config
@@ -122,6 +122,10 @@ fn main() -> ! {
     socket.listen(443).unwrap();
     set_debug(0);
 
+    let tls = Tls::new()
+        .with_hardware_rsa(peripherals.RSA)
+        .with_hardware_sha(peripherals.SHA);
+
     loop {
         socket.work();
 
@@ -137,9 +141,9 @@ fn main() -> ! {
             let mut buffer = [0u8; 1024];
             let mut pos = 0;
 
-            let tls = Session::new(
+            let mut session = Session::new(
                 &mut socket,
-                "",
+                c"",
                 Mode::Server,
                 TlsVersion::Tls1_2,
                 Certificates {
@@ -158,15 +162,14 @@ fn main() -> ! {
                     .ok(),
                     ..Default::default()
                 },
-                &mut peripherals.SHA,
+                tls.token(),
             )
-            .unwrap()
-            .with_hardware_rsa(&mut peripherals.RSA);
+            .unwrap();
 
-            match tls.connect() {
-                Ok(mut connected_session) => {
+            match session.connect() {
+                Ok(_) => {
                     loop {
-                        if let Ok(len) = connected_session.read(&mut buffer[pos..]) {
+                        if let Ok(len) = session.read(&mut buffer[pos..]) {
                             let to_print =
                                 unsafe { core::str::from_utf8_unchecked(&buffer[..(pos + len)]) };
 
@@ -189,7 +192,7 @@ fn main() -> ! {
                     }
 
                     if !time_out {
-                        connected_session
+                        session
                             .write_all(
                                 b"HTTP/1.0 200 OK\r\n\r\n\
                                     <html>\
@@ -201,8 +204,6 @@ fn main() -> ! {
                             )
                             .unwrap();
                     }
-
-                    drop(connected_session);
                 }
                 Err(TlsError::NoClientCertificate) => {
                     println!("Error: No client certificates given. Please provide client certificates during your request");
@@ -215,6 +216,7 @@ fn main() -> ! {
                 }
             }
 
+            drop(session);
             socket.close();
 
             println!("Done\n");
