@@ -1,5 +1,6 @@
 #![no_std]
 
+#[cfg(not(target_os = "espidf"))]
 mod c_types;
 
 #[allow(

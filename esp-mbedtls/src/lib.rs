@@ -90,10 +90,10 @@ pub enum TlsVersion {
 }
 
 impl TlsVersion {
-    fn to_mbed_tls_minor(&self) -> i32 {
+    fn to_mbed_tls_version(&self) -> u32 {
         match self {
-            TlsVersion::Tls1_2 => 3 as _, // %%% TODO MBEDTLS_SSL_MINOR_VERSION_3 as i32,
-            TlsVersion::Tls1_3 => 4 as _, // %%% TODO MBEDTLS_SSL_MINOR_VERSION_4 as i32,
+            TlsVersion::Tls1_2 => 0x303,
+            TlsVersion::Tls1_3 => 0x304,
         }
     }
 }
@@ -371,7 +371,7 @@ impl<'a> Certificates<'a> {
             mbedtls_ssl_conf_rng(ssl_config, Some(rng), drbg_context as *mut c_void);
 
             // Closure to free all allocated resources in case of an error.
-            let cleanup = || {
+            let cleanup = move || {
                 mbedtls_ctr_drbg_free(drbg_context);
                 mbedtls_ssl_config_free(ssl_config);
                 mbedtls_ssl_free(ssl_context);
@@ -396,11 +396,9 @@ impl<'a> Certificates<'a> {
                 cleanup
             )?;
 
-            mbedtls_ssl_conf_min_version(
-                ssl_config,
-                MBEDTLS_SSL_MAJOR_VERSION_3 as i32,
-                min_version.to_mbed_tls_minor(),
-            );
+            // Set the minimum TLS version
+            // Use a ddirect field modified for compatibility with the `esp-idf-svc` mbedtls
+            (*ssl_config).private_min_tls_version = min_version.to_mbed_tls_version();
 
             mbedtls_ssl_conf_authmode(
                 ssl_config,
