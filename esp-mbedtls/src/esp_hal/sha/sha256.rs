@@ -1,11 +1,12 @@
-use core::ffi::{c_int, c_uchar};
+use core::ffi::{c_int, c_uchar, c_void};
+
+use esp_hal::sha::{Sha224, Sha256};
+
+use crate::esp_hal::SHARED_SHA;
 
 use super::{nb, Context, ShaDigest};
-use crate::{
-    hal::sha::{Sha224, Sha256},
-    SHARED_SHA,
-};
 
+#[allow(non_camel_case_types)]
 #[repr(C)]
 pub struct mbedtls_sha256_context {
     sha224_hasher: *mut Context<Sha224>,
@@ -16,9 +17,9 @@ pub struct mbedtls_sha256_context {
 #[no_mangle]
 pub unsafe extern "C" fn mbedtls_sha256_init(ctx: *mut mbedtls_sha256_context) {
     let sha224_mem =
-        crate::calloc(1, core::mem::size_of::<Context<Sha224>>() as u32) as *mut Context<Sha224>;
+        crate::calloc(1, core::mem::size_of::<Context<Sha224>>()) as *mut Context<Sha224>;
     let sha256_mem =
-        crate::calloc(1, core::mem::size_of::<Context<Sha256>>() as u32) as *mut Context<Sha256>;
+        crate::calloc(1, core::mem::size_of::<Context<Sha256>>()) as *mut Context<Sha256>;
     (*ctx).sha224_hasher = sha224_mem;
     (*ctx).sha256_hasher = sha256_mem;
 }
@@ -27,11 +28,11 @@ pub unsafe extern "C" fn mbedtls_sha256_init(ctx: *mut mbedtls_sha256_context) {
 pub unsafe extern "C" fn mbedtls_sha256_free(ctx: *mut mbedtls_sha256_context) {
     if !ctx.is_null() {
         if !(*ctx).sha224_hasher.is_null() {
-            crate::free((*ctx).sha224_hasher as *const u8);
+            crate::free((*ctx).sha224_hasher as *const c_void);
             (*ctx).sha224_hasher = core::ptr::null_mut();
         }
         if !(*ctx).sha256_hasher.is_null() {
-            crate::free((*ctx).sha256_hasher as *const u8);
+            crate::free((*ctx).sha256_hasher as *const c_void);
             (*ctx).sha256_hasher = core::ptr::null_mut();
         }
     }

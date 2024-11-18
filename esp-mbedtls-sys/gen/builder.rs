@@ -10,8 +10,11 @@ use cmake::Config;
 pub struct MbedtlsBuilder {
     crate_root_path: PathBuf,
     soc_config: String,
+    clang_path: Option<PathBuf>,
     sysroot_path: Option<PathBuf>,
+    cmake_target: Option<String>,
     clang_target: Option<String>,
+    host: Option<String>,
 }
 
 impl MbedtlsBuilder {
@@ -20,20 +23,29 @@ impl MbedtlsBuilder {
     /// Arguments:
     /// - `crate_root_path`: Path to the root of the crate
     /// - `soc_config`: The name of the SoC configuration in the `headers/` directory. Use `generic` for a generic, software-only build
+    /// - `clang_path`: Optional path to the Clang compiler. If not specified, the system Clang will be used for generating bindings,
+    ///   and the system compiler (likely GCC) would be used for building the MbedTLS C code itself
     /// - `sysroot_path`: Optional path to the compiler sysroot directory. If not specified, the host sysroot will be used
-    /// - `clang_target`: Optional target for Clang. If not specified, the host target will be used
-    /// - `out_path`: Path to write the bindings to
+    /// - `cmake_target`: Optional target for CMake when building MbedTLS, with Rust target-triple syntax. If not specified, the "TARGET" env variable will be used
+    /// - `clang_target`: Optional target for Clang when generating bindings. If not specified, the host target will be used
+    /// - `host`: Optional host target for the build
     pub const fn new(
         crate_root_path: PathBuf,
         soc_config: String,
+        clang_path: Option<PathBuf>,
         sysroot_path: Option<PathBuf>,
+        cmake_target: Option<String>,
         clang_target: Option<String>,
+        host: Option<String>,
     ) -> Self {
         Self {
             crate_root_path,
             soc_config,
+            clang_path,
             sysroot_path,
+            cmake_target,
             clang_target,
+            host,
         }
     }
 
@@ -46,7 +58,12 @@ impl MbedtlsBuilder {
         out_path: &Path,
         copy_file_path: Option<&Path>,
     ) -> Result<PathBuf> {
+        if let Some(clang_path) = &self.clang_path {
+            std::env::set_var("CLANG_PATH", clang_path);
+        }
+
         let canon = |path: &Path| {
+            // TODO: Is this really necessary?
             path.display()
                 .to_string()
                 .replace('\\', "/")
@@ -80,9 +97,9 @@ impl MbedtlsBuilder {
             ]);
         }
 
-        // if let Some(target) = &self.clang_target {
-        //     builder = builder.clang_arg(&format!("--target={target}"));
-        // }
+        if let Some(target) = &self.clang_target {
+            builder = builder.clang_arg(&format!("--target={target}"));
+        }
 
         let bindings = builder
             .ctypes_prefix("crate::c_types")
@@ -125,52 +142,16 @@ impl MbedtlsBuilder {
     /// Arguments:
     /// - `out_path`: Path to write the compiled libraries to
     pub fn compile(&self, out_path: &Path, copy_path: Option<&Path>) -> Result<PathBuf> {
+        if let Some(clang_path) = &self.clang_path {
+            std::env::set_var("CLANG_PATH", clang_path);
+        }
+
         log::info!("Compiling for {} SOC", self.soc_config);
         let mbedtls_path = self.crate_root_path.join("mbedtls");
 
         let target_dir = out_path.join("mbedtls").join("build");
 
         std::fs::create_dir_all(&target_dir)?;
-
-        // // Remove "-Wdocumentation" since Clang will complain
-        // let mut file = fs::File::open(
-        //     src_dir
-        //         .join("mbedtls")
-        //         .join("library")
-        //         .join("CMakeLists.txt"),
-        // )?;
-
-        // let mut content = String::new();
-        // file.read_to_string(&mut content)?;
-        // let mut file = fs::File::create(
-        //     src_dir
-        //         .join("mbedtls")
-        //         .join("library")
-        //         .join("CMakeLists.txt"),
-        // )?;
-        // file.write_all(content.replace("-Wdocumentation", "").as_bytes())?;
-
-        // // This adds the function prototype for `mbedtls_mpi_exp_mod_soft()` since it
-        // // is not provided in the espressif fork of mbedtls.
-        // if let Err(error) = writeln!(
-        //     fs::OpenOptions::new().write(true).append(true).open(
-        //         src_dir
-        //             .join("mbedtls")
-        //             .join("include")
-        //             .join("mbedtls")
-        //             .join("bignum.h"),
-        //     )?,
-        //     "int mbedtls_mpi_exp_mod_soft(
-        //         mbedtls_mpi *X,
-        //         const mbedtls_mpi *A,
-        //         const mbedtls_mpi *E,
-        //         const mbedtls_mpi *N,
-        //         mbedtls_mpi *prec_RR
-        //     );"
-        // ) {
-        //     eprintln!("Could not write function prototype to bignum.h");
-        //     eprintln!("{error}");
-        // }
 
         // Compile mbedtls and generate libraries to link against
         log::info!("Compiling mbedtls");
@@ -184,6 +165,15 @@ impl MbedtlsBuilder {
             .define("CMAKE_EXPORT_COMPILE_COMMANDS", "ON")
             // Clang will complain about some documentation formatting in mbedtls
             .define("MBEDTLS_FATAL_WARNINGS", "OFF")
+            .define(
+                "MBEDTLS_CONFIG_FILE", 
+                &self
+                    .crate_root_path
+                    .join("gen")
+                    .join("include")
+                    .join("soc")
+                    .join(&self.soc_config)
+                    .join("config.h"))
             .define(
                 "CMAKE_TOOLCHAIN_FILE",
                 &self
@@ -201,14 +191,17 @@ impl MbedtlsBuilder {
                     .join(&self.soc_config)
                     .display()
             ))
-            .cflag(&format!("-DMBEDTLS_CONFIG_FILE='<config.h>'"))
-            .cxxflag(&format!("-DMBEDTLS_CONFIG_FILE='<config.h>'"))
-            //.host("riscv32")
+            //.cflag(&format!("-DMBEDTLS_CONFIG_FILE='<config.h>'"))
+            //.cxxflag(&format!("-DMBEDTLS_CONFIG_FILE='<config.h>'"))
             .profile("Release")
             .out_dir(&target_dir);
 
-        if let Some(target) = &self.clang_target {
+        if let Some(target) = &self.cmake_target {
             config.target(target);
+        }
+
+        if let Some(host) = &self.host {
+            config.host(host);
         }
 
         config.build();

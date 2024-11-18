@@ -11,9 +11,6 @@ use critical_section::Mutex;
 
 use embedded_io::{ErrorKind, ErrorType};
 
-#[cfg(any(feature = "esp32", feature = "esp32c3", feature = "esp32s2", feature = "esp32s3"))]
-pub use esp_hal::Crypto;
-
 use log::Level;
 
 use embedded_io::Read;
@@ -594,6 +591,7 @@ where
                     // real error
                     // Reference: https://os.mbed.com/teams/sandbox/code/mbedtls/docs/tip/ssl_8h.html#a4a37e497cd08c896870a42b1b618186e
                     mbedtls_ssl_session_reset(self.ssl_context);
+                    #[allow(non_snake_case)]
                     return Err(match res {
                         MBEDTLS_ERR_SSL_NO_CLIENT_CERTIFICATE => TlsError::NoClientCertificate,
                         _ => TlsError::MbedTlsError(res),
@@ -707,6 +705,7 @@ where
     fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error> {
         loop {
             let res = self.internal_read(buf);
+            #[allow(non_snake_case)]
             match res {
                 MBEDTLS_ERR_SSL_WANT_READ | MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET => continue, // no data
                 0_i32..=i32::MAX => return Ok(res as usize), // data
@@ -806,6 +805,7 @@ pub mod asynch {
                 Err(e)?;
             }
 
+            #[allow(non_snake_case)]
             Poll::Ready(match res {
                 MBEDTLS_ERR_SSL_WANT_READ => Ok(PollOutcome::WantRead),
                 MBEDTLS_ERR_SSL_WANT_WRITE => Ok(PollOutcome::WantWrite),

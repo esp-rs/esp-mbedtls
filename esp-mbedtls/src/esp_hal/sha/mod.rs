@@ -1,7 +1,5 @@
-use crate::hal::{
-    prelude::nb,
-    sha::{Context, ShaDigest},
-};
+use esp_hal::prelude::nb;
+use esp_hal::sha::{Context, ShaDigest};
 
 mod sha1;
 #[cfg(any(feature = "esp32s2", feature = "esp32s3"))]

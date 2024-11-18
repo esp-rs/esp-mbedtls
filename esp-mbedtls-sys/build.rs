@@ -18,6 +18,7 @@ fn main() -> Result<()> {
     let esp32s2 = env::var("CARGO_FEATURE_ESP32S2").is_ok();
     let esp32s3 = env::var("CARGO_FEATURE_ESP32S3").is_ok();
 
+    let host = env::var("HOST").unwrap();
     let target = env::var("TARGET").unwrap();
 
     // If we're building for ESP32, ESP32C3, ESP32S2, or ESP32S3, we don't need to do anything
@@ -28,11 +29,11 @@ fn main() -> Result<()> {
     let dirs = if esp32 {
         Some((bindings_dir.join("esp32.rs"), libs_dir.join("xtensa-esp32-none-elf")))
     } else if esp32c3 {
-        Some((bindings_dir.join("esp32.rs"), libs_dir.join("xtensa-esp32c3-none-elf")))
+        Some((bindings_dir.join("esp32c3.rs"), libs_dir.join("xtensa-esp32c3-none-elf")))
     } else if esp32s2 {
-        Some((bindings_dir.join("esp32.rs"), libs_dir.join("xtensa-esp32s2-none-elf")))
+        Some((bindings_dir.join("esp32s2.rs"), libs_dir.join("xtensa-esp32s2-none-elf")))
     } else if esp32s3 {
-        Some((bindings_dir.join("esp32.rs"), libs_dir.join("xtensa-esp32s3-none-elf")))
+        Some((bindings_dir.join("esp32s3.rs"), libs_dir.join("xtensa-esp32s3-none-elf")))
     } else if target.ends_with("-espidf") {
         // Nothing to do for ESP-IDF, `esp-idf-sys` will do everything for us
         None
@@ -40,7 +41,7 @@ fn main() -> Result<()> {
         // Need to do on-the-fly build and bindings' generation
         let out = PathBuf::from(env::var_os("OUT_DIR").unwrap());
 
-        let builder = builder::MbedtlsBuilder::new(crate_root_path.clone(), "generic".to_string(), None, None);
+        let builder = builder::MbedtlsBuilder::new(crate_root_path.clone(), "generic".to_string(), None, None, None, None, Some(host));
 
         let libs_dir = builder.compile(&out, None)?;
         let bindings = builder.generate_bindings(&out, None)?;

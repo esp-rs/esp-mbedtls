@@ -1,11 +1,12 @@
-use core::ffi::{c_int, c_uchar};
+use core::ffi::{c_int, c_uchar, c_void};
+
+use esp_hal::sha::{Sha384, Sha512};
+
+use crate::esp_hal::SHARED_SHA;
 
 use super::{nb, Context, ShaDigest};
-use crate::{
-    hal::sha::{Sha384, Sha512},
-    SHARED_SHA,
-};
 
+#[allow(non_camel_case_types)]
 #[repr(C)]
 pub struct mbedtls_sha512_context {
     sha384_hasher: *mut Context<Sha384>,
@@ -16,9 +17,9 @@ pub struct mbedtls_sha512_context {
 #[no_mangle]
 pub unsafe extern "C" fn mbedtls_sha512_init(ctx: *mut mbedtls_sha512_context) {
     let sha384_mem =
-        crate::calloc(1, core::mem::size_of::<Context<Sha384>>() as u32) as *mut Context<Sha384>;
+        crate::calloc(1, core::mem::size_of::<Context<Sha384>>()) as *mut Context<Sha384>;
     let sha512_mem =
-        crate::calloc(1, core::mem::size_of::<Context<Sha512>>() as u32) as *mut Context<Sha512>;
+        crate::calloc(1, core::mem::size_of::<Context<Sha512>>()) as *mut Context<Sha512>;
     (*ctx).sha384_hasher = sha384_mem;
     (*ctx).sha512_hasher = sha512_mem;
 }
@@ -27,11 +28,11 @@ pub unsafe extern "C" fn mbedtls_sha512_init(ctx: *mut mbedtls_sha512_context) {
 pub unsafe extern "C" fn mbedtls_sha512_free(ctx: *mut mbedtls_sha512_context) {
     if !ctx.is_null() {
         if !(*ctx).sha384_hasher.is_null() {
-            crate::free((*ctx).sha384_hasher as *const u8);
+            crate::free((*ctx).sha384_hasher as *const c_void);
             (*ctx).sha384_hasher = core::ptr::null_mut();
         }
         if !(*ctx).sha512_hasher.is_null() {
-            crate::free((*ctx).sha512_hasher as *const u8);
+            crate::free((*ctx).sha512_hasher as *const c_void);
             (*ctx).sha512_hasher = core::ptr::null_mut();
         }
     }

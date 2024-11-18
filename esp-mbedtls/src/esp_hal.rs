@@ -1,20 +1,18 @@
 #[doc(hidden)]
-pub use esp_hal as hal;
-use hal::{
-    peripheral::Peripheral,
-    peripherals::{RSA, SHA},
-    rsa::Rsa,
-    sha::Sha,
-};
 
 use core::cell::RefCell;
-use core::ffi::CStr;
-use core::mem::size_of;
 use critical_section::Mutex;
 
-#[cfg(all(target_os = "none", any(feature = "esp32c3", feature = "esp32s2", feature = "esp32s3")))]
+use esp_hal::peripheral::Peripheral;
+use esp_hal::peripherals::{RSA, SHA};
+use esp_hal::rsa::Rsa;
+use esp_hal::sha::Sha;
+
+use crate::Crypto;
+
+#[cfg(any(feature = "esp32c3", feature = "esp32s2", feature = "esp32s3"))]
 mod bignum;
-#[cfg(all(target_os = "none", not(feature = "esp32")))]
+#[cfg(not(feature = "esp32"))]
 mod sha;
 
 /// Hold the RSA peripheral for cryptographic operations.
@@ -48,15 +46,15 @@ impl<'d> Crypto<'d> {
     /// # Arguments
     ///
     /// * `rsa` - The RSA peripheral from the HAL
-    pub fn with_hardware_rsa(mut self, rsa: impl Peripheral<P = RSA> + 'd) -> Self {
+    pub fn with_hardware_rsa(self, rsa: impl Peripheral<P = RSA> + 'd) -> Self {
         unsafe { RSA_REF = core::mem::transmute(Some(Rsa::new(rsa))) }
         self
     }
 }
 
-impl Drop for Crypto {
+impl Drop for Crypto<'_> {
     fn drop(&mut self) {
-        RSA_REF = core::mem::transmute(None::<RSA>);
+        unsafe { RSA_REF = core::mem::transmute(None::<RSA>); }
         critical_section::with(|cs| SHARED_SHA.borrow_ref_mut(cs).take());
     }
 }

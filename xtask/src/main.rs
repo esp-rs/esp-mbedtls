@@ -22,6 +22,11 @@ struct Args {
 
 #[derive(Subcommand, Debug)]
 enum Commands {
+    /// Generate Rust bindings for mbedtls and generate .a libraries
+    Gen {
+        #[arg(long, value_name = "TARGET", value_enum)]
+        chip: Option<Soc>,
+    },
     /// Generate Rust bindings for mbedtls
     Bindings {
         #[arg(long, value_name = "TARGET", value_enum)]
@@ -60,6 +65,28 @@ enum Arch {
     Xtensa,
 }
 
+impl Arch {
+    pub const fn clang(&self) -> Option<&str> {
+        const ESP_XTENSA_CLANG_PATH: &str = "xtensa-esp32-elf-clang/esp-18.1.2_20240912/esp-clang/bin/clang";
+
+        match self {
+            Arch::Xtensa => Some(ESP_XTENSA_CLANG_PATH),
+            // Clang is a cross-compiler
+            _ => Some(ESP_XTENSA_CLANG_PATH),
+        }
+    }
+
+    pub const fn sysroot(&self) -> &str {
+        const ESP_XTENSA_SYSROOT_PATH: &str = "xtensa-esp-elf/esp-14.2.0_20240906/xtensa-esp-elf/xtensa-esp-elf";
+        const ESP_RISCV_SYSROOT_PATH: &str = "riscv32-esp-elf/esp-14.2.0_20240906/riscv32-esp-elf/riscv32-esp-elf";
+        
+        match self {
+            Arch::RiscV => ESP_RISCV_SYSROOT_PATH,
+            Arch::Xtensa => ESP_XTENSA_SYSROOT_PATH,
+        }
+    }
+}
+
 /// Data for binding compiling on a target
 struct CompilationTarget<'a> {
     /// Chip of the target
@@ -68,23 +95,34 @@ struct CompilationTarget<'a> {
     /// The chip architecture
     arch: Arch,
 
-    /// Target triple
+    /// Rust target triple
     target: &'a str,
 
-    /// Sysroot path for bindings
-    sysroot_path: &'a str,
+    /// Clang target
+    clang_target: &'a str,
 }
 
 impl CompilationTarget<'_> {
-    pub fn build(&self, sys_crate_root_path: PathBuf, _toolchain_dir: &Path) -> Result<()> {
+    pub fn gen(&self, sys_crate_root_path: PathBuf, toolchain_dir: &Path) -> Result<()> {
+        self.build(sys_crate_root_path.clone(), toolchain_dir)?;
+        self.generate_bindings(sys_crate_root_path, toolchain_dir)?;
+
+        Ok(())
+    }
+
+    pub fn build(&self, sys_crate_root_path: PathBuf, toolchain_dir: &Path) -> Result<()> {
         let builder = builder::MbedtlsBuilder::new(
             sys_crate_root_path.clone(),
             format!("{}", self.soc),
+            self.arch.clang().map(|clang| toolchain_dir.join(clang)),
             None,
             Some(self.target.into()),
+            Some(self.clang_target.into()),
+            // Fake host, but we do need to pass something to CMake
+            Some("x86_64-unknown-linux-gnu".into()),
         );
 
-        let out = TempDir::new("mbedtls-sys")?;
+        let out = TempDir::new("esp-mbedtls-sys")?;
 
         builder.compile(
             out.path(),
@@ -97,16 +135,19 @@ impl CompilationTarget<'_> {
     pub fn generate_bindings(
         &self,
         sys_crate_root_path: PathBuf,
-        _toolchain_dir: &Path,
+        toolchain_dir: &Path,
     ) -> Result<()> {
         let builder = builder::MbedtlsBuilder::new(
             sys_crate_root_path.clone(),
             format!("{}", self.soc),
-            None,
+            self.arch.clang().map(|clang| toolchain_dir.join(clang)),
+            Some(toolchain_dir.join(self.arch.sysroot())),
             Some(self.target.into()),
+            Some(self.clang_target.into()),
+            None,
         );
 
-        let out = TempDir::new("mbedtls-sys")?;
+        let out = TempDir::new("esp-mbedtls-sys")?;
 
         builder.generate_bindings(
             out.path(),
@@ -126,28 +167,26 @@ static COMPILATION_TARGETS: &[CompilationTarget] = &[
     CompilationTarget {
         soc: Soc::ESP32,
         arch: Arch::Xtensa,
+        clang_target: "xtensa-esp32-none-elf",
         target: "xtensa-esp32-none-elf",
-        sysroot_path: "xtensa-esp32-elf/esp-2021r2-patch5-8_4_0/xtensa-esp32-elf/xtensa-esp32-elf/",
     },
     CompilationTarget {
         soc: Soc::ESP32C3,
         arch: Arch::RiscV,
+        clang_target: "riscv32-esp-elf",
         target: "riscv32imc-unknown-none-elf",
-        sysroot_path: "riscv32-esp-elf/esp-2021r2-patch5-8_4_0/riscv32-esp-elf/riscv32-esp-elf/",
     },
     CompilationTarget {
         soc: Soc::ESP32S2,
         arch: Arch::Xtensa,
+        clang_target: "xtensa-esp32s2-none-elf",
         target: "xtensa-esp32s2-none-elf",
-        sysroot_path:
-            "xtensa-esp32s2-elf/esp-2021r2-patch5-8_4_0/xtensa-esp32s2-elf/xtensa-esp32s2-elf/",
     },
     CompilationTarget {
         soc: Soc::ESP32S3,
         arch: Arch::Xtensa,
+        clang_target: "xtensa-esp32s3-none-elf",
         target: "xtensa-esp32s3-none-elf",
-        sysroot_path:
-            "xtensa-esp32s3-elf/esp-2021r2-patch5-8_4_0/xtensa-esp32s3-elf/xtensa-esp32s3-elf/",
     },
 ];
 
@@ -167,19 +206,30 @@ fn main() -> Result<()> {
     // directory:
     let home = UserDirs::new().unwrap().home_dir().to_path_buf();
     // We use the tools that come installed with the toolchain
+    // Note that the RiscV toolchain is not installed by default and needs the `-r` `espup` flag
     let toolchain_dir = home.join(".rustup").join("toolchains").join("esp");
 
     let args = Args::parse();
 
+    let target = |chip| COMPILATION_TARGETS
+        .iter()
+        .find(|&target| target.soc == chip)
+        .expect("Compilation target {chip} not found");
+
     match args.command {
+        Some(Commands::Gen { chip }) => match chip {
+            Some(chip) => {
+                target(chip).gen(sys_crate_root_path.clone(), &toolchain_dir)?;
+            }
+            None => {
+                for target in COMPILATION_TARGETS {
+                    target.gen(sys_crate_root_path.clone(), &toolchain_dir)?;
+                }
+            }
+        },
         Some(Commands::Compile { chip }) => match chip {
             Some(chip) => {
-                let target = COMPILATION_TARGETS
-                    .iter()
-                    .find(|&target| target.soc == chip)
-                    .expect("Compilation target {chip} not found");
-
-                target.build(sys_crate_root_path.clone(), &toolchain_dir)?;
+                target(chip).build(sys_crate_root_path.clone(), &toolchain_dir)?;
             }
             None => {
                 for target in COMPILATION_TARGETS {
@@ -189,12 +239,7 @@ fn main() -> Result<()> {
         },
         Some(Commands::Bindings { chip }) => match chip {
             Some(chip) => {
-                let target = COMPILATION_TARGETS
-                    .iter()
-                    .find(|&target| target.soc == chip)
-                    .expect("Compilation target {chip} not found");
-
-                target.generate_bindings(sys_crate_root_path.clone(), &toolchain_dir)?;
+                target(chip).generate_bindings(sys_crate_root_path.clone(), &toolchain_dir)?;
             }
             None => {
                 for target in COMPILATION_TARGETS {

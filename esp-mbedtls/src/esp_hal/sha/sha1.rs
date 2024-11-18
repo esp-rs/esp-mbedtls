@@ -1,8 +1,12 @@
-use core::ffi::{c_int, c_uchar};
+use core::ffi::{c_int, c_uchar, c_void};
+
+use esp_hal::sha::Sha1;
+
+use crate::esp_hal::SHARED_SHA;
 
 use super::{nb, Context, ShaDigest};
-use crate::{hal::sha::Sha1, SHARED_SHA};
 
+#[allow(non_camel_case_types)]
 #[repr(C)]
 pub struct mbedtls_sha1_context {
     hasher: *mut Context<Sha1>,
@@ -11,7 +15,7 @@ pub struct mbedtls_sha1_context {
 #[no_mangle]
 pub unsafe extern "C" fn mbedtls_sha1_init(ctx: *mut mbedtls_sha1_context) {
     let hasher_mem =
-        crate::calloc(1, core::mem::size_of::<Context<Sha1>>() as u32) as *mut Context<Sha1>;
+        crate::calloc(1, core::mem::size_of::<Context<Sha1>>()) as *mut Context<Sha1>;
     core::ptr::write(hasher_mem, Context::<Sha1>::new());
     (*ctx).hasher = hasher_mem;
 }
@@ -19,7 +23,7 @@ pub unsafe extern "C" fn mbedtls_sha1_init(ctx: *mut mbedtls_sha1_context) {
 #[no_mangle]
 pub unsafe extern "C" fn mbedtls_sha1_free(ctx: *mut mbedtls_sha1_context) {
     if !ctx.is_null() && !(*ctx).hasher.is_null() {
-        crate::free((*ctx).hasher as *const u8);
+        crate::free((*ctx).hasher as *const c_void);
         (*ctx).hasher = core::ptr::null_mut();
     }
 }

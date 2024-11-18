@@ -1,12 +1,15 @@
 #![allow(non_snake_case)]
 
-use crate::hal::prelude::nb;
-use crate::hal::rsa::{operand_sizes, RsaModularExponentiation};
+use core::ffi::c_int;
+
+use esp_hal::prelude::nb;
+use esp_hal::rsa::{operand_sizes, RsaModularExponentiation};
 
 use crypto_bigint::*;
 
 use esp_mbedtls_sys::bindings::*;
-use esp_mbedtls_sys::c_types::*;
+
+use crate::esp_hal::RSA_REF;
 
 macro_rules! error_checked {
     ($block:expr) => {{
@@ -47,8 +50,10 @@ const fn calculate_hw_words(words: usize) -> usize {
 /// Return the number of words actually used to represent an mpi number.
 fn mpi_words(X: &mbedtls_mpi) -> usize {
     for i in (0..=X.private_n).rev() {
-        if unsafe { X.private_p.add(i - 1).read() } != 0 {
-            return i;
+        let index = i as usize;
+
+        if unsafe { X.private_p.add(index - 1).read() } != 0 {
+            return index;
         }
     }
     0
@@ -118,7 +123,7 @@ pub unsafe extern "C" fn mbedtls_mpi_exp_mod(
     M: &mbedtls_mpi,
     prec_RR: *mut mbedtls_mpi,
 ) -> c_int {
-    match crate::RSA_REF {
+    match RSA_REF {
         None => return unsafe { mbedtls_mpi_exp_mod_soft(Z, X, Y, M, prec_RR) },
         Some(ref mut rsa) => {
             let x_words = mpi_words(X);
