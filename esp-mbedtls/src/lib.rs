@@ -123,7 +123,7 @@ impl embedded_io::Error for TlsError {
 
 #[allow(unused)]
 pub fn set_debug(level: u32) {
-    #[cfg(not(target_arch = "xtensa"))]
+    #[cfg(all(not(target_os = "espidf"), not(target_arch = "xtensa")))]
     unsafe {
         mbedtls_debug_set_threshold(level as c_int);
     }
@@ -352,7 +352,6 @@ impl<'a> Certificates<'a> {
                 return Err(TlsError::OutOfMemory);
             }
 
-            mbedtls_debug_set_threshold(5);
             mbedtls_ssl_init(ssl_context);
             mbedtls_ssl_config_init(ssl_config);
             // Initialize CA chain
@@ -1170,6 +1169,7 @@ unsafe extern "C" fn rng(_param: *mut c_void, buffer: *mut c_uchar, len: usize) 
     0
 }
 
+#[cfg(not(target_os = "espidf"))]
 #[no_mangle]
 unsafe extern "C" fn mbedtls_platform_zeroize(dst: *mut u8, len: u32) {
     for i in 0..len as isize {
