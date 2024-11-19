@@ -16,10 +16,14 @@ pub struct mbedtls_sha256_context {
 
 #[no_mangle]
 pub unsafe extern "C" fn mbedtls_sha256_init(ctx: *mut mbedtls_sha256_context) {
-    let sha224_mem =
-        crate::aligned_calloc(core::mem::align_of::<Context<Sha224>>(), core::mem::size_of::<Context<Sha224>>()) as *mut Context<Sha224>;
-    let sha256_mem =
-        crate::aligned_calloc(core::mem::align_of::<Context<Sha256>>(), core::mem::size_of::<Context<Sha256>>()) as *mut Context<Sha256>;
+    let sha224_mem = crate::aligned_calloc(
+        core::mem::align_of::<Context<Sha224>>(),
+        core::mem::size_of::<Context<Sha224>>(),
+    ) as *mut Context<Sha224>;
+    let sha256_mem = crate::aligned_calloc(
+        core::mem::align_of::<Context<Sha256>>(),
+        core::mem::size_of::<Context<Sha256>>(),
+    ) as *mut Context<Sha256>;
     (*ctx).sha224_hasher = sha224_mem;
     (*ctx).sha256_hasher = sha256_mem;
 }

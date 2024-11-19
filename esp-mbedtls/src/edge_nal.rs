@@ -4,7 +4,7 @@ use core::net::SocketAddr;
 use embedded_io::Error;
 
 use crate::asynch::Session;
-use crate::{Certificates, TlsReference, Mode, TlsError, TlsVersion};
+use crate::{Certificates, Mode, TlsError, TlsReference, TlsVersion};
 
 /// An implementation of `edge-nal`'s `TcpAccept` trait over TLS.
 pub struct TlsAcceptor<'d, T> {
@@ -19,9 +19,9 @@ where
     T: edge_nal::TcpAccept,
 {
     /// Create a new instance of the `TlsAcceptor` type.
-    /// 
+    ///
     /// Arguments:
-    /// 
+    ///
     /// * `acceptor` - The underlying TCP acceptor
     /// * `min_version` - The minimum TLS version to support
     /// * `certificates` - The certificates to use for each accepted TLS connection
@@ -84,9 +84,9 @@ where
     T: edge_nal::TcpConnect,
 {
     /// Create a new instance of the `TlsConnector` type.
-    /// 
+    ///
     /// Arguments:
-    /// 
+    ///
     /// * `connector` - The underlying TCP connector
     /// * `servername` - The server name to check against the certificate presented by the server
     /// * `min_version` - The minimum TLS version to support
@@ -114,9 +114,9 @@ where
     T: edge_nal::TcpConnect,
 {
     type Error = TlsError;
-    
+
     type Socket<'a> = Session<'a, T::Socket<'a>> where Self: 'a;
-    
+
     async fn connect(&self, remote: SocketAddr) -> Result<Self::Socket<'_>, Self::Error> {
         let socket = self
             .connector
@@ -127,7 +127,9 @@ where
 
         let session = Session::new(
             socket,
-            Mode::Client { servername: self.servername },
+            Mode::Client {
+                servername: self.servername,
+            },
             self.min_version,
             self.certificates,
             self.tls_ref,
@@ -142,9 +144,9 @@ where
     T: edge_nal::Readable,
 {
     async fn readable(&mut self) -> Result<(), Self::Error> {
-         // ... 1- because it is difficult to figure out - with the MbedTLS API - if `Session::read` would return without blocking
-         // For this, we need support for that in MbedTLS itself, which is not available at the moment.
-         // 2- because `Readable` currently throws exception with `edge-nal-embassy`
+        // ... 1- because it is difficult to figure out - with the MbedTLS API - if `Session::read` would return without blocking
+        // For this, we need support for that in MbedTLS itself, which is not available at the moment.
+        // 2- because `Readable` currently throws exception with `edge-nal-embassy`
         Ok(())
     }
 }
@@ -163,6 +165,9 @@ where
     }
 
     async fn abort(&mut self) -> Result<(), Self::Error> {
-        self.stream.abort().await.map_err(|e| TlsError::Io(e.kind()))
+        self.stream
+            .abort()
+            .await
+            .map_err(|e| TlsError::Io(e.kind()))
     }
 }

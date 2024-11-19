@@ -1,5 +1,4 @@
 #[doc(hidden)]
-
 use core::cell::RefCell;
 use critical_section::Mutex;
 
@@ -29,12 +28,12 @@ static SHARED_SHA: Mutex<RefCell<Option<Sha<'static>>>> = Mutex::new(RefCell::ne
 
 impl<'d> Tls<'d> {
     /// Create a new instance of the `Tls` type.
-    /// 
+    ///
     /// Note that there could be only one active `Tls` instance at any point in time,
     /// and the function will return an error if there is already an active instance.
-    /// 
+    ///
     /// Arguments:
-    /// 
+    ///
     /// * `sha` - The SHA peripheral from the HAL
     pub fn new(sha: impl Peripheral<P = SHA> + 'd) -> Result<Self, TlsError> {
         let this = Self::create()?;
@@ -61,7 +60,9 @@ impl<'d> Tls<'d> {
 
 impl Drop for Tls<'_> {
     fn drop(&mut self) {
-        unsafe { RSA_REF = core::mem::transmute(None::<RSA>); }
+        unsafe {
+            RSA_REF = core::mem::transmute(None::<RSA>);
+        }
         critical_section::with(|cs| SHARED_SHA.borrow_ref_mut(cs).take());
     }
 }

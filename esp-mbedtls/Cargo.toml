@@ -33,3 +33,11 @@ esp32s3 = ["esp-hal/esp32s3", "esp-wifi/esp32s3", "esp-mbedtls-sys/esp32s3", "cr
 
 # Implement the traits defined in the latest HEAD of `edge-nal`
 edge-nal = ["dep:edge-nal", "async"]
+
+# Patch until new release
+[patch.crates-io]
+edge-nal = { git = "https://github.com/ivmarkov/edge-net" }
+esp-idf-svc = { git = "https://github.com/esp-rs/esp-idf-svc" }
+esp-idf-hal = { git = "https://github.com/esp-rs/esp-idf-hal" }
+esp-idf-sys = { git = "https://github.com/esp-rs/esp-idf-sys" }
+cmake = { git = "https://github.com/ivmarkov/cmake-rs" }

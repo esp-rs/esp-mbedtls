@@ -1,7 +1,12 @@
 #![no_std]
 
 // For `malloc`, `calloc` and `free` which are provided by `esp-wifi` on baremetal
-#[cfg(any(feature = "esp32", feature = "esp32c3", feature = "esp32s2", feature = "esp32s3"))]
+#[cfg(any(
+    feature = "esp32",
+    feature = "esp32c3",
+    feature = "esp32s2",
+    feature = "esp32s3"
+))]
 use esp_wifi as _;
 
 #[cfg(not(target_os = "espidf"))]
@@ -14,7 +19,15 @@ mod c_types;
     dead_code
 )]
 pub mod bindings {
-    #[cfg(all(not(target_os = "espidf"), not(any(feature = "esp32", feature = "esp32c3", feature = "esp32s2", feature = "esp32s3"))))]
+    #[cfg(all(
+        not(target_os = "espidf"),
+        not(any(
+            feature = "esp32",
+            feature = "esp32c3",
+            feature = "esp32s2",
+            feature = "esp32s3"
+        ))
+    ))]
     include!(env!("ESP_MBEDTLS_SYS_GENERATED_BINDINGS_FILE"));
 
     // This and below are necessary because of https://github.com/rust-lang/cargo/issues/10358

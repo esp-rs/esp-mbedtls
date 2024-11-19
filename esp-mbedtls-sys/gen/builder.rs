@@ -166,14 +166,15 @@ impl MbedtlsBuilder {
             // Clang will complain about some documentation formatting in mbedtls
             .define("MBEDTLS_FATAL_WARNINGS", "OFF")
             .define(
-                "MBEDTLS_CONFIG_FILE", 
+                "MBEDTLS_CONFIG_FILE",
                 &self
                     .crate_root_path
                     .join("gen")
                     .join("include")
                     .join("soc")
                     .join(&self.soc_config)
-                    .join("config.h"))
+                    .join("config.h"),
+            )
             .define(
                 "CMAKE_TOOLCHAIN_FILE",
                 &self
