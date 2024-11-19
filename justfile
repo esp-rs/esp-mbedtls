@@ -14,5 +14,7 @@ check arch toolchain:
     cargo +{{ toolchain }} b{{ arch }} --example sync_server_mTLS --features="examples"
     cargo +{{ toolchain }} b{{ arch }} --example async_server --features="examples-async"
     cargo +{{ toolchain }} b{{ arch }} --example async_server_mTLS --features="examples-async"
-    cargo +{{ toolchain }} b{{ arch }} --example edge_server --features="examples-async,edge-server"
+    cargo +{{ toolchain }} b{{ arch }} --example edge_server --features="examples-async"
+    cargo +{{ toolchain }} b{{ arch }} --example crypto_self_test --features="examples"
+    cargo +{{ toolchain }} b{{ arch }} --example crypto_self_test_std --features="examples-std"
     cargo +{{ toolchain }} fmt --all -- --check
