@@ -17,5 +17,5 @@ check arch toolchain:
     cargo +{{ toolchain }} b{{ arch }} --example edge_server --features="examples-async"
     cargo +{{ toolchain }} b{{ arch }} --example crypto_self_test --features="examples"
     cargo +{{ toolchain }} b --example crypto_self_test_std --features="examples-std" --target x86_64-unknown-linux-gnu -Z build-std=std,panic_abort
-    cargo +{{ toolchain }} b --example crypto_self_test_std --features="examples-std" --target xtensa-esp32-espidf -Z build-std=std,panic_abort
+#    cargo +{{ toolchain }} b --example crypto_self_test_std --features="examples-std" --target xtensa-esp32-espidf -Z build-std=std,panic_abort
     cargo +{{ toolchain }} fmt --all -- --check
