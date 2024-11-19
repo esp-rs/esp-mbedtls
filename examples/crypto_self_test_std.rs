@@ -7,7 +7,7 @@ fn cycles() -> std::time::Instant {
 }
 
 fn main() {
-    let mut tls = Tls::new();
+    let mut tls = Tls::new().unwrap();
 
     tls.set_debug(1);
 
