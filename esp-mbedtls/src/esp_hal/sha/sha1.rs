@@ -15,7 +15,7 @@ pub struct mbedtls_sha1_context {
 #[no_mangle]
 pub unsafe extern "C" fn mbedtls_sha1_init(ctx: *mut mbedtls_sha1_context) {
     let hasher_mem =
-        crate::calloc(1, core::mem::size_of::<Context<Sha1>>()) as *mut Context<Sha1>;
+        crate::aligned_calloc(core::mem::align_of::<Context<Sha1>>(), core::mem::size_of::<Context<Sha1>>()) as *mut Context<Sha1>;
     core::ptr::write(hasher_mem, Context::<Sha1>::new());
     (*ctx).hasher = hasher_mem;
 }

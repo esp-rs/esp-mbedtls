@@ -32,6 +32,14 @@ pub mod io {
     pub use embedded_io::*;
 }
 
+unsafe fn aligned_calloc(align: usize, size: usize) -> *const c_void {
+    // if align > 4 {
+    //     panic!("Cannot allocate with alignment > 4 bytes: {align}");
+    // }
+
+    calloc(1, size)
+}
+
 // Baremetal: these will come from `esp-wifi` (i.e. this can only be used together with esp-wifi)
 // STD: these will come from `libc` indirectly via the Rust standard library
 extern "C" {
@@ -323,28 +331,28 @@ impl<'a> Certificates<'a> {
         unsafe {
             error_checked!(psa_crypto_init())?;
 
-            let drbg_context = calloc(1, size_of::<mbedtls_ctr_drbg_context>())
+            let drbg_context = aligned_calloc(align_of::<mbedtls_ctr_drbg_context>(), size_of::<mbedtls_ctr_drbg_context>())
                 as *mut mbedtls_ctr_drbg_context;
             if drbg_context.is_null() {
                 return Err(TlsError::OutOfMemory);
             }
 
             let ssl_context =
-                calloc(1, size_of::<mbedtls_ssl_context>()) as *mut mbedtls_ssl_context;
+                aligned_calloc(align_of::<mbedtls_ssl_context>(), size_of::<mbedtls_ssl_context>()) as *mut mbedtls_ssl_context;
             if ssl_context.is_null() {
                 free(drbg_context as *const _);
                 return Err(TlsError::OutOfMemory);
             }
 
             let ssl_config =
-                calloc(1, size_of::<mbedtls_ssl_config>()) as *mut mbedtls_ssl_config;
+                aligned_calloc(align_of::<mbedtls_ssl_config>(), size_of::<mbedtls_ssl_config>()) as *mut mbedtls_ssl_config;
             if ssl_config.is_null() {
                 free(drbg_context as *const _);
                 free(ssl_context as *const _);
                 return Err(TlsError::OutOfMemory);
             }
 
-            let crt = calloc(1, size_of::<mbedtls_x509_crt>()) as *mut mbedtls_x509_crt;
+            let crt = aligned_calloc(align_of::<mbedtls_x509_crt>(), size_of::<mbedtls_x509_crt>()) as *mut mbedtls_x509_crt;
             if crt.is_null() {
                 free(drbg_context as *const _);
                 free(ssl_context as *const _);
@@ -353,7 +361,7 @@ impl<'a> Certificates<'a> {
             }
 
             let certificate =
-                calloc(1, size_of::<mbedtls_x509_crt>()) as *mut mbedtls_x509_crt;
+                aligned_calloc(align_of::<mbedtls_x509_crt>(), size_of::<mbedtls_x509_crt>()) as *mut mbedtls_x509_crt;
             if certificate.is_null() {
                 free(drbg_context as *const _);
                 free(ssl_context as *const _);
@@ -363,7 +371,7 @@ impl<'a> Certificates<'a> {
             }
 
             let private_key =
-                calloc(1, size_of::<mbedtls_pk_context>()) as *mut mbedtls_pk_context;
+                aligned_calloc(align_of::<mbedtls_pk_context>(), size_of::<mbedtls_pk_context>()) as *mut mbedtls_pk_context;
             if private_key.is_null() {
                 free(drbg_context as *const _);
                 free(ssl_context as *const _);
@@ -930,7 +938,7 @@ pub mod asynch {
 
     #[cfg(feature = "edge-nal")]
     pub use super::edge_nal::*;
-    
+
     /// An async TLS session over a stream represented by `embedded-io-async`'s `Read` and `Write` traits.
     pub struct Session<'a, T> {
         pub(crate) stream: T,

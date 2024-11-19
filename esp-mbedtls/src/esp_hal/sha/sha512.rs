@@ -17,9 +17,9 @@ pub struct mbedtls_sha512_context {
 #[no_mangle]
 pub unsafe extern "C" fn mbedtls_sha512_init(ctx: *mut mbedtls_sha512_context) {
     let sha384_mem =
-        crate::calloc(1, core::mem::size_of::<Context<Sha384>>()) as *mut Context<Sha384>;
+        crate::aligned_calloc(core::mem::align_of::<Context<Sha384>>(), core::mem::size_of::<Context<Sha384>>()) as *mut Context<Sha384>;
     let sha512_mem =
-        crate::calloc(1, core::mem::size_of::<Context<Sha512>>()) as *mut Context<Sha512>;
+        crate::aligned_calloc(core::mem::align_of::<Context<Sha512>>(), core::mem::size_of::<Context<Sha512>>()) as *mut Context<Sha512>;
     (*ctx).sha384_hasher = sha384_mem;
     (*ctx).sha512_hasher = sha512_mem;
 }

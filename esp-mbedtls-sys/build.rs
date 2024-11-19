@@ -29,7 +29,7 @@ fn main() -> Result<()> {
     let dirs = if esp32 {
         Some((bindings_dir.join("esp32.rs"), libs_dir.join("xtensa-esp32-none-elf")))
     } else if esp32c3 {
-        Some((bindings_dir.join("esp32c3.rs"), libs_dir.join("xtensa-esp32c3-none-elf")))
+        Some((bindings_dir.join("esp32c3.rs"), libs_dir.join("riscv32imc-unknown-none-elf")))
     } else if esp32s2 {
         Some((bindings_dir.join("esp32s2.rs"), libs_dir.join("xtensa-esp32s2-none-elf")))
     } else if esp32s3 {

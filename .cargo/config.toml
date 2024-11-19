@@ -4,8 +4,9 @@
 # Build on target firmware with ESP IDF
 #target = "xtensa-esp32s3-espidf"
 # Build on target firmware with baremetal
-target = "xtensa-esp32s3-none-elf"
+#target = "xtensa-esp32s3-none-elf"
 #target = "xtensa-esp32-none-elf"
+target = "riscv32imc-unknown-none-elf"
 
 [target.xtensa-esp32-none-elf]
 runner = "espflash flash --monitor --baud 921600"

@@ -19748,8 +19748,6 @@ pub struct mbedtls_ssl_config {
     pub private_encrypt_then_mac: u8,
     ///< negotiate extended master secret?
     pub private_extended_ms: u8,
-    ///< detect and prevent replay?
-    pub private_anti_replay: u8,
     ///< disable renegotiation?
     pub private_disable_renegotiation: u8,
     ///< use session tickets?
@@ -20065,10 +20063,6 @@ pub struct mbedtls_ssl_context {
     ///< offset of the next record in datagram
     ///(equal to in_left if none)
     pub private_next_record_offset: usize,
-    ///< last validated record seq_num
-    pub private_in_window_top: u64,
-    ///< bitmask for replay detection
-    pub private_in_window: u64,
     ///< current handshake message length,
     ///including the handshake header
     pub private_in_hslen: usize,
@@ -20923,25 +20917,6 @@ extern "C" {
         info: *const crate::c_types::c_uchar,
         ilen: usize,
     ) -> crate::c_types::c_int;
-}
-extern "C" {
-    /// \brief          Enable or disable anti-replay protection for DTLS.
-    ///                 (DTLS only, no effect on TLS.)
-    ///                 Default: enabled.
-    ///
-    /// \param conf     SSL configuration
-    /// \param mode     MBEDTLS_SSL_ANTI_REPLAY_ENABLED or MBEDTLS_SSL_ANTI_REPLAY_DISABLED.
-    ///
-    /// \warning        Disabling this is a security risk unless the application
-    ///                 protocol handles duplicated packets in a safe way. You
-    ///                 should not disable this without careful consideration.
-    ///                 However, if your application already detects duplicated
-    ///                 packets and needs information about them to adjust its
-    ///                 transmission strategy, then you'll want to disable this.
-    pub fn mbedtls_ssl_conf_dtls_anti_replay(
-        conf: *mut mbedtls_ssl_config,
-        mode: crate::c_types::c_char,
-    );
 }
 extern "C" {
     /// \brief          Set a limit on the number of records with a bad MAC
