@@ -191,8 +191,8 @@ impl MbedtlsBuilder {
                     .join(&self.soc_config)
                     .display()
             ))
-            //.cflag(&format!("-DMBEDTLS_CONFIG_FILE='<config.h>'"))
-            //.cxxflag(&format!("-DMBEDTLS_CONFIG_FILE='<config.h>'"))
+            .cflag(&format!("-DMBEDTLS_CONFIG_FILE='<config.h>'"))
+            .cxxflag(&format!("-DMBEDTLS_CONFIG_FILE='<config.h>'"))
             .profile("Release")
             .out_dir(&target_dir);
 
