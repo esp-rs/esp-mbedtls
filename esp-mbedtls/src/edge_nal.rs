@@ -123,7 +123,10 @@ where
     T: edge_nal::Readable,
 {
     async fn readable(&mut self) -> Result<(), Self::Error> {
-        self.stream.readable().await.map_err(|e| TlsError::Io(e.kind()))
+         // ... 1- because it is difficult to figure out - with the MbedTLS API - if `Session::read` would return without blocking
+         // For this, we need support for that in MbedTLS itself, which is not available at the moment.
+         // 2- because `Readable` currently throws exception with `edge-nal-embassy`
+        Ok(())
     }
 }
 
