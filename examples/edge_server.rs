@@ -164,8 +164,8 @@ async fn main(spawner: Spawner) -> ! {
         ..Default::default()
     };
 
-    let mut tls = Tls::new()
-        .with_hardware_sha(peripherals.SHA)
+    let mut tls = Tls::new(peripherals.SHA)
+        .unwrap()
         .with_hardware_rsa(peripherals.RSA);
 
     tls.set_debug(0);
@@ -175,7 +175,7 @@ async fn main(spawner: Spawner) -> ! {
             &acceptor,
             TlsVersion::Tls1_2,
             certificates,
-            tls.token(),
+            tls.reference(),
         );
         match server
             .run(

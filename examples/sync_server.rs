@@ -104,9 +104,9 @@ fn main() -> ! {
 
     socket.listen(443).unwrap();
 
-    let mut tls = Tls::new()
-        .with_hardware_rsa(peripherals.RSA)
-        .with_hardware_sha(peripherals.SHA);
+    let mut tls = Tls::new(peripherals.SHA)
+        .unwrap()
+        .with_hardware_rsa(peripherals.RSA);
 
     tls.set_debug(0);
 
@@ -141,7 +141,7 @@ fn main() -> ! {
                     .ok(),
                     ..Default::default()
                 },
-                tls.token(),
+                tls.reference(),
             )
             .unwrap();
 

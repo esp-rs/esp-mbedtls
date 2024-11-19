@@ -113,8 +113,8 @@ async fn main(spawner: Spawner) -> ! {
     spawner.spawn(connection(controller)).ok();
     spawner.spawn(net_task(&stack)).ok();
 
-    let mut tls = Tls::new()
-        .with_hardware_sha(peripherals.SHA)
+    let mut tls = Tls::new(peripherals.SHA)
+        .unwrap()
         .with_hardware_rsa(peripherals.RSA);
 
     tls.set_debug(0);
@@ -181,7 +181,7 @@ async fn main(spawner: Spawner) -> ! {
                 .ok(),
                 ..Default::default()
             },
-            tls.token(),
+            tls.reference(),
         )
         .unwrap();
 

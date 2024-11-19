@@ -8,7 +8,7 @@ use esp_hal::peripherals::{RSA, SHA};
 use esp_hal::rsa::Rsa;
 use esp_hal::sha::Sha;
 
-use crate::Tls;
+use crate::{Tls, TlsError};
 
 #[cfg(any(feature = "esp32c3", feature = "esp32s2", feature = "esp32s3"))]
 mod bignum;
@@ -28,20 +28,27 @@ static mut RSA_REF: Option<Rsa<esp_hal::Blocking>> = None;
 static SHARED_SHA: Mutex<RefCell<Option<Sha<'static>>>> = Mutex::new(RefCell::new(None));
 
 impl<'d> Tls<'d> {
-    pub fn with_hardware_sha(self, sha: impl Peripheral<P = SHA> + 'd) -> Self {
+    /// Create a new instance of the `Tls` type.
+    /// 
+    /// Note that there could be only one active `Tls` instance at any point in time,
+    /// and the function will return an error if there is already an active instance.
+    /// 
+    /// Arguments:
+    /// 
+    /// * `sha` - The SHA peripheral from the HAL
+    pub fn new(sha: impl Peripheral<P = SHA> + 'd) -> Result<Self, TlsError> {
+        let this = Self::create()?;
+
         critical_section::with(|cs| {
             SHARED_SHA
                 .borrow_ref_mut(cs)
                 .replace(unsafe { core::mem::transmute(Sha::new(sha)) })
         });
 
-        self
+        Ok(this)
     }
 
-    /// Enable the use of the hardware accelerated RSA peripheral for the [Session].
-    ///
-    /// Note: Due to implementation constraints, this session and every other session will use the
-    /// hardware accelerated RSA driver until the session called with this function is dropped.
+    /// Enable the use of the hardware accelerated RSA peripheral for the `Tls` singleton.
     ///
     /// # Arguments
     ///

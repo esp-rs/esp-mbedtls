@@ -4,30 +4,39 @@ use core::net::SocketAddr;
 use embedded_io::Error;
 
 use crate::asynch::Session;
-use crate::{Certificates, TlsToken, Mode, TlsError, TlsVersion};
+use crate::{Certificates, TlsReference, Mode, TlsError, TlsVersion};
 
+/// An implementation of `edge-nal`'s `TcpAccept` trait over TLS.
 pub struct TlsAcceptor<'d, T> {
     acceptor: T,
     min_version: TlsVersion,
     certificates: Certificates<'d>,
-    token: TlsToken<'d>,
+    tls_ref: TlsReference<'d>,
 }
 
 impl<'d, T> TlsAcceptor<'d, T>
 where
     T: edge_nal::TcpAccept,
 {
+    /// Create a new instance of the `TlsAcceptor` type.
+    /// 
+    /// Arguments:
+    /// 
+    /// * `acceptor` - The underlying TCP acceptor
+    /// * `min_version` - The minimum TLS version to support
+    /// * `certificates` - The certificates to use for each accepted TLS connection
+    /// * `tls_ref` - A reference to the active `Tls` instance
     pub const fn new(
         acceptor: T,
         min_version: TlsVersion,
         certificates: Certificates<'d>,
-        token: TlsToken<'d>,
+        tls_ref: TlsReference<'d>,
     ) -> Self {
         Self {
             acceptor,
             min_version,
             certificates,
-            token,
+            tls_ref,
         }
     }
 }
@@ -54,38 +63,48 @@ where
             Mode::Server,
             self.min_version,
             self.certificates,
-            self.token,
+            self.tls_ref,
         )?;
 
         Ok((addr, session))
     }
 }
 
+/// An implementation of `edge-nal`'s `TcpConnect` trait over TLS.
 pub struct TlsConnector<'d, T> {
     connector: T,
     servername: &'d CStr,
     min_version: TlsVersion,
     certificates: Certificates<'d>,
-    token: TlsToken<'d>,
+    tls_ref: TlsReference<'d>,
 }
 
 impl<'d, T> TlsConnector<'d, T>
 where
     T: edge_nal::TcpConnect,
 {
+    /// Create a new instance of the `TlsConnector` type.
+    /// 
+    /// Arguments:
+    /// 
+    /// * `connector` - The underlying TCP connector
+    /// * `servername` - The server name to check against the certificate presented by the server
+    /// * `min_version` - The minimum TLS version to support
+    /// * `certificates` - The certificates to use for each established TLS connection
+    /// * `tls_ref` - A reference to the active `Tls` instance
     pub const fn new(
         connector: T,
         servername: &'d CStr,
         min_version: TlsVersion,
         certificates: Certificates<'d>,
-        token: TlsToken<'d>,
+        tls_ref: TlsReference<'d>,
     ) -> Self {
         Self {
             connector,
             servername,
             min_version,
             certificates,
-            token,
+            tls_ref,
         }
     }
 }
@@ -111,7 +130,7 @@ where
             Mode::Client { servername: self.servername },
             self.min_version,
             self.certificates,
-            self.token,
+            self.tls_ref,
         )?;
 
         Ok(session)
