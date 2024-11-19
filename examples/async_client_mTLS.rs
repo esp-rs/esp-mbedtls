@@ -40,7 +40,7 @@ const PASSWORD: &str = env!("PASSWORD");
 
 #[esp_hal_embassy::main]
 async fn main(spawner: Spawner) -> ! {
-    init_logger(log::LevelFilter::Info);
+    init_logger(log::LevelFilter::Debug);
 
     let peripherals = esp_hal::init({
         let mut config = esp_hal::Config::default();
@@ -140,7 +140,7 @@ async fn main(spawner: Spawner) -> ! {
         .unwrap()
         .with_hardware_rsa(peripherals.RSA);
 
-    tls.set_debug(0);
+    tls.set_debug(5);
 
     let mut session = Session::new(
         &mut socket,
