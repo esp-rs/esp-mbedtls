@@ -1,9 +1,8 @@
 #![no_std]
-#![feature(c_variadic)]
-#![allow(incomplete_features)]
 
 use core::cell::Cell;
 use core::ffi::{c_int, c_uchar, c_ulong, c_void, CStr};
+use core::fmt;
 use core::marker::PhantomData;
 use core::mem::size_of;
 
@@ -17,19 +16,6 @@ use embedded_io::Read;
 use embedded_io::Write;
 
 use esp_mbedtls_sys::bindings::*;
-/// Re-export self-tests
-pub use esp_mbedtls_sys::bindings::{
-    // Bignum
-    mbedtls_mpi_self_test,
-    // RSA
-    mbedtls_rsa_self_test,
-    // SHA,
-    mbedtls_sha1_self_test,
-    mbedtls_sha224_self_test,
-    mbedtls_sha256_self_test,
-    mbedtls_sha384_self_test,
-    mbedtls_sha512_self_test,
-};
 
 // For `malloc`, `calloc` and `free` which are provided by `esp-wifi` on baremetal
 #[cfg(any(feature = "esp32", feature = "esp32c3", feature = "esp32s2", feature = "esp32s3"))]
@@ -70,22 +56,24 @@ macro_rules! error_checked {
     }};
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Mode {
-    Client,
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Mode<'a> {
+    Client {
+        servername: &'a CStr,
+    },
     Server,
 }
 
-impl Mode {
+impl Mode<'_> {
     fn to_mbed_tls(&self) -> i32 {
         match self {
-            Mode::Client => MBEDTLS_SSL_IS_CLIENT as i32,
+            Mode::Client { .. } => MBEDTLS_SSL_IS_CLIENT as i32,
             Mode::Server => MBEDTLS_SSL_IS_SERVER as i32,
         }
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TlsVersion {
     Tls1_2,
     Tls1_3,
@@ -100,7 +88,7 @@ impl TlsVersion {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TlsError {
     Unknown,
     OutOfMemory,
@@ -109,25 +97,29 @@ pub enum TlsError {
     X509MissingNullTerminator,
     /// The client has given no certificates for the request
     NoClientCertificate,
-    /// Errors from the edge-nal-embassy crate
-    #[cfg(feature = "edge-nal")]
-    TcpError(ErrorKind),
+    Io(ErrorKind),
+}
+
+impl fmt::Display for TlsError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Unknown => write!(f, "Unknown error"),
+            Self::OutOfMemory => write!(f, "Out of memory"),
+            Self::MbedTlsError(e) => write!(f, "MbedTLS error: {e}"),
+            Self::Eof => write!(f, "End of stream"),
+            Self::X509MissingNullTerminator => write!(f, "X509 certificate missing null terminator"),
+            Self::NoClientCertificate => write!(f, "No client certificate"),
+            Self::Io(e) => write!(f, "IO error: {e:?}"),
+        }
+    }
 }
 
 impl embedded_io::Error for TlsError {
     fn kind(&self) -> embedded_io::ErrorKind {
         match self {
-            Self::TcpError(e) => *e,
+            Self::Io(e) => *e,
             _ => embedded_io::ErrorKind::Other,
         }
-    }
-}
-
-#[allow(unused)]
-pub fn set_debug(level: u32) {
-    #[cfg(all(not(target_os = "espidf"), not(target_arch = "xtensa")))]
-    unsafe {
-        mbedtls_debug_set_threshold(level as c_int);
     }
 }
 
@@ -270,7 +262,6 @@ impl<'a> Certificates<'a> {
     // Initialize the SSL using this set of certificates
     fn init_ssl(
         &self,
-        servername: &CStr,
         mode: Mode,
         min_version: TlsVersion,
     ) -> Result<
@@ -412,7 +403,7 @@ impl<'a> Certificates<'a> {
                 },
             );
 
-            if mode == Mode::Client {
+            if let Mode::Client { servername } = mode {
                 error_checked!(
                     mbedtls_ssl_set_hostname(
                         ssl_context,
@@ -486,6 +477,35 @@ impl<'a> Certificates<'a> {
     }
 }
 
+#[derive(enumset::EnumSetType, Debug)]
+pub enum TlsTest {
+    Mpi,
+    Rsa,
+    Sha1,
+    Sha224,
+    Sha256,
+    Sha384,
+    Sha512,
+    Aes,
+    Md5,
+}
+
+impl fmt::Display for TlsTest {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            TlsTest::Mpi => write!(f, "MPI"),
+            TlsTest::Rsa => write!(f, "RSA"),
+            TlsTest::Sha1 => write!(f, "SHA1"),
+            TlsTest::Sha224 => write!(f, "SHA224"),
+            TlsTest::Sha256 => write!(f, "SHA256"),
+            TlsTest::Sha384 => write!(f, "SHA384"),
+            TlsTest::Sha512 => write!(f, "SHA512"),
+            TlsTest::Aes => write!(f, "AES"),
+            TlsTest::Md5 => write!(f, "MD5"),
+        }
+    }
+}
+
 static TLS_CREATED: Mutex<Cell<bool>> = Mutex::new(Cell::new(false));
 
 pub struct Tls<'d>(PhantomData<&'d mut ()>);
@@ -503,6 +523,34 @@ impl<'d> Tls<'d> {
         Self(PhantomData)
     }
 
+    #[allow(unused)]
+    pub fn set_debug(&mut self, level: u32) {
+        #[cfg(all(not(target_os = "espidf"), not(target_arch = "xtensa")))]
+        unsafe {
+            mbedtls_debug_set_threshold(level as c_int);
+        }
+    }
+
+    pub fn self_test(&mut self, test: TlsTest, verbose: bool) -> bool {
+        let verbose = verbose as _;
+
+        let result = unsafe { 
+            match test {
+                TlsTest::Mpi => mbedtls_mpi_self_test(verbose),
+                TlsTest::Rsa => mbedtls_rsa_self_test(verbose),
+                TlsTest::Sha1 => mbedtls_sha1_self_test(verbose),
+                TlsTest::Sha224 => mbedtls_sha224_self_test(verbose),
+                TlsTest::Sha256 => mbedtls_sha256_self_test(verbose),
+                TlsTest::Sha384 => mbedtls_sha384_self_test(verbose),
+                TlsTest::Sha512 => mbedtls_sha512_self_test(verbose),
+                TlsTest::Aes => mbedtls_aes_self_test(verbose),
+                TlsTest::Md5 => mbedtls_md5_self_test(verbose),
+            }
+        };
+
+        result != 0
+    }
+    
     pub fn token(&self) -> TlsToken<'_> {
         unsafe { TlsToken::new() }
     }
@@ -549,14 +597,13 @@ impl<'a, T> Session<'a, T> {
     /// invalid format.
     pub fn new(
         stream: T,
-        servername: &CStr,
         mode: Mode,
         min_version: TlsVersion,
         certificates: Certificates,
         token: TlsToken<'a>,
     ) -> Result<Self, TlsError> {
         let (drbg_context, ssl_context, ssl_config, crt, client_crt, private_key) =
-            certificates.init_ssl(servername, mode, min_version)?;
+            certificates.init_ssl(mode, min_version)?;
         return Ok(Self {
             stream,
             drbg_context,
@@ -864,7 +911,7 @@ pub mod asynch {
                     }
                     Err(err) => {
                         ::log::warn!("TCP error: {:?}", err.kind());
-                        self.io_result = Some(Err(TlsError::TcpError(err.kind())));
+                        self.io_result = Some(Err(TlsError::Io(err.kind())));
                         MBEDTLS_ERR_SSL_WANT_WRITE
                     }
                 }
@@ -911,7 +958,7 @@ pub mod asynch {
                     }
                     Err(err) => {
                         ::log::warn!("TCP error: {:?}", err.kind());
-                        self.io_result = Some(Err(TlsError::TcpError(err.kind())));
+                        self.io_result = Some(Err(TlsError::Io(err.kind())));
                         MBEDTLS_ERR_SSL_WANT_READ
                     }
                 }
@@ -978,14 +1025,13 @@ pub mod asynch {
         /// invalid format.
         pub fn new(
             stream: T,
-            servername: &CStr,
             mode: Mode,
             min_version: TlsVersion,
             certificates: Certificates,
             token: TlsToken<'a>,
         ) -> Result<Self, TlsError> {
             let (drbg_context, ssl_context, ssl_config, crt, client_crt, private_key) =
-                certificates.init_ssl(servername, mode, min_version)?;
+                certificates.init_ssl(mode, min_version)?;
             return Ok(Self {
                 stream,
                 drbg_context,
@@ -1062,7 +1108,7 @@ pub mod asynch {
             self.connect().await?;
             self.flush_write().await?;
 
-            self.stream.flush().await.map_err(|e| TlsError::TcpError(e.kind()))?;
+            self.stream.flush().await.map_err(|e| TlsError::Io(e.kind()))?;
 
             Ok(())
         }
@@ -1098,7 +1144,7 @@ pub mod asynch {
             if self.read_byte.is_none() {
                 let mut buf = [0];
 
-                let len = self.stream.read(&mut buf).await.map_err(|e| TlsError::TcpError(e.kind()))?;
+                let len = self.stream.read(&mut buf).await.map_err(|e| TlsError::Io(e.kind()))?;
                 if len > 0 {
                     self.read_byte = Some(buf[0]);
                 }
@@ -1110,7 +1156,7 @@ pub mod asynch {
         async fn flush_write(&mut self) -> Result<(), TlsError> {
             if let Some(byte) = self.write_byte.as_ref().copied() {
                 let data = [byte];
-                let len = self.stream.write(&data).await.map_err(|e| TlsError::TcpError(e.kind()))?;
+                let len = self.stream.write(&data).await.map_err(|e| TlsError::Io(e.kind()))?;
                 if len > 0 {
                     self.write_byte.take();
                 }

@@ -14,7 +14,7 @@ use embassy_net::{Config, Ipv4Address, Stack, StackResources};
 use embassy_executor::Spawner;
 use embassy_time::{Duration, Timer};
 use esp_backtrace as _;
-use esp_mbedtls::{asynch::Session, set_debug, Certificates, Mode, TlsVersion};
+use esp_mbedtls::{asynch::Session, Certificates, Mode, TlsVersion};
 use esp_mbedtls::{Tls, X509};
 use esp_println::logger::init_logger;
 use esp_println::{print, println};
@@ -124,16 +124,17 @@ async fn main(spawner: Spawner) -> ! {
         loop {}
     }
 
-    set_debug(0);
-
-    let tls = Tls::new()
+    let mut tls = Tls::new()
         .with_hardware_sha(peripherals.SHA)
         .with_hardware_rsa(peripherals.RSA);
 
+    tls.set_debug(0);
+
     let mut session = Session::new(
         &mut socket,
-        c"www.google.com",
-        Mode::Client,
+        Mode::Client {
+            servername: c"www.google.com",
+        },
         TlsVersion::Tls1_3,
         Certificates {
             ca_chain: X509::pem(

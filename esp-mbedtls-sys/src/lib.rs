@@ -17,7 +17,7 @@ pub mod bindings {
     #[cfg(all(not(target_os = "espidf"), not(any(feature = "esp32", feature = "esp32c3", feature = "esp32s2", feature = "esp32s3"))))]
     include!(env!("ESP_MBEDTLS_SYS_GENERATED_BINDINGS_FILE"));
 
-    /// This and below are necessary because of https://github.com/rust-lang/cargo/issues/10358
+    // This and below are necessary because of https://github.com/rust-lang/cargo/issues/10358
     #[cfg(feature = "esp32")]
     include!("include/esp32.rs");
 

@@ -27,7 +27,7 @@ use embassy_net::{Config, Stack, StackResources};
 use embassy_executor::Spawner;
 use embassy_time::{Duration, Timer};
 use esp_backtrace as _;
-use esp_mbedtls::{set_debug, Certificates, Tls, TlsVersion};
+use esp_mbedtls::{Certificates, Tls, TlsVersion};
 use esp_mbedtls::{TlsError, X509};
 use esp_println::logger::init_logger;
 use esp_println::println;
@@ -144,8 +144,6 @@ async fn main(spawner: Spawner) -> ! {
         Timer::after(Duration::from_millis(500)).await;
     }
 
-    set_debug(0);
-
     let mut server = HttpsServer::new();
     let buffers = TcpBuffers::<SERVER_SOCKETS, TX_SIZE, RX_SIZE>::new();
     let tcp = Tcp::new(stack, &buffers);
@@ -166,14 +164,15 @@ async fn main(spawner: Spawner) -> ! {
         ..Default::default()
     };
 
-    let tls = Tls::new()
+    let mut tls = Tls::new()
         .with_hardware_sha(peripherals.SHA)
         .with_hardware_rsa(peripherals.RSA);
+
+    tls.set_debug(0);
 
     loop {
         let tls_acceptor = esp_mbedtls::asynch::TlsAcceptor::new(
             &acceptor,
-            c"",
             TlsVersion::Tls1_2,
             certificates,
             tls.token(),

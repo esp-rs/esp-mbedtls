@@ -8,10 +8,9 @@ use crate::{Certificates, TlsToken, Mode, TlsError, TlsVersion};
 
 pub struct TlsAcceptor<'d, T> {
     acceptor: T,
-    version: TlsVersion,
-    server_name: &'d CStr,
+    min_version: TlsVersion,
     certificates: Certificates<'d>,
-    crypto_token: TlsToken<'d>,
+    token: TlsToken<'d>,
 }
 
 impl<'d, T> TlsAcceptor<'d, T>
@@ -20,17 +19,15 @@ where
 {
     pub const fn new(
         acceptor: T,
-        server_name: &'d CStr,
-        version: TlsVersion,
+        min_version: TlsVersion,
         certificates: Certificates<'d>,
-        crypto_token: TlsToken<'d>,
+        token: TlsToken<'d>,
     ) -> Self {
         Self {
             acceptor,
-            server_name,
-            version,
+            min_version,
             certificates,
-            crypto_token,
+            token,
         }
     }
 }
@@ -49,16 +46,15 @@ where
             .acceptor
             .accept()
             .await
-            .map_err(|e| TlsError::TcpError(e.kind()))?;
+            .map_err(|e| TlsError::Io(e.kind()))?;
         log::debug!("Accepted new connection on socket");
 
         let session = Session::new(
             socket,
-            self.server_name,
             Mode::Server,
-            self.version,
+            self.min_version,
             self.certificates,
-            self.crypto_token,
+            self.token,
         )?;
 
         Ok((addr, session))
@@ -67,10 +63,10 @@ where
 
 pub struct TlsConnector<'d, T> {
     connector: T,
-    server_name: &'d CStr,
-    version: TlsVersion,
+    servername: &'d CStr,
+    min_version: TlsVersion,
     certificates: Certificates<'d>,
-    crypto_token: TlsToken<'d>,
+    token: TlsToken<'d>,
 }
 
 impl<'d, T> TlsConnector<'d, T>
@@ -79,17 +75,17 @@ where
 {
     pub const fn new(
         connector: T,
-        server_name: &'d CStr,
-        version: TlsVersion,
+        servername: &'d CStr,
+        min_version: TlsVersion,
         certificates: Certificates<'d>,
-        crypto_token: TlsToken<'d>,
+        token: TlsToken<'d>,
     ) -> Self {
         Self {
             connector,
-            server_name,
-            version,
+            servername,
+            min_version,
             certificates,
-            crypto_token,
+            token,
         }
     }
 }
@@ -107,16 +103,15 @@ where
             .connector
             .connect(remote)
             .await
-            .map_err(|e| TlsError::TcpError(e.kind()))?;
+            .map_err(|e| TlsError::Io(e.kind()))?;
         log::debug!("Connected to {remote}");
 
         let session = Session::new(
             socket,
-            self.server_name,
-            Mode::Client,
-            self.version,
+            Mode::Client { servername: self.servername },
+            self.min_version,
             self.certificates,
-            self.crypto_token,
+            self.token,
         )?;
 
         Ok(session)
@@ -128,7 +123,7 @@ where
     T: edge_nal::Readable,
 {
     async fn readable(&mut self) -> Result<(), Self::Error> {
-        self.stream.readable().await.map_err(|e| TlsError::TcpError(e.kind()))
+        self.stream.readable().await.map_err(|e| TlsError::Io(e.kind()))
     }
 }
 
@@ -142,10 +137,10 @@ where
         self.stream
             .close(what)
             .await
-            .map_err(|e| TlsError::TcpError(e.kind()))
+            .map_err(|e| TlsError::Io(e.kind()))
     }
 
     async fn abort(&mut self) -> Result<(), Self::Error> {
-        self.stream.abort().await.map_err(|e| TlsError::TcpError(e.kind()))
+        self.stream.abort().await.map_err(|e| TlsError::Io(e.kind()))
     }
 }

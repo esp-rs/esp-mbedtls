@@ -8,8 +8,8 @@ pub use esp_hal as hal;
 
 use esp_alloc as _;
 use esp_backtrace as _;
-use esp_mbedtls::{set_debug, Mode, Tls, TlsVersion, X509};
 use esp_mbedtls::{Certificates, Session};
+use esp_mbedtls::{Mode, Tls, TlsVersion, X509};
 use esp_println::{logger::init_logger, print, println};
 use esp_wifi::{
     init,
@@ -102,8 +102,6 @@ fn main() -> ! {
         .open(IpAddress::v4(62, 210, 201, 125), 443) // certauth.cryptomix.com
         .unwrap();
 
-    set_debug(0);
-
     let certificates = Certificates {
         ca_chain: X509::pem(
             concat!(include_str!("./certs/certauth.cryptomix.com.pem"), "\0").as_bytes(),
@@ -116,14 +114,17 @@ fn main() -> ! {
         password: None,
     };
 
-    let tls = Tls::new()
+    let mut tls = Tls::new()
         .with_hardware_rsa(peripherals.RSA)
         .with_hardware_sha(peripherals.SHA);
 
+    tls.set_debug(0);
+
     let mut session = Session::new(
         &mut socket,
-        c"certauth.cryptomix.com",
-        Mode::Client,
+        Mode::Client {
+            servername: c"certauth.cryptomix.com",
+        },
         TlsVersion::Tls1_3,
         certificates,
         tls.token(),

@@ -8,8 +8,8 @@ pub use esp_hal as hal;
 
 use esp_alloc as _;
 use esp_backtrace as _;
-use esp_mbedtls::{set_debug, Mode, Tls, TlsVersion, X509};
 use esp_mbedtls::{Certificates, Session};
+use esp_mbedtls::{Mode, Tls, TlsVersion, X509};
 use esp_println::{logger::init_logger, print, println};
 use esp_wifi::{
     init,
@@ -101,16 +101,17 @@ fn main() -> ! {
         .open(IpAddress::v4(142, 250, 185, 68), 443) // google.com
         .unwrap();
 
-    set_debug(0);
-
-    let tls = Tls::new()
+    let mut tls = Tls::new()
         .with_hardware_rsa(peripherals.RSA)
         .with_hardware_sha(peripherals.SHA);
 
+    tls.set_debug(0);
+
     let mut session = Session::new(
         &mut socket,
-        c"www.google.com",
-        Mode::Client,
+        Mode::Client {
+            servername: c"www.google.com",
+        },
         TlsVersion::Tls1_3,
         Certificates {
             ca_chain: X509::pem(

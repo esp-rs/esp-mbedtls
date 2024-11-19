@@ -14,7 +14,7 @@ use embassy_net::{Config, Ipv4Address, Stack, StackResources};
 
 use embassy_time::{Duration, Timer};
 use esp_backtrace as _;
-use esp_mbedtls::{asynch::Session, set_debug, Mode, TlsVersion};
+use esp_mbedtls::{asynch::Session, Mode, TlsVersion};
 use esp_mbedtls::{Certificates, Tls, X509};
 use esp_println::logger::init_logger;
 use esp_println::{print, println};
@@ -124,8 +124,6 @@ async fn main(spawner: Spawner) -> ! {
         loop {}
     }
 
-    set_debug(0);
-
     let certificates = Certificates {
         ca_chain: X509::pem(
             concat!(include_str!("./certs/certauth.cryptomix.com.pem"), "\0").as_bytes(),
@@ -138,14 +136,17 @@ async fn main(spawner: Spawner) -> ! {
         password: None,
     };
 
-    let tls = Tls::new()
+    let mut tls = Tls::new()
         .with_hardware_sha(peripherals.SHA)
         .with_hardware_rsa(peripherals.RSA);
 
+    tls.set_debug(0);
+
     let mut session = Session::new(
         &mut socket,
-        c"certauth.cryptomix.com",
-        Mode::Client,
+        Mode::Client {
+            servername: c"certauth.cryptomix.com",
+        },
         TlsVersion::Tls1_3,
         certificates,
         tls.token(),

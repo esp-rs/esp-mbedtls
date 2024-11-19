@@ -18,7 +18,7 @@ use embassy_executor::Spawner;
 use embassy_time::{Duration, Timer};
 use esp_alloc as _;
 use esp_backtrace as _;
-use esp_mbedtls::{asynch::Session, set_debug, Certificates, Mode, TlsVersion};
+use esp_mbedtls::{asynch::Session, Certificates, Mode, TlsVersion};
 use esp_mbedtls::{Tls, TlsError, X509};
 use esp_println::logger::init_logger;
 use esp_println::{print, println};
@@ -97,9 +97,11 @@ async fn main(spawner: Spawner) -> ! {
     spawner.spawn(connection(controller)).ok();
     spawner.spawn(net_task(&stack)).ok();
 
-    let tls = Tls::new()
+    let mut tls = Tls::new()
         .with_hardware_sha(peripherals.SHA)
         .with_hardware_rsa(peripherals.RSA);
+
+    tls.set_debug(0);
 
     let mut rx_buffer = [0; 4096];
     let mut tx_buffer = [0; 4096];
@@ -141,14 +143,12 @@ async fn main(spawner: Spawner) -> ! {
             continue;
         }
 
-        set_debug(0);
         use embedded_io_async::Write;
 
         let mut buffer = [0u8; 1024];
         let mut pos = 0;
         let mut session = Session::new(
             &mut socket,
-            c"",
             Mode::Server,
             TlsVersion::Tls1_2,
             Certificates {

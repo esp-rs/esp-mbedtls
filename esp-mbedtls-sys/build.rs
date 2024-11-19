@@ -41,7 +41,7 @@ fn main() -> Result<()> {
         // Need to do on-the-fly build and bindings' generation
         let out = PathBuf::from(env::var_os("OUT_DIR").unwrap());
 
-        let builder = builder::MbedtlsBuilder::new(crate_root_path.clone(), "generic".to_string(), None, None, None, None, Some(host));
+        let builder = builder::MbedtlsBuilder::new(crate_root_path.clone(), "generic".to_string(), None, None, None, Some(target), Some(host));
 
         let libs_dir = builder.compile(&out, None)?;
         let bindings = builder.generate_bindings(&out, None)?;

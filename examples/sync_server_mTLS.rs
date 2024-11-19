@@ -28,8 +28,8 @@ pub use esp_hal as hal;
 
 use embedded_io::*;
 use esp_backtrace as _;
-use esp_mbedtls::{set_debug, Mode, Tls, TlsError, TlsVersion, X509};
 use esp_mbedtls::{Certificates, Session};
+use esp_mbedtls::{Mode, Tls, TlsError, TlsVersion, X509};
 use esp_println::{logger::init_logger, print, println};
 use esp_wifi::{
     init,
@@ -120,11 +120,12 @@ fn main() -> ! {
     let mut socket = wifi_stack.get_socket(&mut rx_buffer, &mut tx_buffer);
 
     socket.listen(443).unwrap();
-    set_debug(0);
 
-    let tls = Tls::new()
+    let mut tls = Tls::new()
         .with_hardware_rsa(peripherals.RSA)
         .with_hardware_sha(peripherals.SHA);
+
+    tls.set_debug(0);
 
     loop {
         socket.work();
@@ -143,7 +144,6 @@ fn main() -> ! {
 
             let mut session = Session::new(
                 &mut socket,
-                c"",
                 Mode::Server,
                 TlsVersion::Tls1_2,
                 Certificates {
