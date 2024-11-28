@@ -605,7 +605,7 @@ impl<'d> Tls<'d> {
     /// Set the MbedTLS debug level (0 - 5)
     #[allow(unused)]
     pub fn set_debug(&mut self, level: u32) {
-        #[cfg(all(not(target_os = "espidf"), not(target_arch = "xtensa")))]
+        #[cfg(not(target_os = "espidf"))]
         unsafe {
             mbedtls_debug_set_threshold(level as c_int);
         }
