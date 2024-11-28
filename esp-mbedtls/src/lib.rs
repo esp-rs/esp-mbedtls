@@ -1166,6 +1166,7 @@ pub mod asynch {
 
                 match outcome {
                     PollOutcome::Success(res) => break Ok(res),
+                    PollOutcome::Retry => continue,
                     PollOutcome::WantRead => self.wait_read().await?,
                     PollOutcome::WantWrite => self.flush_write().await?,
                 }
@@ -1255,6 +1256,8 @@ pub mod asynch {
         WantRead,
         /// The IO layer needs to write more data asynchronously
         WantWrite,
+        /// Operation needs to be retried
+        Retry,
     }
 
     /// A context for using the async `Read` and `Write` traits from within the synchronous MbedTLS "mbio" callbacks
@@ -1354,6 +1357,8 @@ pub mod asynch {
             Poll::Ready(match res {
                 MBEDTLS_ERR_SSL_WANT_READ => Ok(PollOutcome::WantRead),
                 MBEDTLS_ERR_SSL_WANT_WRITE => Ok(PollOutcome::WantWrite),
+                // See https://github.com/Mbed-TLS/mbedtls/issues/8749
+                MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET => Ok(PollOutcome::Retry),
                 res if res < 0 => {
                     ::log::warn!("MbedTLS error: {res} / {res:x}");
                     Err(TlsError::MbedTlsError(res))
