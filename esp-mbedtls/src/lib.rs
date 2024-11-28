@@ -729,7 +729,7 @@ where
     ///
     /// Note that calling it is not mandatory, because the TLS session is anyway
     /// negotiated during the first read or write operation.
-    pub fn connect<'b>(&mut self) -> Result<(), TlsError> {
+    pub fn connect(&mut self) -> Result<(), TlsError> {
         if matches!(self.state, SessionState::Connected) {
             return Ok(());
         } else if matches!(self.state, SessionState::Eof) {
@@ -739,7 +739,7 @@ where
         unsafe {
             mbedtls_ssl_set_bio(
                 self.ssl_context,
-                core::ptr::addr_of!(self) as *mut c_void,
+                self as *mut _ as *mut c_void,
                 Some(Self::send),
                 Some(Self::receive),
                 None,
@@ -753,6 +753,8 @@ where
                     break;
                 }
                 if res < 0 && res != MBEDTLS_ERR_SSL_WANT_READ && res != MBEDTLS_ERR_SSL_WANT_WRITE
+                    // See https://github.com/Mbed-TLS/mbedtls/issues/8749
+                    && res != MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET
                 {
                     // real error
                     // Reference: https://os.mbed.com/teams/sandbox/code/mbedtls/docs/tip/ssl_8h.html#a4a37e497cd08c896870a42b1b618186e
@@ -789,6 +791,7 @@ where
             let res = self.internal_read(buf);
             #[allow(non_snake_case)]
             match res {
+                // See https://github.com/Mbed-TLS/mbedtls/issues/8749
                 MBEDTLS_ERR_SSL_WANT_READ | MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET => continue, // no data
                 0_i32..=i32::MAX => return Ok(res as usize), // data
                 i32::MIN..=-1_i32 => return Err(TlsError::MbedTlsError(res)), // error
@@ -808,8 +811,16 @@ where
     pub fn write(&mut self, data: &[u8]) -> Result<usize, TlsError> {
         self.connect()?;
 
-        let res = self.internal_write(data);
-        Ok(res as usize)
+        loop {
+            let res = self.internal_write(data);
+            #[allow(non_snake_case)]
+            match res {
+                // See https://github.com/Mbed-TLS/mbedtls/issues/8749
+                MBEDTLS_ERR_SSL_WANT_WRITE | MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET => continue, // no data
+                0_i32..=i32::MAX => return Ok(res as usize), // data
+                i32::MIN..=-1_i32 => return Err(TlsError::MbedTlsError(res)), // error
+            }
+        }
     }
 
     /// Flush the TLS connection
