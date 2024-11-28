@@ -816,7 +816,9 @@ where
             #[allow(non_snake_case)]
             match res {
                 // See https://github.com/Mbed-TLS/mbedtls/issues/8749
-                MBEDTLS_ERR_SSL_WANT_WRITE | MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET => continue, // no data
+                MBEDTLS_ERR_SSL_WANT_WRITE | MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET => {
+                    continue
+                } // no data
                 0_i32..=i32::MAX => return Ok(res as usize), // data
                 i32::MIN..=-1_i32 => return Err(TlsError::MbedTlsError(res)), // error
             }
