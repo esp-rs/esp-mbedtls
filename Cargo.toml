@@ -152,7 +152,6 @@ edge-nal-embassy = { git = "https://github.com/ivmarkov/edge-net" }
 esp-idf-svc = { git = "https://github.com/esp-rs/esp-idf-svc" }
 esp-idf-hal = { git = "https://github.com/esp-rs/esp-idf-hal" }
 esp-idf-sys = { git = "https://github.com/esp-rs/esp-idf-sys" }
-cmake = { git = "https://github.com/ivmarkov/cmake-rs" }
 
 # Patch before 0.6.0 got yanked
 embassy-executor = { git = "https://github.com/embassy-rs/embassy", rev = "886580179ff250e15b0fad6448e8ebed6cdabf2b" }
