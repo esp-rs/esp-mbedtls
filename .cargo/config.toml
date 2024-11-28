@@ -1,12 +1,16 @@
 [build]
 # Build on host
 #target = "x86_64-unknown-linux-gnu"
-# Build on target firmware with ESP IDF
-#target = "xtensa-esp32s3-espidf"
 # Build on target firmware with baremetal
-#target = "xtensa-esp32s3-none-elf"
 #target = "xtensa-esp32-none-elf"
-target = "riscv32imc-unknown-none-elf"
+#target = "xtensa-esp32s2-none-elf"
+#target = "xtensa-esp32s3-none-elf"
+#target = "riscv32imc-unknown-none-elf"
+# Build on target firmware with ESP IDF
+#target = "xtensa-esp32-espidf"
+#target = "xtensa-esp32s2-espidf"
+#target = "xtensa-esp32s3-espidf"
+#target = "riscv32imc-esp-espidf"
 
 [target.xtensa-esp32-none-elf]
 runner = "espflash flash --monitor --baud 921600"
