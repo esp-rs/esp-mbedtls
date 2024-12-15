@@ -578,12 +578,12 @@ impl<'d> Tls<'d> {
     ///
     /// Note that there could be only one active `Tls` instance at any point in time,
     /// and the function will return an error if there is already an active instance.
-    #[cfg(all(not(any(
+    #[cfg(not(any(
         feature = "esp32",
         feature = "esp32c3",
         feature = "esp32s2",
         feature = "esp32s3"
-    ))))]
+    )))]
     pub fn new() -> Result<Self, TlsError> {
         Self::create()
     }
@@ -1074,6 +1074,10 @@ pub mod asynch {
                     log::debug!("Establishing SSL connection");
 
                     self.io(|ssl| unsafe { mbedtls_ssl_handshake(ssl) }).await?;
+                    if matches!(self.state, SessionState::Eof) {
+                        return Err(TlsError::Eof);
+                    }
+
                     self.state = SessionState::Connected;
 
                     Ok(())
@@ -1182,6 +1186,10 @@ pub mod asynch {
                     PollOutcome::Retry => continue,
                     PollOutcome::WantRead => self.wait_read().await?,
                     PollOutcome::WantWrite => self.flush_write().await?,
+                    PollOutcome::Eof => {
+                        self.state = SessionState::Eof;
+                        break Ok(0);
+                    }
                 }
             }
         }
@@ -1271,6 +1279,8 @@ pub mod asynch {
         WantWrite,
         /// Operation needs to be retried
         Retry,
+        /// End of stream reached
+        Eof,
     }
 
     /// A context for using the async `Read` and `Write` traits from within the synchronous MbedTLS "mbio" callbacks
@@ -1372,6 +1382,7 @@ pub mod asynch {
                 MBEDTLS_ERR_SSL_WANT_WRITE => Ok(PollOutcome::WantWrite),
                 // See https://github.com/Mbed-TLS/mbedtls/issues/8749
                 MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET => Ok(PollOutcome::Retry),
+                MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY => Ok(PollOutcome::Eof),
                 res if res < 0 => {
                     ::log::warn!("MbedTLS error: {res} / {res:x}");
                     Err(TlsError::MbedTlsError(res))
