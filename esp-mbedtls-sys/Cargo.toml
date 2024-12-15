@@ -3,6 +3,8 @@ name = "esp-mbedtls-sys"
 version = "0.1.0"
 edition = "2021"
 links = "mbedtls"
+license = "MIT OR Apache-2.0"
+rust-version = "1.82"
 
 [build-dependencies]
 anyhow      = "1.0.68"
