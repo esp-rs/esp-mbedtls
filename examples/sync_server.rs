@@ -9,6 +9,7 @@
 #[doc(hidden)]
 pub use esp_hal as hal;
 
+use blocking_network_stack::Stack;
 use embedded_io::*;
 use esp_backtrace as _;
 use esp_mbedtls::{Certificates, Session};
@@ -17,11 +18,12 @@ use esp_println::{logger::init_logger, print, println};
 use esp_wifi::{
     init,
     wifi::{utils::create_network_interface, ClientConfiguration, Configuration, WifiStaDevice},
-    wifi_interface::WifiStack,
-    EspWifiInitFor,
 };
 use hal::{prelude::*, rng::Rng, time, timer::timg::TimerGroup};
-use smoltcp::iface::SocketStorage;
+use smoltcp::{
+    iface::{SocketSet, SocketStorage},
+    wire::DhcpOption,
+};
 
 const SSID: &str = env!("SSID");
 const PASSWORD: &str = env!("PASSWORD");
@@ -40,20 +42,26 @@ fn main() -> ! {
 
     let timg0 = TimerGroup::new(peripherals.TIMG0);
 
-    let init = init(
-        EspWifiInitFor::Wifi,
-        timg0.timer0,
-        Rng::new(peripherals.RNG),
-        peripherals.RADIO_CLK,
-    )
-    .unwrap();
+    let mut rng = Rng::new(peripherals.RNG);
 
-    let wifi = peripherals.WIFI;
+    let init = init(timg0.timer0, rng.clone(), peripherals.RADIO_CLK).unwrap();
+
+    let mut wifi = peripherals.WIFI;
+    let (iface, device, mut controller) =
+        create_network_interface(&init, &mut wifi, WifiStaDevice).unwrap();
+
     let mut socket_set_entries: [SocketStorage; 3] = Default::default();
-    let (iface, device, mut controller, sockets) =
-        create_network_interface(&init, wifi, WifiStaDevice, &mut socket_set_entries).unwrap();
+    let mut socket_set = SocketSet::new(&mut socket_set_entries[..]);
+    let mut dhcp_socket = smoltcp::socket::dhcpv4::Socket::new();
+    // we can set a hostname here (or add other DHCP options)
+    dhcp_socket.set_outgoing_options(&[DhcpOption {
+        kind: 12,
+        data: b"esp-mbedtls",
+    }]);
+    socket_set.add(dhcp_socket);
+
     let now = || time::now().duration_since_epoch().to_millis();
-    let wifi_stack = WifiStack::new(iface, device, sockets, now);
+    let wifi_stack = Stack::new(iface, device, socket_set, now, rng.random());
 
     println!("Call wifi_connect");
     let client_config = Configuration::Client(ClientConfiguration {

@@ -22,7 +22,7 @@ use edge_nal_embassy::{Tcp, TcpBuffers};
 
 use embedded_io_async::{Read, Write};
 
-use embassy_net::{Config, Stack, StackResources};
+use embassy_net::{Config, Runner, StackResources};
 
 use embassy_executor::Spawner;
 use embassy_time::{Duration, Timer};
@@ -31,11 +31,14 @@ use esp_mbedtls::{Certificates, Tls, TlsVersion};
 use esp_mbedtls::{TlsError, X509};
 use esp_println::logger::init_logger;
 use esp_println::println;
-use esp_wifi::wifi::{
-    ClientConfiguration, Configuration, WifiController, WifiDevice, WifiEvent, WifiStaDevice,
-    WifiState,
+use esp_wifi::init;
+use esp_wifi::{
+    wifi::{
+        ClientConfiguration, Configuration, WifiController, WifiDevice, WifiEvent, WifiStaDevice,
+        WifiState,
+    },
+    EspWifiController,
 };
-use esp_wifi::{init, EspWifiInitFor};
 use hal::{prelude::*, rng::Rng, timer::timg::TimerGroup};
 
 // Patch until https://github.com/embassy-rs/static-cell/issues/16 is fixed
@@ -80,13 +83,15 @@ async fn main(spawner: Spawner) -> ! {
 
     let timg0 = TimerGroup::new(peripherals.TIMG0);
 
-    let init = init(
-        EspWifiInitFor::Wifi,
-        timg0.timer0,
-        Rng::new(peripherals.RNG),
-        peripherals.RADIO_CLK,
-    )
-    .unwrap();
+    let init = &*mk_static!(
+        EspWifiController<'static>,
+        init(
+            timg0.timer0,
+            Rng::new(peripherals.RNG),
+            peripherals.RADIO_CLK,
+        )
+        .unwrap()
+    );
 
     let wifi = peripherals.WIFI;
     let (wifi_interface, controller) =
@@ -108,21 +113,18 @@ async fn main(spawner: Spawner) -> ! {
     let seed = 1234; // very random, very secure seed
 
     // Init network stack
-    let stack = &*mk_static!(
-        Stack<WifiDevice<'_, WifiStaDevice>>,
-        Stack::new(
-            wifi_interface,
-            config,
-            mk_static!(
-                StackResources<SOCKET_COUNT>,
-                StackResources::<SOCKET_COUNT>::new()
-            ),
-            seed
-        )
+    let (stack, runner) = embassy_net::new(
+        wifi_interface,
+        config,
+        mk_static!(
+            StackResources<SOCKET_COUNT>,
+            StackResources::<SOCKET_COUNT>::new()
+        ),
+        seed,
     );
 
     spawner.spawn(connection(controller)).ok();
-    spawner.spawn(net_task(&stack)).ok();
+    spawner.spawn(net_task(runner)).ok();
 
     loop {
         if stack.is_link_up() {
@@ -236,9 +238,9 @@ impl Handler for HttpHandler {
 #[embassy_executor::task]
 async fn connection(mut controller: WifiController<'static>) {
     println!("start connection task");
-    println!("Device capabilities: {:?}", controller.get_capabilities());
+    println!("Device capabilities: {:?}", controller.capabilities());
     loop {
-        match esp_wifi::wifi::get_wifi_state() {
+        match esp_wifi::wifi::wifi_state() {
             WifiState::StaConnected => {
                 // wait until we're no longer connected
                 controller.wait_for_event(WifiEvent::StaDisconnected).await;
@@ -254,12 +256,12 @@ async fn connection(mut controller: WifiController<'static>) {
             });
             controller.set_configuration(&client_config).unwrap();
             println!("Starting wifi");
-            controller.start().await.unwrap();
+            controller.start_async().await.unwrap();
             println!("Wifi started!");
         }
         println!("About to connect...");
 
-        match controller.connect().await {
+        match controller.connect_async().await {
             Ok(_) => println!("Wifi connected!"),
             Err(e) => {
                 println!("Failed to connect to wifi: {e:?}");
@@ -270,6 +272,6 @@ async fn connection(mut controller: WifiController<'static>) {
 }
 
 #[embassy_executor::task]
-async fn net_task(stack: &'static Stack<WifiDevice<'static, WifiStaDevice>>) {
-    stack.run().await
+async fn net_task(mut runner: Runner<'static, WifiDevice<'static, WifiStaDevice>>) {
+    runner.run().await
 }

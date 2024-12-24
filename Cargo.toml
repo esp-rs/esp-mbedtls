@@ -24,30 +24,34 @@ opt-level = "z"
 opt-level = 3
 
 [dependencies]
-esp-hal = { version = "0.21.0", optional = true }
+esp-hal = { version = "0.22.0", optional = true }
 esp-backtrace = { version = "0.14.0", optional = true, features = [
     "panic-handler",
     "println",
     "exception-handler",
 ] }
 esp-println = { version = "0.12.0", optional = true, features = ["log"] }
-esp-hal-embassy = { version = "0.4.0", optional = true }
+esp-hal-embassy = { version = "0.5.0", optional = true }
 
 embassy-time = { version = "0.3.0", optional = true }
-embassy-executor = { version = "=0.6.0", package = "embassy-executor", features = [
+embassy-executor = { version = "0.6.3", package = "embassy-executor", features = [
     "nightly",
     "integrated-timers",
 ], optional = true }
-embassy-net = { version = "0.4.0", features = [
+embassy-net = { version = "0.5.0", features = [
     "tcp",
     "udp",
     "dhcpv4",
     "medium-ethernet",
 ], optional = true }
 
-esp-wifi = { version = "0.10.1", optional = true, features = ["phy-enable-usb", "wifi-default", "sys-logs"] }
+blocking-network-stack = { git = "https://github.com/bjoernQ/blocking-network-stack.git", rev = "1c581661d78e0cf0f17b936297179b993fb149d7" }
+esp-wifi = { version = "0.11.0", optional = true, features = [
+    "wifi",
+    "utils",
+    "sys-logs",
+] }
 smoltcp = { version = "0.11.0", optional = true, default-features = false, features = [
-    "proto-igmp",
     "proto-ipv4",
     "socket-tcp",
     "socket-icmp",
@@ -70,7 +74,7 @@ edge-http = { version = "0.3.0", optional = true }
 edge-nal = { version = "0.3.0", optional = true }
 edge-nal-embassy = { version = "0.3.0", optional = true }
 cfg-if = "1.0.0"
-esp-alloc = { version = "0.5.0", optional = true}
+esp-alloc = { version = "0.5.0", optional = true }
 enumset = { version = "1", default-features = false }
 
 [target.'cfg(target_os = "espidf")'.dependencies]
@@ -104,8 +108,26 @@ name = "edge_server"
 required-features = ["examples-async", "edge-http"]
 
 [features]
-examples = ["esp-hal", "esp-backtrace", "esp-println", "esp-wifi", "smoltcp", "esp-alloc"]
-examples-async = ["examples", "esp-hal-embassy", "embassy-time", "embassy-executor", "embassy-net", "edge-http", "edge-nal", "edge-nal-embassy", "esp-wifi/async", "esp-wifi/embassy-net", "esp-mbedtls/async", "esp-mbedtls/edge-nal"]
+examples = [
+    "esp-hal",
+    "esp-backtrace",
+    "esp-println",
+    "esp-wifi",
+    "smoltcp",
+    "esp-alloc",
+]
+examples-async = [
+    "examples",
+    "esp-hal-embassy",
+    "embassy-time",
+    "embassy-executor",
+    "embassy-net",
+    "edge-http",
+    "edge-nal",
+    "edge-nal-embassy",
+    "esp-mbedtls/async",
+    "esp-mbedtls/edge-nal",
+]
 examples-std = ["critical-section/std"]
 
 esp32 = [
@@ -144,16 +166,11 @@ esp32s3 = [
 [build-dependencies]
 embuild = { version = "0.32", features = ["espidf"] }
 
-# Patch until new release
 [patch.crates-io]
-edge-http = { git = "https://github.com/ivmarkov/edge-net" }
-edge-nal = { git = "https://github.com/ivmarkov/edge-net" }
-edge-nal-embassy = { git = "https://github.com/ivmarkov/edge-net" }
+# Patch until https://github.com/ivmarkov/edge-net/pull/50 is merged
+edge-http = { git = "https://github.com/ivmarkov/edge-net", rev = "5a85bcc8b8726e8b7044e9526f01cdba1fd684da" }
+edge-nal = { git = "https://github.com/ivmarkov/edge-net", rev = "5a85bcc8b8726e8b7044e9526f01cdba1fd684da" }
+edge-nal-embassy = { git = "https://github.com/ivmarkov/edge-net", rev = "5a85bcc8b8726e8b7044e9526f01cdba1fd684da" }
 esp-idf-svc = { git = "https://github.com/esp-rs/esp-idf-svc" }
 esp-idf-hal = { git = "https://github.com/esp-rs/esp-idf-hal" }
 esp-idf-sys = { git = "https://github.com/esp-rs/esp-idf-sys" }
-
-# Patch before 0.6.0 got yanked
-embassy-executor = { git = "https://github.com/embassy-rs/embassy", rev = "886580179ff250e15b0fad6448e8ebed6cdabf2b" }
-embassy-time-driver = { git = "https://github.com/embassy-rs/embassy", rev = "886580179ff250e15b0fad6448e8ebed6cdabf2b" }
-embassy-time-queue-driver = { git = "https://github.com/embassy-rs/embassy", rev = "886580179ff250e15b0fad6448e8ebed6cdabf2b" }
