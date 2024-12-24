@@ -7,7 +7,7 @@ pub use esp_hal as hal;
 
 use esp_alloc as _;
 use esp_backtrace as _;
-use esp_mbedtls::set_debug;
+use esp_mbedtls::Tls;
 use esp_println::{logger::init_logger, println};
 
 /// Only used for ROM functions
@@ -15,15 +15,13 @@ use esp_println::{logger::init_logger, println};
 use esp_wifi::{init, EspWifiInitFor};
 use hal::{prelude::*, rng::Rng, timer::timg::TimerGroup};
 
-use log::warn;
-
 pub fn cycles() -> u64 {
-    #[cfg(feature = "esp32")]
+    #[cfg(any(feature = "esp32", feature = "esp32s2", feature = "esp32s3"))]
     {
         esp_hal::xtensa_lx::timer::get_cycle_count() as u64
     }
 
-    #[cfg(not(feature = "esp32"))]
+    #[cfg(not(any(feature = "esp32", feature = "esp32s2", feature = "esp32s3")))]
     {
         esp_hal::timer::systimer::SystemTimer::now()
     }
@@ -44,7 +42,7 @@ fn main() -> ! {
 
     let timg0 = TimerGroup::new(peripherals.TIMG0);
 
-    let init = init(
+    let _init = init(
         EspWifiInitFor::Wifi,
         timg0.timer0,
         Rng::new(peripherals.RNG),
@@ -52,21 +50,11 @@ fn main() -> ! {
     )
     .unwrap();
 
-    set_debug(1);
+    let mut tls = Tls::new(peripherals.SHA)
+        .unwrap()
+        .with_hardware_rsa(peripherals.RSA);
 
-    // println!("Testing AES");
-    // unsafe {
-    //     esp_mbedtls::mbedtls_aes_self_test(1i32);
-    // }
-    // println!("Testing MD5");
-    // unsafe {
-    //     esp_mbedtls::mbedtls_md5_self_test(1i32);
-    // }
-    println!("Testing RSA");
-    unsafe {
-        esp_mbedtls::mbedtls_rsa_self_test(1i32);
-    }
-    println!("Testing SHA");
+    tls.set_debug(1);
 
     // | Hash Algorithm | Software (cycles) | Hardware (cycles) | Hardware Faster (x times) |
     // |----------------|-------------------|-------------------|---------------------------|
@@ -76,89 +64,75 @@ fn main() -> ! {
     // | SHA-384        |     13,605,806    |         799,532   |           17.02           |
     // | SHA-512        |     13,588,104    |         801,556   |           16.95           |
 
-    unsafe {
-        let before = cycles();
-        esp_mbedtls::mbedtls_sha1_self_test(1i32);
-        let after = cycles();
-        warn!("SHA 1 took {} cycles", after - before);
-        #[cfg(not(feature = "esp32"))]
-        let before = cycles();
-        esp_mbedtls::mbedtls_sha224_self_test(1i32);
-        let after = cycles();
-        warn!("SHA 224 took {} cycles", after - before);
-        let before = cycles();
-        esp_mbedtls::mbedtls_sha256_self_test(1i32);
-        let after = cycles();
-        warn!("SHA 256 took {} cycles", after - before);
-        let before = cycles();
-        esp_mbedtls::mbedtls_sha384_self_test(1i32);
-        let after = cycles();
-        warn!("SHA 384 took {} cycles", after - before);
-        let before = cycles();
-        esp_mbedtls::mbedtls_sha512_self_test(1i32);
-        let after = cycles();
-        warn!("SHA 512 took {} cycles", after - before);
+    for test in enumset::EnumSet::all() {
+        println!("Testing {:?}", test);
 
-        // HW Crypto:
-        // Testing RSA
-        // INFO -   RSA key validation:
-        // INFO - passed
-        //   PKCS#1 encryption :
-        // INFO - passed
-        //   PKCS#1 decryption :
-        // INFO - passed
-        // INFO -   PKCS#1 data sign  :
-        // INFO - passed
-        //   PKCS#1 sig. verify:
-        // INFO - passed
-        // INFO - 10
-        // INFO - pre_cal 16377170
-        // INFO -   MPI test #1 (mul_mpi):
-        // INFO - passed
-        // INFO -   MPI test #2 (div_mpi):
-        // INFO - passed
-        // INFO -   MPI test #3 (exp_mod):
-        // INFO - passed
-        // INFO -   MPI test #4 (inv_mod):
-        // INFO - passed
-        // INFO -   MPI test #5 (simple gcd):
-        // INFO - passed
-        // INFO - 10
-        // INFO - post_cal 17338357
-        // Took 961187 cycles
-        // Done
+        let before = cycles();
 
-        // SW Crypto:
-        // Testing RSA
-        // INFO -   RSA key validation:
-        // INFO - passed
-        //   PKCS#1 encryption :
-        // INFO - passed
-        //   PKCS#1 decryption :
-        // INFO - passed
-        // INFO -   PKCS#1 data sign  :
-        // INFO - passed
-        //   PKCS#1 sig. verify:
-        // INFO - passed
-        // INFO - 10
-        // INFO - pre_cal 19067376
-        // INFO -   MPI test #1 (mul_mpi):
-        // INFO - passed
-        // INFO -   MPI test #2 (div_mpi):
-        // INFO - passed
-        // INFO -   MPI test #3 (exp_mod):
-        // INFO - passed
-        // INFO -   MPI test #4 (inv_mod):
-        // INFO - passed
-        // INFO -   MPI test #5 (simple gcd):
-        // INFO - passed
-        // INFO - 10
-        // INFO - post_cal 20393146
-        // Took 1325770 cycles
-        // Done
+        tls.self_test(test, true);
 
-        // esp_mbedtls::mbedtls_mpi_self_test(1i32);
+        let after = cycles();
+
+        println!("Took {:?} cycles", after.checked_sub(before));
     }
+
+    // HW Crypto:
+    // Testing RSA
+    // INFO -   RSA key validation:
+    // INFO - passed
+    //   PKCS#1 encryption :
+    // INFO - passed
+    //   PKCS#1 decryption :
+    // INFO - passed
+    // INFO -   PKCS#1 data sign  :
+    // INFO - passed
+    //   PKCS#1 sig. verify:
+    // INFO - passed
+    // INFO - 10
+    // INFO - pre_cal 16377170
+    // INFO -   MPI test #1 (mul_mpi):
+    // INFO - passed
+    // INFO -   MPI test #2 (div_mpi):
+    // INFO - passed
+    // INFO -   MPI test #3 (exp_mod):
+    // INFO - passed
+    // INFO -   MPI test #4 (inv_mod):
+    // INFO - passed
+    // INFO -   MPI test #5 (simple gcd):
+    // INFO - passed
+    // INFO - 10
+    // INFO - post_cal 17338357
+    // Took 961187 cycles
+    // Done
+
+    // SW Crypto:
+    // Testing RSA
+    // INFO -   RSA key validation:
+    // INFO - passed
+    //   PKCS#1 encryption :
+    // INFO - passed
+    //   PKCS#1 decryption :
+    // INFO - passed
+    // INFO -   PKCS#1 data sign  :
+    // INFO - passed
+    //   PKCS#1 sig. verify:
+    // INFO - passed
+    // INFO - 10
+    // INFO - pre_cal 19067376
+    // INFO -   MPI test #1 (mul_mpi):
+    // INFO - passed
+    // INFO -   MPI test #2 (div_mpi):
+    // INFO - passed
+    // INFO -   MPI test #3 (exp_mod):
+    // INFO - passed
+    // INFO -   MPI test #4 (inv_mod):
+    // INFO - passed
+    // INFO -   MPI test #5 (simple gcd):
+    // INFO - passed
+    // INFO - 10
+    // INFO - post_cal 20393146
+    // Took 1325770 cycles
+    // Done
 
     println!("Done");
 

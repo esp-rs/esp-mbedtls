@@ -32,12 +32,15 @@ jobs:
           components: rust-src,rustfmt
       - uses: esp-rs/xtensa-toolchain@v1.5
         with:
-          ldproxy: false
+          ldproxy: true
           override: false
       - uses: Swatinem/rust-cache@v2
       - uses: extractions/setup-just@v1
         with:
           just-version: 1.13.0
+
+      - name: mbedtls init
+        run: git submodule update --init --recursive
 
       - name: check
         run: just

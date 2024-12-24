@@ -6,13 +6,15 @@ all: (check "esp32" "esp") (check "esp32s3" "esp") (check "esp32c3" "nightly-202
     
 [private]
 check arch toolchain:
-    cargo +{{ toolchain }} b{{ arch }} --example sync_client
-    cargo +{{ toolchain }} b{{ arch }} --example sync_client_mTLS
-    cargo +{{ toolchain }} b{{ arch }} --example async_client --features="async"
-    cargo +{{ toolchain }} b{{ arch }} --example async_client_mTLS --features="async"
-    cargo +{{ toolchain }} b{{ arch }} --example sync_server
-    cargo +{{ toolchain }} b{{ arch }} --example sync_server_mTLS
-    cargo +{{ toolchain }} b{{ arch }} --example async_server --features="async"
-    cargo +{{ toolchain }} b{{ arch }} --example async_server_mTLS --features="async"
-    cargo +{{ toolchain }} b{{ arch }} --example edge_server --features="async,edge-server"
+    cargo +{{ toolchain }} b{{ arch }} --example sync_client --features="examples"
+    cargo +{{ toolchain }} b{{ arch }} --example sync_client_mTLS --features="examples"
+    cargo +{{ toolchain }} b{{ arch }} --example async_client --features="examples-async"
+    cargo +{{ toolchain }} b{{ arch }} --example async_client_mTLS --features="examples-async"
+    cargo +{{ toolchain }} b{{ arch }} --example sync_server --features="examples"
+    cargo +{{ toolchain }} b{{ arch }} --example sync_server_mTLS --features="examples"
+    cargo +{{ toolchain }} b{{ arch }} --example async_server --features="examples-async"
+    cargo +{{ toolchain }} b{{ arch }} --example async_server_mTLS --features="examples-async"
+    cargo +{{ toolchain }} b{{ arch }} --example edge_server --features="examples-async"
+    cargo +{{ toolchain }} b{{ arch }} --example crypto_self_test --features="examples"
+    cargo +{{ toolchain }} b --example crypto_self_test_std --features="examples-std" --target x86_64-unknown-linux-gnu -Z build-std=std,panic_abort
     cargo +{{ toolchain }} fmt --all -- --check

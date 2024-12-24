@@ -10,6 +10,8 @@
 #![feature(type_alias_impl_trait)]
 #![feature(impl_trait_in_assoc_type)]
 
+use core::net::{IpAddr, Ipv4Addr, SocketAddr};
+
 #[doc(hidden)]
 pub use esp_hal as hal;
 
@@ -25,7 +27,7 @@ use embassy_net::{Config, Stack, StackResources};
 use embassy_executor::Spawner;
 use embassy_time::{Duration, Timer};
 use esp_backtrace as _;
-use esp_mbedtls::{set_debug, Certificates, TlsVersion};
+use esp_mbedtls::{Certificates, Tls, TlsVersion};
 use esp_mbedtls::{TlsError, X509};
 use esp_println::logger::init_logger;
 use esp_println::println;
@@ -68,7 +70,7 @@ pub type HttpsServer = Server<SERVER_SOCKETS, RX_SIZE, 32>;
 async fn main(spawner: Spawner) -> ! {
     init_logger(log::LevelFilter::Info);
 
-    let mut peripherals = esp_hal::init({
+    let peripherals = esp_hal::init({
         let mut config = esp_hal::Config::default();
         config.cpu_clock = CpuClock::max();
         config
@@ -142,12 +144,16 @@ async fn main(spawner: Spawner) -> ! {
         Timer::after(Duration::from_millis(500)).await;
     }
 
-    set_debug(0);
-
     let mut server = HttpsServer::new();
     let buffers = TcpBuffers::<SERVER_SOCKETS, TX_SIZE, RX_SIZE>::new();
-    let tls_buffers = esp_mbedtls::asynch::TlsBuffers::<RX_SIZE, TX_SIZE>::new();
     let tcp = Tcp::new(stack, &buffers);
+
+    use edge_nal::TcpBind;
+
+    let acceptor = tcp
+        .bind(SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), 443))
+        .await
+        .unwrap();
 
     let certificates = Certificates {
         // Use self-signed certificates
@@ -158,19 +164,22 @@ async fn main(spawner: Spawner) -> ! {
         ..Default::default()
     };
 
+    let mut tls = Tls::new(peripherals.SHA)
+        .unwrap()
+        .with_hardware_rsa(peripherals.RSA);
+
+    tls.set_debug(0);
+
     loop {
         let tls_acceptor = esp_mbedtls::asynch::TlsAcceptor::new(
-            &tcp,
-            &tls_buffers,
-            443,
+            &acceptor,
             TlsVersion::Tls1_2,
             certificates,
-            &mut peripherals.SHA,
-        )
-        .await
-        .with_hardware_rsa(&mut peripherals.RSA);
+            tls.reference(),
+        );
         match server
             .run(
+                Some(15 * 1000),
                 edge_nal::WithTimeout::new(15_000, tls_acceptor),
                 HttpHandler,
             )

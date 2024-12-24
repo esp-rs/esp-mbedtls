@@ -14,8 +14,8 @@ use embassy_net::{Config, Ipv4Address, Stack, StackResources};
 use embassy_executor::Spawner;
 use embassy_time::{Duration, Timer};
 use esp_backtrace as _;
-use esp_mbedtls::X509;
-use esp_mbedtls::{asynch::Session, set_debug, Certificates, Mode, TlsVersion};
+use esp_mbedtls::{asynch::Session, Certificates, Mode, TlsVersion};
+use esp_mbedtls::{Tls, X509};
 use esp_println::logger::init_logger;
 use esp_println::{print, println};
 use esp_wifi::wifi::{
@@ -124,12 +124,17 @@ async fn main(spawner: Spawner) -> ! {
         loop {}
     }
 
-    set_debug(0);
+    let mut tls = Tls::new(peripherals.SHA)
+        .unwrap()
+        .with_hardware_rsa(peripherals.RSA);
 
-    let tls = Session::new(
+    tls.set_debug(0);
+
+    let mut session = Session::new(
         &mut socket,
-        "www.google.com",
-        Mode::Client,
+        Mode::Client {
+            servername: c"www.google.com",
+        },
         TlsVersion::Tls1_3,
         Certificates {
             ca_chain: X509::pem(
@@ -138,23 +143,19 @@ async fn main(spawner: Spawner) -> ! {
             .ok(),
             ..Default::default()
         },
-        mk_static!([u8; 4096], [0; 4096]),
-        mk_static!([u8; 4096], [0; 4096]),
-        peripherals.SHA,
+        tls.reference(),
     )
-    .unwrap()
-    .with_hardware_rsa(peripherals.RSA);
+    .unwrap();
 
     println!("Start tls connect");
-    let mut tls = tls.connect().await.unwrap();
+    session.connect().await.unwrap();
 
     println!("connected!");
     let mut buf = [0; 1024];
 
-    use embedded_io_async::Read;
     use embedded_io_async::Write;
 
-    let r = tls
+    let r = session
         .write_all(b"GET /notfound HTTP/1.0\r\nHost: www.google.com\r\n\r\n")
         .await;
     if let Err(e) = r {
@@ -163,7 +164,7 @@ async fn main(spawner: Spawner) -> ! {
     }
 
     loop {
-        let n = match tls.read(&mut buf).await {
+        let n = match session.read(&mut buf).await {
             Ok(n) => n,
             Err(esp_mbedtls::TlsError::Eof) => {
                 break;

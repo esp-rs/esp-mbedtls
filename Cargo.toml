@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["bjoernQ <bjoern.quentin@mobile-j.de>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
-rust-version = "1.75"
+rust-version = "1.82"
 
 [profile.release]
 debug = true
@@ -16,19 +16,21 @@ opt-level = "s"
 opt-level = 3
 
 [profile.dev]
+debug = true
 lto = "fat"
+opt-level = "z"
 
 [profile.dev.package.esp-wifi]
 opt-level = 3
 
 [dependencies]
-esp-hal = { version = "0.21.0" }
-esp-backtrace = { version = "0.14.0", features = [
+esp-hal = { version = "0.21.0", optional = true }
+esp-backtrace = { version = "0.14.0", optional = true, features = [
     "panic-handler",
     "println",
     "exception-handler",
 ] }
-esp-println = { version = "0.12.0", features = ["log"] }
+esp-println = { version = "0.12.0", optional = true, features = ["log"] }
 esp-hal-embassy = { version = "0.4.0", optional = true }
 
 embassy-time = { version = "0.3.0", optional = true }
@@ -43,9 +45,8 @@ embassy-net = { version = "0.4.0", features = [
     "medium-ethernet",
 ], optional = true }
 
-
-esp-wifi = { version = "0.10.1", features = ["phy-enable-usb", "wifi-default"] }
-smoltcp = { version = "0.11.0", default-features = false, features = [
+esp-wifi = { version = "0.10.1", optional = true, features = ["phy-enable-usb", "wifi-default", "sys-logs"] }
+smoltcp = { version = "0.11.0", optional = true, default-features = false, features = [
     "proto-igmp",
     "proto-ipv4",
     "socket-tcp",
@@ -58,7 +59,7 @@ smoltcp = { version = "0.11.0", default-features = false, features = [
 ] }
 log = "0.4.16"
 embedded-io = "0.6.1"
-embedded-io-async = { version = "0.6.0", optional = true }
+embedded-io-async = "0.6.0"
 heapless = "0.8.0"
 critical-section = "1.0.1"
 static_cell = { version = "2.1", features = ["nightly"] }
@@ -69,89 +70,88 @@ edge-http = { version = "0.3.0", optional = true }
 edge-nal = { version = "0.3.0", optional = true }
 edge-nal-embassy = { version = "0.3.0", optional = true }
 cfg-if = "1.0.0"
-esp-alloc = "0.5.0"
+esp-alloc = { version = "0.5.0", optional = true}
+enumset = { version = "1", default-features = false }
+
+[target.'cfg(target_os = "espidf")'.dependencies]
+esp-idf-svc = { version = "0.49.1", features = ["binstart"] }
 
 [[example]]
 name = "crypto_self_test"
-required-features = ["esp-wifi/sys-logs"]
+required-features = ["examples"]
+
+[[example]]
+name = "crypto_self_test_std"
 
 [[example]]
 name = "async_client"
-required-features = ["async"]
+required-features = ["examples-async"]
 
 [[example]]
 name = "async_client_mTLS"
-required-features = ["async"]
+required-features = ["examples-async"]
 
 [[example]]
 name = "async_server"
-required-features = ["async"]
+required-features = ["examples-async"]
 
 [[example]]
 name = "async_server_mTLS"
-required-features = ["async"]
+required-features = ["examples-async"]
 
 [[example]]
 name = "edge_server"
-required-features = ["async", "edge-server"]
+required-features = ["examples-async", "edge-http"]
 
 [features]
+examples = ["esp-hal", "esp-backtrace", "esp-println", "esp-wifi", "smoltcp", "esp-alloc"]
+examples-async = ["examples", "esp-hal-embassy", "embassy-time", "embassy-executor", "embassy-net", "edge-http", "edge-nal", "edge-nal-embassy", "esp-wifi/async", "esp-wifi/embassy-net", "esp-mbedtls/async", "esp-mbedtls/edge-nal"]
+examples-std = ["critical-section/std"]
+
 esp32 = [
-    "esp-hal/esp32",
+    "esp-hal?/esp32",
     "esp-hal-embassy?/esp32",
-    "esp-backtrace/esp32",
-    "esp-println/esp32",
-    "esp-wifi/esp32",
+    "esp-backtrace?/esp32",
+    "esp-println?/esp32",
+    "esp-wifi?/esp32",
     "esp-mbedtls/esp32",
 ]
 esp32c3 = [
-    "esp-hal/esp32c3",
+    "esp-hal?/esp32c3",
     "esp-hal-embassy?/esp32c3",
-    "esp-backtrace/esp32c3",
-    "esp-println/esp32c3",
-    "esp-wifi/esp32c3",
+    "esp-backtrace?/esp32c3",
+    "esp-println?/esp32c3",
+    "esp-wifi?/esp32c3",
     "esp-mbedtls/esp32c3",
 ]
 esp32s2 = [
-    "esp-hal/esp32s2",
+    "esp-hal?/esp32s2",
     "esp-hal-embassy?/esp32s2",
-    "esp-backtrace/esp32s2",
-    "esp-println/esp32s2",
-    "esp-wifi/esp32s2",
+    "esp-backtrace?/esp32s2",
+    "esp-println?/esp32s2",
+    "esp-wifi?/esp32s2",
     "esp-mbedtls/esp32s2",
 ]
 esp32s3 = [
-    "esp-hal/esp32s3",
+    "esp-hal?/esp32s3",
     "esp-hal-embassy?/esp32s3",
-    "esp-backtrace/esp32s3",
-    "esp-println/esp32s3",
-    "esp-wifi/esp32s3",
+    "esp-backtrace?/esp32s3",
+    "esp-println?/esp32s3",
+    "esp-wifi?/esp32s3",
     "esp-mbedtls/esp32s3",
 ]
-async = [
-    "esp-wifi/async",
-    "esp-wifi/embassy-net",
-    "embassy-executor",
-    "embassy-net",
-    "embassy-time",
-    "dep:embedded-io-async",
-    "esp-mbedtls/async",
-    "esp-hal-embassy",
-]
 
-# Helper feature to enable all dependencies required for edge-net
-edge-server = [
-    "edge-nal",
-    "edge-nal-embassy",
-    "edge-http",
-    "esp-mbedtls/edge-nal",
-]
+[build-dependencies]
+embuild = { version = "0.32", features = ["espidf"] }
 
 # Patch until new release
 [patch.crates-io]
-edge-http = { git = "https://github.com/ivmarkov/edge-net", rev = "722f92ac0fffd0cb1e1ce76086cca58df6eb49ee" }
-edge-nal = { git = "https://github.com/ivmarkov/edge-net", rev = "722f92ac0fffd0cb1e1ce76086cca58df6eb49ee" }
-edge-nal-embassy = { git = "https://github.com/ivmarkov/edge-net", rev = "722f92ac0fffd0cb1e1ce76086cca58df6eb49ee" }
+edge-http = { git = "https://github.com/ivmarkov/edge-net" }
+edge-nal = { git = "https://github.com/ivmarkov/edge-net" }
+edge-nal-embassy = { git = "https://github.com/ivmarkov/edge-net" }
+esp-idf-svc = { git = "https://github.com/esp-rs/esp-idf-svc" }
+esp-idf-hal = { git = "https://github.com/esp-rs/esp-idf-hal" }
+esp-idf-sys = { git = "https://github.com/esp-rs/esp-idf-sys" }
 
 # Patch before 0.6.0 got yanked
 embassy-executor = { git = "https://github.com/embassy-rs/embassy", rev = "886580179ff250e15b0fad6448e8ebed6cdabf2b" }

@@ -1,67 +1,63 @@
 #![no_std]
-#![feature(c_variadic)]
-#![allow(incomplete_features)]
 
-use embedded_io::ErrorType;
-#[doc(hidden)]
-pub use esp_hal as hal;
-use hal::{
-    peripheral::Peripheral,
-    peripherals::{RSA, SHA},
-    rsa::Rsa,
-    sha::Sha,
-};
-
-mod compat;
-
-#[cfg(any(feature = "esp32c3", feature = "esp32s2", feature = "esp32s3"))]
-mod bignum;
-#[cfg(not(feature = "esp32"))]
-mod sha;
-
-use core::cell::RefCell;
-use core::ffi::CStr;
+use core::cell::Cell;
+use core::ffi::{c_int, c_uchar, c_ulong, c_void, CStr};
+use core::fmt;
+use core::marker::PhantomData;
 use core::mem::size_of;
+
 use critical_section::Mutex;
 
-use compat::StrBuf;
+use embedded_io::{ErrorKind, ErrorType};
+
+use log::Level;
+
 use embedded_io::Read;
 use embedded_io::Write;
+
 use esp_mbedtls_sys::bindings::*;
-/// Re-export self-tests
-pub use esp_mbedtls_sys::bindings::{
-    // Bignum
-    mbedtls_mpi_self_test,
-    // RSA
-    mbedtls_rsa_self_test,
-    // SHA,
-    mbedtls_sha1_self_test,
-    mbedtls_sha224_self_test,
-    mbedtls_sha256_self_test,
-    mbedtls_sha384_self_test,
-    mbedtls_sha512_self_test,
-};
-use esp_mbedtls_sys::c_types::*;
 
-/// Hold the RSA peripheral for cryptographic operations.
-///
-/// This is initialized when `with_hardware_rsa()` is called on a [Session] and is set back to None
-/// when the session that called `with_hardware_rsa()` is dropped.
-///
-/// Note: Due to implementation constraints, this session and every other session will use the
-/// hardware accelerated RSA driver until the session called with this function is dropped.
-static mut RSA_REF: Option<Rsa<esp_hal::Blocking>> = None;
+// For `malloc`, `calloc` and `free` which are provided by `esp-wifi` on baremetal
+#[cfg(any(
+    feature = "esp32",
+    feature = "esp32c3",
+    feature = "esp32s2",
+    feature = "esp32s3"
+))]
+use esp_wifi as _;
 
-/// Hold the SHA peripheral for cryptographic operations.
-static SHARED_SHA: Mutex<RefCell<Option<Sha<'static>>>> = Mutex::new(RefCell::new(None));
+#[cfg(feature = "edge-nal")]
+mod edge_nal;
+#[cfg(any(
+    feature = "esp32",
+    feature = "esp32c3",
+    feature = "esp32s2",
+    feature = "esp32s3"
+))]
+mod esp_hal;
 
-// these will come from esp-wifi (i.e. this can only be used together with esp-wifi)
+/// Re-export of the `embedded-io` crate so that users don't have to explicitly depend on it
+/// to use e.g. `write_all` or `read_exact`.
+pub mod io {
+    pub use embedded_io::*;
+}
+
+unsafe fn aligned_calloc(_align: usize, size: usize) -> *const c_void {
+    // if _align > 4 {
+    //     panic!("Cannot allocate with alignment > 4 bytes: {_align}");
+    // }
+
+    calloc(1, size)
+}
+
+// Baremetal: these will come from `esp-wifi` (i.e. this can only be used together with esp-wifi)
+// STD: these will come from `libc` indirectly via the Rust standard library
 extern "C" {
-    fn free(ptr: *const u8);
+    fn free(ptr: *const c_void);
 
-    fn calloc(number: u32, size: u32) -> *const u8;
+    fn calloc(number: usize, size: usize) -> *const c_void;
 
-    fn random() -> u32;
+    fn random() -> c_ulong;
 }
 
 macro_rules! error_checked {
@@ -84,68 +80,89 @@ macro_rules! error_checked {
     }};
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Mode {
-    Client,
+/// The mode of operation of a TLS `Session` instance
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Mode<'a> {
+    /// Client mode
+    Client {
+        /// The server name to check against the received server certificate.
+        servername: &'a CStr,
+    },
+    /// Server mode
     Server,
 }
 
-impl Mode {
+impl Mode<'_> {
     fn to_mbed_tls(&self) -> i32 {
         match self {
-            Mode::Client => MBEDTLS_SSL_IS_CLIENT as i32,
+            Mode::Client { .. } => MBEDTLS_SSL_IS_CLIENT as i32,
             Mode::Server => MBEDTLS_SSL_IS_SERVER as i32,
         }
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+/// The minimum TLS version that will be supported by a particular `Session` instance
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TlsVersion {
+    /// TLS 1.2
     Tls1_2,
+    /// TLS 1.3
     Tls1_3,
 }
 
 impl TlsVersion {
-    fn to_mbed_tls_minor(&self) -> i32 {
+    fn to_mbed_tls_version(&self) -> u32 {
         match self {
-            TlsVersion::Tls1_2 => MBEDTLS_SSL_MINOR_VERSION_3 as i32,
-            TlsVersion::Tls1_3 => MBEDTLS_SSL_MINOR_VERSION_4 as i32,
+            TlsVersion::Tls1_2 => 0x303,
+            TlsVersion::Tls1_3 => 0x304,
         }
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+/// Error type for TLS operations
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TlsError {
+    /// A `Tls` instance has already been created
+    AlreadyCreated,
+    /// An unknown error occurred
     Unknown,
+    /// Out of heap
     OutOfMemory,
+    /// MBedTLS error
     MbedTlsError(i32),
+    /// End of stream
     Eof,
+    /// X509 certificate missing null terminator
     X509MissingNullTerminator,
     /// The client has given no certificates for the request
     NoClientCertificate,
-    /// Errors from the edge-nal-embassy crate
-    #[cfg(feature = "edge-nal")]
-    TcpError(edge_nal_embassy::TcpError),
+    /// IO error
+    Io(ErrorKind),
+}
+
+impl fmt::Display for TlsError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::AlreadyCreated => write!(f, "TLS already created"),
+            Self::Unknown => write!(f, "Unknown error"),
+            Self::OutOfMemory => write!(f, "Out of memory"),
+            Self::MbedTlsError(e) => write!(f, "MbedTLS error: {e}"),
+            Self::Eof => write!(f, "End of stream"),
+            Self::X509MissingNullTerminator => {
+                write!(f, "X509 certificate missing null terminator")
+            }
+            Self::NoClientCertificate => write!(f, "No client certificate"),
+            Self::Io(e) => write!(f, "IO error: {e:?}"),
+        }
+    }
 }
 
 impl embedded_io::Error for TlsError {
     fn kind(&self) -> embedded_io::ErrorKind {
-        embedded_io::ErrorKind::Other
-    }
-}
-
-#[cfg(feature = "edge-nal")]
-impl From<edge_nal_embassy::TcpError> for TlsError {
-    fn from(value: edge_nal_embassy::TcpError) -> Self {
-        TlsError::TcpError(value)
-    }
-}
-
-#[allow(unused)]
-pub fn set_debug(level: u32) {
-    #[cfg(not(target_arch = "xtensa"))]
-    unsafe {
-        mbedtls_debug_set_threshold(level as c_int);
+        match self {
+            Self::Io(e) => *e,
+            _ => embedded_io::ErrorKind::Other,
+        }
     }
 }
 
@@ -275,20 +292,24 @@ pub struct Certificates<'a> {
 
 impl<'a> Default for Certificates<'a> {
     fn default() -> Self {
-        Self {
-            ca_chain: Default::default(),
-            certificate: Default::default(),
-            private_key: Default::default(),
-            password: Default::default(),
-        }
+        Self::new()
     }
 }
 
 impl<'a> Certificates<'a> {
+    /// Create a new instance of [Certificates] with no certificates whatsoever
+    pub const fn new() -> Self {
+        Self {
+            ca_chain: None,
+            certificate: None,
+            private_key: None,
+            password: None,
+        }
+    }
+
     // Initialize the SSL using this set of certificates
     fn init_ssl(
         &self,
-        servername: &str,
         mode: Mode,
         min_version: TlsVersion,
     ) -> Result<
@@ -309,31 +330,50 @@ impl<'a> Certificates<'a> {
             "Both certificate and private_key must be Some() or None"
         );
 
+        // TODO: Allocate a lot of these things:
+        // - In one chunk
+        // - With a `Box`, which is safer
+        // - Consider reconfiguring mbedtls with the custom malloc/free
+        //   callbacks that we can actually redirect to `Box`
+        //
+        // This way the lib would become completely independent from `esp-wifi`
+        // and would simply requre a Rust global allocator to be set.
+        // (Or we can even implement a mode of operation of the lib where
+        //  it uses a fixed memory pool, and then we layer on top our own little allocator)
         unsafe {
             error_checked!(psa_crypto_init())?;
 
-            let drbg_context = calloc(1, size_of::<mbedtls_ctr_drbg_context>() as u32)
-                as *mut mbedtls_ctr_drbg_context;
+            let drbg_context = aligned_calloc(
+                align_of::<mbedtls_ctr_drbg_context>(),
+                size_of::<mbedtls_ctr_drbg_context>(),
+            ) as *mut mbedtls_ctr_drbg_context;
             if drbg_context.is_null() {
                 return Err(TlsError::OutOfMemory);
             }
 
-            let ssl_context =
-                calloc(1, size_of::<mbedtls_ssl_context>() as u32) as *mut mbedtls_ssl_context;
+            let ssl_context = aligned_calloc(
+                align_of::<mbedtls_ssl_context>(),
+                size_of::<mbedtls_ssl_context>(),
+            ) as *mut mbedtls_ssl_context;
             if ssl_context.is_null() {
                 free(drbg_context as *const _);
                 return Err(TlsError::OutOfMemory);
             }
 
-            let ssl_config =
-                calloc(1, size_of::<mbedtls_ssl_config>() as u32) as *mut mbedtls_ssl_config;
+            let ssl_config = aligned_calloc(
+                align_of::<mbedtls_ssl_config>(),
+                size_of::<mbedtls_ssl_config>(),
+            ) as *mut mbedtls_ssl_config;
             if ssl_config.is_null() {
                 free(drbg_context as *const _);
                 free(ssl_context as *const _);
                 return Err(TlsError::OutOfMemory);
             }
 
-            let crt = calloc(1, size_of::<mbedtls_x509_crt>() as u32) as *mut mbedtls_x509_crt;
+            let crt = aligned_calloc(
+                align_of::<mbedtls_x509_crt>(),
+                size_of::<mbedtls_x509_crt>(),
+            ) as *mut mbedtls_x509_crt;
             if crt.is_null() {
                 free(drbg_context as *const _);
                 free(ssl_context as *const _);
@@ -341,8 +381,10 @@ impl<'a> Certificates<'a> {
                 return Err(TlsError::OutOfMemory);
             }
 
-            let certificate =
-                calloc(1, size_of::<mbedtls_x509_crt>() as u32) as *mut mbedtls_x509_crt;
+            let certificate = aligned_calloc(
+                align_of::<mbedtls_x509_crt>(),
+                size_of::<mbedtls_x509_crt>(),
+            ) as *mut mbedtls_x509_crt;
             if certificate.is_null() {
                 free(drbg_context as *const _);
                 free(ssl_context as *const _);
@@ -351,8 +393,10 @@ impl<'a> Certificates<'a> {
                 return Err(TlsError::OutOfMemory);
             }
 
-            let private_key =
-                calloc(1, size_of::<mbedtls_pk_context>() as u32) as *mut mbedtls_pk_context;
+            let private_key = aligned_calloc(
+                align_of::<mbedtls_pk_context>(),
+                size_of::<mbedtls_pk_context>(),
+            ) as *mut mbedtls_pk_context;
             if private_key.is_null() {
                 free(drbg_context as *const _);
                 free(ssl_context as *const _);
@@ -370,13 +414,17 @@ impl<'a> Certificates<'a> {
             mbedtls_x509_crt_init(certificate);
             // Initialize private key
             mbedtls_pk_init(private_key);
-            (*ssl_config).private_f_dbg = Some(dbg_print);
-            // Init RNG
+
+            //(*ssl_config).private_f_dbg = Some(dbg_print);
+            mbedtls_ssl_conf_dbg(ssl_config, Some(dbg_print), core::ptr::null_mut());
+
             mbedtls_ctr_drbg_init(drbg_context);
+
+            // Init RNG
             mbedtls_ssl_conf_rng(ssl_config, Some(rng), drbg_context as *mut c_void);
 
             // Closure to free all allocated resources in case of an error.
-            let cleanup = || {
+            let cleanup = move || {
                 mbedtls_ctr_drbg_free(drbg_context);
                 mbedtls_ssl_config_free(ssl_config);
                 mbedtls_ssl_free(ssl_context);
@@ -401,11 +449,9 @@ impl<'a> Certificates<'a> {
                 cleanup
             )?;
 
-            mbedtls_ssl_conf_min_version(
-                ssl_config,
-                MBEDTLS_SSL_MAJOR_VERSION_3 as i32,
-                min_version.to_mbed_tls_minor(),
-            );
+            // Set the minimum TLS version
+            // Use a ddirect field modified for compatibility with the `esp-idf-svc` mbedtls
+            (*ssl_config).private_min_tls_version = min_version.to_mbed_tls_version();
 
             mbedtls_ssl_conf_authmode(
                 ssl_config,
@@ -418,15 +464,9 @@ impl<'a> Certificates<'a> {
                 },
             );
 
-            if mode == Mode::Client {
-                let mut hostname = StrBuf::new();
-                hostname.append(servername);
-                hostname.append_char('\0');
+            if let Mode::Client { servername } = mode {
                 error_checked!(
-                    mbedtls_ssl_set_hostname(
-                        ssl_context,
-                        hostname.as_str_ref().as_ptr() as *const c_char
-                    ),
+                    mbedtls_ssl_set_hostname(ssl_context, servername.as_ptr(),),
                     cleanup
                 )?;
             }
@@ -495,7 +535,138 @@ impl<'a> Certificates<'a> {
     }
 }
 
-pub struct Session<T> {
+/// A TLS self-test type
+#[derive(enumset::EnumSetType, Debug)]
+pub enum TlsTest {
+    Mpi,
+    Rsa,
+    Sha1,
+    Sha224,
+    Sha256,
+    Sha384,
+    Sha512,
+    Aes,
+    Md5,
+}
+
+impl fmt::Display for TlsTest {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            TlsTest::Mpi => write!(f, "MPI"),
+            TlsTest::Rsa => write!(f, "RSA"),
+            TlsTest::Sha1 => write!(f, "SHA1"),
+            TlsTest::Sha224 => write!(f, "SHA224"),
+            TlsTest::Sha256 => write!(f, "SHA256"),
+            TlsTest::Sha384 => write!(f, "SHA384"),
+            TlsTest::Sha512 => write!(f, "SHA512"),
+            TlsTest::Aes => write!(f, "AES"),
+            TlsTest::Md5 => write!(f, "MD5"),
+        }
+    }
+}
+
+static TLS_CREATED: Mutex<Cell<bool>> = Mutex::new(Cell::new(false));
+
+/// A TLS instance
+///
+/// Represents an instance of the MbedTLS library.
+/// Only one such instance can be active at any point in time.
+pub struct Tls<'d>(PhantomData<&'d mut ()>);
+
+impl<'d> Tls<'d> {
+    /// Create a new instance of the `Tls` type.
+    ///
+    /// Note that there could be only one active `Tls` instance at any point in time,
+    /// and the function will return an error if there is already an active instance.
+    #[cfg(not(any(
+        feature = "esp32",
+        feature = "esp32c3",
+        feature = "esp32s2",
+        feature = "esp32s3"
+    )))]
+    pub fn new() -> Result<Self, TlsError> {
+        Self::create()
+    }
+
+    pub(crate) fn create() -> Result<Self, TlsError> {
+        critical_section::with(|cs| {
+            let created = TLS_CREATED.borrow(cs).get();
+
+            if created {
+                return Err(TlsError::AlreadyCreated);
+            }
+
+            TLS_CREATED.borrow(cs).set(true);
+
+            Ok(Self(PhantomData))
+        })
+    }
+
+    /// Set the MbedTLS debug level (0 - 5)
+    #[allow(unused)]
+    pub fn set_debug(&mut self, level: u32) {
+        #[cfg(not(target_os = "espidf"))]
+        unsafe {
+            mbedtls_debug_set_threshold(level as c_int);
+        }
+    }
+
+    /// Run a self-test on the MbedTLS library
+    ///
+    /// # Arguments
+    ///
+    /// * `test` - The test to run
+    /// * `verbose` - Whether to run the test in verbose mode
+    pub fn self_test(&mut self, test: TlsTest, verbose: bool) -> bool {
+        let verbose = verbose as _;
+
+        let result = unsafe {
+            match test {
+                TlsTest::Mpi => mbedtls_mpi_self_test(verbose),
+                TlsTest::Rsa => mbedtls_rsa_self_test(verbose),
+                TlsTest::Sha1 => mbedtls_sha1_self_test(verbose),
+                TlsTest::Sha224 => mbedtls_sha224_self_test(verbose),
+                TlsTest::Sha256 => mbedtls_sha256_self_test(verbose),
+                TlsTest::Sha384 => mbedtls_sha384_self_test(verbose),
+                TlsTest::Sha512 => mbedtls_sha512_self_test(verbose),
+                TlsTest::Aes => mbedtls_aes_self_test(verbose),
+                TlsTest::Md5 => mbedtls_md5_self_test(verbose),
+            }
+        };
+
+        result != 0
+    }
+
+    /// Get a reference to the `Tls` instance
+    ///
+    /// Each `Session` needs a reference to (the) active `Tls` instance
+    /// throughout its lifetime.
+    pub fn reference(&self) -> TlsReference<'_> {
+        TlsReference(PhantomData)
+    }
+}
+
+/// A reference to (the) active `Tls` instance
+///
+/// Used instead of just `&'a Tls` so that the invariant `'d` lifetime of the `Tls` instance
+/// is not exposed in the `Session` type.
+#[allow(unused)]
+#[derive(Debug, Copy, Clone)]
+pub struct TlsReference<'a>(PhantomData<&'a ()>);
+
+/// A TLS session state
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
+enum SessionState {
+    /// Initial state (TLS handshake not started yet)
+    Initial,
+    /// Handshake complete
+    Connected,
+    /// End of stream reached
+    Eof,
+}
+
+/// A blocking TLS session over a stream represented by `embedded-io`'s `Read` and `Write` traits.
+pub struct Session<'a, T> {
     stream: T,
     drbg_context: *mut mbedtls_ctr_drbg_context,
     ssl_context: *mut mbedtls_ssl_context,
@@ -503,22 +674,22 @@ pub struct Session<T> {
     crt: *mut mbedtls_x509_crt,
     client_crt: *mut mbedtls_x509_crt,
     private_key: *mut mbedtls_pk_context,
-    // Indicate if this session is the one holding the RSA ref
-    owns_rsa: bool,
+    state: SessionState,
+    _tls_ref: TlsReference<'a>,
 }
 
-impl<T> Session<T> {
+impl<'a, T> Session<'a, T> {
     /// Create a session for a TLS stream.
     ///
     /// # Arguments
     ///
     /// * `stream` - The stream for the connection.
-    /// * `servername` - The hostname to check against the received server certificate. It sets the ServerName TLS extension, too, if that extension is enabled. (client-side only)
     /// * `mode` - Use [Mode::Client] if you are running a client. [Mode::Server] if you are
-    /// running a server.
+    ///   running a server.
     /// * `min_version` - The minimum TLS version for the connection, that will be accepted.
     /// * `certificates` - Certificate chain for the connection. Will play a different role
-    /// depending on if running as client or server. See [Certificates] for more information.
+    ///   depending on if running as client or server. See [Certificates] for more information.
+    /// * `tls_ref` - A reference to the active `Tls` instance.
     ///
     /// # Errors
     ///
@@ -527,20 +698,13 @@ impl<T> Session<T> {
     /// invalid format.
     pub fn new(
         stream: T,
-        servername: &str,
         mode: Mode,
         min_version: TlsVersion,
         certificates: Certificates,
-        sha: impl Peripheral<P = SHA>,
+        tls_ref: TlsReference<'a>,
     ) -> Result<Self, TlsError> {
-        critical_section::with(|cs| {
-            SHARED_SHA
-                .borrow_ref_mut(cs)
-                .replace(unsafe { core::mem::transmute(Sha::new(sha)) })
-        });
-
         let (drbg_context, ssl_context, ssl_config, crt, client_crt, private_key) =
-            certificates.init_ssl(servername, mode, min_version)?;
+            certificates.init_ssl(mode, min_version)?;
         return Ok(Self {
             stream,
             drbg_context,
@@ -549,34 +713,33 @@ impl<T> Session<T> {
             crt,
             client_crt,
             private_key,
-            owns_rsa: false,
+            state: SessionState::Initial,
+            _tls_ref: tls_ref,
         });
-    }
-
-    /// Enable the use of the hardware accelerated RSA peripheral for the [Session].
-    ///
-    /// Note: Due to implementation constraints, this session and every other session will use the
-    /// hardware accelerated RSA driver until the session called with this function is dropped.
-    ///
-    /// # Arguments
-    ///
-    /// * `rsa` - The RSA peripheral from the HAL
-    pub fn with_hardware_rsa(mut self, rsa: impl Peripheral<P = RSA>) -> Self {
-        unsafe { RSA_REF = core::mem::transmute(Some(Rsa::new(rsa))) }
-        self.owns_rsa = true;
-        self
     }
 }
 
-impl<T> Session<T>
+impl<'a, T> Session<'a, T>
 where
     T: Read + Write,
 {
-    pub fn connect<'b>(self) -> Result<ConnectedSession<T>, TlsError> {
+    /// Negotiate the TLS connection
+    ///
+    /// This function will perform the TLS handshake with the server.
+    ///
+    /// Note that calling it is not mandatory, because the TLS session is anyway
+    /// negotiated during the first read or write operation.
+    pub fn connect(&mut self) -> Result<(), TlsError> {
+        if matches!(self.state, SessionState::Connected) {
+            return Ok(());
+        } else if matches!(self.state, SessionState::Eof) {
+            return Err(TlsError::Eof);
+        }
+
         unsafe {
             mbedtls_ssl_set_bio(
                 self.ssl_context,
-                core::ptr::addr_of!(self) as *mut c_void,
+                self as *mut _ as *mut c_void,
                 Some(Self::send),
                 Some(Self::receive),
                 None,
@@ -584,15 +747,19 @@ where
 
             loop {
                 let res = mbedtls_ssl_handshake(self.ssl_context);
+                log::debug!("mbedtls_ssl_handshake: {res:x}");
                 if res == 0 {
                     // success
                     break;
                 }
                 if res < 0 && res != MBEDTLS_ERR_SSL_WANT_READ && res != MBEDTLS_ERR_SSL_WANT_WRITE
+                    // See https://github.com/Mbed-TLS/mbedtls/issues/8749
+                    && res != MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET
                 {
                     // real error
                     // Reference: https://os.mbed.com/teams/sandbox/code/mbedtls/docs/tip/ssl_8h.html#a4a37e497cd08c896870a42b1b618186e
                     mbedtls_ssl_session_reset(self.ssl_context);
+                    #[allow(non_snake_case)]
                     return Err(match res {
                         MBEDTLS_ERR_SSL_NO_CLIENT_CERTIFICATE => TlsError::NoClientCertificate,
                         _ => TlsError::MbedTlsError(res),
@@ -602,8 +769,73 @@ where
                 // try again immediately
             }
 
-            Ok(ConnectedSession { session: self })
+            self.state = SessionState::Connected;
+
+            Ok(())
         }
+    }
+
+    /// Read unencrypted data from the TLS connection
+    ///
+    /// # Arguments
+    ///
+    /// * `buf` - The buffer to read the data into
+    ///
+    /// # Returns
+    ///
+    /// The number of bytes read or an error
+    pub fn read(&mut self, buf: &mut [u8]) -> Result<usize, TlsError> {
+        self.connect()?;
+
+        loop {
+            let res = self.internal_read(buf);
+            #[allow(non_snake_case)]
+            match res {
+                // See https://github.com/Mbed-TLS/mbedtls/issues/8749
+                MBEDTLS_ERR_SSL_WANT_READ | MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET => continue, // no data
+                0_i32..=i32::MAX => return Ok(res as usize), // data
+                i32::MIN..=-1_i32 => return Err(TlsError::MbedTlsError(res)), // error
+            }
+        }
+    }
+
+    /// Write unencrypted data to the TLS connection
+    ///
+    /// Arguments:
+    ///
+    /// * `data` - The data to write
+    ///
+    /// Returns:
+    ///
+    /// The number of bytes written or an error
+    pub fn write(&mut self, data: &[u8]) -> Result<usize, TlsError> {
+        self.connect()?;
+
+        loop {
+            let res = self.internal_write(data);
+            #[allow(non_snake_case)]
+            match res {
+                // See https://github.com/Mbed-TLS/mbedtls/issues/8749
+                MBEDTLS_ERR_SSL_WANT_WRITE | MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET => {
+                    continue
+                } // no data
+                0_i32..=i32::MAX => return Ok(res as usize), // data
+                i32::MIN..=-1_i32 => return Err(TlsError::MbedTlsError(res)), // error
+            }
+        }
+    }
+
+    /// Flush the TLS connection
+    ///
+    /// This function will flush the TLS connection, ensuring that all data is sent.
+    ///
+    /// Returns:
+    ///
+    /// An error if the flush failed
+    pub fn flush(&mut self) -> Result<(), TlsError> {
+        self.connect()?;
+
+        self.stream.flush().map_err(|_| TlsError::Unknown)
     }
 
     fn internal_write(&mut self, buf: &[u8]) -> i32 {
@@ -671,16 +903,10 @@ where
     }
 }
 
-impl<T> Drop for Session<T> {
+impl<T> Drop for Session<'_, T> {
     fn drop(&mut self) {
         log::debug!("session dropped - freeing memory");
         unsafe {
-            // If the struct that owns the RSA reference is dropped
-            // we remove RSA in static for safety
-            if self.owns_rsa {
-                RSA_REF = core::mem::transmute(None::<RSA>);
-            }
-            critical_section::with(|cs| SHARED_SHA.borrow_ref_mut(cs).take());
             mbedtls_ssl_close_notify(self.ssl_context);
             mbedtls_ctr_drbg_free(self.drbg_context);
             mbedtls_ssl_config_free(self.ssl_config);
@@ -698,59 +924,63 @@ impl<T> Drop for Session<T> {
     }
 }
 
-pub struct ConnectedSession<T>
-where
-    T: Read + Write,
-{
-    session: Session<T>,
-}
-
-impl<T> ErrorType for ConnectedSession<T>
+impl<T> ErrorType for Session<'_, T>
 where
     T: Read + Write,
 {
     type Error = TlsError;
 }
 
-impl<T> Read for ConnectedSession<T>
+impl<T> Read for Session<'_, T>
 where
     T: Read + Write,
 {
     fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error> {
-        loop {
-            let res = self.session.internal_read(buf);
-            match res {
-                MBEDTLS_ERR_SSL_WANT_READ | MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET => continue, // no data
-                0_i32..=i32::MAX => return Ok(res as usize), // data
-                i32::MIN..=-1_i32 => return Err(TlsError::MbedTlsError(res)), // error
-            }
-        }
+        Session::read(self, buf)
     }
 }
 
-impl<T> Write for ConnectedSession<T>
+impl<T> Write for Session<'_, T>
 where
     T: Read + Write,
 {
     fn write(&mut self, buf: &[u8]) -> Result<usize, Self::Error> {
-        let res = self.session.internal_write(buf);
-        Ok(res as usize)
+        Session::write(self, buf)
     }
 
     fn flush(&mut self) -> Result<(), Self::Error> {
-        self.session.stream.flush().map_err(|_| TlsError::Unknown)
+        Session::flush(self)
     }
 }
 
 #[cfg(feature = "async")]
 pub mod asynch {
+    use core::future::Future;
+    use core::pin::pin;
+    use core::task::{Context, Poll};
+
+    use embedded_io::Error;
+
     use super::*;
 
-    /// Implements edge-nal traits
-    #[cfg(feature = "edge-nal")]
-    pub use crate::compat::edge_nal_compat::*;
+    /// Re-export of the `embedded-io-async` crate so that users don't have to explicitly depend on it
+    /// to use e.g. `write_all` or `read_exact`.
+    pub mod io {
+        pub use embedded_io_async::*;
+    }
 
-    pub struct Session<'a, T, const RX_SIZE: usize = 4096, const TX_SIZE: usize = 4096> {
+    /// Re-export of the `edge-nal` crate so that users don't have to explicitly depend on it
+    /// to use e.g. `TlsAccept` and `TlsConnect` methods.
+    #[cfg(feature = "edge-nal")]
+    pub mod nal {
+        pub use crate::edge_nal::*;
+    }
+
+    #[cfg(feature = "edge-nal")]
+    pub use super::edge_nal::*;
+
+    /// An async TLS session over a stream represented by `embedded-io-async`'s `Read` and `Write` traits.
+    pub struct Session<'a, T> {
         pub(crate) stream: T,
         drbg_context: *mut mbedtls_ctr_drbg_context,
         ssl_context: *mut mbedtls_ssl_context,
@@ -758,24 +988,24 @@ pub mod asynch {
         crt: *mut mbedtls_x509_crt,
         client_crt: *mut mbedtls_x509_crt,
         private_key: *mut mbedtls_pk_context,
-        eof: bool,
-        rx_buffer: BufferedBytes<'a, RX_SIZE>,
-        tx_buffer: BufferedBytes<'a, TX_SIZE>,
-        owns_rsa: bool,
+        state: SessionState,
+        read_byte: Option<u8>,
+        write_byte: Option<u8>,
+        _token: TlsReference<'a>,
     }
 
-    impl<'a, T, const RX_SIZE: usize, const TX_SIZE: usize> Session<'a, T, RX_SIZE, TX_SIZE> {
+    impl<'a, T> Session<'a, T> {
         /// Create a session for a TLS stream.
         ///
         /// # Arguments
         ///
         /// * `stream` - The stream for the connection.
-        /// * `servername` - The hostname to check against the received server certificate. It sets the ServerName TLS extension, too, if that extension is enabled. (client-side only)
         /// * `mode` - Use [Mode::Client] if you are running a client. [Mode::Server] if you are
-        /// running a server.
+        ///   running a server.
         /// * `min_version` - The minimum TLS version for the connection, that will be accepted.
         /// * `certificates` - Certificate chain for the connection. Will play a different role
-        /// depending on if running as client or server. See [Certificates] for more information.
+        ///   depending on if running as client or server. See [Certificates] for more information.
+        /// * `tls_ref` - A reference to the active `Tls` instance.
         ///
         /// # Errors
         ///
@@ -784,23 +1014,13 @@ pub mod asynch {
         /// invalid format.
         pub fn new(
             stream: T,
-            servername: &str,
             mode: Mode,
             min_version: TlsVersion,
             certificates: Certificates,
-
-            rx_buffer: &'a mut [u8; RX_SIZE],
-            tx_buffer: &'a mut [u8; TX_SIZE],
-            sha: impl Peripheral<P = SHA>,
+            tls_ref: TlsReference<'a>,
         ) -> Result<Self, TlsError> {
-            critical_section::with(|cs| {
-                SHARED_SHA
-                    .borrow_ref_mut(cs)
-                    .replace(unsafe { core::mem::transmute(Sha::new(sha)) })
-            });
-
             let (drbg_context, ssl_context, ssl_config, crt, client_crt, private_key) =
-                certificates.init_ssl(servername, mode, min_version)?;
+                certificates.init_ssl(mode, min_version)?;
             return Ok(Self {
                 stream,
                 drbg_context,
@@ -809,38 +1029,18 @@ pub mod asynch {
                 crt,
                 client_crt,
                 private_key,
-                eof: false,
-                rx_buffer: BufferedBytes::new(rx_buffer),
-                tx_buffer: BufferedBytes::new(tx_buffer),
-                owns_rsa: false,
+                state: SessionState::Initial,
+                read_byte: None,
+                write_byte: None,
+                _token: tls_ref,
             });
-        }
-
-        /// Enable the use of the hardware accelerated RSA peripheral for the [Session].
-        ///
-        /// Note: Due to implementation constraints, this session and every other session will use the
-        /// hardware accelerated RSA driver until the session called with this function is dropped.
-        ///
-        /// # Arguments
-        ///
-        /// * `rsa` - The RSA peripheral from the HAL
-        pub fn with_hardware_rsa(mut self, rsa: impl Peripheral<P = RSA>) -> Self {
-            unsafe { RSA_REF = core::mem::transmute(Some(Rsa::new(rsa))) }
-            self.owns_rsa = true;
-            self
         }
     }
 
-    impl<T, const RX_SIZE: usize, const TX_SIZE: usize> Drop for Session<'_, T, RX_SIZE, TX_SIZE> {
+    impl<T> Drop for Session<'_, T> {
         fn drop(&mut self) {
             log::debug!("session dropped - freeing memory");
             unsafe {
-                // If the struct that owns the RSA reference is dropped
-                // we remove RSA in static for safety
-                if self.owns_rsa {
-                    RSA_REF = core::mem::transmute(None::<RSA>);
-                }
-                critical_section::with(|cs| SHARED_SHA.borrow_ref_mut(cs).take());
                 mbedtls_ssl_close_notify(self.ssl_context);
                 mbedtls_ctr_drbg_free(self.drbg_context);
                 mbedtls_ssl_config_free(self.ssl_config);
@@ -858,337 +1058,467 @@ pub mod asynch {
         }
     }
 
-    impl<'a, T, const RX_SIZE: usize, const TX_SIZE: usize> Session<'a, T, RX_SIZE, TX_SIZE>
+    impl<'a, T> Session<'a, T>
     where
         T: embedded_io_async::Read + embedded_io_async::Write,
     {
-        pub async fn connect(
-            mut self,
-        ) -> Result<AsyncConnectedSession<'a, T, RX_SIZE, TX_SIZE>, TlsError> {
-            unsafe {
-                mbedtls_ssl_set_bio(
-                    self.ssl_context,
-                    core::ptr::addr_of!(self) as *mut c_void,
-                    Some(Self::sync_send),
-                    Some(Self::sync_receive),
-                    None,
-                );
+        /// Negotiate the TLS connection
+        ///
+        /// This function will perform the TLS handshake with the server.
+        ///
+        /// Note that calling it is not mandatory, because the TLS session is anyway
+        /// negotiated during the first read or write operation.
+        pub async fn connect(&mut self) -> Result<(), TlsError> {
+            match self.state {
+                SessionState::Initial => {
+                    log::debug!("Establishing SSL connection");
 
-                loop {
-                    let res = mbedtls_ssl_handshake(self.ssl_context);
-                    log::debug!("mbedtls_ssl_handshake: {res}");
-                    if res == 0 {
-                        // success
-                        break;
+                    self.io(|ssl| unsafe { mbedtls_ssl_handshake(ssl) }).await?;
+                    if matches!(self.state, SessionState::Eof) {
+                        return Err(TlsError::Eof);
                     }
-                    if res < 0
-                        && res != MBEDTLS_ERR_SSL_WANT_READ
-                        && res != MBEDTLS_ERR_SSL_WANT_WRITE
-                    {
-                        // real error
-                        // Reference: https://os.mbed.com/teams/sandbox/code/mbedtls/docs/tip/ssl_8h.html#a4a37e497cd08c896870a42b1b618186e
-                        mbedtls_ssl_session_reset(self.ssl_context);
-                        return Err(match res {
-                            MBEDTLS_ERR_SSL_NO_CLIENT_CERTIFICATE => TlsError::NoClientCertificate,
-                            _ => TlsError::MbedTlsError(res),
-                        });
-                    } else {
-                        if !self.tx_buffer.empty() {
-                            log::debug!("Having data to send to stream");
-                            let data = self.tx_buffer.pull(TX_SIZE);
-                            log::debug!(
-                                "pulled {} bytes from tx_buffer ... send to stream",
-                                data.len()
-                            );
-                            self.stream
-                                .write(data)
-                                .await
-                                .map_err(|_| TlsError::Unknown)?;
-                        }
 
-                        if res == MBEDTLS_ERR_SSL_WANT_READ {
-                            let mut buf = [0u8; RX_SIZE];
-                            let res = self
-                                .stream
-                                .read(&mut buf[..self.rx_buffer.remaining()])
-                                .await
-                                .map_err(|_| TlsError::Unknown)?;
-                            if res > 0 {
-                                log::debug!("push {} bytes to rx-buffer", res);
-                                self.rx_buffer.push(&buf[..res]).ok();
-                            }
-                        }
-                    }
+                    self.state = SessionState::Connected;
+
+                    Ok(())
                 }
-                self.drain_tx_buffer().await?;
-
-                Ok(AsyncConnectedSession { session: self })
+                SessionState::Connected => Ok(()),
+                SessionState::Eof => Err(TlsError::Eof),
             }
         }
 
-        async fn drain_tx_buffer(&mut self) -> Result<(), TlsError> {
-            unsafe {
-                mbedtls_ssl_set_bio(
-                    self.ssl_context,
-                    self as *mut _ as *mut c_void,
-                    Some(Self::sync_send),
-                    Some(Self::sync_receive),
-                    None,
-                );
-                if !self.tx_buffer.empty() {
-                    log::debug!("Drain tx buffer");
-                    let data = self.tx_buffer.pull(TX_SIZE);
-                    log::debug!(
-                        "pulled {} bytes from tx_buffer ... send to stream",
-                        data.len()
-                    );
-                    log::debug!("{:02x?}", &data);
-                    let res = self
-                        .stream
-                        .write(data)
-                        .await
-                        .map_err(|_| TlsError::Unknown)?;
-                    log::debug!("wrote {res} bytes to stream");
-                    self.stream.flush().await.map_err(|_| TlsError::Unknown)?;
+        /// Read unencrypted data from the TLS connection
+        ///
+        /// # Arguments
+        ///
+        /// * `buf` - The buffer to read the data into
+        ///
+        /// # Returns
+        ///
+        /// The number of bytes read or an error
+        pub async fn read(&mut self, buf: &mut [u8]) -> Result<usize, TlsError> {
+            self.connect().await?;
+
+            let len = self
+                .io(|ssl| unsafe {
+                    mbedtls_ssl_read(ssl, buf.as_mut_ptr() as *mut _, buf.len() as _)
+                })
+                .await?;
+
+            Ok(len as _)
+        }
+
+        /// Write unencrypted data to the TLS connection
+        ///
+        /// Arguments:
+        ///
+        /// * `data` - The data to write
+        ///
+        /// Returns:
+        ///
+        /// The number of bytes written or an error
+        pub async fn write(&mut self, data: &[u8]) -> Result<usize, TlsError> {
+            self.connect().await?;
+
+            let len = self
+                .io(|ssl| unsafe {
+                    mbedtls_ssl_write(ssl, data.as_ptr() as *const _, data.len() as _)
+                })
+                .await?;
+
+            Ok(len as _)
+        }
+
+        /// Flush the TLS connection
+        ///
+        /// This function will flush the TLS connection, ensuring that all data is sent.
+        ///
+        /// Returns:
+        ///
+        /// An error if the flush failed
+        pub async fn flush(&mut self) -> Result<(), TlsError> {
+            self.connect().await?;
+
+            self.flush_write().await?;
+            self.stream
+                .flush()
+                .await
+                .map_err(|e| TlsError::Io(e.kind()))?;
+
+            Ok(())
+        }
+
+        /// Close the TLS connection
+        ///
+        /// This function will close the TLS connection, sending the TLS "close notify" info the the peer.
+        ///
+        /// Returns:
+        ///
+        /// An error if the close failed
+        pub async fn close(&mut self) -> Result<(), TlsError> {
+            self.connect().await?;
+
+            self.io(|ssl| unsafe { mbedtls_ssl_close_notify(ssl) })
+                .await?;
+            self.flush().await?;
+
+            self.state = SessionState::Eof;
+
+            Ok(())
+        }
+
+        /// Perform an async IO operation on the TLS connection, by calling the
+        /// provided MbedTLS function.
+        ///
+        /// The MbedTLS function is usually either `mbedtls_ssl_read`, `mbedtls_ssl_write` or `mbedtls_ssl_handshake`.
+        async fn io<F>(&mut self, mut f: F) -> Result<i32, TlsError>
+        where
+            F: FnMut(*mut mbedtls_ssl_context) -> i32,
+        {
+            loop {
+                let outcome =
+                    core::future::poll_fn(|cx| PollCtx::poll(self, cx, |ssl| f(ssl))).await?;
+
+                self.flush_write().await?;
+
+                match outcome {
+                    PollOutcome::Success(res) => break Ok(res),
+                    PollOutcome::Retry => continue,
+                    PollOutcome::WantRead => self.wait_read().await?,
+                    PollOutcome::WantWrite => self.flush_write().await?,
+                    PollOutcome::Eof => {
+                        self.state = SessionState::Eof;
+                        break Ok(0);
+                    }
+                }
+            }
+        }
+
+        /// Wait for the stream to be readable
+        ///
+        /// Since the `Session` is implemented purely with the `Read` trait, this method
+        /// will read a single byte from the stream, so that the `Read` trait can be polled
+        async fn wait_read(&mut self) -> Result<(), TlsError> {
+            if self.read_byte.is_none() {
+                let mut buf = [0];
+
+                let len = self
+                    .stream
+                    .read(&mut buf)
+                    .await
+                    .map_err(|e| TlsError::Io(e.kind()))?;
+                if len > 0 {
+                    self.read_byte = Some(buf[0]);
                 }
             }
 
             Ok(())
         }
 
-        async fn async_internal_write(&mut self, buf: &[u8]) -> Result<i32, TlsError> {
-            unsafe {
-                mbedtls_ssl_set_bio(
-                    self.ssl_context,
-                    self as *mut _ as *mut c_void,
-                    Some(Self::sync_send),
-                    Some(Self::sync_receive),
-                    None,
-                );
-                self.drain_tx_buffer().await?;
-
-                let len = mbedtls_ssl_write(self.ssl_context, buf.as_ptr(), buf.len());
-                self.drain_tx_buffer().await?;
-
-                Ok(len)
-            }
-        }
-
-        async fn async_internal_read(&mut self, buf: &mut [u8]) -> Result<i32, TlsError> {
-            unsafe {
-                mbedtls_ssl_set_bio(
-                    self.ssl_context,
-                    self as *mut _ as *mut c_void,
-                    Some(Self::sync_send),
-                    Some(Self::sync_receive),
-                    None,
-                );
-                self.drain_tx_buffer().await?;
-
-                if !self.rx_buffer.can_read() && mbedtls_ssl_check_pending(self.ssl_context) == 0 {
-                    let mut buffer = [0u8; RX_SIZE];
-                    let from_socket = self
-                        .stream
-                        .read(&mut buffer[..self.rx_buffer.remaining()])
-                        .await
-                        .map_err(|_| TlsError::Unknown)?;
-                    if from_socket > 0 {
-                        log::debug!("<<< got {} bytes from socket", from_socket);
-                        self.rx_buffer.push(&buffer[..from_socket]).ok();
-                    } else {
-                        // the socket is in EOF state but there might be still data to process
-                        self.eof = true;
-                    }
-                }
-
-                if !self.rx_buffer.empty()
-                    || mbedtls_ssl_check_pending(self.ssl_context) == 1
-                    || mbedtls_ssl_get_bytes_avail(self.ssl_context) > 0
-                {
-                    log::debug!("<<< read data from mbedtls");
-                    let res = mbedtls_ssl_read(self.ssl_context, buf.as_mut_ptr(), buf.len());
-                    log::debug!("<<< mbedtls returned {res}");
-
-                    if res == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY {
-                        self.eof = true;
-                        return Ok(0);
-                    }
-                    Ok(res)
-                } else {
-                    Ok(0)
+        /// Wait for the stream to be writable
+        ///
+        /// Since the `Session` is implemented purely with the `Write` trait, this method
+        /// will write a single byte to the stream (provided by the "mbio" MbedTLS callbacks),
+        /// so that the `Write` trait can be polled
+        async fn flush_write(&mut self) -> Result<(), TlsError> {
+            if let Some(byte) = self.write_byte.as_ref().copied() {
+                let data = [byte];
+                let len = self
+                    .stream
+                    .write(&data)
+                    .await
+                    .map_err(|e| TlsError::Io(e.kind()))?;
+                if len > 0 {
+                    self.write_byte.take();
                 }
             }
-        }
 
-        unsafe extern "C" fn sync_send(ctx: *mut c_void, buf: *const c_uchar, len: usize) -> c_int {
-            log::debug!("*** sync send called, bytes={len}");
-            let session = ctx as *mut Session<T, RX_SIZE, TX_SIZE>;
-            let slice = core::ptr::slice_from_raw_parts(
-                buf as *const u8,
-                usize::min(len as usize, (*session).tx_buffer.remaining()),
-            );
-            (*session).tx_buffer.push(&*slice).ok();
-            let written = (&*slice).len();
-            log::debug!("*** put {} bytes into tx_buffer", written);
-
-            if written == 0 {
-                MBEDTLS_ERR_SSL_WANT_WRITE
-            } else {
-                written as c_int
-            }
-        }
-
-        unsafe extern "C" fn sync_receive(
-            ctx: *mut c_void,
-            buf: *mut c_uchar,
-            len: usize,
-        ) -> c_int {
-            log::debug!("*** sync rcv, len={}", len);
-            let session = ctx as *mut Session<T, RX_SIZE, TX_SIZE>;
-
-            if (*session).rx_buffer.empty() {
-                log::debug!("*** buffer empty - want read");
-                return MBEDTLS_ERR_SSL_WANT_READ;
-            }
-
-            let buffer = core::slice::from_raw_parts_mut(buf as *mut u8, len as usize);
-            let max_len = usize::min(len as usize, (*session).rx_buffer.remaining());
-            let data = (*session).rx_buffer.pull(max_len);
-            buffer[0..data.len()].copy_from_slice(data);
-
-            log::debug!("*** pulled {} bytes from rx-buffer", data.len());
-
-            if data.len() == 0 {
-                MBEDTLS_ERR_SSL_WANT_READ
-            } else {
-                data.len() as c_int
-            }
+            Ok(())
         }
     }
 
-    pub struct AsyncConnectedSession<'a, T, const RX_SIZE: usize, const TX_SIZE: usize>
+    impl<T> embedded_io_async::ErrorType for Session<'_, T>
     where
-        T: embedded_io_async::Read + embedded_io_async::Write,
-    {
-        pub(crate) session: Session<'a, T, RX_SIZE, TX_SIZE>,
-    }
-
-    impl<T, const RX_SIZE: usize, const TX_SIZE: usize> embedded_io_async::ErrorType
-        for AsyncConnectedSession<'_, T, RX_SIZE, TX_SIZE>
-    where
-        T: embedded_io_async::Read + embedded_io_async::Write,
+        T: embedded_io_async::ErrorType,
     {
         type Error = TlsError;
     }
 
-    impl<T, const RX_SIZE: usize, const TX_SIZE: usize> embedded_io_async::Read
-        for AsyncConnectedSession<'_, T, RX_SIZE, TX_SIZE>
+    impl<T> embedded_io_async::Read for Session<'_, T>
     where
         T: embedded_io_async::Read + embedded_io_async::Write,
     {
         async fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error> {
-            log::debug!("async read called");
-            loop {
-                if self.session.eof && self.session.rx_buffer.empty() {
-                    return Err(TlsError::Eof);
-                }
-                let res = self.session.async_internal_read(buf).await?;
-                match res {
-                    MBEDTLS_ERR_SSL_WANT_READ | MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET => {
-                        continue
-                    } // no data
-                    0..=i32::MAX => return Ok(res as usize), // data
-                    i32::MIN..=-1_i32 => return Err(TlsError::MbedTlsError(res)), // error
-                }
-            }
+            self.read(buf).await
         }
     }
 
-    impl<T, const RX_SIZE: usize, const TX_SIZE: usize> embedded_io_async::Write
-        for AsyncConnectedSession<'_, T, RX_SIZE, TX_SIZE>
+    impl<T> embedded_io_async::Write for Session<'_, T>
     where
         T: embedded_io_async::Read + embedded_io_async::Write,
     {
         async fn write(&mut self, buf: &[u8]) -> Result<usize, Self::Error> {
-            let res = self.session.async_internal_write(buf).await?;
-            Ok(res as usize)
+            self.write(buf).await
         }
 
         async fn flush(&mut self) -> Result<(), Self::Error> {
-            self.session
-                .drain_tx_buffer()
-                .await
-                .map_err(|_| TlsError::Unknown)?;
-
-            self.session
-                .stream
-                .flush()
-                .await
-                .map_err(|_| TlsError::Unknown)
+            self.flush().await
         }
     }
-    pub(crate) struct BufferedBytes<'a, const BUFFER_SIZE: usize> {
-        buffer: &'a mut [u8; BUFFER_SIZE],
-        write_idx: usize,
-        read_idx: usize,
+
+    /// Poll outcome for the `PollCtx` type
+    #[derive(Copy, Clone, Debug)]
+    pub enum PollOutcome {
+        /// The operation was successful
+        ///
+        /// The returned value would be either 0, or how many bytes were read/written
+        Success(i32),
+        /// The IO layer needs to read more data asynchronously
+        WantRead,
+        /// The IO layer needs to write more data asynchronously
+        WantWrite,
+        /// Operation needs to be retried
+        Retry,
+        /// End of stream reached
+        Eof,
     }
 
-    impl<'a, const BUFFER_SIZE: usize> BufferedBytes<'a, BUFFER_SIZE> {
-        pub fn new(buffer: &'a mut [u8; BUFFER_SIZE]) -> Self {
+    /// A context for using the async `Read` and `Write` traits from within the synchronous MbedTLS "mbio" callbacks
+    /// **without any additional buffers** / memory.
+    ///
+    /// Using the MbedTLS callback-based IO metaphor is a bit of a challenge with the async `Read` and `Write` traits,
+    /// in that these cannot be `await`-ed from within the MbedTLS mbio callbacks, as the latter are synchronous callback
+    /// functions.
+    ///
+    /// What the `PollCtx` type implements therefore is the following trick:
+    /// - While we cannot `await` on the `Read` and `Write` traits directly from within the "mbio" callbacks, we can still
+    ///   poll them (with `Future::poll`). This is because the `poll` method is synchronous in that it either resolves the
+    ///   future immediately (`Poll::Ready`), or returns `Poll::Pending` if the future needs to be polled again.
+    /// - Because of the `Read` and `Write` traits' semantics, polling them MUST return immediately, if there is even one
+    ///   byte available for reading from the networking stack buffers (or - correspondingly - if there is space to write
+    ///   even one byte in the networking stack buffers).
+    /// - Since the network stack usually does not operate byte-by-byte, what this means is that by just calling `Future::poll`
+    ///   on the `Read` / `Write` trait, we can efficiently transfer the incoming/outgoing data from/to the network stack, without
+    ///   any additional network buffers.
+    /// - Of course, if the network read buffers are empty (or write buffers are full), we still need to `await` outside the
+    ///   MbedTLS callbacks, in the `Session::read` / `Session::write` / `Session::connect` methods.
+    ///
+    /// Note also, that the implementation of `PollCtx` is a tad more complex, because it is implemented purely in terms of the
+    /// `Read` and `Write` traits, rather than `edge-nal`'s `Readable` and (future) `Writable`, so we need to shuffle single bytes
+    /// between the "mbio" callbacks and the `Session` asunc context to make it work.
+    ///
+    /// On the other hand, this enables `Session` to be used over any streaming transport that implements the `Read` and `Write` traits
+    /// (i.e. UART and others).
+    struct PollCtx<'s, 'a, 'c, 'q, T> {
+        /// The session
+        session: &'s mut Session<'a, T>,
+        /// The async context with which `Session::read` / `Session::write` / `Session::connect` are called.
+        /// Necessary so that we can invoke `Future::poll`
+        context: &'c mut Context<'q>,
+        /// The result from `Future::poll`, if it returned `Poll::Ready`
+        io_result: Option<Result<(), TlsError>>,
+    }
+
+    impl<'s, 'a, 'c, 'q, T> PollCtx<'s, 'a, 'c, 'q, T>
+    where
+        T: embedded_io_async::Read + embedded_io_async::Write,
+    {
+        fn poll<F>(
+            session: &'s mut Session<'a, T>,
+            context: &'c mut Context<'q>,
+            f: F,
+        ) -> Poll<Result<PollOutcome, TlsError>>
+        where
+            F: FnOnce(*mut mbedtls_ssl_context) -> i32,
+        {
+            Self::new(session, context).poll_mut(f)
+        }
+
+        /// Create a new `PollCtx` instance
+        fn new(session: &'s mut Session<'a, T>, context: &'c mut Context<'q>) -> Self {
             Self {
-                buffer,
-                write_idx: 0,
-                read_idx: 0,
+                session,
+                context,
+                io_result: None,
             }
         }
 
-        pub fn pull(&mut self, max: usize) -> &[u8] {
-            if self.read_idx == self.write_idx {
-                self.read_idx = 0;
-                self.write_idx = 0;
+        /// Call `Future::poll` on the `Read` or `Write` traits
+        fn poll_mut<F>(&mut self, f: F) -> Poll<Result<PollOutcome, TlsError>>
+        where
+            F: FnOnce(*mut mbedtls_ssl_context) -> i32,
+        {
+            unsafe {
+                mbedtls_ssl_set_bio(
+                    self.session.ssl_context,
+                    self as *mut _ as *mut c_void,
+                    Some(Self::raw_send),
+                    Some(Self::raw_receive),
+                    None,
+                );
             }
 
-            let len = usize::min(max, self.write_idx - self.read_idx);
-            let res = &self.buffer[self.read_idx..][..len];
-            self.read_idx += len;
-            res
-        }
+            let res = f(self.session.ssl_context);
 
-        pub fn push(&mut self, data: &[u8]) -> Result<(), ()> {
-            if self.read_idx == self.write_idx {
-                self.read_idx = 0;
-                self.write_idx = 0;
+            // Remove the callbacks so that we get a warning from MbedTLS in case
+            // it needs to invoke them when we don't anticipate so (for bugs detection)
+            unsafe {
+                mbedtls_ssl_set_bio(
+                    self.session.ssl_context,
+                    core::ptr::null_mut(),
+                    None,
+                    None,
+                    None,
+                );
             }
 
-            if self.buffer.len() - self.write_idx < data.len() {
-                return Err(());
+            if let Some(Err(e)) = self.io_result.take() {
+                Err(e)?;
             }
 
-            self.buffer[self.write_idx..][..data.len()].copy_from_slice(data);
-            self.write_idx += data.len();
-
-            Ok(())
+            #[allow(non_snake_case)]
+            Poll::Ready(match res {
+                MBEDTLS_ERR_SSL_WANT_READ => Ok(PollOutcome::WantRead),
+                MBEDTLS_ERR_SSL_WANT_WRITE => Ok(PollOutcome::WantWrite),
+                // See https://github.com/Mbed-TLS/mbedtls/issues/8749
+                MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET => Ok(PollOutcome::Retry),
+                MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY => Ok(PollOutcome::Eof),
+                res if res < 0 => {
+                    ::log::warn!("MbedTLS error: {res} / {res:x}");
+                    Err(TlsError::MbedTlsError(res))
+                }
+                len => Ok(PollOutcome::Success(len)),
+            })
         }
 
-        pub fn remaining(&self) -> usize {
-            self.buffer.len() - self.write_idx
-        }
+        fn send(&mut self, buf: &[u8]) -> i32 {
+            ::log::debug!("Send {}B", buf.len());
 
-        pub fn can_read(&self) -> bool {
-            self.read_idx < self.write_idx
-        }
-
-        pub fn empty(&mut self) -> bool {
-            if self.read_idx == self.write_idx {
-                self.read_idx = 0;
-                self.write_idx = 0;
+            if buf.is_empty() {
+                // MbedTLS does not want us to read anything
+                return 0;
             }
 
-            self.read_idx == self.write_idx
+            if self.session.write_byte.is_some() {
+                // We have a byte to write from the previous call
+                // Indicate to the `Session` instance that it needs to write it
+                return MBEDTLS_ERR_SSL_WANT_WRITE;
+            }
+
+            // Poll the `write` future by trying to immediately send (part of) the MbedTLS write data
+            // into the network stack buffers
+            let fut = pin!(self.session.stream.write(buf));
+
+            if let Poll::Ready(result) = fut.poll(self.context) {
+                match result {
+                    Ok(len) => {
+                        // Success!
+
+                        if len == 0 {
+                            // The stream has reached EOF
+                            self.session.state = SessionState::Eof;
+                            self.io_result = Some(Err(TlsError::Eof));
+                            ::log::warn!("IO error: EOF");
+                        } else {
+                            // The write was successful, indicate so
+                            self.io_result = Some(Ok(()));
+                        }
+
+                        len as _
+                    }
+                    Err(err) => {
+                        // MbedTLS error
+                        ::log::warn!("TCP error: {:?}", err.kind());
+                        self.io_result = Some(Err(TlsError::Io(err.kind())));
+                        MBEDTLS_ERR_SSL_WANT_WRITE
+                    }
+                }
+            } else {
+                // Network write buffers are full, indicate to the `Session` instance that
+                // it needs to write-await
+                // Also give it one byte of the TLS data so that it can call `Write::write` on something
+                self.session.write_byte = Some(buf[0]);
+                1
+            }
+        }
+
+        fn receive(&mut self, buf: &mut [u8]) -> i32 {
+            ::log::debug!("Recv {}B", buf.len());
+
+            if buf.is_empty() {
+                // MbedTLS does not want us to read anything
+                return 0;
+            }
+
+            let offset = if let Some(byte) = self.session.read_byte.take() {
+                // We have one byte read from the `Session` async context, give it
+                // to MbedTLS
+                buf[0] = byte;
+                1
+            } else {
+                0
+            };
+
+            if buf.len() == offset {
+                // MbedTLS requested only one byte anyway
+                return offset as _;
+            }
+
+            let fut = pin!(self.session.stream.read(&mut buf[offset..]));
+
+            if let Poll::Ready(result) = fut.poll(self.context) {
+                match result {
+                    Ok(len) => {
+                        // Success!
+
+                        let len = len + offset;
+
+                        if len == 0 {
+                            // The stream has reached EOF
+                            self.session.state = SessionState::Eof;
+                            self.io_result = Some(Err(TlsError::Eof));
+                            ::log::warn!("IO error: EOF");
+                        } else {
+                            // The read was successful, indicate so
+                            self.io_result = Some(Ok(()));
+                        }
+
+                        len as _
+                    }
+                    Err(err) => {
+                        // MbedTLS error
+                        ::log::warn!("TCP error: {:?}", err.kind());
+                        self.io_result = Some(Err(TlsError::Io(err.kind())));
+                        MBEDTLS_ERR_SSL_WANT_READ
+                    }
+                }
+            } else {
+                // Network read buffers are empty, either return the single byte we have
+                // or indicate to the `Session` async context, that it needs to invoke `read` on the
+                // `Read` trait
+                if offset == 0 {
+                    MBEDTLS_ERR_SSL_WANT_READ
+                } else {
+                    offset as _
+                }
+            }
+        }
+
+        unsafe extern "C" fn raw_send(ctx: *mut c_void, buf: *const c_uchar, len: usize) -> c_int {
+            let ctx = (ctx as *mut PollCtx<'s, 'a, 'c, 'q, T>).as_mut().unwrap();
+
+            ctx.send(core::slice::from_raw_parts(buf as *const _, len))
+        }
+
+        unsafe extern "C" fn raw_receive(ctx: *mut c_void, buf: *mut c_uchar, len: usize) -> c_int {
+            let ctx = (ctx as *mut PollCtx<'s, 'a, 'c, 'q, T>).as_mut().unwrap();
+
+            ctx.receive(core::slice::from_raw_parts_mut(buf as *mut _, len))
         }
     }
 }
 
+/// Outputs the MbedTLS debug messages to the log
 unsafe extern "C" fn dbg_print(
     _arg: *mut c_void,
     lvl: i32,
@@ -1196,15 +1526,25 @@ unsafe extern "C" fn dbg_print(
     line: i32,
     msg: *const i8,
 ) {
-    let msg = CStr::from_ptr(msg as *const i8);
     let file = CStr::from_ptr(file as *const i8);
-    log::info!(
-        "{} {}:{} {}",
-        lvl,
-        file.to_str().unwrap_or("<invalid string>"),
-        line,
-        msg.to_str().unwrap_or("<invalid string>")
-    );
+    let msg = CStr::from_ptr(msg as *const i8);
+
+    let file = file.to_str().unwrap_or("???").trim();
+    let msg = msg.to_str().unwrap_or("???").trim();
+
+    let level = match lvl {
+        0 => Level::Error,
+        1 => Level::Warn,
+        2 => Level::Debug,
+        _ => Level::Trace,
+    };
+
+    log::log!(level, "{} ({}:{}) {}", lvl, file, line, msg);
+}
+
+#[no_mangle]
+extern "C" fn rand() -> crate::c_ulong {
+    unsafe { crate::random() }
 }
 
 unsafe extern "C" fn rng(_param: *mut c_void, buffer: *mut c_uchar, len: usize) -> c_int {
@@ -1217,6 +1557,7 @@ unsafe extern "C" fn rng(_param: *mut c_void, buffer: *mut c_uchar, len: usize) 
     0
 }
 
+#[cfg(not(target_os = "espidf"))]
 #[no_mangle]
 unsafe extern "C" fn mbedtls_platform_zeroize(dst: *mut u8, len: u32) {
     for i in 0..len as isize {
