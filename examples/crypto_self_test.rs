@@ -12,7 +12,7 @@ use esp_println::{logger::init_logger, println};
 
 /// Only used for ROM functions
 #[allow(unused_imports)]
-use esp_wifi::{init, EspWifiInitFor};
+use esp_wifi::init;
 use hal::{prelude::*, rng::Rng, timer::timg::TimerGroup};
 
 pub fn cycles() -> u64 {
@@ -43,7 +43,6 @@ fn main() -> ! {
     let timg0 = TimerGroup::new(peripherals.TIMG0);
 
     let _init = init(
-        EspWifiInitFor::Wifi,
         timg0.timer0,
         Rng::new(peripherals.RNG),
         peripherals.RADIO_CLK,
