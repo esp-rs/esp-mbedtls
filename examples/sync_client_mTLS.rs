@@ -1,10 +1,11 @@
 //! Example for a client connection using certificate authentication (mTLS)
 #![no_std]
 #![no_main]
-#![allow(non_snake_case)]
 
 #[doc(hidden)]
 pub use esp_hal as hal;
+
+use blocking_network_stack::Stack;
 
 use esp_alloc as _;
 use esp_backtrace as _;
@@ -14,11 +15,12 @@ use esp_println::{logger::init_logger, print, println};
 use esp_wifi::{
     init,
     wifi::{utils::create_network_interface, ClientConfiguration, Configuration, WifiStaDevice},
-    wifi_interface::WifiStack,
-    EspWifiInitFor,
 };
 use hal::{prelude::*, rng::Rng, time, timer::timg::TimerGroup};
-use smoltcp::{iface::SocketStorage, wire::IpAddress};
+use smoltcp11::{
+    iface::{SocketSet, SocketStorage},
+    wire::IpAddress,
+};
 
 const SSID: &str = env!("SSID");
 const PASSWORD: &str = env!("PASSWORD");
@@ -26,7 +28,6 @@ const PASSWORD: &str = env!("PASSWORD");
 #[entry]
 fn main() -> ! {
     init_logger(log::LevelFilter::Info);
-
     let peripherals = esp_hal::init({
         let mut config = esp_hal::Config::default();
         config.cpu_clock = CpuClock::max();
@@ -37,20 +38,20 @@ fn main() -> ! {
 
     let timg0 = TimerGroup::new(peripherals.TIMG0);
 
-    let init = init(
-        EspWifiInitFor::Wifi,
-        timg0.timer0,
-        Rng::new(peripherals.RNG),
-        peripherals.RADIO_CLK,
-    )
-    .unwrap();
+    let mut rng = Rng::new(peripherals.RNG);
+
+    let init = init(timg0.timer0, rng, peripherals.RADIO_CLK).unwrap();
 
     let wifi = peripherals.WIFI;
+
+    let (iface, device, mut controller) =
+        create_network_interface(&init, wifi, WifiStaDevice).unwrap();
+
     let mut socket_set_entries: [SocketStorage; 3] = Default::default();
-    let (iface, device, mut controller, sockets) =
-        create_network_interface(&init, wifi, WifiStaDevice, &mut socket_set_entries).unwrap();
+    let sockets = SocketSet::new(&mut socket_set_entries[..]);
+
     let now = || time::now().duration_since_epoch().to_millis();
-    let wifi_stack = WifiStack::new(iface, device, sockets, now);
+    let wifi_stack = Stack::new(iface, device, sockets, now, rng.random());
 
     println!("Call wifi_connect");
     let client_config = Configuration::Client(ClientConfiguration {
@@ -73,6 +74,7 @@ fn main() -> ! {
             }
             Err(err) => {
                 println!("{:?}", err);
+                #[allow(clippy::empty_loop)]
                 loop {}
             }
         }
@@ -145,7 +147,7 @@ fn main() -> ! {
         match session.read(&mut buffer) {
             Ok(len) => {
                 print!("{}", unsafe {
-                    core::str::from_utf8_unchecked(&buffer[..len as usize])
+                    core::str::from_utf8_unchecked(&buffer[..len])
                 });
             }
             Err(_) => {
@@ -156,5 +158,6 @@ fn main() -> ! {
     }
     println!("Done");
 
+    #[allow(clippy::empty_loop)]
     loop {}
 }

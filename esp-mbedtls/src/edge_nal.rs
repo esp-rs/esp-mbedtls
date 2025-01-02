@@ -151,6 +151,23 @@ where
     }
 }
 
+impl<T> edge_nal::TcpSplit for Session<'_, T>
+where
+    T: edge_nal::TcpSplit + embedded_io_async::Read + embedded_io_async::Write + edge_nal::Readable,
+{
+    type Read<'a> = Self
+    where
+        Self: 'a;
+
+    type Write<'a> = Self
+    where
+        Self: 'a;
+
+    fn split(&mut self) -> (Self::Read<'_>, Self::Write<'_>) {
+        panic!("Splitting a TLS session is not supported yet");
+    }
+}
+
 impl<T> edge_nal::TcpShutdown for Session<'_, T>
 where
     T: embedded_io_async::Read + embedded_io_async::Write + edge_nal::TcpShutdown,
