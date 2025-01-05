@@ -1176,16 +1176,19 @@ pub mod asynch {
             F: FnMut(*mut mbedtls_ssl_context) -> i32,
         {
             loop {
+                self.flush_write().await?;
+
                 let outcome =
                     core::future::poll_fn(|cx| PollCtx::poll(self, cx, |ssl| f(ssl))).await?;
 
-                self.flush_write().await?;
-
                 match outcome {
-                    PollOutcome::Success(res) => break Ok(res),
+                    PollOutcome::Success(res) => {
+                        self.flush_write().await?;
+                        break Ok(res);
+                    }
                     PollOutcome::Retry => continue,
                     PollOutcome::WantRead => self.wait_read().await?,
-                    PollOutcome::WantWrite => self.flush_write().await?,
+                    PollOutcome::WantWrite => continue,
                     PollOutcome::Eof => {
                         self.state = SessionState::Eof;
                         break Ok(0);
@@ -1209,6 +1212,8 @@ pub mod asynch {
                     .map_err(|e| TlsError::Io(e.kind()))?;
                 if len > 0 {
                     self.read_byte = Some(buf[0]);
+                } else {
+                    Err(TlsError::Eof)?;
                 }
             }
 
@@ -1230,6 +1235,8 @@ pub mod asynch {
                     .map_err(|e| TlsError::Io(e.kind()))?;
                 if len > 0 {
                     self.write_byte.take();
+                } else {
+                    Err(TlsError::Eof)?;
                 }
             }
 
@@ -1395,7 +1402,7 @@ pub mod asynch {
             ::log::debug!("Send {}B", buf.len());
 
             if buf.is_empty() {
-                // MbedTLS does not want us to read anything
+                // MbedTLS does not want us to write anything
                 return 0;
             }
 
