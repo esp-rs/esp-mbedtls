@@ -66,3 +66,17 @@ impl Drop for Tls<'_> {
         critical_section::with(|cs| SHARED_SHA.borrow_ref_mut(cs).take());
     }
 }
+
+// See https://github.com/esp-rs/esp-mbedtls/pull/62#issuecomment-2560830139
+// TODO: In future - and for all baremetal platforms - we should be having a definition like the one below
+// for **all** libc functions used by `mbedtls`
+//
+// And then each baremetal platform can decide to opt-in and use the definition(s)
+// from `tinyrlibc` or opt-out and provide their own implementation(s)
+#[cfg(feature = "esp32c3")]
+#[used]
+static _MEMCHR: unsafe extern "C" fn(
+    *const core::ffi::c_void,
+    core::ffi::c_int,
+    usize,
+) -> *const core::ffi::c_void = tinyrlibc::memchr;
