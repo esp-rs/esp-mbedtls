@@ -73,7 +73,7 @@ async fn main(spawner: Spawner) -> ! {
         config
     });
 
-    esp_alloc::heap_allocator!(110 * 1024);
+    esp_alloc::heap_allocator!(130 * 1024);
 
     let timg0 = TimerGroup::new(peripherals.TIMG0);
 
