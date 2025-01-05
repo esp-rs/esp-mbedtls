@@ -110,7 +110,7 @@ async fn main(spawner: Spawner) -> ! {
     let (stack, runner) = embassy_net::new(
         wifi_interface,
         config,
-        mk_static!(StackResources<3>, StackResources::<3>::new()),
+        mk_static!(StackResources<4>, StackResources::<4>::new()),
         seed,
     );
 
@@ -195,7 +195,10 @@ async fn main(spawner: Spawner) -> ! {
 struct HttpHandler;
 
 impl Handler for HttpHandler {
-    type Error<E> = Error<E> where E: core::fmt::Debug;
+    type Error<E>
+        = Error<E>
+    where
+        E: core::fmt::Debug;
 
     async fn handle<T, const N: usize>(
         &self,
