@@ -1181,7 +1181,7 @@ pub mod asynch {
                 // in the socket write buffer would be send _before_ our outstanding byte
                 //
                 // It is another topic that this usually should not happen, as we are calling `flush_write` also
-                // _after_ the `poll_fn` call, but in the rare case where the user cancels this function (drops the function)
+                // _after_ the `poll_fn` call, but in the rare case where the user cancels this function (drops the future)
                 // and then re-tries the call, the outstanding byte will not be written so it needs to be re-tried here.
                 self.flush_write().await?;
 
