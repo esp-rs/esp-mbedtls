@@ -25,6 +25,15 @@
 #![feature(impl_trait_in_assoc_type)]
 #![allow(non_snake_case)]
 
+// See https://github.com/esp-rs/esp-mbedtls/pull/62#issuecomment-2560830139
+//
+// This is by the way a generic way to polyfill the libc functions used by `mbedtls`:
+// - If your (baremetal) platform does not provide one or more of these, just
+//   add a dependency on `tinyrlibc` in your binary crate with features for all missing functions
+//   and then put such a `use` statement in your main file
+#[cfg(feature = "esp32c3")]
+use tinyrlibc as _;
+
 #[doc(hidden)]
 pub use esp_hal as hal;
 
