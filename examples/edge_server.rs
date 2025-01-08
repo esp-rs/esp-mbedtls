@@ -66,6 +66,9 @@ const SERVER_SOCKETS: usize = 1;
 #[cfg(not(feature = "esp32"))]
 const SERVER_SOCKETS: usize = 2;
 
+/// Total number of sockets used for the application
+const SOCKET_COUNT: usize = 1 + 1 + SERVER_SOCKETS; // DHCP + DNS + Server
+
 const RX_SIZE: usize = 4096;
 const TX_SIZE: usize = 2048;
 
@@ -119,7 +122,10 @@ async fn main(spawner: Spawner) -> ! {
     let (stack, runner) = embassy_net::new(
         wifi_interface,
         config,
-        mk_static!(StackResources<4>, StackResources::<4>::new()),
+        mk_static!(
+            StackResources<SOCKET_COUNT>,
+            StackResources::<SOCKET_COUNT>::new()
+        ),
         seed,
     );
 
