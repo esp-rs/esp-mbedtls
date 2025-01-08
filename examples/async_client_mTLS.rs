@@ -99,8 +99,6 @@ async fn main(spawner: Spawner) -> ! {
         seed,
     );
 
-    let runner = mk_static!(Runner<'_, WifiDevice<'static, WifiStaDevice>>, runner);
-
     spawner.spawn(connection(controller)).ok();
     spawner.spawn(net_task(runner)).ok();
 
@@ -235,6 +233,6 @@ async fn connection(mut controller: WifiController<'static>) {
 }
 
 #[embassy_executor::task]
-async fn net_task(runner: &'static mut Runner<'static, WifiDevice<'static, WifiStaDevice>>) {
+async fn net_task(mut runner: Runner<'static, WifiDevice<'static, WifiStaDevice>>) {
     runner.run().await
 }
