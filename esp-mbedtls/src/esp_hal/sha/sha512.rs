@@ -114,6 +114,7 @@ pub unsafe extern "C" fn mbedtls_sha512_finish(
             );
             nb::block!(hasher.finish(&mut data)).unwrap();
             nb::block!(hasher.save((*ctx).sha384_hasher.as_mut().unwrap())).unwrap();
+            core::ptr::copy_nonoverlapping(data.as_ptr(), output, 48);
         } else {
             let mut hasher = ShaDigest::restore(
                 sha.as_mut().unwrap(),
@@ -121,8 +122,8 @@ pub unsafe extern "C" fn mbedtls_sha512_finish(
             );
             nb::block!(hasher.finish(&mut data)).unwrap();
             nb::block!(hasher.save((*ctx).sha512_hasher.as_mut().unwrap())).unwrap();
+            core::ptr::copy_nonoverlapping(data.as_ptr(), output, 64);
         }
     });
-    core::ptr::copy_nonoverlapping(data.as_ptr(), output, data.len());
     0
 }

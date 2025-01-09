@@ -46,7 +46,10 @@ where
     T: edge_nal::TcpAccept,
 {
     type Error = TlsError;
-    type Socket<'a> = Session<'a, T::Socket<'a>> where Self: 'a;
+    type Socket<'a>
+        = Session<'a, T::Socket<'a>>
+    where
+        Self: 'a;
 
     async fn accept(
         &self,
@@ -115,7 +118,10 @@ where
 {
     type Error = TlsError;
 
-    type Socket<'a> = Session<'a, T::Socket<'a>> where Self: 'a;
+    type Socket<'a>
+        = Session<'a, T::Socket<'a>>
+    where
+        Self: 'a;
 
     async fn connect(&self, remote: SocketAddr) -> Result<Self::Socket<'_>, Self::Error> {
         let socket = self
@@ -148,6 +154,25 @@ where
         // For this, we need support for that in MbedTLS itself, which is not available at the moment.
         // 2- because `Readable` currently throws exception with `edge-nal-embassy`
         Ok(())
+    }
+}
+
+impl<T> edge_nal::TcpSplit for Session<'_, T>
+where
+    T: edge_nal::TcpSplit + embedded_io_async::Read + embedded_io_async::Write + edge_nal::Readable,
+{
+    type Read<'a>
+        = Self
+    where
+        Self: 'a;
+
+    type Write<'a>
+        = Self
+    where
+        Self: 'a;
+
+    fn split(&mut self) -> (Self::Read<'_>, Self::Write<'_>) {
+        panic!("Splitting a TLS session is not supported yet");
     }
 }
 

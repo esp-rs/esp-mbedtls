@@ -8,22 +8,22 @@ rust-version = "1.82"
 
 [build-dependencies]
 anyhow      = "1.0.68"
-bindgen     = "0.68.1"
+bindgen     = "0.71.1"
 env_logger  = "0.10.0"
 log         = "0.4.17"
 cmake       = "0.1.52"
 fs_extra    = "1.3.0"
-embuild     = "0.32"
+embuild     = "0.33"
 
 [dependencies]
 # For malloc/free
 # TODO: Replace with `esp-alloc` once `esp-alloc` starts to provide `malloc` and `free` in future
 # ... or switch to our own `mbedtls_malloc/free`
-esp-wifi = { version = "0.10.1", default-features = false, optional = true }
+esp-wifi = { version = "0.11.0", default-features = false, optional = true }
 
 # ESP-IDF: The mbedtls lib distributed with ESP-IDF is used
 [target.'cfg(target_os = "espidf")'.dependencies]
-esp-idf-sys = { version = "0.35", default-features = false }
+esp-idf-sys = { version = "0.36", default-features = false }
 
 # All other platforms: mbedtls libs and bindings are created on the fly
 
