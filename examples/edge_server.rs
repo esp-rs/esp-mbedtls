@@ -10,15 +10,6 @@
 #![feature(type_alias_impl_trait)]
 #![feature(impl_trait_in_assoc_type)]
 
-// See https://github.com/esp-rs/esp-mbedtls/pull/62#issuecomment-2560830139
-//
-// This is by the way a generic way to polyfill the libc functions used by `mbedtls`:
-// - If your (baremetal) platform does not provide one or more of these, just
-//   add a dependency on `tinyrlibc` in your binary crate with features for all missing functions
-//   and then put such a `use` statement in your main file
-#[cfg(feature = "esp32c3")]
-use tinyrlibc as _;
-
 use core::net::{IpAddr, Ipv4Addr, SocketAddr};
 
 #[doc(hidden)]
@@ -45,7 +36,7 @@ use esp_wifi::wifi::{
     WifiState,
 };
 use esp_wifi::{init, EspWifiController};
-use hal::{prelude::*, rng::Rng, timer::timg::TimerGroup};
+use hal::{clock::CpuClock, rng::Rng, timer::timg::TimerGroup};
 
 // Patch until https://github.com/embassy-rs/static-cell/issues/16 is fixed
 macro_rules! mk_static {
@@ -108,8 +99,8 @@ async fn main(spawner: Spawner) -> ! {
             let timg1 = TimerGroup::new(peripherals.TIMG1);
             esp_hal_embassy::init(timg1.timer0);
         } else {
-            use esp_hal::timer::systimer::{SystemTimer, Target};
-            let systimer = SystemTimer::new(peripherals.SYSTIMER).split::<Target>();
+            use esp_hal::timer::systimer::SystemTimer;
+            let systimer = SystemTimer::new(peripherals.SYSTIMER);
             esp_hal_embassy::init(systimer.alarm0);
         }
     }

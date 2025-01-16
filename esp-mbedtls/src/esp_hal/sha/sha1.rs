@@ -4,7 +4,7 @@ use esp_hal::sha::Sha1;
 
 use crate::esp_hal::SHARED_SHA;
 
-use super::{nb, Context, ShaDigest};
+use super::{Context, ShaDigest};
 
 #[allow(non_camel_case_types)]
 #[repr(C)]

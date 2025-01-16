@@ -1,4 +1,3 @@
-use esp_hal::prelude::nb;
 use esp_hal::sha::{Context, ShaDigest};
 
 mod sha1;

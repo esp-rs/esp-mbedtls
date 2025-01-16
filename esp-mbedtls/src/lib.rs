@@ -1,7 +1,7 @@
 #![no_std]
 
 use core::cell::Cell;
-use core::ffi::{c_int, c_uchar, c_ulong, c_void, CStr};
+use core::ffi::{c_char, c_int, c_uchar, c_ulong, c_void, CStr};
 use core::fmt;
 use core::marker::PhantomData;
 use core::mem::size_of;
@@ -1542,12 +1542,12 @@ pub mod asynch {
 unsafe extern "C" fn dbg_print(
     _arg: *mut c_void,
     lvl: i32,
-    file: *const i8,
+    file: *const c_char,
     line: i32,
-    msg: *const i8,
+    msg: *const c_char,
 ) {
-    let file = CStr::from_ptr(file as *const i8);
-    let msg = CStr::from_ptr(msg as *const i8);
+    let file = CStr::from_ptr(file);
+    let msg = CStr::from_ptr(msg);
 
     let file = file.to_str().unwrap_or("???").trim();
     let msg = msg.to_str().unwrap_or("???").trim();
