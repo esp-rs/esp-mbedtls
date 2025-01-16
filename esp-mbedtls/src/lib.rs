@@ -290,13 +290,13 @@ pub struct Certificates<'a> {
     pub password: Option<&'a str>,
 }
 
-impl<'a> Default for Certificates<'a> {
+impl Default for Certificates<'_> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<'a> Certificates<'a> {
+impl Certificates<'_> {
     /// Create a new instance of [Certificates] with no certificates whatsoever
     pub const fn new() -> Self {
         Self {
@@ -573,7 +573,7 @@ static TLS_CREATED: Mutex<Cell<bool>> = Mutex::new(Cell::new(false));
 /// Only one such instance can be active at any point in time.
 pub struct Tls<'d>(PhantomData<&'d mut ()>);
 
-impl<'d> Tls<'d> {
+impl Tls<'_> {
     /// Create a new instance of the `Tls` type.
     ///
     /// Note that there could be only one active `Tls` instance at any point in time,
@@ -705,7 +705,7 @@ impl<'a, T> Session<'a, T> {
     ) -> Result<Self, TlsError> {
         let (drbg_context, ssl_context, ssl_config, crt, client_crt, private_key) =
             certificates.init_ssl(mode, min_version)?;
-        return Ok(Self {
+        Ok(Self {
             stream,
             drbg_context,
             ssl_context,
@@ -715,11 +715,11 @@ impl<'a, T> Session<'a, T> {
             private_key,
             state: SessionState::Initial,
             _tls_ref: tls_ref,
-        });
+        })
     }
 }
 
-impl<'a, T> Session<'a, T>
+impl<T> Session<'_, T>
 where
     T: Read + Write,
 {
@@ -869,7 +869,7 @@ where
     unsafe extern "C" fn send(ctx: *mut c_void, buf: *const c_uchar, len: usize) -> c_int {
         let session = ctx as *mut Session<T>;
         let stream = &mut (*session).stream;
-        let slice = core::ptr::slice_from_raw_parts(buf as *const u8, len as usize);
+        let slice = core::ptr::slice_from_raw_parts(buf, len);
         let res = stream.write(&*slice);
 
         match res {
@@ -887,8 +887,8 @@ where
     unsafe extern "C" fn receive(ctx: *mut c_void, buf: *mut c_uchar, len: usize) -> c_int {
         let session = ctx as *mut Session<T>;
         let stream = &mut (*session).stream;
-        let mut buffer = core::slice::from_raw_parts_mut(buf as *mut u8, len as usize);
-        let res = stream.read(&mut buffer);
+        let buffer = core::slice::from_raw_parts_mut(buf, len);
+        let res = stream.read(buffer);
 
         match res {
             Ok(len) => {
@@ -1021,7 +1021,7 @@ pub mod asynch {
         ) -> Result<Self, TlsError> {
             let (drbg_context, ssl_context, ssl_config, crt, client_crt, private_key) =
                 certificates.init_ssl(mode, min_version)?;
-            return Ok(Self {
+            Ok(Self {
                 stream,
                 drbg_context,
                 ssl_context,
@@ -1033,7 +1033,7 @@ pub mod asynch {
                 read_byte: None,
                 write_byte: None,
                 _token: tls_ref,
-            });
+            })
         }
     }
 
@@ -1058,7 +1058,7 @@ pub mod asynch {
         }
     }
 
-    impl<'a, T> Session<'a, T>
+    impl<T> Session<'_, T>
     where
         T: embedded_io_async::Read + embedded_io_async::Write,
     {
@@ -1185,8 +1185,7 @@ pub mod asynch {
                 // and then re-tries the call, the outstanding byte will not be written so it needs to be re-tried here.
                 self.flush_write().await?;
 
-                let outcome =
-                    core::future::poll_fn(|cx| PollCtx::poll(self, cx, |ssl| f(ssl))).await?;
+                let outcome = core::future::poll_fn(|cx| PollCtx::poll(self, cx, &mut f)).await?;
 
                 match outcome {
                     PollOutcome::Success(res) => {
@@ -1569,9 +1568,7 @@ extern "C" fn rand() -> crate::c_ulong {
 
 unsafe extern "C" fn rng(_param: *mut c_void, buffer: *mut c_uchar, len: usize) -> c_int {
     for i in 0..len {
-        buffer
-            .offset(i as isize)
-            .write_volatile((random() & 0xff) as u8);
+        buffer.add(i).write_volatile((random() & 0xff) as u8);
     }
 
     0
