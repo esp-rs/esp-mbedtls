@@ -3,6 +3,28 @@
 //!
 //! This example uses self-signed certificate. Your browser may display an error.
 //! You have to enable the exception to then proceed, of if using curl, use the flag `-k`.
+//!
+//! # mTLS
+//! Running this example with the feature `mtls` will make the server request a client
+//! certificate for the connection. If you send a request, without passing
+//! certificates, you will get an error. Theses certificates below are generated
+//! to work is the configured CA:
+//!
+//! certificate.pem
+//! ```text
+#![doc = include_str!("./certs/certificate.pem")]
+//! ```
+//!
+//! private_key.pem
+//! ```text
+#![doc = include_str!("./certs/private_key.pem")]
+//! ```
+//!
+//! Test with curl:
+//! ```bash
+//! curl https://<IP>/ --cert certificate.pem --key private_key.pem -k
+//! ```
+//!
 #![no_std]
 #![no_main]
 #![feature(type_alias_impl_trait)]
@@ -151,6 +173,10 @@ async fn main(spawner: Spawner) -> ! {
             Mode::Server,
             TlsVersion::Tls1_2,
             Certificates {
+                // Provide a ca_chain if you want to enable mTLS for the server.
+                #[cfg(feature = "mtls")]
+                ca_chain: X509::pem(concat!(include_str!("./certs/ca_cert.pem"), "\0").as_bytes())
+                    .ok(),
                 // Use self-signed certificates
                 certificate: X509::pem(
                     concat!(include_str!("./certs/certificate.pem"), "\0").as_bytes(),
@@ -211,6 +237,9 @@ async fn main(spawner: Spawner) -> ! {
                 }
 
                 Timer::after(Duration::from_millis(1000)).await;
+            }
+            Err(TlsError::NoClientCertificate) => {
+                println!("Error: No client certificates given. Please provide client certificates during your request");
             }
             Err(TlsError::MbedTlsError(-30592)) => {
                 println!("Fatal message: Please enable the exception for a self-signed certificate in your browser");

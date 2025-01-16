@@ -1,9 +1,15 @@
 //! Example for a client connection to a server.
-//! This example connects to Google.com and then prints out the result
+//! This example connects to either `Google.com` or `certauth.cryptomix.com` (mTLS) and then prints out the result.
+//!
+//! # mTLS
+//! Use the mTLS feature to enable client authentication and send client certificates when doing a
+//! request. Note that this will connect to `certauth.cryptomix.com` instead of `google.com`
 #![no_std]
 #![no_main]
 #![feature(type_alias_impl_trait)]
 #![feature(impl_trait_in_assoc_type)]
+
+use core::ffi::CStr;
 
 #[doc(hidden)]
 pub use esp_hal as hal;
@@ -37,6 +43,19 @@ macro_rules! mk_static {
 
 const SSID: &str = env!("SSID");
 const PASSWORD: &str = env!("PASSWORD");
+
+// Setup configuration based on mTLS feature.
+cfg_if::cfg_if! {
+    if #[cfg(feature = "mtls")] {
+        const REMOTE_IP: Ipv4Address = Ipv4Address::new(62, 210, 201, 125); // certauth.cryptomix.com
+        const SERVERNAME: &CStr = c"certauth.cryptomix.com";
+        const REQUEST: &[u8] = b"GET /json/ HTTP/1.0\r\nHost: certauth.cryptomix.com\r\n\r\n";
+    } else {
+        const REMOTE_IP: Ipv4Address = Ipv4Address::new(142, 250, 185, 68); // google.com
+        const SERVERNAME: &CStr = c"www.google.com";
+        const REQUEST: &[u8] = b"GET /notfound HTTP/1.0\r\nHost: www.google.com\r\n\r\n";
+    }
+}
 
 #[esp_hal_embassy::main]
 async fn main(spawner: Spawner) -> ! {
@@ -115,13 +134,37 @@ async fn main(spawner: Spawner) -> ! {
 
     socket.set_timeout(Some(Duration::from_secs(10)));
 
-    let remote_endpoint = (Ipv4Address::new(142, 250, 185, 68), 443); // www.google.com
+    let remote_endpoint = (REMOTE_IP, 443);
     println!("connecting...");
     let r = socket.connect(remote_endpoint).await;
     if let Err(e) = r {
         println!("connect error: {:?}", e);
         #[allow(clippy::empty_loop)]
         loop {}
+    }
+
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "mtls")] {
+            let certificates = Certificates {
+                ca_chain: X509::pem(
+                    concat!(include_str!("./certs/certauth.cryptomix.com.pem"), "\0").as_bytes(),
+                )
+                .ok(),
+                certificate: X509::pem(concat!(include_str!("./certs/certificate.pem"), "\0").as_bytes())
+                    .ok(),
+                private_key: X509::pem(concat!(include_str!("./certs/private_key.pem"), "\0").as_bytes())
+                    .ok(),
+                password: None,
+            };
+        } else {
+            let certificates = Certificates {
+                ca_chain: X509::pem(
+                    concat!(include_str!("./certs/www.google.com.pem"), "\0").as_bytes(),
+                )
+                .ok(),
+                ..Default::default()
+            };
+        }
     }
 
     let mut tls = Tls::new(peripherals.SHA)
@@ -133,16 +176,10 @@ async fn main(spawner: Spawner) -> ! {
     let mut session = Session::new(
         &mut socket,
         Mode::Client {
-            servername: c"www.google.com",
+            servername: SERVERNAME,
         },
         TlsVersion::Tls1_3,
-        Certificates {
-            ca_chain: X509::pem(
-                concat!(include_str!("./certs/www.google.com.pem"), "\0").as_bytes(),
-            )
-            .ok(),
-            ..Default::default()
-        },
+        certificates,
         tls.reference(),
     )
     .unwrap();
@@ -155,9 +192,7 @@ async fn main(spawner: Spawner) -> ! {
 
     use embedded_io_async::Write;
 
-    let r = session
-        .write_all(b"GET /notfound HTTP/1.0\r\nHost: www.google.com\r\n\r\n")
-        .await;
+    let r = session.write_all(REQUEST).await;
     if let Err(e) = r {
         println!("write error: {:?}", e);
         #[allow(clippy::empty_loop)]

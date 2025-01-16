@@ -91,15 +91,7 @@ name = "async_client"
 required-features = ["examples-async"]
 
 [[example]]
-name = "async_client_mTLS"
-required-features = ["examples-async"]
-
-[[example]]
 name = "async_server"
-required-features = ["examples-async"]
-
-[[example]]
-name = "async_server_mTLS"
 required-features = ["examples-async"]
 
 [[example]]
@@ -161,6 +153,14 @@ esp32s3 = [
     "esp-wifi?/esp32s3",
     "esp-mbedtls/esp32s3",
 ]
+
+# Enable mTLS for the running example. See example documentation for further details.
+# Applies to:
+#  - async_client
+#  - async_server
+#  - sync_client
+#  - sync_server
+mtls = []
 
 [build-dependencies]
 embuild = { version = "0.33", features = ["espidf"] }
