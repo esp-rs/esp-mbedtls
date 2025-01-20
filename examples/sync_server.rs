@@ -3,17 +3,30 @@
 //!
 //! This example uses self-signed certificate. Your browser may display an error.
 //! You have to enable the exception to then proceed, of if using curl, use the flag `-k`.
+//!
+//! # mTLS
+//! Running this example with the feature `mtls` will make the server request a client
+//! certificate for the connection. If you send a request, without passing
+//! certificates, you will get an error. Theses certificates below are generated
+//! to work is the configured CA:
+//!
+//! certificate.pem
+//! ```text
+#![doc = include_str!("./certs/certificate.pem")]
+//! ```
+//!
+//! private_key.pem
+//! ```text
+#![doc = include_str!("./certs/private_key.pem")]
+//! ```
+//!
+//! Test with curl:
+//! ```bash
+//! curl https://<IP>/ --cert certificate.pem --key private_key.pem -k
+//! ```
+//!
 #![no_std]
 #![no_main]
-
-// See https://github.com/esp-rs/esp-mbedtls/pull/62#issuecomment-2560830139
-//
-// This is by the way a generic way to polyfill the libc functions used by `mbedtls`:
-// - If your (baremetal) platform does not provide one or more of these, just
-//   add a dependency on `tinyrlibc` in your binary crate with features for all missing functions
-//   and then put such a `use` statement in your main file
-#[cfg(feature = "esp32c3")]
-use tinyrlibc as _;
 
 #[doc(hidden)]
 pub use esp_hal as hal;
@@ -29,13 +42,13 @@ use esp_wifi::{
     init,
     wifi::{utils::create_network_interface, ClientConfiguration, Configuration, WifiStaDevice},
 };
-use hal::{prelude::*, rng::Rng, time, timer::timg::TimerGroup};
-use smoltcp11::iface::{SocketSet, SocketStorage};
+use hal::{clock::CpuClock, main, rng::Rng, time, timer::timg::TimerGroup};
+use smoltcp::iface::{SocketSet, SocketStorage};
 
 const SSID: &str = env!("SSID");
 const PASSWORD: &str = env!("PASSWORD");
 
-#[entry]
+#[main]
 fn main() -> ! {
     init_logger(log::LevelFilter::Info);
     let peripherals = esp_hal::init({
@@ -139,6 +152,12 @@ fn main() -> ! {
                 Mode::Server,
                 TlsVersion::Tls1_2,
                 Certificates {
+                    // Provide a ca_chain if you want to enable mTLS for the server.
+                    #[cfg(feature = "mtls")]
+                    ca_chain: X509::pem(
+                        concat!(include_str!("./certs/ca_cert.pem"), "\0").as_bytes(),
+                    )
+                    .ok(),
                     // Use self-signed certificates
                     certificate: X509::pem(
                         concat!(include_str!("./certs/certificate.pem"), "\0").as_bytes(),
@@ -188,6 +207,9 @@ fn main() -> ! {
                             )
                             .unwrap();
                     }
+                }
+                Err(TlsError::NoClientCertificate) => {
+                    println!("Error: No client certificates given. Please provide client certificates during your request");
                 }
                 Err(TlsError::MbedTlsError(-30592)) => {
                     println!("Fatal message: Please enable the exception for a self-signed certificate in your browser");

@@ -3,19 +3,32 @@
 //!
 //! This example uses self-signed certificate. Your browser may display an error.
 //! You have to enable the exception to then proceed, of if using curl, use the flag `-k`.
+//!
+//! # mTLS
+//! Running this example with the feature `mtls` will make the server request a client
+//! certificate for the connection. If you send a request, without passing
+//! certificates, you will get an error. Theses certificates below are generated
+//! to work is the configured CA:
+//!
+//! certificate.pem
+//! ```text
+#![doc = include_str!("./certs/certificate.pem")]
+//! ```
+//!
+//! private_key.pem
+//! ```text
+#![doc = include_str!("./certs/private_key.pem")]
+//! ```
+//!
+//! Test with curl:
+//! ```bash
+//! curl https://<IP>/ --cert certificate.pem --key private_key.pem -k
+//! ```
+//!
 #![no_std]
 #![no_main]
 #![feature(type_alias_impl_trait)]
 #![feature(impl_trait_in_assoc_type)]
-
-// See https://github.com/esp-rs/esp-mbedtls/pull/62#issuecomment-2560830139
-//
-// This is by the way a generic way to polyfill the libc functions used by `mbedtls`:
-// - If your (baremetal) platform does not provide one or more of these, just
-//   add a dependency on `tinyrlibc` in your binary crate with features for all missing functions
-//   and then put such a `use` statement in your main file
-#[cfg(feature = "esp32c3")]
-use tinyrlibc as _;
 
 #[doc(hidden)]
 pub use esp_hal as hal;
@@ -36,7 +49,7 @@ use esp_wifi::wifi::{
     WifiState,
 };
 use esp_wifi::{init, EspWifiController};
-use hal::{prelude::*, rng::Rng, timer::timg::TimerGroup};
+use hal::{clock::CpuClock, rng::Rng, timer::timg::TimerGroup};
 
 // Patch until https://github.com/embassy-rs/static-cell/issues/16 is fixed
 macro_rules! mk_static {
@@ -84,8 +97,8 @@ async fn main(spawner: Spawner) -> ! {
             let timg1 = TimerGroup::new(peripherals.TIMG1);
             esp_hal_embassy::init(timg1.timer0);
         } else {
-            use esp_hal::timer::systimer::{SystemTimer, Target};
-            let systimer = SystemTimer::new(peripherals.SYSTIMER).split::<Target>();
+            use esp_hal::timer::systimer::SystemTimer;
+            let systimer = SystemTimer::new(peripherals.SYSTIMER);
             esp_hal_embassy::init(systimer.alarm0);
         }
     }
@@ -160,6 +173,10 @@ async fn main(spawner: Spawner) -> ! {
             Mode::Server,
             TlsVersion::Tls1_2,
             Certificates {
+                // Provide a ca_chain if you want to enable mTLS for the server.
+                #[cfg(feature = "mtls")]
+                ca_chain: X509::pem(concat!(include_str!("./certs/ca_cert.pem"), "\0").as_bytes())
+                    .ok(),
                 // Use self-signed certificates
                 certificate: X509::pem(
                     concat!(include_str!("./certs/certificate.pem"), "\0").as_bytes(),
@@ -220,6 +237,9 @@ async fn main(spawner: Spawner) -> ! {
                 }
 
                 Timer::after(Duration::from_millis(1000)).await;
+            }
+            Err(TlsError::NoClientCertificate) => {
+                println!("Error: No client certificates given. Please provide client certificates during your request");
             }
             Err(TlsError::MbedTlsError(-30592)) => {
                 println!("Fatal message: Please enable the exception for a self-signed certificate in your browser");

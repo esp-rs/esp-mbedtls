@@ -2,7 +2,6 @@
 
 use core::ffi::c_int;
 
-use esp_hal::prelude::nb;
 use esp_hal::rsa::{operand_sizes, RsaModularExponentiation};
 
 use crypto_bigint::*;

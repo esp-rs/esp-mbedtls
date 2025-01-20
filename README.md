@@ -8,13 +8,9 @@ It comes with mbedtls precompiled to avoid the need for a complete C toolchain. 
 
 This should work together with `esp-wifi`. It currently won't work without. However it's not well tested yet besides the included examples.
 
-See the examples for how to use it. A key thing is to [set a bigger heap size](https://github.com/esp-rs/esp-wifi/blob/main/esp-wifi/docs/tuning.md) for esp-wifi since more heap memory is needed to get this working.
-
 In general this is heavy in terms of heap memory used and code size. If you can, you should prefer using something like `embedded-tls`.
 
 For now it's missing advanced configuration options which will be added step-by-step.
-
-Currently this won't work on ESP32-S2 - getting it to work will require tweaking the memory usage a lot!
 
 The examples use one hard-coded address of `www.google.com` which might not always work.
 
@@ -30,9 +26,8 @@ Examples are available for:
 
 - esp32
 - esp32c3
+- esp32s2
 - esp32s3
-
-Limited support is also available for `esp32s2` but it won't compile for async.
 
 To run examples, you need to specify the architecture as a feature, the example name, the target and the toolchain.
 
@@ -58,20 +53,21 @@ Here's a table of the architectures with their corresponding target for quick re
 | ------------ | --------------------------- | ------------------ |
 | esp32        | xtensa-esp32-none-elf       | esp                |
 | esp32c3      | riscv32imc-unknown-none-elf | nightly            |
+| esp32s2      | xtensa-esp32s2-none-elf     | esp                |
 | esp32s3      | xtensa-esp32s3-none-elf     | esp                |
 
-Heres's a list of all the examples with their description:
+Heres's a list of all the examples with their description, and the required features to enable them:
 
-| Example           | Description                                                  |
-| :---------------- | ------------------------------------------------------------ |
-| async_client      | Example of a HTTPS connection using the async client.        |
-| async_client_mTLS | Example of a HTTPS connection using the async client, with certificate authentication. This sends client certificates to a server, and the response indicates informations about the certificates. |
-| sync_client       | Example of a HTTPS connection using the sync client.         |
-| sync_client_mTLS  | Example of a HTTPS connection using the sync client, with certificate authentication. This sends client certificates to a server, and the response indicates informations about the certificates. |
-| async_server      | Example of a simple async server with HTTPS support. This uses self-signed certificates, so you will need to enable an exception in your browser. |
-| async_server_mTLS | Example of a simple async server with HTTPS support, with client authentication. You will need to pass client certificates in your request in order to have a successful connection. Refer to the documentation inside the example. |
-| sync_server       | Example of a simple sync server with HTTPS support. This uses self-signed certificates, so you will need to enable an exception in your browser. |
-| sync_server_mTLS  | Example of a simple sync server with HTTPS support, with client authentication. You will need to pass client certificates in your request in order to have a successful connection. Refer to the documentation inside the example. |
+| Example                  | Features | Description                                                  |
+| :----------------------- | -------- | ------------------------------------------------------------ |
+| async_client             | -        | Example of a HTTPS connection using the async client.        |
+| async_client (with mTLS) | mtls     | Example of a HTTPS connection using the async client, with certificate authentication. This sends client certificates to a server, and the response indicates informations about the certificates. |
+| sync_client              | -        | Example of a HTTPS connection using the sync client.         |
+| sync_client (with mTLS)  | mtls     | Example of a HTTPS connection using the sync client, with certificate authentication. This sends client certificates to a server, and the response indicates informations about the certificates. |
+| async_server             | -        | Example of a simple async server with HTTPS support. This uses self-signed certificates, so you will need to enable an exception in your browser. |
+| async_server (with mTLS) | mtls     | Example of a simple async server with HTTPS support, with client authentication. You will need to pass client certificates in your request in order to have a successful connection. Refer to the documentation inside the example. |
+| sync_server              | -        | Example of a simple sync server with HTTPS support. This uses self-signed certificates, so you will need to enable an exception in your browser. |
+| sync_server (with mTLS)  | mtls     | Example of a simple sync server with HTTPS support, with client authentication. You will need to pass client certificates in your request in order to have a successful connection. Refer to the documentation inside the example. |
 
 This needs `espflash` version 2.x. If you are using version 1.x you need to remove the `flash` command from the runner in `.cargo/config.toml`
 

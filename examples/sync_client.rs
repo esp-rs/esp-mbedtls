@@ -1,16 +1,13 @@
 //! Example for a client connection to a server.
-//! This example connects to Google.com and then prints out the result
+//! This example connects to either `Google.com` or `certauth.cryptomix.com` (mTLS) and then prints out the result.
+//!
+//! # mTLS
+//! Use the mTLS feature to enable client authentication and send client certificates when doing a
+//! request. Note that this will connect to `certauth.cryptomix.com` instead of `google.com`
 #![no_std]
 #![no_main]
 
-// See https://github.com/esp-rs/esp-mbedtls/pull/62#issuecomment-2560830139
-//
-// This is by the way a generic way to polyfill the libc functions used by `mbedtls`:
-// - If your (baremetal) platform does not provide one or more of these, just
-//   add a dependency on `tinyrlibc` in your binary crate with features for all missing functions
-//   and then put such a `use` statement in your main file
-#[cfg(feature = "esp32c3")]
-use tinyrlibc as _;
+use core::ffi::CStr;
 
 #[doc(hidden)]
 pub use esp_hal as hal;
@@ -26,8 +23,8 @@ use esp_wifi::{
     init,
     wifi::{utils::create_network_interface, ClientConfiguration, Configuration, WifiStaDevice},
 };
-use hal::{prelude::*, rng::Rng, time, timer::timg::TimerGroup};
-use smoltcp11::{
+use hal::{clock::CpuClock, main, rng::Rng, time, timer::timg::TimerGroup};
+use smoltcp::{
     iface::{SocketSet, SocketStorage},
     wire::IpAddress,
 };
@@ -35,7 +32,20 @@ use smoltcp11::{
 const SSID: &str = env!("SSID");
 const PASSWORD: &str = env!("PASSWORD");
 
-#[entry]
+// Setup configuration based on mTLS feature.
+cfg_if::cfg_if! {
+    if #[cfg(feature = "mtls")] {
+        const REMOTE_IP: IpAddress = IpAddress::v4(62, 210, 201, 125); // certauth.cryptomix.com
+        const SERVERNAME: &CStr = c"certauth.cryptomix.com";
+        const REQUEST: &[u8] = b"GET /json/ HTTP/1.0\r\nHost: certauth.cryptomix.com\r\n\r\n";
+    } else {
+        const REMOTE_IP: IpAddress = IpAddress::v4(142, 250, 185, 68); // google.com
+        const SERVERNAME: &CStr = c"www.google.com";
+        const REQUEST: &[u8] = b"GET /notfound HTTP/1.0\r\nHost: www.google.com\r\n\r\n";
+    }
+}
+
+#[main]
 fn main() -> ! {
     init_logger(log::LevelFilter::Info);
     let peripherals = esp_hal::init({
@@ -110,9 +120,31 @@ fn main() -> ! {
 
     socket.work();
 
-    socket
-        .open(IpAddress::v4(142, 250, 185, 68), 443) // google.com
-        .unwrap();
+    socket.open(REMOTE_IP, 443).unwrap();
+
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "mtls")] {
+            let certificates = Certificates {
+                ca_chain: X509::pem(
+                    concat!(include_str!("./certs/certauth.cryptomix.com.pem"), "\0").as_bytes(),
+                )
+                .ok(),
+                certificate: X509::pem(concat!(include_str!("./certs/certificate.pem"), "\0").as_bytes())
+                    .ok(),
+                private_key: X509::pem(concat!(include_str!("./certs/private_key.pem"), "\0").as_bytes())
+                    .ok(),
+                password: None,
+            };
+        } else {
+            let certificates = Certificates {
+                ca_chain: X509::pem(
+                    concat!(include_str!("./certs/www.google.com.pem"), "\0").as_bytes(),
+                )
+                .ok(),
+                ..Default::default()
+            };
+        }
+    }
 
     let mut tls = Tls::new(peripherals.SHA)
         .unwrap()
@@ -123,16 +155,10 @@ fn main() -> ! {
     let mut session = Session::new(
         &mut socket,
         Mode::Client {
-            servername: c"www.google.com",
+            servername: SERVERNAME,
         },
         TlsVersion::Tls1_3,
-        Certificates {
-            ca_chain: X509::pem(
-                concat!(include_str!("./certs/www.google.com.pem"), "\0").as_bytes(),
-            )
-            .ok(),
-            ..Default::default()
-        },
+        certificates,
         tls.reference(),
     )
     .unwrap();
@@ -141,9 +167,7 @@ fn main() -> ! {
     session.connect().unwrap();
 
     println!("Write to connection");
-    session
-        .write(b"GET /notfound HTTP/1.0\r\nHost: www.google.com\r\n\r\n")
-        .unwrap();
+    session.write(REQUEST).unwrap();
 
     println!("Read from connection");
     let mut buffer = [0u8; 4096];
