@@ -44,6 +44,7 @@ enum Commands {
 enum Soc {
     ESP32,
     ESP32C3,
+    ESP32C6,
     ESP32S2,
     ESP32S3,
 }
@@ -53,6 +54,7 @@ impl core::fmt::Display for Soc {
         match self {
             Soc::ESP32 => write!(f, "esp32"),
             Soc::ESP32C3 => write!(f, "esp32c3"),
+            Soc::ESP32C6 => write!(f, "esp32c6"),
             Soc::ESP32S2 => write!(f, "esp32s2"),
             Soc::ESP32S3 => write!(f, "esp32s3"),
         }
@@ -175,6 +177,12 @@ static COMPILATION_TARGETS: &[CompilationTarget] = &[
         arch: Arch::RiscV,
         clang_target: "riscv32-esp-elf",
         target: "riscv32imc-unknown-none-elf",
+    },
+    CompilationTarget {
+        soc: Soc::ESP32C6,
+        arch: Arch::RiscV,
+        clang_target: "riscv32-esp-elf",
+        target: "riscv32imac-unknown-none-elf",
     },
     CompilationTarget {
         soc: Soc::ESP32S2,

@@ -21,6 +21,7 @@ use esp_mbedtls_sys::bindings::*;
 #[cfg(any(
     feature = "esp32",
     feature = "esp32c3",
+    feature = "esp32c6",
     feature = "esp32s2",
     feature = "esp32s3"
 ))]
@@ -31,6 +32,7 @@ mod edge_nal;
 #[cfg(any(
     feature = "esp32",
     feature = "esp32c3",
+    feature = "esp32c6",
     feature = "esp32s2",
     feature = "esp32s3"
 ))]
@@ -40,6 +42,18 @@ mod esp_hal;
 /// to use e.g. `write_all` or `read_exact`.
 pub mod io {
     pub use embedded_io::*;
+}
+
+#[cfg(feature = "esp32c6")]
+#[no_mangle]
+unsafe extern "C" fn memchr(ptr: *const u8, ch: u8, count: usize) -> *const u8{
+    for i in 0..count {
+        if ptr.add(i).read() == ch {
+            return ptr.add(i);
+        } 
+    }
+
+    return core::ptr::null()
 }
 
 unsafe fn aligned_calloc(_align: usize, size: usize) -> *const c_void {
@@ -581,6 +595,7 @@ impl Tls<'_> {
     #[cfg(not(any(
         feature = "esp32",
         feature = "esp32c3",
+        feature = "esp32c6",
         feature = "esp32s2",
         feature = "esp32s3"
     )))]
@@ -1077,7 +1092,7 @@ pub mod asynch {
                     if matches!(self.state, SessionState::Eof) {
                         return Err(TlsError::Eof);
                     }
-
+                    log::debug!("Establish SSL connection OK");
                     self.state = SessionState::Connected;
 
                     Ok(())

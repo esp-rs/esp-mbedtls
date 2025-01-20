@@ -15,6 +15,7 @@ fn main() -> Result<()> {
     // and just use the pre-generated baremetal ESP bindings and libraries
     let esp32 = env::var("CARGO_FEATURE_ESP32").is_ok();
     let esp32c3 = env::var("CARGO_FEATURE_ESP32C3").is_ok();
+    let esp32c6 = env::var("CARGO_FEATURE_ESP32C6").is_ok();
     let esp32s2 = env::var("CARGO_FEATURE_ESP32S2").is_ok();
     let esp32s3 = env::var("CARGO_FEATURE_ESP32S3").is_ok();
 
@@ -35,6 +36,11 @@ fn main() -> Result<()> {
         Some((
             bindings_dir.join("esp32c3.rs"),
             libs_dir.join("riscv32imc-unknown-none-elf"),
+        ))
+    } else if esp32c6 {
+        Some((
+            bindings_dir.join("esp32c6.rs"),
+            libs_dir.join("riscv32imac-unknown-none-elf"),
         ))
     } else if esp32s2 {
         Some((
