@@ -30,6 +30,7 @@ default = ["edge-nal"]
 async = ["dep:embedded-io-async"]
 esp32 = ["esp-hal/esp32", "esp-wifi/esp32", "esp-mbedtls-sys/esp32"]
 esp32c3 = ["esp-hal/esp32c3", "esp-wifi/esp32c3", "esp-mbedtls-sys/esp32c3"]
+esp32c6 = ["esp-hal/esp32c6", "esp-wifi/esp32c6", "esp-mbedtls-sys/esp32c6"]
 esp32s2 = ["esp-hal/esp32s2", "esp-wifi/esp32s2", "esp-mbedtls-sys/esp32s2"]
 esp32s3 = ["esp-hal/esp32s3", "esp-wifi/esp32s3", "esp-mbedtls-sys/esp32s3"]
 
