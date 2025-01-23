@@ -4,6 +4,7 @@
 #[cfg(any(
     feature = "esp32",
     feature = "esp32c3",
+    feature = "esp32c6",
     feature = "esp32s2",
     feature = "esp32s3"
 ))]
@@ -39,7 +40,7 @@ pub mod bindings {
     include!("include/esp32c3.rs");
 
     #[cfg(feature = "esp32c6")]
-    include!("include/esp32c3.rs");
+    include!("include/esp32c6.rs");
 
     #[cfg(feature = "esp32s2")]
     include!("include/esp32s2.rs");

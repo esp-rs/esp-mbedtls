@@ -22,7 +22,7 @@ fn main() -> Result<()> {
     let host = env::var("HOST").unwrap();
     let target = env::var("TARGET").unwrap();
 
-    // If we're building for ESP32, ESP32C3, ESP32S2, or ESP32S3, we don't need to do anything
+    // If we're building for ESP32, ESP32C3, ESP32C6, ESP32S2, or ESP32S3, we don't need to do anything
     // Just link against the pre-built libraries and use the pre-generated bindings
     let bindings_dir = crate_root_path.join("src").join("include");
     let libs_dir = crate_root_path.join("libs");
