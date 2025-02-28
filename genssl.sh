@@ -15,7 +15,7 @@ echo -n | openssl s_client -showcerts -connect certauth.cryptomix.com:443 2>/dev
 # Generate CA certificate
 openssl req \
   -x509 \
-  -newkey rsa:4096 \
+  -newkey rsa:2048 \
   -keyout $CERTS_DIR/ca_key.pem \
   -out $CERTS_DIR/ca_cert.pem \
   -nodes \
@@ -25,7 +25,7 @@ openssl req \
 
 # Generate certificate signing request (CSR)
 openssl req \
-    -newkey rsa:4096 \
+    -newkey rsa:2048 \
     -keyout $CERTS_DIR/private_key.pem \
     -out $CERTS_DIR/csr.pem \
     -nodes \

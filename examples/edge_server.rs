@@ -32,8 +32,7 @@ use esp_mbedtls::{TlsError, X509};
 use esp_println::logger::init_logger;
 use esp_println::println;
 use esp_wifi::wifi::{
-    ClientConfiguration, Configuration, WifiController, WifiDevice, WifiEvent, WifiStaDevice,
-    WifiState,
+    ClientConfiguration, Configuration, WifiController, WifiDevice, WifiEvent, WifiState,
 };
 use esp_wifi::{init, EspWifiController};
 use hal::{clock::CpuClock, rng::Rng, timer::timg::TimerGroup};
@@ -70,29 +69,22 @@ pub type HttpsServer = Server<SERVER_SOCKETS, RX_SIZE, 32>;
 async fn main(spawner: Spawner) -> ! {
     init_logger(log::LevelFilter::Info);
 
-    let peripherals = esp_hal::init({
-        let mut config = esp_hal::Config::default();
-        config.cpu_clock = CpuClock::max();
-        config
-    });
+    let config = esp_hal::Config::default().with_cpu_clock(CpuClock::max());
+    let peripherals = esp_hal::init(config);
 
-    esp_alloc::heap_allocator!(130 * 1024);
+    esp_alloc::heap_allocator!(size: 130 * 1024);
 
     let timg0 = TimerGroup::new(peripherals.TIMG0);
+    let mut rng = Rng::new(peripherals.RNG);
 
-    let init = &*mk_static!(
+    let esp_wifi_ctrl = &*mk_static!(
         EspWifiController<'_>,
-        init(
-            timg0.timer0,
-            Rng::new(peripherals.RNG),
-            peripherals.RADIO_CLK,
-        )
-        .unwrap()
+        init(timg0.timer0, rng.clone(), peripherals.RADIO_CLK,).unwrap()
     );
 
-    let wifi = peripherals.WIFI;
-    let (wifi_interface, controller) =
-        esp_wifi::wifi::new_with_mode(init, wifi, WifiStaDevice).unwrap();
+    let (controller, interfaces) = esp_wifi::wifi::new(&esp_wifi_ctrl, peripherals.WIFI).unwrap();
+
+    let wifi_interface = interfaces.sta;
 
     cfg_if::cfg_if! {
         if #[cfg(feature = "esp32")] {
@@ -107,7 +99,7 @@ async fn main(spawner: Spawner) -> ! {
 
     let config = Config::dhcpv4(Default::default());
 
-    let seed = 1234; // very random, very secure seed
+    let seed = (rng.random() as u64) << 32 | rng.random() as u64;
 
     // Init network stack
     let (stack, runner) = embassy_net::new(
@@ -269,6 +261,6 @@ async fn connection(mut controller: WifiController<'static>) {
 }
 
 #[embassy_executor::task]
-async fn net_task(mut runner: Runner<'static, WifiDevice<'static, WifiStaDevice>>) {
+async fn net_task(mut runner: Runner<'static, WifiDevice<'static>>) {
     runner.run().await
 }

@@ -21,12 +21,12 @@ use esp_mbedtls::{Mode, Tls, TlsVersion, X509};
 use esp_println::{logger::init_logger, print, println};
 use esp_wifi::{
     init,
-    wifi::{utils::create_network_interface, ClientConfiguration, Configuration, WifiStaDevice},
+    wifi::{ClientConfiguration, Configuration},
 };
 use hal::{clock::CpuClock, main, rng::Rng, time, timer::timg::TimerGroup};
 use smoltcp::{
     iface::{SocketSet, SocketStorage},
-    wire::IpAddress,
+    wire::{DhcpOption, IpAddress},
 };
 
 const SSID: &str = env!("SSID");
@@ -48,30 +48,39 @@ cfg_if::cfg_if! {
 #[main]
 fn main() -> ! {
     init_logger(log::LevelFilter::Info);
-    let peripherals = esp_hal::init({
-        let mut config = esp_hal::Config::default();
-        config.cpu_clock = CpuClock::max();
-        config
-    });
+    let config = esp_hal::Config::default().with_cpu_clock(CpuClock::max());
+    let peripherals = esp_hal::init(config);
 
-    esp_alloc::heap_allocator!(115 * 1024);
+    esp_alloc::heap_allocator!(size: 115 * 1024);
 
     let timg0 = TimerGroup::new(peripherals.TIMG0);
 
     let mut rng = Rng::new(peripherals.RNG);
 
-    let init = init(timg0.timer0, rng, peripherals.RADIO_CLK).unwrap();
+    let esp_wifi_ctrl = init(timg0.timer0, rng.clone(), peripherals.RADIO_CLK).unwrap();
 
-    let wifi = peripherals.WIFI;
+    let (mut controller, interfaces) =
+        esp_wifi::wifi::new(&esp_wifi_ctrl, peripherals.WIFI).unwrap();
 
-    let (iface, device, mut controller) =
-        create_network_interface(&init, wifi, WifiStaDevice).unwrap();
+    let mut device = interfaces.sta;
+    let iface = create_interface(&mut device);
 
     let mut socket_set_entries: [SocketStorage; 3] = Default::default();
-    let sockets = SocketSet::new(&mut socket_set_entries[..]);
+    let mut sockets = SocketSet::new(&mut socket_set_entries[..]);
+    let mut dhcp_socket = smoltcp::socket::dhcpv4::Socket::new();
+    // we can set a hostname here (or add other DHCP options)
+    dhcp_socket.set_outgoing_options(&[DhcpOption {
+        kind: 12,
+        data: b"esp-mbedtls",
+    }]);
+    sockets.add(dhcp_socket);
 
-    let now = || time::now().duration_since_epoch().to_millis();
+    let now = || time::Instant::now().duration_since_epoch().as_millis();
     let wifi_stack = Stack::new(iface, device, sockets, now, rng.random());
+
+    controller
+        .set_power_saving(esp_wifi::config::PowerSaveMode::None)
+        .unwrap();
 
     println!("Call wifi_connect");
     let client_config = Configuration::Client(ClientConfiguration {
@@ -188,4 +197,25 @@ fn main() -> ! {
 
     #[allow(clippy::empty_loop)]
     loop {}
+}
+
+// some smoltcp boilerplate
+fn timestamp() -> smoltcp::time::Instant {
+    smoltcp::time::Instant::from_micros(
+        esp_hal::time::Instant::now()
+            .duration_since_epoch()
+            .as_micros() as i64,
+    )
+}
+
+fn create_interface(device: &mut esp_wifi::wifi::WifiDevice) -> smoltcp::iface::Interface {
+    // users could create multiple instances but since they only have one WifiDevice
+    // they probably can't do anything bad with that
+    smoltcp::iface::Interface::new(
+        smoltcp::iface::Config::new(smoltcp::wire::HardwareAddress::Ethernet(
+            smoltcp::wire::EthernetAddress::from_bytes(&device.mac_address()),
+        )),
+        device,
+        timestamp(),
+    )
 }
