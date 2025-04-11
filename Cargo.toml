@@ -24,14 +24,14 @@ opt-level = "z"
 opt-level = 3
 
 [dependencies]
-esp-hal = { version = "0.23.0", optional = true }
-esp-backtrace = { version = "0.15.0", optional = true, features = [
+esp-hal = { version = "1.0.0-beta.0", optional = true }
+esp-backtrace = { version = "0.15.1", optional = true, features = [
     "panic-handler",
     "println",
     "exception-handler",
 ] }
-esp-println = { version = "0.13.0", optional = true, features = ["log"] }
-esp-hal-embassy = { version = "0.6.0", optional = true }
+esp-println = { version = "0.13.1", optional = true, features = ["log"] }
+esp-hal-embassy = { version = "0.7.0", optional = true }
 
 embassy-time = { version = "0.4.0", optional = true }
 embassy-executor = { version = "0.7", package = "embassy-executor", features = [
@@ -44,9 +44,8 @@ embassy-net = { version = "0.6.0", features = [
     "medium-ethernet",
 ], optional = true }
 
-esp-wifi = { version = "0.12.0", optional = true, features = [
+esp-wifi = { version = "0.13.0", optional = true, features = [
     "sys-logs",
-    "utils",
     "wifi",
 ] }
 blocking-network-stack = { git = "https://github.com/bjoernQ/blocking-network-stack", rev = "b3ecefc222d8806edd221f266999ca339c52d34e" }
@@ -73,7 +72,7 @@ edge-http = { version = "0.5.0", optional = true }
 edge-nal = { version = "0.5.0", optional = true }
 edge-nal-embassy = { version = "0.5.0", optional = true }
 cfg-if = "1.0.0"
-esp-alloc = { version = "0.6.0", optional = true }
+esp-alloc = { version = "0.7.0", optional = true }
 enumset = { version = "1", default-features = false }
 
 [target.'cfg(target_os = "espidf")'.dependencies]
@@ -104,6 +103,7 @@ examples = [
     "esp-backtrace",
     "esp-println",
     "esp-wifi",
+    "esp-wifi/smoltcp",
     "smoltcp",
     "esp-alloc",
 ]

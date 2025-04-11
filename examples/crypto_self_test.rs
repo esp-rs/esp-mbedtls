@@ -33,13 +33,10 @@ fn main() -> ! {
     init_logger(log::LevelFilter::Info);
 
     // Init ESP-WIFI heap for malloc
-    let peripherals = esp_hal::init({
-        let mut config = esp_hal::Config::default();
-        config.cpu_clock = CpuClock::max();
-        config
-    });
+    let config = esp_hal::Config::default().with_cpu_clock(CpuClock::max());
+    let peripherals = esp_hal::init(config);
 
-    esp_alloc::heap_allocator!(115 * 1024);
+    esp_alloc::heap_allocator!(size: 115 * 1024);
 
     let timg0 = TimerGroup::new(peripherals.TIMG0);
 
