@@ -231,6 +231,10 @@ impl Handler for HttpHandler {
 async fn connection(mut controller: WifiController<'static>) {
     println!("start connection task");
     println!("Device capabilities: {:?}", controller.capabilities());
+    #[cfg(feature = "esp32c6")]
+    controller
+        .set_power_saving(esp_wifi::config::PowerSaveMode::None)
+        .unwrap();
     loop {
         if matches!(esp_wifi::wifi::wifi_state(), WifiState::StaConnected) {
             // wait until we're no longer connected

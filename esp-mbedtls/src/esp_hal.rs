@@ -9,7 +9,12 @@ use esp_hal::sha::Sha;
 
 use crate::{Tls, TlsError};
 
-#[cfg(any(feature = "esp32c3", feature = "esp32s2", feature = "esp32s3"))]
+#[cfg(any(
+    feature = "esp32c3",
+    feature = "esp32c6",
+    feature = "esp32s2",
+    feature = "esp32s3"
+))]
 mod bignum;
 #[cfg(not(feature = "esp32"))]
 mod sha;

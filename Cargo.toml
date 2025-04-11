@@ -137,6 +137,14 @@ esp32c3 = [
     "esp-wifi?/esp32c3",
     "esp-mbedtls/esp32c3",
 ]
+esp32c6 = [
+    "esp-hal?/esp32c6",
+    "esp-hal-embassy?/esp32c6",
+    "esp-backtrace?/esp32c6",
+    "esp-println?/esp32c6",
+    "esp-wifi?/esp32c6",
+    "esp-mbedtls/esp32c6",
+]
 esp32s2 = [
     "esp-hal?/esp32s2",
     "esp-hal-embassy?/esp32s2",

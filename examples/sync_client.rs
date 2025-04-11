@@ -88,6 +88,10 @@ fn main() -> ! {
         password: PASSWORD.try_into().unwrap(),
         ..Default::default()
     });
+    #[cfg(feature = "esp32c6")]
+    controller
+        .set_power_saving(esp_wifi::config::PowerSaveMode::None)
+        .unwrap();
     controller.set_configuration(&client_config).unwrap();
     controller.start().unwrap();
     controller.connect().unwrap();
