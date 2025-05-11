@@ -149,14 +149,13 @@ async fn main(spawner: Spawner) -> ! {
         .await
         .unwrap();
 
-    let certificates = Certificates {
-        // Use self-signed certificates
-        certificate: X509::pem(concat!(include_str!("./certs/certificate.pem"), "\0").as_bytes())
-            .ok(),
-        private_key: X509::pem(concat!(include_str!("./certs/private_key.pem"), "\0").as_bytes())
-            .ok(),
-        ..Default::default()
-    };
+    let certificates = Certificates::new()
+        .with_certificates(
+            X509::pem(concat!(include_str!("./certs/certificate.pem"), "\0").as_bytes()).unwrap(),
+            X509::pem(concat!(include_str!("./certs/private_key.pem"), "\0").as_bytes()).unwrap(),
+            None,
+        )
+        .unwrap();
 
     let mut tls = Tls::new(peripherals.SHA)
         .unwrap()
@@ -168,7 +167,7 @@ async fn main(spawner: Spawner) -> ! {
         let tls_acceptor = esp_mbedtls::asynch::TlsAcceptor::new(
             &acceptor,
             TlsVersion::Tls1_2,
-            certificates,
+            &certificates,
             tls.reference(),
         );
         match server
