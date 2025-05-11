@@ -10,7 +10,7 @@ use crate::{Certificates, Mode, TlsError, TlsReference, TlsVersion};
 pub struct TlsAcceptor<'d, T> {
     acceptor: T,
     min_version: TlsVersion,
-    certificates: Certificates<'d>,
+    certificates: &'d Certificates,
     tls_ref: TlsReference<'d>,
 }
 
@@ -29,7 +29,7 @@ where
     pub const fn new(
         acceptor: T,
         min_version: TlsVersion,
-        certificates: Certificates<'d>,
+        certificates: &'d Certificates,
         tls_ref: TlsReference<'d>,
     ) -> Self {
         Self {
@@ -78,7 +78,7 @@ pub struct TlsConnector<'d, T> {
     connector: T,
     servername: &'d CStr,
     min_version: TlsVersion,
-    certificates: Certificates<'d>,
+    certificates: &'d Certificates,
     tls_ref: TlsReference<'d>,
 }
 
@@ -99,7 +99,7 @@ where
         connector: T,
         servername: &'d CStr,
         min_version: TlsVersion,
-        certificates: Certificates<'d>,
+        certificates: &'d Certificates,
         tls_ref: TlsReference<'d>,
     ) -> Self {
         Self {
