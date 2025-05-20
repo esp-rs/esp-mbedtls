@@ -43,3 +43,9 @@ openssl x509 \
 
 # Remove csr
 rm $CERTS_DIR/csr.pem
+
+# Converts to DER format
+# Certificate
+openssl x509 -in $CERTS_DIR/certificate.pem -out $CERTS_DIR/certificate.der -outform DER
+# Private Key
+openssl rsa -in $CERTS_DIR/private_key.pem -out $CERTS_DIR/private_key.der -outform DER

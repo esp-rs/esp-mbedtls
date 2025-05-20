@@ -20,7 +20,7 @@ use embassy_net::{Config, Ipv4Address, Runner, StackResources};
 use embassy_executor::Spawner;
 use embassy_time::{Duration, Timer};
 use esp_backtrace as _;
-use esp_mbedtls::{asynch::Session, Certificates, Mode, TlsVersion};
+use esp_mbedtls::{asynch::Session, AuthMode, Certificates, Mode, TlsVersion};
 use esp_mbedtls::{Tls, X509};
 use esp_println::logger::init_logger;
 use esp_println::{print, println};
@@ -140,25 +140,21 @@ async fn main(spawner: Spawner) -> ! {
 
     cfg_if::cfg_if! {
         if #[cfg(feature = "mtls")] {
-            let certificates = Certificates {
-                ca_chain: X509::pem(
-                    concat!(include_str!("./certs/certauth.cryptomix.com.pem"), "\0").as_bytes(),
+            let certificates = Certificates::new()
+                .with_certificates(
+                    X509::pem(concat!(include_str!("./certs/certificate.pem"), "\0").as_bytes()).unwrap(),
+                    X509::pem(concat!(include_str!("./certs/private_key.pem"), "\0").as_bytes()).unwrap(),
+                    None,
                 )
-                .ok(),
-                certificate: X509::pem(concat!(include_str!("./certs/certificate.pem"), "\0").as_bytes())
-                    .ok(),
-                private_key: X509::pem(concat!(include_str!("./certs/private_key.pem"), "\0").as_bytes())
-                    .ok(),
-                password: None,
-            };
+                .unwrap()
+                .with_ca_chain(
+                    X509::pem(concat!(include_str!("./certs/certauth.cryptomix.com.pem"), "\0").as_bytes())
+                        .unwrap(),
+                );
         } else {
-            let certificates = Certificates {
-                ca_chain: X509::pem(
-                    concat!(include_str!("./certs/www.google.com.pem"), "\0").as_bytes(),
-                )
-                .ok(),
-                ..Default::default()
-            };
+            let certificates = Certificates::new().with_ca_chain(
+                X509::pem(concat!(include_str!("./certs/www.google.com.pem"), "\0").as_bytes()).unwrap(),
+            );
         }
     }
 
@@ -173,8 +169,9 @@ async fn main(spawner: Spawner) -> ! {
         Mode::Client {
             servername: SERVERNAME,
         },
+        Some(AuthMode::Required),
         TlsVersion::Tls1_3,
-        certificates,
+        &certificates.unwrap(),
         tls.reference(),
     )
     .unwrap();
