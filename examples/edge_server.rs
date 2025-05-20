@@ -150,9 +150,9 @@ async fn main(spawner: Spawner) -> ! {
         .unwrap();
 
     let certificates = Certificates::new()
-        .with_certificates(
-            X509::pem(concat!(include_str!("./certs/certificate.pem"), "\0").as_bytes()).unwrap(),
-            X509::pem(concat!(include_str!("./certs/private_key.pem"), "\0").as_bytes()).unwrap(),
+        .with_certificates_no_copy(
+            X509::der(include_bytes!("./certs/certificate.der")),
+            X509::der(include_bytes!("./certs/private_key.der")),
             None,
         )
         .unwrap();
@@ -166,6 +166,7 @@ async fn main(spawner: Spawner) -> ! {
     loop {
         let tls_acceptor = esp_mbedtls::asynch::TlsAcceptor::new(
             &acceptor,
+            None,
             TlsVersion::Tls1_2,
             &certificates,
             tls.reference(),

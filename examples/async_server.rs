@@ -40,7 +40,7 @@ use embassy_executor::Spawner;
 use embassy_time::{Duration, Timer};
 use esp_alloc as _;
 use esp_backtrace as _;
-use esp_mbedtls::{asynch::Session, Certificates, Mode, TlsVersion};
+use esp_mbedtls::{asynch::Session, AuthMode, Certificates, Mode, TlsVersion};
 use esp_mbedtls::{Tls, TlsError, X509};
 use esp_println::logger::init_logger;
 use esp_println::{print, println};
@@ -144,6 +144,25 @@ async fn main(spawner: Spawner) -> ! {
 
     let mut socket = TcpSocket::new(stack, &mut rx_buffer, &mut tx_buffer);
     socket.set_timeout(Some(Duration::from_secs(10)));
+
+    let certificates = Certificates::new()
+        .with_certificates_no_copy(
+            X509::der(include_bytes!("./certs/certificate.der")),
+            X509::der(include_bytes!("./certs/private_key.der")),
+            None,
+        )
+        .unwrap()
+        .with_ca_chain(
+            X509::pem(concat!(include_str!("./certs/ca_cert.pem"), "\0").as_bytes()).unwrap(),
+        )
+        .unwrap();
+
+    let auth_mode = if cfg!(feature = "mtls") {
+        AuthMode::Required
+    } else {
+        AuthMode::None
+    };
+
     loop {
         println!("Waiting for connection...");
         let r = socket
@@ -166,23 +185,9 @@ async fn main(spawner: Spawner) -> ! {
         let mut session = Session::new(
             &mut socket,
             Mode::Server,
+            Some(auth_mode),
             TlsVersion::Tls1_2,
-            Certificates {
-                // Provide a ca_chain if you want to enable mTLS for the server.
-                #[cfg(feature = "mtls")]
-                ca_chain: X509::pem(concat!(include_str!("./certs/ca_cert.pem"), "\0").as_bytes())
-                    .ok(),
-                // Use self-signed certificates
-                certificate: X509::pem(
-                    concat!(include_str!("./certs/certificate.pem"), "\0").as_bytes(),
-                )
-                .ok(),
-                private_key: X509::pem(
-                    concat!(include_str!("./certs/private_key.pem"), "\0").as_bytes(),
-                )
-                .ok(),
-                ..Default::default()
-            },
+            &certificates,
             tls.reference(),
         )
         .unwrap();
