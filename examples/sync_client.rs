@@ -16,7 +16,7 @@ use blocking_network_stack::Stack;
 
 use esp_alloc as _;
 use esp_backtrace as _;
-use esp_mbedtls::{Certificates, Session};
+use esp_mbedtls::{AuthMode, Certificates, Session};
 use esp_mbedtls::{Mode, Tls, TlsVersion, X509};
 use esp_println::{logger::init_logger, print, println};
 use esp_wifi::{
@@ -51,7 +51,7 @@ fn main() -> ! {
     let config = esp_hal::Config::default().with_cpu_clock(CpuClock::max());
     let peripherals = esp_hal::init(config);
 
-    esp_alloc::heap_allocator!(size: 115 * 1024);
+    esp_alloc::heap_allocator!(size: 125 * 1024);
 
     let timg0 = TimerGroup::new(peripherals.TIMG0);
 
@@ -133,25 +133,21 @@ fn main() -> ! {
 
     cfg_if::cfg_if! {
         if #[cfg(feature = "mtls")] {
-            let certificates = Certificates {
-                ca_chain: X509::pem(
-                    concat!(include_str!("./certs/certauth.cryptomix.com.pem"), "\0").as_bytes(),
+            let certificates = Certificates::new()
+                .with_certificates(
+                    X509::pem(concat!(include_str!("./certs/certificate.pem"), "\0").as_bytes()).unwrap(),
+                    X509::pem(concat!(include_str!("./certs/private_key.pem"), "\0").as_bytes()).unwrap(),
+                    None,
                 )
-                .ok(),
-                certificate: X509::pem(concat!(include_str!("./certs/certificate.pem"), "\0").as_bytes())
-                    .ok(),
-                private_key: X509::pem(concat!(include_str!("./certs/private_key.pem"), "\0").as_bytes())
-                    .ok(),
-                password: None,
-            };
+                .unwrap()
+                .with_ca_chain(
+                    X509::pem(concat!(include_str!("./certs/certauth.cryptomix.com.pem"), "\0").as_bytes())
+                        .unwrap(),
+                );
         } else {
-            let certificates = Certificates {
-                ca_chain: X509::pem(
-                    concat!(include_str!("./certs/www.google.com.pem"), "\0").as_bytes(),
-                )
-                .ok(),
-                ..Default::default()
-            };
+            let certificates = Certificates::new().with_ca_chain(
+                X509::pem(concat!(include_str!("./certs/www.google.com.pem"), "\0").as_bytes()).unwrap(),
+            );
         }
     }
 
@@ -166,8 +162,9 @@ fn main() -> ! {
         Mode::Client {
             servername: SERVERNAME,
         },
+        Some(AuthMode::Required),
         TlsVersion::Tls1_3,
-        certificates,
+        &certificates.unwrap(),
         tls.reference(),
     )
     .unwrap();
