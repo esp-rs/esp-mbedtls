@@ -41,7 +41,7 @@ use embassy_time::{Duration, Timer};
 use esp_alloc as _;
 use esp_backtrace as _;
 use esp_mbedtls::{asynch::Session, AuthMode, Certificates, Mode, TlsVersion};
-use esp_mbedtls::{Tls, TlsError, X509};
+use esp_mbedtls::{SessionConfig, Tls, TlsError, X509};
 use esp_println::logger::init_logger;
 use esp_println::{print, println};
 use esp_wifi::wifi::{
@@ -157,11 +157,11 @@ async fn main(spawner: Spawner) -> ! {
         )
         .unwrap();
 
-    let auth_mode = if cfg!(feature = "mtls") {
-        AuthMode::Required
-    } else {
-        AuthMode::None
-    };
+    let mut config = SessionConfig::new(Mode::Server, TlsVersion::Tls1_2);
+
+    if cfg!(feature = "mtls") {
+        config.set_auth_mode(AuthMode::Required);
+    }
 
     loop {
         println!("Waiting for connection...");
@@ -182,15 +182,8 @@ async fn main(spawner: Spawner) -> ! {
 
         let mut buffer = [0u8; 1024];
         let mut pos = 0;
-        let mut session = Session::new(
-            &mut socket,
-            Mode::Server,
-            Some(auth_mode),
-            TlsVersion::Tls1_2,
-            &certificates,
-            tls.reference(),
-        )
-        .unwrap();
+        let mut session =
+            Session::new(&mut socket, config, &certificates, tls.reference()).unwrap();
 
         println!("Start tls connect");
         match session.connect().await {

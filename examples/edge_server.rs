@@ -27,7 +27,7 @@ use embassy_net::{Config, Runner, StackResources};
 use embassy_executor::Spawner;
 use embassy_time::{Duration, Timer};
 use esp_backtrace as _;
-use esp_mbedtls::{Certificates, Tls, TlsVersion};
+use esp_mbedtls::{AuthMode, Certificates, Tls, TlsVersion};
 use esp_mbedtls::{TlsError, X509};
 use esp_println::logger::init_logger;
 use esp_println::println;
@@ -166,7 +166,7 @@ async fn main(spawner: Spawner) -> ! {
     loop {
         let tls_acceptor = esp_mbedtls::asynch::TlsAcceptor::new(
             &acceptor,
-            None,
+            AuthMode::None,
             TlsVersion::Tls1_2,
             &certificates,
             tls.reference(),
