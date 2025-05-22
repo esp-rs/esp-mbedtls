@@ -35,7 +35,7 @@ use blocking_network_stack::Stack;
 
 use embedded_io::*;
 use esp_backtrace as _;
-use esp_mbedtls::{AuthMode, Certificates, Session};
+use esp_mbedtls::{AuthMode, Certificates, Session, SessionConfig};
 use esp_mbedtls::{Mode, Tls, TlsError, TlsVersion, X509};
 use esp_println::{logger::init_logger, print, println};
 use esp_wifi::{
@@ -159,11 +159,11 @@ fn main() -> ! {
         )
         .unwrap();
 
-    let auth_mode = if cfg!(feature = "mtls") {
-        AuthMode::Required
-    } else {
-        AuthMode::None
-    };
+    let mut config = SessionConfig::new(Mode::Server, TlsVersion::Tls1_2);
+
+    if cfg!(feature = "mtls") {
+        config.set_auth_mode(AuthMode::Required);
+    }
 
     loop {
         socket.work();
@@ -180,15 +180,8 @@ fn main() -> ! {
             let mut buffer = [0u8; 1024];
             let mut pos = 0;
 
-            let mut session = Session::new(
-                &mut socket,
-                Mode::Server,
-                Some(auth_mode),
-                TlsVersion::Tls1_2,
-                &certificates,
-                tls.reference(),
-            )
-            .unwrap();
+            let mut session =
+                Session::new(&mut socket, config, &certificates, tls.reference()).unwrap();
 
             match session.connect() {
                 Ok(_) => {

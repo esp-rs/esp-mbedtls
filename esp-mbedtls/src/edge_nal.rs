@@ -4,12 +4,12 @@ use core::net::SocketAddr;
 use embedded_io::Error;
 
 use crate::asynch::Session;
-use crate::{AuthMode, Certificates, Mode, TlsError, TlsReference, TlsVersion};
+use crate::{AuthMode, Certificates, Mode, SessionConfig, TlsError, TlsReference, TlsVersion};
 
 /// An implementation of `edge-nal`'s `TcpAccept` trait over TLS.
 pub struct TlsAcceptor<'d, T> {
     acceptor: T,
-    auth_mode: Option<AuthMode>,
+    auth_mode: AuthMode,
     min_version: TlsVersion,
     certificates: &'d Certificates<'d>,
     tls_ref: TlsReference<'d>,
@@ -30,7 +30,7 @@ where
     /// * `tls_ref` - A reference to the active `Tls` instance
     pub const fn new(
         acceptor: T,
-        auth_mode: Option<AuthMode>,
+        auth_mode: AuthMode,
         min_version: TlsVersion,
         certificates: &'d Certificates<'d>,
         tls_ref: TlsReference<'d>,
@@ -67,9 +67,11 @@ where
 
         let session = Session::new(
             socket,
-            Mode::Server,
-            self.auth_mode,
-            self.min_version,
+            SessionConfig {
+                mode: Mode::Server,
+                auth_mode: self.auth_mode,
+                min_version: self.min_version,
+            },
             self.certificates,
             self.tls_ref,
         )?;
@@ -82,7 +84,7 @@ where
 pub struct TlsConnector<'d, T> {
     connector: T,
     servername: &'d CStr,
-    auth_mode: Option<AuthMode>,
+    auth_mode: AuthMode,
     min_version: TlsVersion,
     certificates: &'d Certificates<'d>,
     tls_ref: TlsReference<'d>,
@@ -105,7 +107,7 @@ where
     pub const fn new(
         connector: T,
         servername: &'d CStr,
-        auth_mode: Option<AuthMode>,
+        auth_mode: AuthMode,
         min_version: TlsVersion,
         certificates: &'d Certificates<'d>,
         tls_ref: TlsReference<'d>,
@@ -142,11 +144,13 @@ where
 
         let session = Session::new(
             socket,
-            Mode::Client {
-                servername: self.servername,
+            SessionConfig {
+                mode: Mode::Client {
+                    servername: self.servername,
+                },
+                auth_mode: self.auth_mode,
+                min_version: self.min_version,
             },
-            self.auth_mode,
-            self.min_version,
             self.certificates,
             self.tls_ref,
         )?;

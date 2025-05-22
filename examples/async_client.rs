@@ -20,8 +20,8 @@ use embassy_net::{Config, Ipv4Address, Runner, StackResources};
 use embassy_executor::Spawner;
 use embassy_time::{Duration, Timer};
 use esp_backtrace as _;
-use esp_mbedtls::{asynch::Session, AuthMode, Certificates, Mode, TlsVersion};
-use esp_mbedtls::{Tls, X509};
+use esp_mbedtls::{asynch::Session, Certificates, Mode, TlsVersion};
+use esp_mbedtls::{SessionConfig, Tls, X509};
 use esp_println::logger::init_logger;
 use esp_println::{print, println};
 use esp_wifi::wifi::{
@@ -166,11 +166,12 @@ async fn main(spawner: Spawner) -> ! {
 
     let mut session = Session::new(
         &mut socket,
-        Mode::Client {
-            servername: SERVERNAME,
-        },
-        Some(AuthMode::Required),
-        TlsVersion::Tls1_3,
+        SessionConfig::new(
+            Mode::Client {
+                servername: SERVERNAME,
+            },
+            TlsVersion::Tls1_3,
+        ),
         &certificates.unwrap(),
         tls.reference(),
     )
