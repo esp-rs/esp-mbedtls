@@ -16,7 +16,7 @@ use blocking_network_stack::Stack;
 
 use esp_alloc as _;
 use esp_backtrace as _;
-use esp_mbedtls::{AuthMode, Certificates, Session};
+use esp_mbedtls::{Certificates, Session, SessionConfig};
 use esp_mbedtls::{Mode, Tls, TlsVersion, X509};
 use esp_println::{logger::init_logger, print, println};
 use esp_wifi::{
@@ -159,11 +159,12 @@ fn main() -> ! {
 
     let mut session = Session::new(
         &mut socket,
-        Mode::Client {
-            servername: SERVERNAME,
-        },
-        Some(AuthMode::Required),
-        TlsVersion::Tls1_3,
+        SessionConfig::new(
+            Mode::Client {
+                servername: SERVERNAME,
+            },
+            TlsVersion::Tls1_3,
+        ),
         &certificates.unwrap(),
         tls.reference(),
     )
