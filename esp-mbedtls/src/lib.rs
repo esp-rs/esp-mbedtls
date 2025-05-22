@@ -634,6 +634,30 @@ impl Certificates<'_> {
         }
     }
 
+    /// Get a reference to the underlying parsed X509 peer certificate, if configured
+    pub fn certificate(&self) -> Option<&mbedtls_x509_crt> {
+        self.certificate.as_ref().and_then(|certificate| {
+            let ptr = certificate.crt;
+            if ptr.is_null() {
+                None
+            } else {
+                Some(unsafe { &*ptr })
+            }
+        })
+    }
+
+    /// Get a reference to the underlying parsed CA Chain X509 certificate, if configured
+    pub fn ca_chain(&self) -> Option<&mbedtls_x509_crt> {
+        self.ca_chain.as_ref().and_then(|ca_chain| {
+            let ptr = ca_chain.crt;
+            if ptr.is_null() {
+                None
+            } else {
+                Some(unsafe { &*ptr })
+            }
+        })
+    }
+
     /// Initialize the own certificate chain and private key used for requests
     /// It should contain in order from the bottom up your certificate chain.
     /// The top certificate (self-signed) can be omitted.

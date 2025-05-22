@@ -12,6 +12,7 @@ use esp_wifi as _;
 
 #[cfg(not(target_os = "espidf"))]
 mod c_types;
+mod extra_impls;
 
 #[allow(
     non_camel_case_types,
