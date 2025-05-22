@@ -119,10 +119,7 @@ impl TlsVersion {
     }
 }
 
-/// Certificate verification mode
-/// Default:
-///  - [VerificationMode::None] on server
-///  - [VerificationMode::Required] on client
+/// Certificate verification mode used for a session
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum AuthMode {
     /// Peer certificate is not checked (default on server) (insecure on client)
@@ -137,13 +134,51 @@ pub enum AuthMode {
 }
 
 impl AuthMode {
-    fn to_mbedtls_mode(&self) -> i32 {
+    fn to_mbedtls_authmode(&self) -> i32 {
         (match self {
             AuthMode::None => MBEDTLS_SSL_VERIFY_NONE,
             AuthMode::Optional => MBEDTLS_SSL_VERIFY_OPTIONAL,
             AuthMode::Required => MBEDTLS_SSL_VERIFY_REQUIRED,
             AuthMode::Unset => MBEDTLS_SSL_VERIFY_UNSET,
         }) as i32
+    }
+}
+
+/// Configuration for a TLS session
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct SessionConfig<'a> {
+    /// The mode of operation of a TLS `Session` instance
+    mode: Mode<'a>,
+    /// The minimum TLS version that will be supported by a particular `Session` instance
+    min_version: TlsVersion,
+    /// Certificate verification mode. Can be overriden.
+    /// By default, the following we be used depending on the mode:
+    ///  - [AuthMode::None] on server
+    ///  - [AuthMode::Required] on client
+    auth_mode: AuthMode,
+}
+
+impl<'a> SessionConfig<'a> {
+    /// Create a config for a session
+    ///
+    /// # Arguments
+    ///
+    /// * `mode` - The mode of operation of a TLS `Session` instance
+    /// * `min_version` - The minimum TLS version that will be supported by a particular `Session` instance
+    pub fn new(mode: Mode<'a>, min_version: TlsVersion) -> Self {
+        Self {
+            mode,
+            min_version,
+            auth_mode: match mode {
+                Mode::Client { servername: _ } => AuthMode::Required,
+                Mode::Server => AuthMode::None,
+            },
+        }
+    }
+
+    /// Override the auth mode to use a specific one
+    pub fn set_auth_mode(&mut self, auth_mode: AuthMode) {
+        self.auth_mode = auth_mode
     }
 }
 
@@ -631,9 +666,7 @@ impl Certificates<'_> {
     /// Initialize the SSL using this set of certificates
     fn init_ssl(
         &self,
-        mode: Mode,
-        auth_mode: Option<AuthMode>,
-        min_version: TlsVersion,
+        config: SessionConfig<'_>,
     ) -> Result<
         (
             *mut mbedtls_ctr_drbg_context,
@@ -706,7 +739,7 @@ impl Certificates<'_> {
             error_checked!(
                 mbedtls_ssl_config_defaults(
                     ssl_config,
-                    mode.to_mbed_tls(),
+                    config.mode.to_mbed_tls(),
                     MBEDTLS_SSL_TRANSPORT_STREAM as i32,
                     MBEDTLS_SSL_PRESET_DEFAULT as i32,
                 ),
@@ -715,21 +748,11 @@ impl Certificates<'_> {
 
             // Set the minimum TLS version
             // Use a ddirect field modified for compatibility with the `esp-idf-svc` mbedtls
-            (*ssl_config).private_min_tls_version = min_version.to_mbed_tls_version();
+            (*ssl_config).private_min_tls_version = config.min_version.to_mbed_tls_version();
 
-            mbedtls_ssl_conf_authmode(
-                ssl_config,
-                if let Some(mode) = auth_mode {
-                    mode.to_mbedtls_mode()
-                } else {
-                    match mode {
-                        Mode::Client { servername: _ } => AuthMode::Required.to_mbedtls_mode(),
-                        Mode::Server => AuthMode::None.to_mbedtls_mode(),
-                    }
-                },
-            );
+            mbedtls_ssl_conf_authmode(ssl_config, config.auth_mode.to_mbedtls_authmode());
 
-            if let Mode::Client { servername } = mode {
+            if let Mode::Client { servername } = config.mode {
                 error_checked!(
                     mbedtls_ssl_set_hostname(ssl_context, servername.as_ptr(),),
                     cleanup
@@ -911,14 +934,11 @@ impl<'a, T> Session<'a, T> {
     /// invalid format.
     pub fn new(
         stream: T,
-        mode: Mode,
-        auth_mode: Option<AuthMode>,
-        min_version: TlsVersion,
+        config: SessionConfig<'_>,
         certificates: &Certificates,
         tls_ref: TlsReference<'a>,
     ) -> Result<Self, TlsError> {
-        let (drbg_context, ssl_context, ssl_config) =
-            certificates.init_ssl(mode, auth_mode, min_version)?;
+        let (drbg_context, ssl_context, ssl_config) = certificates.init_ssl(config)?;
         Ok(Self {
             stream,
             drbg_context,
@@ -1217,14 +1237,11 @@ pub mod asynch {
         /// invalid format.
         pub fn new(
             stream: T,
-            mode: Mode,
-            auth_mode: Option<AuthMode>,
-            min_version: TlsVersion,
+            config: SessionConfig<'_>,
             certificates: &Certificates,
             tls_ref: TlsReference<'a>,
         ) -> Result<Self, TlsError> {
-            let (drbg_context, ssl_context, ssl_config) =
-                certificates.init_ssl(mode, auth_mode, min_version)?;
+            let (drbg_context, ssl_context, ssl_config) = certificates.init_ssl(config)?;
             Ok(Self {
                 stream,
                 drbg_context,
