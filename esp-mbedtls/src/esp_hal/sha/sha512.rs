@@ -32,11 +32,11 @@ pub unsafe extern "C" fn mbedtls_sha512_init(ctx: *mut mbedtls_sha512_context) {
 pub unsafe extern "C" fn mbedtls_sha512_free(ctx: *mut mbedtls_sha512_context) {
     if !ctx.is_null() {
         if !(*ctx).sha384_hasher.is_null() {
-            crate::free((*ctx).sha384_hasher as *const c_void);
+            crate::mbedtls_free((*ctx).sha384_hasher as *const c_void);
             (*ctx).sha384_hasher = core::ptr::null_mut();
         }
         if !(*ctx).sha512_hasher.is_null() {
-            crate::free((*ctx).sha512_hasher as *const c_void);
+            crate::mbedtls_free((*ctx).sha512_hasher as *const c_void);
             (*ctx).sha512_hasher = core::ptr::null_mut();
         }
     }
