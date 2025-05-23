@@ -27,7 +27,7 @@ use embassy_net::{Config, Runner, StackResources};
 use embassy_executor::Spawner;
 use embassy_time::{Duration, Timer};
 use esp_backtrace as _;
-use esp_mbedtls::{Certificates, Tls, TlsVersion};
+use esp_mbedtls::{AuthMode, Certificates, Tls, TlsVersion};
 use esp_mbedtls::{TlsError, X509};
 use esp_println::logger::init_logger;
 use esp_println::println;
@@ -146,14 +146,13 @@ async fn main(spawner: Spawner) -> ! {
         .await
         .unwrap();
 
-    let certificates = Certificates {
-        // Use self-signed certificates
-        certificate: X509::pem(concat!(include_str!("./certs/certificate.pem"), "\0").as_bytes())
-            .ok(),
-        private_key: X509::pem(concat!(include_str!("./certs/private_key.pem"), "\0").as_bytes())
-            .ok(),
-        ..Default::default()
-    };
+    let certificates = Certificates::new()
+        .with_certificates_no_copy(
+            X509::der(include_bytes!("./certs/certificate.der")),
+            X509::der(include_bytes!("./certs/private_key.der")),
+            None,
+        )
+        .unwrap();
 
     let mut tls = Tls::new(peripherals.SHA)
         .unwrap()
@@ -164,8 +163,9 @@ async fn main(spawner: Spawner) -> ! {
     loop {
         let tls_acceptor = esp_mbedtls::asynch::TlsAcceptor::new(
             &acceptor,
+            AuthMode::None,
             TlsVersion::Tls1_2,
-            certificates,
+            &certificates,
             tls.reference(),
         );
         match server

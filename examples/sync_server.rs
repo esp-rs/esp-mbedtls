@@ -35,7 +35,7 @@ use blocking_network_stack::Stack;
 
 use embedded_io::*;
 use esp_backtrace as _;
-use esp_mbedtls::{Certificates, Session};
+use esp_mbedtls::{AuthMode, Certificates, Session, SessionConfig};
 use esp_mbedtls::{Mode, Tls, TlsError, TlsVersion, X509};
 use esp_println::{logger::init_logger, print, println};
 use esp_wifi::{
@@ -144,6 +144,24 @@ fn main() -> ! {
 
     tls.set_debug(0);
 
+    let certificates = Certificates::new()
+        .with_certificates_no_copy(
+            X509::der(include_bytes!("./certs/certificate.der")),
+            X509::der(include_bytes!("./certs/private_key.der")),
+            None,
+        )
+        .unwrap()
+        .with_ca_chain(
+            X509::pem(concat!(include_str!("./certs/ca_cert.pem"), "\0").as_bytes()).unwrap(),
+        )
+        .unwrap();
+
+    let mut config = SessionConfig::new(Mode::Server, TlsVersion::Tls1_2);
+
+    if cfg!(feature = "mtls") {
+        config.set_auth_mode(AuthMode::Required);
+    }
+
     loop {
         socket.work();
 
@@ -159,31 +177,8 @@ fn main() -> ! {
             let mut buffer = [0u8; 1024];
             let mut pos = 0;
 
-            let mut session = Session::new(
-                &mut socket,
-                Mode::Server,
-                TlsVersion::Tls1_2,
-                Certificates {
-                    // Provide a ca_chain if you want to enable mTLS for the server.
-                    #[cfg(feature = "mtls")]
-                    ca_chain: X509::pem(
-                        concat!(include_str!("./certs/ca_cert.pem"), "\0").as_bytes(),
-                    )
-                    .ok(),
-                    // Use self-signed certificates
-                    certificate: X509::pem(
-                        concat!(include_str!("./certs/certificate.pem"), "\0").as_bytes(),
-                    )
-                    .ok(),
-                    private_key: X509::pem(
-                        concat!(include_str!("./certs/private_key.pem"), "\0").as_bytes(),
-                    )
-                    .ok(),
-                    ..Default::default()
-                },
-                tls.reference(),
-            )
-            .unwrap();
+            let mut session =
+                Session::new(&mut socket, config, &certificates, tls.reference()).unwrap();
 
             match session.connect() {
                 Ok(_) => {
