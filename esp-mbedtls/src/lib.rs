@@ -959,7 +959,7 @@ impl<'a, T> Session<'a, T> {
     pub fn new(
         stream: T,
         config: SessionConfig<'_>,
-        certificates: &Certificates,
+        certificates: &'a Certificates<'a>,
         tls_ref: TlsReference<'a>,
     ) -> Result<Self, TlsError> {
         let (drbg_context, ssl_context, ssl_config) = certificates.init_ssl(config)?;
@@ -1262,7 +1262,7 @@ pub mod asynch {
         pub fn new(
             stream: T,
             config: SessionConfig<'_>,
-            certificates: &Certificates,
+            certificates: &'a Certificates<'a>,
             tls_ref: TlsReference<'a>,
         ) -> Result<Self, TlsError> {
             let (drbg_context, ssl_context, ssl_config) = certificates.init_ssl(config)?;
