@@ -154,6 +154,8 @@ fn main() -> ! {
         }
     }
 
+    let certificates = certificates.unwrap();
+
     let mut tls = Tls::new(peripherals.SHA)
         .unwrap()
         .with_hardware_rsa(peripherals.RSA);
@@ -168,7 +170,7 @@ fn main() -> ! {
             },
             TlsVersion::Tls1_3,
         ),
-        &certificates.unwrap(),
+        &certificates,
         tls.reference(),
     )
     .unwrap();
