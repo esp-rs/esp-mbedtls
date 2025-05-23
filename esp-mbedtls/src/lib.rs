@@ -61,15 +61,15 @@ unsafe fn aligned_calloc(_align: usize, size: usize) -> *const c_void {
     //     panic!("Cannot allocate with alignment > 4 bytes: {_align}");
     // }
 
-    calloc(1, size)
+    mbedtls_calloc(1, size)
 }
 
 // Baremetal: these will come from `esp-wifi` (i.e. this can only be used together with esp-wifi)
 // STD: these will come from `libc` indirectly via the Rust standard library
 extern "C" {
-    fn free(ptr: *const c_void);
+    fn mbedtls_free(ptr: *const c_void);
 
-    fn calloc(number: usize, size: usize) -> *const c_void;
+    fn mbedtls_calloc(nmemb: usize, size: usize) -> *const c_void;
 
     fn random() -> c_ulong;
 }
@@ -367,7 +367,7 @@ impl MbedTLSX509Crt<'static> {
 
             let cleanup = || {
                 mbedtls_x509_crt_free(ptr);
-                free(ptr as *const _);
+                mbedtls_free(ptr as *const _);
             };
 
             match certificate.format {
@@ -429,7 +429,7 @@ impl<'d> MbedTLSX509Crt<'d> {
 
             let cleanup = || {
                 mbedtls_x509_crt_free(ptr);
-                free(ptr as *const _);
+                mbedtls_free(ptr as *const _);
             };
 
             error_checked!(
@@ -456,7 +456,7 @@ impl Drop for MbedTLSX509Crt<'_> {
     fn drop(&mut self) {
         unsafe {
             mbedtls_x509_crt_free(self.crt);
-            free(self.crt as *const _);
+            mbedtls_free(self.crt as *const _);
         }
     }
 }
@@ -506,7 +506,7 @@ impl PkContext {
                 ),
                 || {
                     mbedtls_pk_free(ptr);
-                    free(ptr as *const _);
+                    mbedtls_free(ptr as *const _);
                 }
             )?;
             Ok(Self(ptr))
@@ -518,7 +518,7 @@ impl Drop for PkContext {
     fn drop(&mut self) {
         unsafe {
             mbedtls_pk_free(self.0);
-            free(self.0 as *const _);
+            mbedtls_free(self.0 as *const _);
         }
     }
 }
@@ -741,7 +741,7 @@ impl Certificates<'_> {
                 size_of::<mbedtls_ssl_context>(),
             ) as *mut mbedtls_ssl_context;
             if ssl_context.is_null() {
-                free(drbg_context as *const _);
+                mbedtls_free(drbg_context as *const _);
                 return Err(TlsError::OutOfMemory);
             }
 
@@ -750,8 +750,8 @@ impl Certificates<'_> {
                 size_of::<mbedtls_ssl_config>(),
             ) as *mut mbedtls_ssl_config;
             if ssl_config.is_null() {
-                free(drbg_context as *const _);
-                free(ssl_context as *const _);
+                mbedtls_free(drbg_context as *const _);
+                mbedtls_free(ssl_context as *const _);
                 return Err(TlsError::OutOfMemory);
             }
 
@@ -771,9 +771,9 @@ impl Certificates<'_> {
                 mbedtls_ctr_drbg_free(drbg_context);
                 mbedtls_ssl_config_free(ssl_config);
                 mbedtls_ssl_free(ssl_context);
-                free(drbg_context as *const _);
-                free(ssl_context as *const _);
-                free(ssl_config as *const _);
+                mbedtls_free(drbg_context as *const _);
+                mbedtls_free(ssl_context as *const _);
+                mbedtls_free(ssl_config as *const _);
             };
 
             error_checked!(
@@ -1183,9 +1183,9 @@ impl<T> Drop for Session<'_, T> {
             mbedtls_ctr_drbg_free(self.drbg_context);
             mbedtls_ssl_config_free(self.ssl_config);
             mbedtls_ssl_free(self.ssl_context);
-            free(self.drbg_context as *const _);
-            free(self.ssl_config as *const _);
-            free(self.ssl_context as *const _);
+            mbedtls_free(self.drbg_context as *const _);
+            mbedtls_free(self.ssl_config as *const _);
+            mbedtls_free(self.ssl_context as *const _);
         }
     }
 }
@@ -1304,9 +1304,9 @@ pub mod asynch {
                 mbedtls_ctr_drbg_free(self.drbg_context);
                 mbedtls_ssl_config_free(self.ssl_config);
                 mbedtls_ssl_free(self.ssl_context);
-                free(self.drbg_context as *const _);
-                free(self.ssl_config as *const _);
-                free(self.ssl_context as *const _);
+                mbedtls_free(self.drbg_context as *const _);
+                mbedtls_free(self.ssl_config as *const _);
+                mbedtls_free(self.ssl_context as *const _);
             }
         }
     }

@@ -25,7 +25,7 @@ pub unsafe extern "C" fn mbedtls_sha1_init(ctx: *mut mbedtls_sha1_context) {
 #[no_mangle]
 pub unsafe extern "C" fn mbedtls_sha1_free(ctx: *mut mbedtls_sha1_context) {
     if !ctx.is_null() && !(*ctx).hasher.is_null() {
-        crate::free((*ctx).hasher as *const c_void);
+        crate::mbedtls_free((*ctx).hasher as *const c_void);
         (*ctx).hasher = core::ptr::null_mut();
     }
 }
