@@ -56,6 +56,8 @@ cfg_if::cfg_if! {
     }
 }
 
+esp_bootloader_esp_idf::esp_app_desc!();
+
 #[esp_hal_embassy::main]
 async fn main(spawner: Spawner) -> ! {
     init_logger(log::LevelFilter::Info);

@@ -65,6 +65,8 @@ const TX_SIZE: usize = 2048;
 /// HTTPS server evaluated at compile time with socket count and buffer size.
 pub type HttpsServer = Server<SERVER_SOCKETS, RX_SIZE, 32>;
 
+esp_bootloader_esp_idf::esp_app_desc!();
+
 #[esp_hal_embassy::main]
 async fn main(spawner: Spawner) -> ! {
     init_logger(log::LevelFilter::Info);
