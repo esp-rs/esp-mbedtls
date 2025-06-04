@@ -2,7 +2,6 @@
 use core::cell::RefCell;
 use critical_section::Mutex;
 
-use esp_hal::peripheral::Peripheral;
 use esp_hal::peripherals::{RSA, SHA};
 use esp_hal::rsa::Rsa;
 use esp_hal::sha::Sha;
@@ -35,7 +34,7 @@ impl<'d> Tls<'d> {
     /// Arguments:
     ///
     /// * `sha` - The SHA peripheral from the HAL
-    pub fn new(sha: impl Peripheral<P = SHA> + 'd) -> Result<Self, TlsError> {
+    pub fn new(sha: SHA<'d>) -> Result<Self, TlsError> {
         let this = Self::create()?;
 
         critical_section::with(|cs| {
@@ -52,7 +51,7 @@ impl<'d> Tls<'d> {
     /// # Arguments
     ///
     /// * `rsa` - The RSA peripheral from the HAL
-    pub fn with_hardware_rsa(self, rsa: impl Peripheral<P = RSA> + 'd) -> Self {
+    pub fn with_hardware_rsa(self, rsa: RSA<'d>) -> Self {
         unsafe { RSA_REF = core::mem::transmute(Some(Rsa::new(rsa))) }
         self
     }

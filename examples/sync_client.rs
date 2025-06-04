@@ -45,13 +45,16 @@ cfg_if::cfg_if! {
     }
 }
 
+esp_bootloader_esp_idf::esp_app_desc!();
+
 #[main]
 fn main() -> ! {
     init_logger(log::LevelFilter::Info);
     let config = esp_hal::Config::default().with_cpu_clock(CpuClock::max());
     let peripherals = esp_hal::init(config);
 
-    esp_alloc::heap_allocator!(size: 115 * 1024);
+    esp_alloc::heap_allocator!(size: 72 * 1024);
+    esp_alloc::heap_allocator!(#[unsafe(link_section = ".dram2_uninit")] size: 64 * 1024);
 
     let timg0 = TimerGroup::new(peripherals.TIMG0);
 
