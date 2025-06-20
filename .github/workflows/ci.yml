@@ -1,10 +1,31 @@
-name: CI
+# This CI optionally builds libraries and then builds examples against them.
+#
+# If a change is detected within `esp-mbedtls-sys/`, a rebuild is triggered and this CI will automatically
+# rebuild the libraries using the xtask. Then the tests are executed against the rebuilt libraries.
+#
+# If no rebuild occurs, the tests are executed against the current libraries.
+#
+# The libraries are pushed on either of these conditions:
+# 1. The PR is labelled with `rebuild-libs`.
+#    Then libraries will be forcefully rebuilt and then pushed onto the PR branch.
+# 2. The libraries are rebuilt on the main branch.
+#    When pushing a PR that would trigger a rebuild, the libraries get automatically
+#    pushed to the main branch after successful testing.
+
+name: Build (optional) and test examples
 
 on:
   pull_request:
     branches:
       - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - labeled
   push:
+    branches:
+      - main
   workflow_dispatch:
 
 env:
@@ -20,27 +41,126 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
 
 jobs:
-  all:
+  build-test:
     runs-on: ubuntu-latest
+    permissions: read-all
+    outputs:
+      upload-libs: ${{ steps.detect-changes.outputs.libs == 'true' }}
 
     steps:
-      - uses: actions/checkout@v3
+      # ==== Setup ====
+      - uses: actions/checkout@v4
+
+      - name: mbedtls init
+        run: git submodule update --init --recursive
+
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          target: x86_64-unknown-linux-gnu
+          toolchain: stable
+          components: rust-src,rustfmt
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            ./
+            xtask
+
+      - name: Install Rust for Xtensa
+        uses: esp-rs/xtensa-toolchain@v1.5
+        with:
+          ldproxy: true
+          override: false
+
+      # ==== Build libs ====
+      - name: Detect esp-mbedtls-sys/ changes
+        uses: dorny/paths-filter@v3
+        id: detect-changes
+        with:
+          filters: |
+            libs:
+              - 'esp-mbedtls-sys/**'
+
+      # https://github.com/esp-rs/xtensa-toolchain/issues/40
+      - name: Install full Espressif LLVM installation
+        if: |
+          steps.detect-changes.outputs.libs == 'true' ||
+          contains(github.event.pull_request.labels.*.name, 'rebuild-libs')
+        run: $HOME/.cargo/bin/espup install -l debug --extended-llvm
+
+      - name: Build libraries and bindings
+        if: |
+          steps.detect-changes.outputs.libs == 'true' ||
+          contains(github.event.pull_request.labels.*.name, 'rebuild-libs')
+        run: |
+          rm -rf esp-mbedtls-sys/libs/*
+          cargo +stable xtask gen
+
+      # ==== Test ====
+      # If the libs are rebuilt, the tests are executed against the new libraries,
+      # else they get executed against the latest version in HEAD
+
+      # Tests requires nightly riscv32imc-unknown-none-elf to be installed
       - uses: dtolnay/rust-toolchain@v1
         with:
           target: riscv32imc-unknown-none-elf
           toolchain: nightly
           components: rust-src,rustfmt
-      - uses: esp-rs/xtensa-toolchain@v1.5
-        with:
-          ldproxy: true
-          override: false
-      - uses: Swatinem/rust-cache@v2
       - uses: extractions/setup-just@v1
         with:
           just-version: 1.13.0
 
-      - name: mbedtls init
-        run: git submodule update --init --recursive
-
       - name: check
         run: just
+
+      - name: Upload libraries artifacts for commit
+        if: |
+          (steps.detect-changes.outputs.libs == 'true' &&
+          github.ref == 'refs/heads/main') ||
+          contains(github.event.pull_request.labels.*.name, 'rebuild-libs')
+        uses: actions/upload-artifact@v4
+        with:
+          name: esp-mbedtls-sys
+          retention-days: 1
+          path: |
+            esp-mbedtls-sys/libs
+            esp-mbedtls-sys/src
+
+  # If libraries are rebuilt and tests are successful, we upload them in a specific job
+  # that has write access to prevent security breaches, and unwanted use of the token
+  commit-libs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    needs: build-test
+    if: |
+      (needs.build-test.outputs.upload-libs &&
+      github.ref == 'refs/heads/main') ||
+      contains(github.event.pull_request.labels.*.name, 'rebuild-libs')
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # In a pull request trigger, ref is required as GitHub Actions checks out in detached HEAD mode,
+          # meaning it doesn’t check out your branch by default.
+          ref: ${{ github.head_ref || github.ref_name }}
+          # When doing a pull request, we need to fetch the forked repository.
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: esp-mbedtls-sys
+          # Required because else artifacts will be put into the base directory
+          path: esp-mbedtls-sys/
+
+      - name: Commit and push libraries to ${{ github.head_ref || github.ref_name }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add esp-mbedtls-sys/libs
+          git add esp-mbedtls-sys/src
+          # Only commit and push when there are changes
+          git diff --cached --quiet || (
+            git commit -m "chore: auto-push built libraries"
+            git push
+          )
