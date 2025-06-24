@@ -133,10 +133,12 @@ jobs:
     permissions:
       contents: write
     needs: build-test
+    # TODO: Currently GitHub doesn't allow pushing to a forked repo's branch when running an action on a PR to upstream.
     if: |
-      (needs.build-test.outputs.upload-libs &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      ((needs.build-test.outputs.upload-libs &&
       github.ref == 'refs/heads/main') ||
-      contains(github.event.pull_request.labels.*.name, 'rebuild-libs')
+      contains(github.event.pull_request.labels.*.name, 'rebuild-libs'))
     steps:
       - uses: actions/checkout@v4
         with:
