@@ -66,11 +66,15 @@ jobs:
             ./
             xtask
 
-      - name: Install Rust for Xtensa
-        uses: esp-rs/xtensa-toolchain@v1.5
+      - name: Install Rust for Xtensa and Espressif LLVM installation (optional)
+        uses: esp-rs/xtensa-toolchain@v1.6
         with:
           ldproxy: true
           override: false
+          extended-llvm: ${{
+            steps.detect-changes.outputs.libs == 'true' ||
+            contains(github.event.pull_request.labels.*.name, 'rebuild-libs')
+            }}
 
       # ==== Build libs ====
       - name: Detect esp-mbedtls-sys/ changes
@@ -80,13 +84,6 @@ jobs:
           filters: |
             libs:
               - 'esp-mbedtls-sys/**'
-
-      # https://github.com/esp-rs/xtensa-toolchain/issues/40
-      - name: Install full Espressif LLVM installation
-        if: |
-          steps.detect-changes.outputs.libs == 'true' ||
-          contains(github.event.pull_request.labels.*.name, 'rebuild-libs')
-        run: $HOME/.cargo/bin/espup install -l debug --extended-llvm
 
       - name: Build libraries and bindings
         if: |
