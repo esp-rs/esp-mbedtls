@@ -322,7 +322,7 @@ impl<'a> X509<'a> {
 
 /// Creates a wrapper over [mbedtls_x509_crt] to safely manage allocation and freeing on drop
 #[derive(Debug)]
-struct MbedTLSX509Crt<'d> {
+pub struct MbedTLSX509Crt<'d> {
     crt: *mut mbedtls_x509_crt,
     _t: PhantomData<&'d ()>,
 }
@@ -338,7 +338,7 @@ impl MbedTLSX509Crt<'static> {
     ///
     /// This will return an error if an error occurs during parsing such as passing a DER encoded
     /// certificate in a PEM format, and vice-versa.
-    fn new(certificate: X509<'_>) -> Result<Self, TlsError> {
+    pub fn new(certificate: X509<'_>) -> Result<Self, TlsError> {
         unsafe {
             let ptr = aligned_calloc(
                 align_of::<mbedtls_x509_crt>(),
@@ -396,7 +396,7 @@ impl<'d> MbedTLSX509Crt<'d> {
     ///
     /// This will return an error if an error occurs during parsing.
     /// [TlsError::InvalidFormat] will be returned if a PEM encoded certificate is passed.
-    fn new_no_copy(certificate: X509<'d>) -> Result<Self, TlsError> {
+    pub fn new_no_copy(certificate: X509<'d>) -> Result<Self, TlsError> {
         // Currently no copy is only supported by DER certificates
         if matches!(certificate.format(), CertificateFormat::PEM) {
             return Err(TlsError::InvalidFormat);
@@ -447,7 +447,7 @@ impl Drop for MbedTLSX509Crt<'_> {
 
 /// Creates a wrapper over [mbedtls_pk_context] to safely manage allocation and freeing on drop
 #[derive(Debug)]
-struct PkContext(*mut mbedtls_pk_context);
+pub struct PkContext(*mut mbedtls_pk_context);
 
 impl PkContext {
     /// Parse an X509 private key into RAM and returns a wrapped pointer if successful.
@@ -461,7 +461,7 @@ impl PkContext {
     ///
     /// This will return an error if an error occurs during parsing such as passing a DER encoded
     /// private key in a PEM format, and vice-versa.
-    fn new<'a>(private_key: X509<'a>, password: Option<&'a str>) -> Result<Self, TlsError> {
+    pub fn new<'a>(private_key: X509<'a>, password: Option<&'a str>) -> Result<Self, TlsError> {
         unsafe {
             let ptr = aligned_calloc(
                 align_of::<mbedtls_pk_context>(),
@@ -523,7 +523,7 @@ pub struct Certificates<'d> {
     /// In server mode, the CA chain should contain the trusted CA certificates that will be
     /// provided to the client and that will be used to verify the client's certificate
     /// during the handshake, if enabled.
-    ca_chain: Option<MbedTLSX509Crt<'d>>,
+    ca_chain: Option<&'d MbedTLSX509Crt<'d>>,
 
     /// Own certificate chain used for requests
     /// It should contain in order from the bottom up your certificate chain.
@@ -539,11 +539,11 @@ pub struct Certificates<'d> {
     /// performing a handshake.
     /// When set to [None] the server will not request nor perform any verification
     /// on the client certificates. Only set when you want to use client authentication.
-    certificate: Option<MbedTLSX509Crt<'d>>,
+    certificate: Option<&'d MbedTLSX509Crt<'d>>,
 
     /// Private key paired with the certificate. Must be set when [Certificates::certificate]
     /// is not [None]
-    private_key: Option<PkContext>,
+    private_key: Option<&'d PkContext>,
 }
 
 impl Default for Certificates<'_> {
@@ -553,62 +553,6 @@ impl Default for Certificates<'_> {
 }
 
 impl<'d> Certificates<'d> {
-    /// Initialize the own certificate chain and private key used for requests without making an
-    /// internal copy in RAM.
-    ///
-    /// Note: This only work for a certificate encoded in PEM format, else [TlsError::InvalidFormat] will be returned
-    ///
-    /// It should contain in order from the bottom up your certificate chain.
-    /// The top certificate (self-signed) can be omitted.
-    ///
-    /// # Client:
-    /// In client mode, this certificate will be used for client authentication
-    /// when communicating wiht the server. Do not call this function if you don't want to use
-    /// client authentication
-    ///
-    /// # Server:
-    /// In server mode, this will be the certificate given to the client when
-    /// performing a handshake.
-    ///
-    /// # Arguments
-    ///
-    /// * `certificate` - The X509 certificate in DER format
-    /// * `private_key` - The X509 private key in DER or PEM format
-    /// * `password` - The optional password if the private key is password protected
-    ///
-    /// # Errors
-    ///
-    /// - This function will fail with [TlsError::OutOfMemory] if there's not enough memory to
-    ///   allocate certificates.
-    /// - [TlsError::InvalidFormat] will be returned if a PEM encoded certificate is passed.
-    pub fn with_certificates_no_copy(
-        mut self,
-        certificate: X509<'d>,
-        private_key: X509<'_>,
-        password: Option<&'_ str>,
-    ) -> Result<Self, TlsError> {
-        self.certificate = Some(MbedTLSX509Crt::new_no_copy(certificate)?);
-        self.private_key = Some(PkContext::new(private_key, password)?);
-        Ok(self)
-    }
-
-    /// Initialize the Certificate Authority chain used for requests without making an internal
-    /// copy in RAM.
-    /// Note: This currently only work for certificates in DER format.
-    ///
-    /// # Errors
-    ///
-    /// - This function will fail with [TlsError::OutOfMemory] if there's not enough memory to
-    ///   allocate certificates.
-    /// - This function will fail with [TlsError::InvalidFormat] if a PEM encoded certificate is
-    ///   provided.
-    pub fn with_ca_chain_no_copy(mut self, ca_chain: X509<'d>) -> Result<Self, TlsError> {
-        self.ca_chain = Some(MbedTLSX509Crt::new_no_copy(ca_chain)?);
-        Ok(self)
-    }
-}
-
-impl Certificates<'_> {
     /// Create a new instance of [Certificates] with no certificates whatsoever
     pub const fn new() -> Self {
         Self {
@@ -667,13 +611,12 @@ impl Certificates<'_> {
     /// allocate certificates.
     pub fn with_certificates(
         mut self,
-        certificate: X509<'_>,
-        private_key: X509<'_>,
-        password: Option<&'_ str>,
-    ) -> Result<Self, TlsError> {
-        self.certificate = Some(MbedTLSX509Crt::new(certificate)?);
-        self.private_key = Some(PkContext::new(private_key, password)?);
-        Ok(self)
+        certificate: &'d MbedTLSX509Crt<'_>,
+        private_key: &'d PkContext,
+    ) -> Self {
+        self.certificate = Some(certificate);
+        self.private_key = Some(private_key);
+        self
     }
 
     /// Initialize the Certificate Authority chain used for requests
@@ -682,9 +625,9 @@ impl Certificates<'_> {
     ///
     /// This function will fail with [TlsError::OutOfMemory] if there's not enough memory to
     /// allocate certificates.
-    pub fn with_ca_chain(mut self, ca_chain: X509<'_>) -> Result<Self, TlsError> {
-        self.ca_chain = Some(MbedTLSX509Crt::new(ca_chain)?);
-        Ok(self)
+    pub fn with_ca_chain(mut self, ca_chain: &'d MbedTLSX509Crt<'_>) -> Self {
+        self.ca_chain = Some(ca_chain);
+        self
     }
 
     /// Initialize the SSL using this set of certificates
