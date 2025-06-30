@@ -27,7 +27,7 @@ use embassy_net::{Config, Runner, StackResources};
 use embassy_executor::Spawner;
 use embassy_time::{Duration, Timer};
 use esp_backtrace as _;
-use esp_mbedtls::{AuthMode, Certificates, Tls, TlsVersion};
+use esp_mbedtls::{AuthMode, Certificates, MbedTLSX509Crt, PkContext, Tls, TlsVersion};
 use esp_mbedtls::{TlsError, X509};
 use esp_println::logger::init_logger;
 use esp_println::println;
@@ -149,13 +149,11 @@ async fn main(spawner: Spawner) -> ! {
         .await
         .unwrap();
 
-    let certificates = Certificates::new()
-        .with_certificates_no_copy(
-            X509::der(include_bytes!("./certs/certificate.der")),
-            X509::der(include_bytes!("./certs/private_key.der")),
-            None,
-        )
-        .unwrap();
+    let crt =
+        MbedTLSX509Crt::new_no_copy(X509::der(include_bytes!("./certs/certificate.der"))).unwrap();
+    let private_key =
+        PkContext::new(X509::der(include_bytes!("./certs/private_key.der")), None).unwrap();
+    let certificates = Certificates::new().with_certificates(&crt, &private_key);
 
     let mut tls = Tls::new(peripherals.SHA)
         .unwrap()

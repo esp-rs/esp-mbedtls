@@ -48,3 +48,10 @@ impl core::fmt::Debug for crate::bindings::mbedtls_x509_crt {
         Ok(())
     }
 }
+
+impl core::fmt::Debug for crate::bindings::mbedtls_pk_context {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        // TODO: Implement helpful debug
+        write!(f, "mbedtls_pk_context {{ .. }}")
+    }
+}
