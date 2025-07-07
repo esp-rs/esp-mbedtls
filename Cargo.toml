@@ -69,6 +69,7 @@ static_cell = { version = "2.1", features = ["nightly"] }
 esp-mbedtls = { path = "./esp-mbedtls" }
 
 edge-http = { version = "0.5.0", optional = true }
+edge-ws = { version = "0.5.0", optional = true }
 edge-nal = { version = "0.5.0", optional = true }
 edge-nal-embassy = { version = "0.5.0", optional = true }
 cfg-if = "1.0.0"
@@ -97,6 +98,10 @@ required-features = ["examples-async"]
 [[example]]
 name = "edge_server"
 required-features = ["examples-async", "edge-http"]
+
+[[example]]
+name = "edge_ws"
+required-features = ["examples-async", "edge-http", "edge-ws"]
 
 [features]
 examples = [

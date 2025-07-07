@@ -10,6 +10,9 @@ echo -n | openssl s_client -showcerts -connect www.google.com:443 2>/dev/null | 
 # Get certificate chain for certauth.cryptomix.com
 echo -n | openssl s_client -showcerts -connect certauth.cryptomix.com:443 2>/dev/null | awk '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/' > $CERTS_DIR/certauth.cryptomix.com.pem
 
+# Get certificate chain for echo.websocket.org
+echo -n | openssl s_client -showcerts -connect echo.websocket.org:443 2>/dev/null | awk '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/' > $CERTS_DIR/echo.websocket.org.pem
+
 # Generate a CA and a pair of certificate + private key signed with the CA
 
 # Generate CA certificate
