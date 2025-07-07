@@ -546,6 +546,8 @@ pub struct Certificates<'d> {
     private_key: Option<PkContext>,
 }
 
+unsafe impl Send for Certificates<'_> {}
+
 impl Default for Certificates<'_> {
     fn default() -> Self {
         Self::new()
