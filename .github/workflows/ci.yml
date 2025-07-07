@@ -66,6 +66,14 @@ jobs:
             ./
             xtask
 
+      - name: Detect esp-mbedtls-sys/ changes
+        uses: dorny/paths-filter@v3
+        id: detect-changes
+        with:
+          filters: |
+            libs:
+              - 'esp-mbedtls-sys/**'
+
       - name: Install Rust for Xtensa and Espressif LLVM installation (optional)
         uses: esp-rs/xtensa-toolchain@v1.6
         with:
@@ -77,14 +85,6 @@ jobs:
             }}
 
       # ==== Build libs ====
-      - name: Detect esp-mbedtls-sys/ changes
-        uses: dorny/paths-filter@v3
-        id: detect-changes
-        with:
-          filters: |
-            libs:
-              - 'esp-mbedtls-sys/**'
-
       - name: Build libraries and bindings
         if: |
           steps.detect-changes.outputs.libs == 'true' ||
