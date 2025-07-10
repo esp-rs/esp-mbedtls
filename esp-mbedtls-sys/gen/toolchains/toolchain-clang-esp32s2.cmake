@@ -8,7 +8,7 @@ cmake_path(REMOVE_FILENAME CLANG_DIR_PATH)
 
 set(CMAKE_AR "${CLANG_DIR_PATH}/llvm-ar")
 set(CMAKE_RANLIB "${CLANG_DIR_PATH}/llvm-ranlib")
-set(CMAKE_OBJDUMP xtensa-esp32s3-elf-objdump)
+set(CMAKE_OBJDUMP xtensa-esp32s2-elf-objdump)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --target=xtensa-esp-elf -mcpu=esp32s2"
   CACHE STRING "C Compiler Base Flags" 
