@@ -87,20 +87,12 @@ fn main() -> ! {
     let now = || time::Instant::now().duration_since_epoch().as_millis();
     let wifi_stack = Stack::new(iface, device, sockets, now, rng.random());
 
-    controller
-        .set_power_saving(esp_wifi::config::PowerSaveMode::None)
-        .unwrap();
-
     println!("Call wifi_connect");
     let client_config = Configuration::Client(ClientConfiguration {
         ssid: SSID.try_into().unwrap(),
         password: PASSWORD.try_into().unwrap(),
         ..Default::default()
     });
-    #[cfg(feature = "esp32c6")]
-    controller
-        .set_power_saving(esp_wifi::config::PowerSaveMode::None)
-        .unwrap();
     controller.set_configuration(&client_config).unwrap();
     controller.start().unwrap();
     controller.connect().unwrap();
