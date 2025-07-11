@@ -26,6 +26,7 @@ Examples are available for:
 
 - esp32
 - esp32c3
+- esp32c6
 - esp32s2
 - esp32s3
 
@@ -53,6 +54,7 @@ Here's a table of the architectures with their corresponding target for quick re
 | ------------ | --------------------------- | ------------------ |
 | esp32        | xtensa-esp32-none-elf       | esp                |
 | esp32c3      | riscv32imc-unknown-none-elf | nightly            |
+| esp32c6      | riscv32imac-unknown-none-elf| nightly            |
 | esp32s2      | xtensa-esp32s2-none-elf     | esp                |
 | esp32s3      | xtensa-esp32s3-none-elf     | esp                |
 
