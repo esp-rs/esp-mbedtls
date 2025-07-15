@@ -25,6 +25,8 @@ macro_rules! error_checked {
 const SOC_RSA_MAX_BIT_LEN: usize = 4096;
 #[cfg(feature = "esp32c3")]
 const SOC_RSA_MAX_BIT_LEN: usize = 3072;
+#[cfg(feature = "esp32c6")]
+const SOC_RSA_MAX_BIT_LEN: usize = 3072;
 #[cfg(feature = "esp32s2")]
 const SOC_RSA_MAX_BIT_LEN: usize = 4096;
 #[cfg(feature = "esp32s3")]
@@ -323,7 +325,7 @@ pub unsafe extern "C" fn mbedtls_mpi_exp_mod(
                         mod_exp.read_results(&mut out);
                         copy_bytes(out.as_ptr(), (*Z).private_p, m_words);
                     }
-                    #[cfg(not(feature = "esp32c3"))]
+                    #[cfg(not(any(feature = "esp32c3", feature = "esp32c6")))]
                     U4096::LIMBS => {
                         const OP_SIZE: usize = U4096::LIMBS;
                         let mut base = [0u32; OP_SIZE];
