@@ -157,6 +157,8 @@ impl fmt::Display for TlsError {
     }
 }
 
+impl core::error::Error for TlsError {}
+
 impl embedded_io::Error for TlsError {
     fn kind(&self) -> embedded_io::ErrorKind {
         match self {
