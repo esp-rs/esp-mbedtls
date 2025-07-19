@@ -296,6 +296,7 @@ pub const RE_DUP_MAX: u32 = 255;
 pub const MB_LEN_MAX: u32 = 1;
 pub const NL_ARGMAX: u32 = 32;
 pub const _POSIX2_RE_DUP_MAX: u32 = 255;
+pub const CHAR_MIN: u32 = 0;
 pub const __int20: u32 = 2;
 pub const __int20__: u32 = 2;
 pub const __INT8: &[u8; 3] = b"hh\0";
