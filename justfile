@@ -1,7 +1,7 @@
 export SSID := "Dummy"
 export PASSWORD := "Dummy"
 
-all: (check "esp32" "esp") (check "esp32s3" "esp") (check "esp32c3" "nightly")
+all: (check "esp32" "esp") (check "esp32s3" "esp") (check "esp32c3" "nightly") (check "esp32c6" "nightly")
     cd esp-mbedtls && cargo +nightly fmt --all -- --check
     
 [private]
