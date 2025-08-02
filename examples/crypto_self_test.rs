@@ -45,7 +45,6 @@ fn main() -> ! {
     let _init = init(
         timg0.timer0,
         Rng::new(peripherals.RNG),
-        peripherals.RADIO_CLK,
     )
     .unwrap();
 

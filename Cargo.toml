@@ -44,7 +44,7 @@ embassy-net = { version = "0.6.0", features = [
     "medium-ethernet",
 ], optional = true }
 
-esp-wifi = { version = "0.14.0", optional = true, features = [
+esp-wifi = { version = "0.15.0", optional = true, features = [
     "sys-logs",
     "wifi",
 ] }
