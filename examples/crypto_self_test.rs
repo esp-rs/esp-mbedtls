@@ -42,12 +42,7 @@ fn main() -> ! {
 
     let timg0 = TimerGroup::new(peripherals.TIMG0);
 
-    let _init = init(
-        timg0.timer0,
-        Rng::new(peripherals.RNG),
-        peripherals.RADIO_CLK,
-    )
-    .unwrap();
+    let _init = init(timg0.timer0, Rng::new(peripherals.RNG)).unwrap();
 
     let mut tls = Tls::new(peripherals.SHA)
         .unwrap()

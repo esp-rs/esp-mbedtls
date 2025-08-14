@@ -80,7 +80,7 @@ async fn main(spawner: Spawner) -> ! {
 
     let esp_wifi_ctrl = &*mk_static!(
         EspWifiController<'_>,
-        init(timg0.timer0, rng.clone(), peripherals.RADIO_CLK,).unwrap()
+        init(timg0.timer0, rng.clone()).unwrap()
     );
 
     let (controller, interfaces) = esp_wifi::wifi::new(&esp_wifi_ctrl, peripherals.WIFI).unwrap();
