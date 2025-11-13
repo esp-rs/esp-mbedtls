@@ -10,7 +10,7 @@ use critical_section::Mutex;
 
 use embedded_io::{ErrorKind, ErrorType};
 
-use log::Level;
+use ::log::Level;
 
 use embedded_io::Read;
 use embedded_io::Write;
@@ -764,7 +764,7 @@ where
 
             loop {
                 let res = mbedtls_ssl_handshake(self.ssl_context);
-                log::debug!("mbedtls_ssl_handshake: {res:x}");
+                ::log::debug!("mbedtls_ssl_handshake: {res:x}");
                 if res == 0 {
                     // success
                     break;
@@ -922,7 +922,7 @@ where
 
 impl<T> Drop for Session<'_, T> {
     fn drop(&mut self) {
-        log::debug!("session dropped - freeing memory");
+        ::log::debug!("session dropped - freeing memory");
         unsafe {
             mbedtls_ssl_close_notify(self.ssl_context);
             mbedtls_ctr_drbg_free(self.drbg_context);
@@ -1056,7 +1056,7 @@ pub mod asynch {
 
     impl<T> Drop for Session<'_, T> {
         fn drop(&mut self) {
-            log::debug!("session dropped - freeing memory");
+            ::log::debug!("session dropped - freeing memory");
             unsafe {
                 mbedtls_ssl_close_notify(self.ssl_context);
                 mbedtls_ctr_drbg_free(self.drbg_context);
@@ -1088,13 +1088,13 @@ pub mod asynch {
         pub async fn connect(&mut self) -> Result<(), TlsError> {
             match self.state {
                 SessionState::Initial => {
-                    log::debug!("Establishing SSL connection");
+                    ::log::debug!("Establishing SSL connection");
 
                     self.io(|ssl| unsafe { mbedtls_ssl_handshake(ssl) }).await?;
                     if matches!(self.state, SessionState::Eof) {
                         return Err(TlsError::Eof);
                     }
-                    log::debug!("Establish SSL connection OK");
+                    ::log::debug!("Establish SSL connection OK");
                     self.state = SessionState::Connected;
 
                     Ok(())
@@ -1575,7 +1575,7 @@ unsafe extern "C" fn dbg_print(
         _ => Level::Trace,
     };
 
-    log::log!(level, "{} ({}:{}) {}", lvl, file, line, msg);
+    ::log::log!(level, "{} ({}:{}) {}", lvl, file, line, msg);
 }
 
 #[no_mangle]
