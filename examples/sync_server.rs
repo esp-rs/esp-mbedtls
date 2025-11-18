@@ -35,7 +35,7 @@ use blocking_network_stack::Stack;
 
 use embedded_io::*;
 use esp_backtrace as _;
-use esp_mbedtls::{AuthMode, Certificates, MbedTLSX509Crt, PkContext, Session, SessionConfig};
+use esp_mbedtls::{AuthMode, Certificate, Certificates, PrivateKey, Session, SessionConfig};
 use esp_mbedtls::{Mode, Tls, TlsError, TlsVersion, X509};
 use esp_println::{logger::init_logger, print, println};
 use esp_wifi::{
@@ -144,10 +144,10 @@ fn main() -> ! {
     tls.set_debug(0);
 
     let crt =
-        MbedTLSX509Crt::new_no_copy(X509::der(include_bytes!("./certs/certificate.der"))).unwrap();
+        Certificate::new_no_copy(X509::der(include_bytes!("./certs/certificate.der"))).unwrap();
     let private_key =
-        PkContext::new(X509::der(include_bytes!("./certs/private_key.der")), None).unwrap();
-    let ca_chain = MbedTLSX509Crt::new(
+        PrivateKey::new(X509::der(include_bytes!("./certs/private_key.der")), None).unwrap();
+    let ca_chain = Certificate::new(
         X509::pem(concat!(include_str!("./certs/ca_cert.pem"), "\0").as_bytes()).unwrap(),
     )
     .unwrap();

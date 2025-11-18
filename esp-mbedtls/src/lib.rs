@@ -5,7 +5,6 @@ use core::ffi::{c_char, c_int, c_uchar, c_ulong, c_void, CStr};
 use core::fmt;
 use core::marker::PhantomData;
 use core::mem::size_of;
-use core::ops::Deref;
 use core::ptr::NonNull;
 
 use critical_section::Mutex;
@@ -96,27 +95,6 @@ macro_rules! error_checked {
     }};
 }
 
-/// The mode of operation of a TLS `Session` instance
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Mode<'a> {
-    /// Client mode
-    Client {
-        /// The server name to check against the received server certificate.
-        servername: &'a CStr,
-    },
-    /// Server mode
-    Server,
-}
-
-impl Mode<'_> {
-    fn to_mbed_tls(&self) -> i32 {
-        match self {
-            Mode::Client { .. } => MBEDTLS_SSL_IS_CLIENT as i32,
-            Mode::Server => MBEDTLS_SSL_IS_SERVER as i32,
-        }
-    }
-}
-
 /// The minimum TLS version that will be supported by a particular `Session` instance
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TlsVersion {
@@ -160,41 +138,231 @@ impl AuthMode {
     }
 }
 
+/// The credentials (certificate and private key)
+/// used for client or server authentication
+#[derive(Debug, Clone, Copy)]
+pub struct Credentials<'a> {
+    /// Certificate (chain)
+    certificate: &'a Certificate<'a>,
+    /// Private key paired with the certificate.
+    private_key: &'a PrivateKey,
+}
+
 /// Configuration for a TLS session
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct SessionConfig<'a> {
-    /// The mode of operation of a TLS `Session` instance
-    mode: Mode<'a>,
-    /// The minimum TLS version that will be supported by a particular `Session` instance
-    min_version: TlsVersion,
+#[derive(Debug, Clone)]
+pub struct ClientSessionConfig<'a> {
+    /// The server name to check against the received server certificate.
+    pub server_name: &'a CStr,
+    /// Trusted CA (Certificate Authority) chain to be used for certificate
+    /// verification during the SSL/TLS handshake.
+    ///
+    /// The CA chain should contain the trusted CA certificates
+    /// that will be used to verify the client's certificate by the server during the handshake.
+    pub ca_chain: Option<&'a Certificate<'a>>,
+    /// Optional client credentials used for authenticating the client to the server
+    pub creds: Option<Credentials<'a>>,
     /// Certificate verification mode. Can be overriden.
-    /// By default, the following we be used depending on the mode:
-    ///  - [AuthMode::None] on server
-    ///  - [AuthMode::Required] on client
-    auth_mode: AuthMode,
+    /// By default, [AuthMode::Required] will be used
+    pub auth_mode: AuthMode,
+    /// The minimum TLS version that will be supported by a particular `Session` instance
+    pub min_version: TlsVersion,
+}
+
+impl<'a> ClientSessionConfig<'a> {
+    pub const fn new(server_name: &'a CStr) -> Self {
+        Self {
+            server_name,
+            ca_chain: None,
+            creds: None,
+            auth_mode: AuthMode::Required,
+            min_version: TlsVersion::Tls1_2,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ServerSessionConfig<'a> {
+    /// Trusted CA (Certificate Authority) chain to be used for certificate
+    /// verification during the SSL/TLS handshake.
+    ///
+    /// The CA chain should contain the trusted CA certificates
+    /// that will be used to verify the server's certificate by the clientduring the handshake.
+    pub ca_chain: Option<&'a Certificate<'a>>,
+    /// Server credentials used for authenticating the server to the client
+    pub creds: Credentials<'a>,
+    /// Certificate verification mode. Can be overriden.
+    /// By default, [AuthMode::None] will be used
+    pub auth_mode: AuthMode,
+    /// The minimum TLS version that will be supported by a particular `Session` instance
+    pub min_version: TlsVersion,
+}
+
+impl<'a> ServerSessionConfig<'a> {
+    pub const fn new(creds: Credentials<'a>) -> Self {
+        Self {
+            ca_chain: None,
+            creds,
+            auth_mode: AuthMode::None,
+            min_version: TlsVersion::Tls1_2,
+        }
+    }
+}
+
+/// Configuration for a TLS session
+#[derive(Debug, Clone)]
+pub enum SessionConfig<'a> {
+    Client(&'a ClientSessionConfig<'a>),
+    Server(&'a ServerSessionConfig<'a>),
 }
 
 impl<'a> SessionConfig<'a> {
-    /// Create a config for a session
-    ///
-    /// # Arguments
-    ///
-    /// * `mode` - The mode of operation of a TLS `Session` instance
-    /// * `min_version` - The minimum TLS version that will be supported by a particular `Session` instance
-    pub fn new(mode: Mode<'a>, min_version: TlsVersion) -> Self {
-        Self {
-            mode,
-            min_version,
-            auth_mode: match mode {
-                Mode::Client { servername: _ } => AuthMode::Required,
-                Mode::Server => AuthMode::None,
-            },
+    fn ca_chain(&self) -> Option<&'a Certificate<'a>> {
+        match self {
+            SessionConfig::Client(ClientSessionConfig { ca_chain, .. }) => *ca_chain,
+            SessionConfig::Server(ServerSessionConfig { ca_chain, .. }) => *ca_chain,
         }
     }
 
-    /// Override the auth mode to use a specific one
-    pub fn set_auth_mode(&mut self, auth_mode: AuthMode) {
-        self.auth_mode = auth_mode
+    fn creds(&self) -> Option<Credentials<'a>> {
+        match self {
+            SessionConfig::Client(ClientSessionConfig { creds, .. }) => *creds,
+            SessionConfig::Server(ServerSessionConfig { creds, .. }) => Some(*creds),
+        }
+    }
+
+    fn auth_mode(&self) -> AuthMode {
+        match self {
+            SessionConfig::Client(ClientSessionConfig { auth_mode, .. }) => *auth_mode,
+            SessionConfig::Server(ServerSessionConfig { auth_mode, .. }) => *auth_mode,
+        }
+    }
+
+    fn min_version(&self) -> TlsVersion {
+        match self {
+            SessionConfig::Client(ClientSessionConfig { min_version, .. }) => *min_version,
+            SessionConfig::Server(ServerSessionConfig { min_version, .. }) => *min_version,
+        }
+    }
+
+    fn raw_mode(&self) -> i32 {
+        match self {
+            Self::Client { .. } => MBEDTLS_SSL_IS_CLIENT as i32,
+            Self::Server { .. } => MBEDTLS_SSL_IS_SERVER as i32,
+        }
+    }
+
+    /// Initialize the SSL using this set of certificates
+    fn init_ssl(&self) -> Result<
+        (
+            *mut mbedtls_ctr_drbg_context,
+            *mut mbedtls_ssl_context,
+            *mut mbedtls_ssl_config,
+        ),
+        TlsError,
+    > {
+        // TODO: Allocate a lot of these things:
+        // - In one chunk
+        // - With a `Box`, which is safer
+        // - Consider reconfiguring mbedtls with the custom malloc/free
+        //   callbacks that we can actually redirect to `Box`
+        //
+        // This way the lib would become completely independent from `esp-wifi`
+        // and would simply requre a Rust global allocator to be set.
+        // (Or we can even implement a mode of operation of the lib where
+        //  it uses a fixed memory pool, and then we layer on top our own little allocator)
+        unsafe {
+            error_checked!(psa_crypto_init())?;
+
+            let drbg_context = aligned_calloc(
+                align_of::<mbedtls_ctr_drbg_context>(),
+                size_of::<mbedtls_ctr_drbg_context>(),
+            ) as *mut mbedtls_ctr_drbg_context;
+            if drbg_context.is_null() {
+                return Err(TlsError::OutOfMemory);
+            }
+
+            let ssl_context = aligned_calloc(
+                align_of::<mbedtls_ssl_context>(),
+                size_of::<mbedtls_ssl_context>(),
+            ) as *mut mbedtls_ssl_context;
+            if ssl_context.is_null() {
+                mbedtls_free(drbg_context as *const _);
+                return Err(TlsError::OutOfMemory);
+            }
+
+            let ssl_config = aligned_calloc(
+                align_of::<mbedtls_ssl_config>(),
+                size_of::<mbedtls_ssl_config>(),
+            ) as *mut mbedtls_ssl_config;
+            if ssl_config.is_null() {
+                mbedtls_free(drbg_context as *const _);
+                mbedtls_free(ssl_context as *const _);
+                return Err(TlsError::OutOfMemory);
+            }
+
+            mbedtls_ssl_init(ssl_context);
+            mbedtls_ssl_config_init(ssl_config);
+
+            //(*ssl_config).private_f_dbg = Some(dbg_print);
+            mbedtls_ssl_conf_dbg(ssl_config, Some(dbg_print), core::ptr::null_mut());
+
+            mbedtls_ctr_drbg_init(drbg_context);
+
+            // Init RNG
+            mbedtls_ssl_conf_rng(ssl_config, Some(rng), drbg_context as *mut c_void);
+
+            // Closure to free all allocated resources in case of an error.
+            let cleanup = move || {
+                mbedtls_ctr_drbg_free(drbg_context);
+                mbedtls_ssl_config_free(ssl_config);
+                mbedtls_ssl_free(ssl_context);
+                mbedtls_free(drbg_context as *const _);
+                mbedtls_free(ssl_context as *const _);
+                mbedtls_free(ssl_config as *const _);
+            };
+
+            error_checked!(
+                mbedtls_ssl_config_defaults(
+                    ssl_config,
+                    self.raw_mode(),
+                    MBEDTLS_SSL_TRANSPORT_STREAM as i32,
+                    MBEDTLS_SSL_PRESET_DEFAULT as i32,
+                ),
+                cleanup
+            )?;
+
+            // Set the minimum TLS version
+            // Use a ddirect field modified for compatibility with the `esp-idf-svc` mbedtls
+            (*ssl_config).private_min_tls_version = self.min_version().to_mbed_tls_version();
+
+            mbedtls_ssl_conf_authmode(ssl_config, self.auth_mode().to_mbedtls_authmode());
+
+            if let Self::Client(ClientSessionConfig { server_name, .. }) = self {
+                error_checked!(
+                    mbedtls_ssl_set_hostname(ssl_context, server_name.as_ptr(),),
+                    cleanup
+                )?;
+            }
+
+            if let Some(creds) = self.creds() {
+                mbedtls_ssl_conf_own_cert(
+                    ssl_config,
+                    creds.certificate.crt.as_ptr(),
+                    creds.private_key.0.as_ptr(),
+                );
+            }
+
+            if let Some(ca_chain) = self.ca_chain() {
+                mbedtls_ssl_conf_ca_chain(
+                    ssl_config,
+                    ca_chain as *const _ as *mut mbedtls_x509_crt,
+                    core::ptr::null_mut(),
+                );
+            }
+
+            error_checked!(mbedtls_ssl_setup(ssl_context, ssl_config), cleanup)?;
+            Ok((drbg_context, ssl_context, ssl_config))
+        }
     }
 }
 
@@ -338,14 +506,14 @@ impl<'a> X509<'a> {
     }
 }
 
-/// Creates a wrapper over [mbedtls_x509_crt] to safely manage allocation and freeing on drop
+/// A X509 certificate or certificate chain.
 #[derive(Debug)]
-pub struct MbedTLSX509Crt<'d> {
+pub struct Certificate<'d> {
     crt: NonNull<mbedtls_x509_crt>,
     _t: PhantomData<&'d ()>,
 }
 
-impl MbedTLSX509Crt<'static> {
+impl Certificate<'static> {
     /// Parse an X509 certificate into RAM by making a copy
     ///
     /// # Arguments
@@ -401,7 +569,7 @@ impl MbedTLSX509Crt<'static> {
     }
 }
 
-impl<'d> MbedTLSX509Crt<'d> {
+impl<'d> Certificate<'d> {
     /// Parse an X509 certificate without making a copy in RAM. This requires that the underlying data
     /// lives for the lifetime of the certificate.
     /// Note: This is currently only supported for DER encoded certificates
@@ -454,21 +622,21 @@ impl<'d> MbedTLSX509Crt<'d> {
     }
 }
 
-impl Deref for MbedTLSX509Crt<'_> {
-    type Target = mbedtls_x509_crt;
+// impl Deref for MbedTLSX509Crt<'_> {
+//     type Target = mbedtls_x509_crt;
 
-    fn deref(&self) -> &Self::Target {
-        unsafe { self.crt.as_ref() }
-    }
-}
+//     fn deref(&self) -> &Self::Target {
+//         unsafe { self.crt.as_ref() }
+//     }
+// }
 
-impl core::convert::AsRef<mbedtls_x509_crt> for MbedTLSX509Crt<'_> {
-    fn as_ref(&self) -> &mbedtls_x509_crt {
-        self
-    }
-}
+// impl core::convert::AsRef<mbedtls_x509_crt> for MbedTLSX509Crt<'_> {
+//     fn as_ref(&self) -> &mbedtls_x509_crt {
+//         self
+//     }
+// }
 
-impl Drop for MbedTLSX509Crt<'_> {
+impl Drop for Certificate<'_> {
     fn drop(&mut self) {
         unsafe {
             mbedtls_x509_crt_free(self.crt.as_ptr());
@@ -477,12 +645,11 @@ impl Drop for MbedTLSX509Crt<'_> {
     }
 }
 
-/// Creates a wrapper over [mbedtls_pk_context] to safely manage allocation and freeing on drop
+/// A private key
 #[derive(Debug)]
-#[repr(transparent)]
-pub struct PkContext(NonNull<mbedtls_pk_context>);
+pub struct PrivateKey(NonNull<mbedtls_pk_context>);
 
-impl PkContext {
+impl PrivateKey {
     /// Parse an X509 private key into RAM and returns a wrapped pointer if successful.
     ///
     /// # Arguments
@@ -494,7 +661,7 @@ impl PkContext {
     ///
     /// This will return an error if an error occurs during parsing such as passing a DER encoded
     /// private key in a PEM format, and vice-versa.
-    pub fn new<'a>(private_key: X509<'a>, password: Option<&'a str>) -> Result<Self, TlsError> {
+    pub fn new(private_key: X509<'_>, password: Option<&str>) -> Result<Self, TlsError> {
         unsafe {
             let ptr = aligned_calloc(
                 align_of::<mbedtls_pk_context>(),
@@ -531,254 +698,25 @@ impl PkContext {
     }
 }
 
-impl Deref for PkContext {
-    type Target = mbedtls_pk_context;
+// impl Deref for PkContext {
+//     type Target = mbedtls_pk_context;
 
-    fn deref(&self) -> &Self::Target {
-        unsafe { self.0.as_ref() }
-    }
-}
+//     fn deref(&self) -> &Self::Target {
+//         unsafe { self.0.as_ref() }
+//     }
+// }
 
-impl core::convert::AsRef<mbedtls_pk_context> for PkContext {
-    fn as_ref(&self) -> &mbedtls_pk_context {
-        self
-    }
-}
+// impl core::convert::AsRef<mbedtls_pk_context> for PkContext {
+//     fn as_ref(&self) -> &mbedtls_pk_context {
+//         self
+//     }
+// }
 
-impl Drop for PkContext {
+impl Drop for PrivateKey {
     fn drop(&mut self) {
         unsafe {
             mbedtls_pk_free(self.0.as_ptr());
             mbedtls_free(self.0.as_ptr() as *const _);
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct Certificates<'d> {
-    /// Trusted CA (Certificate Authority) chain to be used for certificate
-    /// verification during the SSL/TLS handshake.
-    ///
-    /// Certificates can be chained. When dealing with intermediate CA certificates,
-    /// make sure to include the entire chain up to the root CA.
-    ///
-    /// # Client:
-    /// In Client mode, the CA chain should contain the trusted CA certificates
-    /// that will be used to verify the server's certificate during the handshake.
-    ///
-    /// # Server:
-    /// In server mode, the CA chain should contain the trusted CA certificates that will be
-    /// provided to the client and that will be used to verify the client's certificate
-    /// during the handshake, if enabled.
-    ca_chain: Option<&'d mbedtls_x509_crt>,
-
-    /// Own certificate chain used for requests
-    /// It should contain in order from the bottom up your certificate chain.
-    /// The top certificate (self-signed) can be omitted.
-    ///
-    /// # Client:
-    /// In client mode, this certificate will be used for client authentication
-    /// when communicating wiht the server. Use [None] if you don't want to use
-    /// client authentication.
-    ///
-    /// # Server:
-    /// In server mode, this will be the certificate given to the client when
-    /// performing a handshake.
-    /// When set to [None] the server will not request nor perform any verification
-    /// on the client certificates. Only set when you want to use client authentication.
-    certificate: Option<&'d mbedtls_x509_crt>,
-
-    /// Private key paired with the certificate. Must be set when [Certificates::certificate]
-    /// is not [None]
-    private_key: Option<&'d mbedtls_pk_context>,
-}
-
-unsafe impl Send for Certificates<'_> {}
-
-impl Default for Certificates<'_> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl<'d> Certificates<'d> {
-    /// Create a new instance of [Certificates] with no certificates whatsoever
-    pub const fn new() -> Self {
-        Self {
-            ca_chain: None,
-            certificate: None,
-            private_key: None,
-        }
-    }
-
-    /// Get a reference to the underlying parsed X509 peer certificate, if configured
-    pub fn certificate(&self) -> Option<&mbedtls_x509_crt> {
-        self.certificate
-    }
-
-    /// Get a reference to the underlying parsed CA Chain X509 certificate, if configured
-    pub fn ca_chain(&self) -> Option<&mbedtls_x509_crt> {
-        self.ca_chain
-    }
-
-    /// Initialize the own certificate chain and private key used for requests
-    /// It should contain in order from the bottom up your certificate chain.
-    /// The top certificate (self-signed) can be omitted.
-    ///
-    /// # Client:
-    /// In client mode, this certificate will be used for client authentication
-    /// when communicating wiht the server. Do not call this function if you don't want to use
-    /// client authentication
-    ///
-    /// # Server:
-    /// In server mode, this will be the certificate given to the client when
-    /// performing a handshake.
-    ///
-    /// # Arguments
-    ///
-    /// * `certificate` - The X509 certificate in DER or PEM format
-    /// * `private_key` - The X509 private key in DER or PEM format
-    /// * `password` - The optional password if the private key is password protected
-    ///
-    /// # Errors
-    ///
-    /// This function will fail with [TlsError::OutOfMemory] if there's not enough memory to
-    /// allocate certificates.
-    pub fn with_certificates(
-        mut self,
-        certificate: &'d mbedtls_x509_crt,
-        private_key: &'d mbedtls_pk_context,
-    ) -> Self {
-        self.certificate = Some(certificate);
-        self.private_key = Some(private_key);
-        self
-    }
-
-    /// Initialize the Certificate Authority chain used for requests
-    ///
-    /// # Errors
-    ///
-    /// This function will fail with [TlsError::OutOfMemory] if there's not enough memory to
-    /// allocate certificates.
-    pub fn with_ca_chain(mut self, ca_chain: &'d mbedtls_x509_crt) -> Self {
-        self.ca_chain = Some(ca_chain);
-        self
-    }
-
-    /// Initialize the SSL using this set of certificates
-    fn init_ssl(
-        &self,
-        config: SessionConfig<'_>,
-    ) -> Result<
-        (
-            *mut mbedtls_ctr_drbg_context,
-            *mut mbedtls_ssl_context,
-            *mut mbedtls_ssl_config,
-        ),
-        TlsError,
-    > {
-        // TODO: Allocate a lot of these things:
-        // - In one chunk
-        // - With a `Box`, which is safer
-        // - Consider reconfiguring mbedtls with the custom malloc/free
-        //   callbacks that we can actually redirect to `Box`
-        //
-        // This way the lib would become completely independent from `esp-wifi`
-        // and would simply requre a Rust global allocator to be set.
-        // (Or we can even implement a mode of operation of the lib where
-        //  it uses a fixed memory pool, and then we layer on top our own little allocator)
-        unsafe {
-            error_checked!(psa_crypto_init())?;
-
-            let drbg_context = aligned_calloc(
-                align_of::<mbedtls_ctr_drbg_context>(),
-                size_of::<mbedtls_ctr_drbg_context>(),
-            ) as *mut mbedtls_ctr_drbg_context;
-            if drbg_context.is_null() {
-                return Err(TlsError::OutOfMemory);
-            }
-
-            let ssl_context = aligned_calloc(
-                align_of::<mbedtls_ssl_context>(),
-                size_of::<mbedtls_ssl_context>(),
-            ) as *mut mbedtls_ssl_context;
-            if ssl_context.is_null() {
-                mbedtls_free(drbg_context as *const _);
-                return Err(TlsError::OutOfMemory);
-            }
-
-            let ssl_config = aligned_calloc(
-                align_of::<mbedtls_ssl_config>(),
-                size_of::<mbedtls_ssl_config>(),
-            ) as *mut mbedtls_ssl_config;
-            if ssl_config.is_null() {
-                mbedtls_free(drbg_context as *const _);
-                mbedtls_free(ssl_context as *const _);
-                return Err(TlsError::OutOfMemory);
-            }
-
-            mbedtls_ssl_init(ssl_context);
-            mbedtls_ssl_config_init(ssl_config);
-
-            //(*ssl_config).private_f_dbg = Some(dbg_print);
-            mbedtls_ssl_conf_dbg(ssl_config, Some(dbg_print), core::ptr::null_mut());
-
-            mbedtls_ctr_drbg_init(drbg_context);
-
-            // Init RNG
-            mbedtls_ssl_conf_rng(ssl_config, Some(rng), drbg_context as *mut c_void);
-
-            // Closure to free all allocated resources in case of an error.
-            let cleanup = move || {
-                mbedtls_ctr_drbg_free(drbg_context);
-                mbedtls_ssl_config_free(ssl_config);
-                mbedtls_ssl_free(ssl_context);
-                mbedtls_free(drbg_context as *const _);
-                mbedtls_free(ssl_context as *const _);
-                mbedtls_free(ssl_config as *const _);
-            };
-
-            error_checked!(
-                mbedtls_ssl_config_defaults(
-                    ssl_config,
-                    config.mode.to_mbed_tls(),
-                    MBEDTLS_SSL_TRANSPORT_STREAM as i32,
-                    MBEDTLS_SSL_PRESET_DEFAULT as i32,
-                ),
-                cleanup
-            )?;
-
-            // Set the minimum TLS version
-            // Use a ddirect field modified for compatibility with the `esp-idf-svc` mbedtls
-            (*ssl_config).private_min_tls_version = config.min_version.to_mbed_tls_version();
-
-            mbedtls_ssl_conf_authmode(ssl_config, config.auth_mode.to_mbedtls_authmode());
-
-            if let Mode::Client { servername } = config.mode {
-                error_checked!(
-                    mbedtls_ssl_set_hostname(ssl_context, servername.as_ptr(),),
-                    cleanup
-                )?;
-            }
-
-            if let (Some(certificate), Some(private_key)) = (self.certificate, self.private_key) {
-                mbedtls_ssl_conf_own_cert(
-                    ssl_config,
-                    certificate as *const _ as *mut mbedtls_x509_crt,
-                    private_key as *const _ as *mut mbedtls_pk_context,
-                );
-            }
-
-            if let Some(ca_chain) = self.ca_chain {
-                mbedtls_ssl_conf_ca_chain(
-                    ssl_config,
-                    ca_chain as *const _ as *mut mbedtls_x509_crt,
-                    core::ptr::null_mut(),
-                );
-            }
-
-            error_checked!(mbedtls_ssl_setup(ssl_context, ssl_config), cleanup)?;
-            Ok((drbg_context, ssl_context, ssl_config))
         }
     }
 }
@@ -945,11 +883,10 @@ impl<'a, T> Session<'a, T> {
     /// invalid format.
     pub fn new(
         stream: T,
-        config: SessionConfig<'_>,
-        certificates: &'a Certificates<'a>,
+        config: &SessionConfig<'a>,
         tls_ref: TlsReference<'a>,
     ) -> Result<Self, TlsError> {
-        let (drbg_context, ssl_context, ssl_config) = certificates.init_ssl(config)?;
+        let (drbg_context, ssl_context, ssl_config) = config.init_ssl()?;
         Ok(Self {
             stream,
             drbg_context,
@@ -1248,11 +1185,10 @@ pub mod asynch {
         /// invalid format.
         pub fn new(
             stream: T,
-            config: SessionConfig<'_>,
-            certificates: &'a Certificates<'a>,
+            config: SessionConfig<'a>,
             tls_ref: TlsReference<'a>,
         ) -> Result<Self, TlsError> {
-            let (drbg_context, ssl_context, ssl_config) = certificates.init_ssl(config)?;
+            let (drbg_context, ssl_context, ssl_config) = config.init_ssl()?;
             Ok(Self {
                 stream,
                 drbg_context,

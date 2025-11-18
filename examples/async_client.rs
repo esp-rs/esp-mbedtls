@@ -20,8 +20,8 @@ use embassy_net::{Config, Ipv4Address, Runner, StackResources};
 use embassy_executor::Spawner;
 use embassy_time::{Duration, Timer};
 use esp_backtrace as _;
-use esp_mbedtls::{asynch::Session, Certificates, Mode, PkContext, TlsVersion};
-use esp_mbedtls::{MbedTLSX509Crt, SessionConfig, Tls, X509};
+use esp_mbedtls::{asynch::Session, Certificates, Mode, PrivateKey, TlsVersion};
+use esp_mbedtls::{Certificate, ClientSessionConfig, Credentials, SessionConfig, Tls, X509};
 use esp_println::logger::init_logger;
 use esp_println::{print, println};
 use esp_wifi::wifi::{
@@ -140,22 +140,14 @@ async fn main(spawner: Spawner) -> ! {
 
     cfg_if::cfg_if! {
         if #[cfg(feature = "mtls")] {
-            let crt = MbedTLSX509Crt::new(X509::pem(concat!(include_str!("./certs/certificate.pem"), "\0").as_bytes()).unwrap()).unwrap();
-            let private_key = PkContext::new(X509::pem(concat!(include_str!("./certs/private_key.pem"), "\0").as_bytes()).unwrap(), None).unwrap();
-            let ca_chain = MbedTLSX509Crt::new(X509::pem(concat!(include_str!("./certs/certauth.cryptomix.com.pem"), "\0").as_bytes()).unwrap()).unwrap();
-            let certificates = Certificates::new()
-                .with_certificates(
-                    &crt,
-                    &private_key
-                )
-                .with_ca_chain(
-                    &ca_chain
-                );
+            let creds = Some(Credentials {
+                certificate: Certificate::new(X509::pem(concat!(include_str!("./certs/certificate.pem"), "\0").as_bytes()).unwrap()).unwrap(),
+                private_key: PrivateKey::new(X509::pem(concat!(include_str!("./certs/private_key.pem"), "\0").as_bytes()).unwrap(), None).unwrap(),
+            });
+            let ca_chain = Certificate::new(X509::pem(concat!(include_str!("./certs/certauth.cryptomix.com.pem"), "\0").as_bytes()).unwrap()).unwrap();
         } else {
-            let ca_chain = MbedTLSX509Crt::new(X509::pem(concat!(include_str!("./certs/www.google.com.pem"), "\0").as_bytes()).unwrap()).unwrap();
-            let certificates = Certificates::new().with_ca_chain(
-                &ca_chain
-            );
+            let creds = None;
+            let ca_chain = Certificate::new(X509::pem(concat!(include_str!("./certs/www.google.com.pem"), "\0").as_bytes()).unwrap()).unwrap();
         }
     }
 
@@ -167,13 +159,12 @@ async fn main(spawner: Spawner) -> ! {
 
     let mut session = Session::new(
         &mut socket,
-        SessionConfig::new(
-            Mode::Client {
-                servername: SERVERNAME,
-            },
-            TlsVersion::Tls1_3,
-        ),
-        &certificates,
+        SessionConfig::Client(ClientSessionConfig {
+            min_version: TlsVersion::Tls1_3,
+            ca_chain,
+            creds,
+            ..ClientSessionConfig::new(SERVERNAME)
+        }),
         tls.reference(),
     )
     .unwrap();

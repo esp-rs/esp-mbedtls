@@ -1,17 +1,14 @@
-use core::ffi::CStr;
 use core::net::SocketAddr;
 
 use embedded_io::Error;
 
 use crate::asynch::Session;
-use crate::{AuthMode, Certificates, Mode, SessionConfig, TlsError, TlsReference, TlsVersion};
+use crate::{ClientSessionConfig, ServerSessionConfig, SessionConfig, TlsError, TlsReference};
 
 /// An implementation of `edge-nal`'s `TcpAccept` trait over TLS.
 pub struct TlsAcceptor<'d, T> {
     acceptor: T,
-    auth_mode: AuthMode,
-    min_version: TlsVersion,
-    certificates: &'d Certificates<'d>,
+    config: ServerSessionConfig<'d>,
     tls_ref: TlsReference<'d>,
 }
 
@@ -24,22 +21,16 @@ where
     /// Arguments:
     ///
     /// * `acceptor` - The underlying TCP acceptor
-    /// * `auth_mode` - Certificates verification mode
-    /// * `min_version` - The minimum TLS version to support
-    /// * `certificates` - The certificates to use for each accepted TLS connection
+    /// * `config` - The server session configuration
     /// * `tls_ref` - A reference to the active `Tls` instance
     pub const fn new(
         acceptor: T,
-        auth_mode: AuthMode,
-        min_version: TlsVersion,
-        certificates: &'d Certificates<'d>,
+        config: ServerSessionConfig<'d>,
         tls_ref: TlsReference<'d>,
     ) -> Self {
         Self {
             acceptor,
-            auth_mode,
-            min_version,
-            certificates,
+            config,
             tls_ref,
         }
     }
@@ -67,12 +58,7 @@ where
 
         let session = Session::new(
             socket,
-            SessionConfig {
-                mode: Mode::Server,
-                auth_mode: self.auth_mode,
-                min_version: self.min_version,
-            },
-            self.certificates,
+            SessionConfig::Server(&self.config),
             self.tls_ref,
         )?;
 
@@ -83,10 +69,7 @@ where
 /// An implementation of `edge-nal`'s `TcpConnect` trait over TLS.
 pub struct TlsConnector<'d, T> {
     connector: T,
-    servername: &'d CStr,
-    auth_mode: AuthMode,
-    min_version: TlsVersion,
-    certificates: &'d Certificates<'d>,
+    config: ClientSessionConfig<'d>,
     tls_ref: TlsReference<'d>,
 }
 
@@ -99,25 +82,16 @@ where
     /// Arguments:
     ///
     /// * `connector` - The underlying TCP connector
-    /// * `servername` - The server name to check against the certificate presented by the server
-    /// * `auth_mode` - Certificates verification mode
-    /// * `min_version` - The minimum TLS version to support
-    /// * `certificates` - The certificates to use for each established TLS connection
+    /// * `config` - The client session configuration
     /// * `tls_ref` - A reference to the active `Tls` instance
     pub const fn new(
         connector: T,
-        servername: &'d CStr,
-        auth_mode: AuthMode,
-        min_version: TlsVersion,
-        certificates: &'d Certificates<'d>,
+        config: ClientSessionConfig<'d>,
         tls_ref: TlsReference<'d>,
     ) -> Self {
         Self {
             connector,
-            servername,
-            auth_mode,
-            min_version,
-            certificates,
+            config,
             tls_ref,
         }
     }
@@ -144,14 +118,7 @@ where
 
         let session = Session::new(
             socket,
-            SessionConfig {
-                mode: Mode::Client {
-                    servername: self.servername,
-                },
-                auth_mode: self.auth_mode,
-                min_version: self.min_version,
-            },
-            self.certificates,
+            SessionConfig::Client(&self.config),
             self.tls_ref,
         )?;
 

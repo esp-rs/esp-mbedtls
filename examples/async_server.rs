@@ -41,7 +41,9 @@ use embassy_time::{Duration, Timer};
 use esp_alloc as _;
 use esp_backtrace as _;
 use esp_mbedtls::{asynch::Session, AuthMode, Certificates, Mode, TlsVersion};
-use esp_mbedtls::{MbedTLSX509Crt, PkContext, SessionConfig, Tls, TlsError, X509};
+use esp_mbedtls::{
+    Certificate, PrivateKey, ServerSessionConfig, SessionConfig, Tls, TlsError, X509,
+};
 use esp_println::logger::init_logger;
 use esp_println::{print, println};
 use esp_wifi::wifi::{
@@ -145,24 +147,23 @@ async fn main(spawner: Spawner) -> ! {
     let mut socket = TcpSocket::new(stack, &mut rx_buffer, &mut tx_buffer);
     socket.set_timeout(Some(Duration::from_secs(10)));
 
-    let crt =
-        MbedTLSX509Crt::new_no_copy(X509::der(include_bytes!("./certs/certificate.der"))).unwrap();
-    let private_key =
-        PkContext::new(X509::der(include_bytes!("./certs/private_key.der")), None).unwrap();
-    let ca_chain = MbedTLSX509Crt::new(
-        X509::pem(concat!(include_str!("./certs/ca_cert.pem"), "\0").as_bytes()).unwrap(),
-    )
-    .unwrap();
-
-    let certificates = Certificates::new()
-        .with_certificates(&crt, &private_key)
-        .with_ca_chain(&ca_chain);
-
-    let mut config = SessionConfig::new(Mode::Server, TlsVersion::Tls1_2);
-
-    if cfg!(feature = "mtls") {
-        config.set_auth_mode(AuthMode::Required);
-    }
+    let config = ServerSessionConfig {
+        ca_chain: Certificate::new(
+            X509::pem(concat!(include_str!("./certs/ca_cert.pem"), "\0").as_bytes()).unwrap(),
+        )
+        .unwrap(),
+        ..ServerSessionConfig::new(Credentials {
+            certificate: Certificate::new_no_copy(X509::der(include_bytes!(
+                "./certs/certificate.der"
+            )))
+            .unwrap(),
+            private_key: PrivateKey::new(
+                X509::der(include_bytes!("./certs/private_key.der")),
+                None,
+            )
+            .unwrap(),
+        })
+    };
 
     loop {
         println!("Waiting for connection...");
@@ -184,7 +185,7 @@ async fn main(spawner: Spawner) -> ! {
         let mut buffer = [0u8; 1024];
         let mut pos = 0;
         let mut session =
-            Session::new(&mut socket, config, &certificates, tls.reference()).unwrap();
+            Session::new(&mut socket, SessionConfig::Server(&config), tls.reference()).unwrap();
 
         println!("Start tls connect");
         match session.connect().await {
