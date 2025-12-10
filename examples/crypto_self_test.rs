@@ -10,10 +10,7 @@ use esp_backtrace as _;
 use esp_mbedtls::Tls;
 use esp_println::{logger::init_logger, println};
 
-/// Only used for ROM functions
-#[allow(unused_imports)]
-use esp_wifi::init;
-use hal::{clock::CpuClock, main, rng::Rng, timer::timg::TimerGroup};
+use hal::{clock::CpuClock, main};
 
 pub fn cycles() -> u64 {
     #[cfg(any(feature = "esp32", feature = "esp32s2", feature = "esp32s3"))]
@@ -34,15 +31,10 @@ esp_bootloader_esp_idf::esp_app_desc!();
 fn main() -> ! {
     init_logger(log::LevelFilter::Info);
 
-    // Init ESP-WIFI heap for malloc
     let config = esp_hal::Config::default().with_cpu_clock(CpuClock::max());
     let peripherals = esp_hal::init(config);
 
     esp_alloc::heap_allocator!(size: 115 * 1024);
-
-    let timg0 = TimerGroup::new(peripherals.TIMG0);
-
-    let _init = init(timg0.timer0, Rng::new(peripherals.RNG)).unwrap();
 
     let mut tls = Tls::new(peripherals.SHA)
         .unwrap()

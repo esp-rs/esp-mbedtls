@@ -1,5 +1,5 @@
 #[doc(hidden)]
-use core::cell::RefCell;
+use core::{cell::RefCell, ffi::c_ulong};
 use critical_section::Mutex;
 
 use esp_hal::peripherals::{RSA, SHA};
@@ -17,6 +17,12 @@ use crate::{Tls, TlsError};
 mod bignum;
 #[cfg(not(feature = "esp32"))]
 mod sha;
+
+#[no_mangle]
+pub unsafe extern "C" fn random() -> c_ulong {
+    let rng = esp_hal::rng::Rng::new();
+    rng.random()
+}
 
 /// Hold the RSA peripheral for cryptographic operations.
 ///

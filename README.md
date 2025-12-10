@@ -6,7 +6,7 @@ It comes with mbedtls precompiled to avoid the need for a complete C toolchain. 
 
 ## Status
 
-This should work together with `esp-wifi`. It currently won't work without. However it's not well tested yet besides the included examples.
+This should work together with `esp-radio`. It currently won't work without. However it's not well tested yet besides the included examples.
 
 In general this is heavy in terms of heap memory used and code size. If you can, you should prefer using something like `embedded-tls`.
 

@@ -17,7 +17,7 @@ use embedded_io::Write;
 
 use esp_mbedtls_sys::bindings::*;
 
-// For `malloc`, `calloc` and `free` which are provided by `esp-wifi` on baremetal
+// For `malloc`, `calloc` and `free` which are provided by `esp-alloc` on baremetal
 #[cfg(any(
     feature = "esp32",
     feature = "esp32c3",
@@ -25,7 +25,7 @@ use esp_mbedtls_sys::bindings::*;
     feature = "esp32s2",
     feature = "esp32s3"
 ))]
-use esp_wifi as _;
+use esp_alloc as _;
 
 #[cfg(feature = "edge-nal")]
 mod edge_nal;
@@ -64,7 +64,7 @@ unsafe fn aligned_calloc(_align: usize, size: usize) -> *const c_void {
     calloc(1, size)
 }
 
-// Baremetal: these will come from `esp-wifi` (i.e. this can only be used together with esp-wifi)
+// Baremetal: these will come from `esp-alloc`
 // STD: these will come from `libc` indirectly via the Rust standard library
 extern "C" {
     fn free(ptr: *const c_void);
@@ -352,7 +352,7 @@ impl Certificates<'_> {
         // - Consider reconfiguring mbedtls with the custom malloc/free
         //   callbacks that we can actually redirect to `Box`
         //
-        // This way the lib would become completely independent from `esp-wifi`
+        // This way the lib would become completely independent from `esp-alloc`
         // and would simply requre a Rust global allocator to be set.
         // (Or we can even implement a mode of operation of the lib where
         //  it uses a fixed memory pool, and then we layer on top our own little allocator)

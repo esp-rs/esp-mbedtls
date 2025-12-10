@@ -19,7 +19,7 @@ embuild     = "0.33"
 # For malloc/free
 # TODO: Replace with `esp-alloc` once `esp-alloc` starts to provide `malloc` and `free` in future
 # ... or switch to our own `mbedtls_malloc/free`
-esp-wifi = { version = "0.15.0", default-features = false, optional = true }
+esp-radio = { version = "0.17.0", default-features = false, optional = true }
 
 # ESP-IDF: The mbedtls lib distributed with ESP-IDF is used
 [target.'cfg(target_os = "espidf")'.dependencies]
@@ -31,8 +31,8 @@ esp-idf-sys = { version = "0.36", default-features = false }
 default = []
 
 # ESP-HAL: Exactly *one* chip MUST be selected via its feature:
-esp32 = ["esp-wifi/esp32"]
-esp32c3 = ["esp-wifi/esp32c3"]
-esp32c6 = ["esp-wifi/esp32c6"]
-esp32s2 = ["esp-wifi/esp32s2"]
-esp32s3 = ["esp-wifi/esp32s3"]
+esp32 = ["esp-radio/esp32"]
+esp32c3 = ["esp-radio/esp32c3"]
+esp32c6 = ["esp-radio/esp32c6"]
+esp32s2 = ["esp-radio/esp32s2"]
+esp32s3 = ["esp-radio/esp32s3"]
