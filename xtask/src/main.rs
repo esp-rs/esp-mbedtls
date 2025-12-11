@@ -3,10 +3,10 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use clap::{Parser, Subcommand, ValueEnum};
 use directories::UserDirs;
-use log::LevelFilter;
+use log::{error, LevelFilter};
 use tempdir::TempDir;
 
 #[path = "../../esp-mbedtls-sys/gen/builder.rs"]
@@ -68,13 +68,24 @@ enum Arch {
 }
 
 impl Arch {
-    pub const fn clang(&self) -> Option<&str> {
-        const ESP_XTENSA_CLANG_PATH: &str = "xtensa-esp32-elf-clang/esp-19.1.2_20250225/esp-clang/bin/clang";
+    /// Returns the path to the installed clang compiler.
+    ///
+    /// Attempts to locate the custom ESP clang compiler as installed by `espup`.
+    pub fn clang(&self) -> Result<PathBuf> {
+        let home = UserDirs::new()
+            .context("Failed to get home directory")?
+            .home_dir()
+            .to_path_buf();
+        let clang_lib = home.join(".espup/esp-clang").canonicalize().context("$HOME/.espup/esp-clang not found. Please install with: `espup install --extended-llvm`")?;
+        let clang_bin = clang_lib
+            .parent()
+            .context("Could not determine clang directory parent")?
+            .join("bin/clang");
 
         match self {
-            Arch::Xtensa => Some(ESP_XTENSA_CLANG_PATH),
+            Arch::Xtensa => Ok(clang_bin),
             // Clang is a cross-compiler
-            _ => Some(ESP_XTENSA_CLANG_PATH),
+            _ => Ok(clang_bin),
         }
     }
 
@@ -116,7 +127,20 @@ impl CompilationTarget<'_> {
         let builder = builder::MbedtlsBuilder::new(
             sys_crate_root_path.clone(),
             format!("{}", self.soc),
-            self.arch.clang().map(|clang| toolchain_dir.join(clang)),
+            self.arch
+                .clang()
+                .map(|clang| {
+                    // Prepend toolchain dir only if resolved clang path is not absolute
+                    if clang.is_absolute() {
+                        clang.to_path_buf()
+                    } else {
+                        toolchain_dir.join(clang)
+                    }
+                })
+                .map_err(|e| {
+                    error!("Failed to resolve clang: {e:?}");
+                })
+                .ok(),
             None,
             Some(self.target.into()),
             Some(self.clang_target.into()),
@@ -142,7 +166,20 @@ impl CompilationTarget<'_> {
         let builder = builder::MbedtlsBuilder::new(
             sys_crate_root_path.clone(),
             format!("{}", self.soc),
-            self.arch.clang().map(|clang| toolchain_dir.join(clang)),
+            self.arch
+                .clang()
+                .map(|clang| {
+                    // Prepend toolchain dir only if resolved clang path is not absolute
+                    if clang.is_absolute() {
+                        clang.to_path_buf()
+                    } else {
+                        toolchain_dir.join(clang)
+                    }
+                })
+                .map_err(|e| {
+                    error!("Failed to resolve clang: {e:?}");
+                })
+                .ok(),
             Some(toolchain_dir.join(self.arch.sysroot())),
             Some(self.target.into()),
             Some(self.clang_target.into()),
