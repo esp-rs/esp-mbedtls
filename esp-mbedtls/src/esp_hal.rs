@@ -24,6 +24,30 @@ pub unsafe extern "C" fn random() -> c_ulong {
     rng.random()
 }
 
+// TODO: Provide a better way to define this in low-level esp-compat crate
+#[no_mangle]
+pub unsafe extern "C" fn _putchar(c: u8) {
+    static mut BUFFER: [u8; 256] = [0u8; 256];
+    static mut IDX: usize = 0;
+
+    unsafe {
+        let buffer = core::ptr::addr_of_mut!(BUFFER);
+        if c == 0 || c == b'\n' || IDX == (*buffer).len() - 1 {
+            if c != 0 {
+                BUFFER[IDX] = c;
+            } else {
+                IDX = IDX.saturating_sub(1);
+            }
+
+            ::log::info!("{}", core::str::from_utf8_unchecked(&BUFFER[..IDX]));
+            IDX = 0;
+        } else {
+            BUFFER[IDX] = c;
+            IDX += 1;
+        }
+    }
+}
+
 /// Hold the RSA peripheral for cryptographic operations.
 ///
 /// This is initialized when `with_hardware_rsa()` is called on a [Session] and is set back to None

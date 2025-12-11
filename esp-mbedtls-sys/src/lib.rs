@@ -1,6 +1,6 @@
 #![no_std]
 
-// For `malloc`, `calloc` and `free` which are provided by `esp-radio` on baremetal
+// For `malloc`, `calloc` and `free` which are provided by `esp-alloc` on baremetal
 #[cfg(any(
     feature = "esp32",
     feature = "esp32c3",
@@ -8,7 +8,17 @@
     feature = "esp32s2",
     feature = "esp32s3"
 ))]
-use esp_radio as _;
+use esp_alloc as _;
+
+// For `printf` which is provided by `esp-wifi-sys` on baremetal
+#[cfg(any(
+    feature = "esp32",
+    feature = "esp32c3",
+    feature = "esp32c6",
+    feature = "esp32s2",
+    feature = "esp32s3"
+))]
+use esp_wifi_sys as _;
 
 #[cfg(not(target_os = "espidf"))]
 mod c_types;
