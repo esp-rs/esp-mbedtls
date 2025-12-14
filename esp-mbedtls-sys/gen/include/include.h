@@ -2,6 +2,7 @@
 
 #include MBEDTLS_CONFIG_FILE
 
+#include "mbedtls/platform.h"
 #include "mbedtls/ssl.h"
 #include "mbedtls/x509.h"
 #include "mbedtls/entropy.h"

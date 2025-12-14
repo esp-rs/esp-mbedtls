@@ -58,7 +58,7 @@ where
 
         let session = Session::new(
             socket,
-            SessionConfig::Server(&self.config),
+            &SessionConfig::Server(self.config.clone()),
             self.tls_ref,
         )?;
 
@@ -118,7 +118,7 @@ where
 
         let session = Session::new(
             socket,
-            SessionConfig::Client(&self.config),
+            &SessionConfig::Client(self.config.clone()),
             self.tls_ref,
         )?;
 
@@ -164,14 +164,14 @@ where
     async fn close(&mut self, what: edge_nal::Close) -> Result<(), Self::Error> {
         Session::close(self).await?;
 
-        self.stream
+        self.stream()
             .close(what)
             .await
             .map_err(|e| TlsError::Io(e.kind()))
     }
 
     async fn abort(&mut self) -> Result<(), Self::Error> {
-        self.stream
+        self.stream()
             .abort()
             .await
             .map_err(|e| TlsError::Io(e.kind()))
