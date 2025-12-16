@@ -2,7 +2,7 @@ use core::net::SocketAddr;
 
 use embedded_io::Error;
 
-use crate::asynch::Session;
+use crate::Session;
 use crate::{ClientSessionConfig, ServerSessionConfig, SessionConfig, TlsError, TlsReference};
 
 /// An implementation of `edge-nal`'s `TcpAccept` trait over TLS.
