@@ -6,6 +6,8 @@ use esp_hal::peripherals::{RSA, SHA};
 use esp_hal::rsa::Rsa;
 use esp_hal::sha::Sha;
 
+use rand_core::CryptoRng;
+
 use crate::{Tls, TlsError};
 
 #[cfg(any(
@@ -39,8 +41,8 @@ impl<'d> Tls<'d> {
     /// Arguments:
     ///
     /// * `sha` - The SHA peripheral from the HAL
-    pub fn new(sha: SHA<'d>) -> Result<Self, TlsError> {
-        let this = Self::create()?;
+    pub fn new(rng: &'d mut (dyn CryptoRng + Send), sha: SHA<'d>) -> Result<Self, TlsError> {
+        let this = Self::create(rng)?;
 
         critical_section::with(|cs| {
             SHARED_SHA
@@ -64,9 +66,12 @@ impl<'d> Tls<'d> {
 
 impl Drop for Tls<'_> {
     fn drop(&mut self) {
+        self.release();
+
         unsafe {
             RSA_REF = core::mem::transmute(None::<RSA>);
         }
+
         critical_section::with(|cs| SHARED_SHA.borrow_ref_mut(cs).take());
     }
 }

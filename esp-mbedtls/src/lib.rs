@@ -1,8 +1,7 @@
 #![no_std]
 
-use core::cell::Cell;
-use core::ffi::{c_char, c_int, c_uchar, c_ulong, c_void, CStr};
-use core::fmt;
+use core::cell::RefCell;
+use core::ffi::{c_char, c_int, c_uchar, c_void, CStr};
 use core::marker::PhantomData;
 use core::mem::size_of;
 use core::ops::{Deref, DerefMut};
@@ -11,8 +10,6 @@ use core::ptr::NonNull;
 use critical_section::Mutex;
 
 use embedded_io::{Error, ErrorKind, ErrorType};
-
-use log::Level;
 
 use embedded_io::Read;
 use embedded_io::Write;
@@ -28,6 +25,10 @@ use esp_mbedtls_sys::bindings::*;
     feature = "esp32s3"
 ))]
 use esp_wifi as _;
+
+use rand_core::CryptoRng;
+
+pub(crate) mod fmt;
 
 #[cfg(feature = "edge-nal")]
 mod edge_nal;
@@ -80,8 +81,8 @@ pub enum TlsError {
     Io(ErrorKind),
 }
 
-impl fmt::Display for TlsError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl core::fmt::Display for TlsError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Self::AlreadyCreated => write!(f, "TLS already created"),
             Self::Unknown => write!(f, "Unknown error"),
@@ -113,6 +114,151 @@ impl embedded_io::Error for TlsError {
         }
     }
 }
+
+/// A TLS self-test type
+#[derive(enumset::EnumSetType, Debug)]
+pub enum TlsTest {
+    Mpi,
+    Rsa,
+    Sha1,
+    Sha224,
+    Sha256,
+    Sha384,
+    Sha512,
+    Aes,
+    Md5,
+}
+
+impl core::fmt::Display for TlsTest {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            TlsTest::Mpi => write!(f, "MPI"),
+            TlsTest::Rsa => write!(f, "RSA"),
+            TlsTest::Sha1 => write!(f, "SHA1"),
+            TlsTest::Sha224 => write!(f, "SHA224"),
+            TlsTest::Sha256 => write!(f, "SHA256"),
+            TlsTest::Sha384 => write!(f, "SHA384"),
+            TlsTest::Sha512 => write!(f, "SHA512"),
+            TlsTest::Aes => write!(f, "AES"),
+            TlsTest::Md5 => write!(f, "MD5"),
+        }
+    }
+}
+
+static TLS_RNG: Mutex<RefCell<Option<&mut (dyn CryptoRng + Send)>>> =
+    Mutex::new(RefCell::new(None));
+
+/// A TLS instance
+///
+/// Represents an instance of the MbedTLS library.
+/// Only one such instance can be active at any point in time.
+pub struct Tls<'d>(PhantomData<&'d mut ()>);
+
+impl<'d> Tls<'d> {
+    /// Create a new instance of the `Tls` type.
+    ///
+    /// Note that there could be only one active `Tls` instance at any point in time,
+    /// and the function will return an error if there is already an active instance.
+    #[cfg(not(any(
+        feature = "esp32",
+        feature = "esp32c3",
+        feature = "esp32c6",
+        feature = "esp32s2",
+        feature = "esp32s3"
+    )))]
+    pub fn new(rng: &'d mut (dyn CryptoRng + Send)) -> Result<Self, TlsError> {
+        Self::create(rng)
+    }
+
+    pub(crate) fn create(rng: &'d mut (dyn CryptoRng + Send)) -> Result<Self, TlsError> {
+        critical_section::with(|cs| {
+            let created = TLS_RNG.borrow(cs).borrow().is_some();
+
+            if created {
+                return Err(TlsError::AlreadyCreated);
+            }
+
+            *TLS_RNG.borrow(cs).borrow_mut() = Some(unsafe {
+                core::mem::transmute::<
+                    &'d mut (dyn CryptoRng + Send),
+                    &'static mut (dyn CryptoRng + Send),
+                >(rng)
+            });
+
+            Ok(Self(PhantomData))
+        })
+    }
+
+    pub(crate) fn release(&mut self) {
+        critical_section::with(|cs| {
+            *TLS_RNG.borrow(cs).borrow_mut() = None;
+        });
+    }
+
+    /// Set the MbedTLS debug level (0 - 5)
+    #[allow(unused)]
+    pub fn set_debug(&mut self, level: u32) {
+        #[cfg(not(target_os = "espidf"))]
+        unsafe {
+            mbedtls_debug_set_threshold(level as c_int);
+        }
+    }
+
+    /// Run a self-test on the MbedTLS library
+    ///
+    /// # Arguments
+    ///
+    /// * `test` - The test to run
+    /// * `verbose` - Whether to run the test in verbose mode
+    pub fn self_test(&mut self, test: TlsTest, verbose: bool) -> bool {
+        let verbose = verbose as _;
+
+        let result = unsafe {
+            match test {
+                TlsTest::Mpi => mbedtls_mpi_self_test(verbose),
+                TlsTest::Rsa => mbedtls_rsa_self_test(verbose),
+                TlsTest::Sha1 => mbedtls_sha1_self_test(verbose),
+                TlsTest::Sha224 => mbedtls_sha224_self_test(verbose),
+                TlsTest::Sha256 => mbedtls_sha256_self_test(verbose),
+                TlsTest::Sha384 => mbedtls_sha384_self_test(verbose),
+                TlsTest::Sha512 => mbedtls_sha512_self_test(verbose),
+                TlsTest::Aes => mbedtls_aes_self_test(verbose),
+                TlsTest::Md5 => mbedtls_md5_self_test(verbose),
+            }
+        };
+
+        result != 0
+    }
+
+    /// Get a reference to the `Tls` instance
+    ///
+    /// Each `Session` needs a reference to (the) active `Tls` instance
+    /// throughout its lifetime.
+    pub fn reference(&self) -> TlsReference<'_> {
+        TlsReference(PhantomData)
+    }
+}
+
+#[cfg(not(any(
+    feature = "esp32",
+    feature = "esp32c3",
+    feature = "esp32c6",
+    feature = "esp32s2",
+    feature = "esp32s3"
+)))]
+impl<'d> Drop for Tls<'d> {
+    fn drop(&mut self) {
+        self.release();
+    }
+}
+
+/// A reference to (the) active `Tls` instance
+///
+/// Used instead of just `&'a Tls` so that the invariant `'d` lifetime of the `Tls` instance
+/// is not exposed in the `Session` type.
+#[allow(unused)]
+#[derive(Debug, Copy, Clone)]
+pub struct TlsReference<'a>(PhantomData<&'a ()>);
 
 /// Format type for [X509]
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
@@ -333,126 +479,6 @@ impl PrivateKey {
     }
 }
 
-/// A TLS self-test type
-#[derive(enumset::EnumSetType, Debug)]
-pub enum TlsTest {
-    Mpi,
-    Rsa,
-    Sha1,
-    Sha224,
-    Sha256,
-    Sha384,
-    Sha512,
-    Aes,
-    Md5,
-}
-
-impl fmt::Display for TlsTest {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            TlsTest::Mpi => write!(f, "MPI"),
-            TlsTest::Rsa => write!(f, "RSA"),
-            TlsTest::Sha1 => write!(f, "SHA1"),
-            TlsTest::Sha224 => write!(f, "SHA224"),
-            TlsTest::Sha256 => write!(f, "SHA256"),
-            TlsTest::Sha384 => write!(f, "SHA384"),
-            TlsTest::Sha512 => write!(f, "SHA512"),
-            TlsTest::Aes => write!(f, "AES"),
-            TlsTest::Md5 => write!(f, "MD5"),
-        }
-    }
-}
-
-static TLS_CREATED: Mutex<Cell<bool>> = Mutex::new(Cell::new(false));
-
-/// A TLS instance
-///
-/// Represents an instance of the MbedTLS library.
-/// Only one such instance can be active at any point in time.
-pub struct Tls<'d>(PhantomData<&'d mut ()>);
-
-impl Tls<'_> {
-    /// Create a new instance of the `Tls` type.
-    ///
-    /// Note that there could be only one active `Tls` instance at any point in time,
-    /// and the function will return an error if there is already an active instance.
-    #[cfg(not(any(
-        feature = "esp32",
-        feature = "esp32c3",
-        feature = "esp32c6",
-        feature = "esp32s2",
-        feature = "esp32s3"
-    )))]
-    pub fn new() -> Result<Self, TlsError> {
-        Self::create()
-    }
-
-    pub(crate) fn create() -> Result<Self, TlsError> {
-        critical_section::with(|cs| {
-            let created = TLS_CREATED.borrow(cs).get();
-
-            if created {
-                return Err(TlsError::AlreadyCreated);
-            }
-
-            TLS_CREATED.borrow(cs).set(true);
-
-            Ok(Self(PhantomData))
-        })
-    }
-
-    /// Set the MbedTLS debug level (0 - 5)
-    #[allow(unused)]
-    pub fn set_debug(&mut self, level: u32) {
-        #[cfg(not(target_os = "espidf"))]
-        unsafe {
-            mbedtls_debug_set_threshold(level as c_int);
-        }
-    }
-
-    /// Run a self-test on the MbedTLS library
-    ///
-    /// # Arguments
-    ///
-    /// * `test` - The test to run
-    /// * `verbose` - Whether to run the test in verbose mode
-    pub fn self_test(&mut self, test: TlsTest, verbose: bool) -> bool {
-        let verbose = verbose as _;
-
-        let result = unsafe {
-            match test {
-                TlsTest::Mpi => mbedtls_mpi_self_test(verbose),
-                TlsTest::Rsa => mbedtls_rsa_self_test(verbose),
-                TlsTest::Sha1 => mbedtls_sha1_self_test(verbose),
-                TlsTest::Sha224 => mbedtls_sha224_self_test(verbose),
-                TlsTest::Sha256 => mbedtls_sha256_self_test(verbose),
-                TlsTest::Sha384 => mbedtls_sha384_self_test(verbose),
-                TlsTest::Sha512 => mbedtls_sha512_self_test(verbose),
-                TlsTest::Aes => mbedtls_aes_self_test(verbose),
-                TlsTest::Md5 => mbedtls_md5_self_test(verbose),
-            }
-        };
-
-        result != 0
-    }
-
-    /// Get a reference to the `Tls` instance
-    ///
-    /// Each `Session` needs a reference to (the) active `Tls` instance
-    /// throughout its lifetime.
-    pub fn reference(&self) -> TlsReference<'_> {
-        TlsReference(PhantomData)
-    }
-}
-
-/// A reference to (the) active `Tls` instance
-///
-/// Used instead of just `&'a Tls` so that the invariant `'d` lifetime of the `Tls` instance
-/// is not exposed in the `Session` type.
-#[allow(unused)]
-#[derive(Debug, Copy, Clone)]
-pub struct TlsReference<'a>(PhantomData<&'a ()>);
-
 /// The minimum TLS version that will be supported by a particular `Session` instance
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TlsVersion {
@@ -656,7 +682,7 @@ impl<'a> SessionState<'a> {
         unsafe {
             mbedtls_ssl_conf_rng(
                 &mut *ssl_config,
-                Some(rng),
+                Some(mbedtls_rng),
                 &mut *drbg_context as *mut _ as *mut c_void,
             );
         }
@@ -973,7 +999,7 @@ impl<T> Drop for Session<'_, T> {
             mbedtls_ssl_close_notify(&mut *self.state.ssl_context);
         }
 
-        log::debug!("session dropped - freeing memory");
+        debug!("Session dropped - freeing memory");
     }
 }
 
@@ -1215,7 +1241,7 @@ pub mod asynch {
                 mbedtls_ssl_close_notify(&mut *self.state.ssl_context);
             }
 
-            log::debug!("session dropped - freeing memory");
+            debug!("Session dropped - freeing memory");
         }
     }
 
@@ -1492,7 +1518,7 @@ pub mod asynch {
         T: embedded_io_async::Read + embedded_io_async::Write,
     {
         async fn connect(&mut self) -> Result<(), TlsError> {
-            log::debug!("Establishing SSL connection");
+            debug!("Establishing SSL connection");
 
             loop {
                 match self
@@ -1663,7 +1689,7 @@ pub mod asynch {
         }
 
         fn bio_receive(&mut self, buf: &mut [u8], ctx: &mut Context<'_>) -> i32 {
-            ::log::debug!("Receive {}B", buf.len());
+            debug!("Receive {}B", buf.len());
 
             match self.poll_read(ctx, buf) {
                 Poll::Ready(len) => len as _,
@@ -1672,7 +1698,7 @@ pub mod asynch {
         }
 
         fn bio_send(&mut self, buf: &[u8], ctx: &mut Context<'_>) -> i32 {
-            ::log::debug!("Send {}B", buf.len());
+            debug!("Send {}B", buf.len());
 
             match self.poll_write(ctx, buf) {
                 Poll::Ready(len) => len as _,
@@ -1984,54 +2010,43 @@ unsafe extern "C" fn dbg_print(
     let file = file.to_str().unwrap_or("???").trim();
     let msg = msg.to_str().unwrap_or("???").trim();
 
-    let level = match lvl {
-        0 => Level::Error,
-        1 => Level::Warn,
-        2 => Level::Debug,
-        _ => Level::Trace,
-    };
-
-    log::log!(level, "{} ({}:{}) {}", lvl, file, line, msg);
-}
-
-#[no_mangle]
-extern "C" fn rand() -> crate::c_ulong {
-    unsafe { crate::random() }
-}
-
-unsafe extern "C" fn rng(_param: *mut c_void, buffer: *mut c_uchar, len: usize) -> c_int {
-    for i in 0..len {
-        buffer.add(i).write_volatile((random() & 0xff) as u8);
+    match lvl {
+        0 => error!("{} ({}:{}) {}", lvl, file, line, msg),
+        1 => warn!("{} ({}:{}) {}", lvl, file, line, msg),
+        2 => debug!("{} ({}:{}) {}", lvl, file, line, msg),
+        _ => trace!("{} ({}:{}) {}", lvl, file, line, msg),
     }
+}
+
+unsafe extern "C" fn mbedtls_rng(_param: *mut c_void, buf: *mut c_uchar, len: usize) -> c_int {
+    let buf = core::slice::from_raw_parts_mut(buf, len as _);
+
+    critical_section::with(|cs| {
+        let mut rng = TLS_RNG.borrow(cs).borrow_mut();
+
+        rng.as_mut().unwrap().fill_bytes(buf);
+    });
 
     0
-}
-
-// Baremetal: these will come from `esp-wifi` (i.e. this can only be used together with esp-wifi)
-// STD: these will come from `libc` indirectly via the Rust standard library
-// TODO: Replace with a proper `rng` static trait reference, whixch should be set during `Tls` initialization
-unsafe extern "C" {
-    unsafe fn random() -> c_ulong;
-}
-
-#[cfg(not(target_os = "espidf"))]
-#[no_mangle]
-unsafe extern "C" fn mbedtls_platform_zeroize(dst: *mut u8, len: u32) {
-    for i in 0..len as isize {
-        dst.offset(i).write_volatile(0);
-    }
 }
 
 #[no_mangle]
 unsafe extern "C" fn mbedtls_psa_external_get_random(
     _ctx: *mut (),
-    output: *mut u8,
+    output: *mut c_uchar,
     out_size: usize,
     output_len: *mut usize,
-) -> i32 {
+) -> c_int {
     *output_len = out_size;
-    rng(core::ptr::null_mut(), output, out_size);
-    0
+    mbedtls_rng(core::ptr::null_mut(), output, out_size)
+}
+
+#[cfg(not(target_os = "espidf"))]
+#[no_mangle]
+unsafe extern "C" fn mbedtls_platform_zeroize(dst: *mut c_uchar, len: u32) {
+    for i in 0..len as isize {
+        dst.offset(i).write_volatile(0);
+    }
 }
 
 #[cfg(feature = "esp32c6")]

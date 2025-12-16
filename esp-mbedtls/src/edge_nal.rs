@@ -54,7 +54,7 @@ where
             .accept()
             .await
             .map_err(|e| TlsError::Io(e.kind()))?;
-        log::debug!("Accepted new connection on socket");
+        debug!("Accepted new connection on socket");
 
         let session = Session::new(
             socket,
@@ -114,7 +114,7 @@ where
             .connect(remote)
             .await
             .map_err(|e| TlsError::Io(e.kind()))?;
-        log::debug!("Connected to {remote}");
+        debug!("Connected to {remote}");
 
         let session = Session::new(
             socket,
