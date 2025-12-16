@@ -6,6 +6,8 @@ use crate::asynch::Session;
 use crate::{ClientSessionConfig, ServerSessionConfig, SessionConfig, TlsError, TlsReference};
 
 /// An implementation of `edge-nal`'s `TcpAccept` trait over TLS.
+#[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct TlsAcceptor<'d, T> {
     acceptor: T,
     config: ServerSessionConfig<'d>,
@@ -67,6 +69,8 @@ where
 }
 
 /// An implementation of `edge-nal`'s `TcpConnect` trait over TLS.
+#[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct TlsConnector<'d, T> {
     connector: T,
     config: ClientSessionConfig<'d>,
@@ -114,7 +118,7 @@ where
             .connect(remote)
             .await
             .map_err(|e| TlsError::Io(e.kind()))?;
-        debug!("Connected to {remote}");
+        debug!("Connected to {}", remote);
 
         let session = Session::new(
             socket,

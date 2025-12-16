@@ -92,14 +92,34 @@ impl core::fmt::Display for TlsError {
             Self::X509MissingNullTerminator => {
                 write!(f, "X509 certificate missing null terminator")
             }
-            Self::InvalidFormat => {
-                write!(
-                    f,
-                    "The X509 is in an unexpected format (PEM instead of DER and vice-versa)"
-                )
-            }
+            Self::InvalidFormat => write!(
+                f,
+                "The X509 is in an unexpected format (PEM instead of DER and vice-versa)"
+            ),
             Self::NoClientCertificate => write!(f, "No client certificate"),
             Self::Io(e) => write!(f, "IO error: {e:?}"),
+        }
+    }
+}
+
+#[cfg(feature = "defmt")]
+impl defmt::Format for TlsError {
+    fn format(&self, f: defmt::Formatter<'_>) {
+        match self {
+            Self::AlreadyCreated => defmt::write!(f, "TLS already created"),
+            Self::Unknown => defmt::write!(f, "Unknown error"),
+            Self::OutOfMemory => defmt::write!(f, "Out of memory"),
+            Self::MbedTlsError(e) => defmt::write!(f, "MbedTLS error: {}", e),
+            Self::Eof => defmt::write!(f, "End of stream"),
+            Self::X509MissingNullTerminator => {
+                defmt::write!(f, "X509 certificate missing null terminator")
+            }
+            Self::InvalidFormat => defmt::write!(
+                f,
+                "The X509 is in an unexpected format (PEM instead of DER and vice-versa)"
+            ),
+            Self::NoClientCertificate => defmt::write!(f, "No client certificate"),
+            Self::Io(e) => defmt::write!(f, "IO error: {:?}", debug2format!(e)),
         }
     }
 }
@@ -117,6 +137,7 @@ impl embedded_io::Error for TlsError {
 
 /// A TLS self-test type
 #[derive(enumset::EnumSetType, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum TlsTest {
     Mpi,
     Rsa,
@@ -258,10 +279,12 @@ impl<'d> Drop for Tls<'d> {
 /// is not exposed in the `Session` type.
 #[allow(unused)]
 #[derive(Debug, Copy, Clone)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct TlsReference<'a>(PhantomData<&'a ()>);
 
 /// Format type for [X509]
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum CertificateFormat {
     PEM,
     DER,
@@ -282,6 +305,7 @@ pub enum CertificateFormat {
 /// let cert = X509::der(CERTIFICATE);
 /// ```
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct X509<'a> {
     bytes: &'a [u8],
     format: CertificateFormat,
@@ -345,6 +369,7 @@ impl<'a> X509<'a> {
 
 /// A X509 certificate or certificate chain.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Certificate<'d> {
     crt: MRc<mbedtls_x509_crt>,
     _t: PhantomData<&'d ()>,
@@ -440,6 +465,7 @@ impl<'d> Certificate<'d> {
 
 /// A private key
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct PrivateKey(MRc<mbedtls_pk_context>);
 
 impl PrivateKey {
@@ -481,6 +507,7 @@ impl PrivateKey {
 
 /// The minimum TLS version that will be supported by a particular `Session` instance
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum TlsVersion {
     /// TLS 1.2
     Tls1_2,
@@ -499,6 +526,7 @@ impl TlsVersion {
 
 /// Certificate verification mode used for a session
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum AuthMode {
     /// Peer certificate is not checked (default on server) (insecure on client)
     None,
@@ -525,6 +553,7 @@ impl AuthMode {
 /// The credentials (certificate and private key)
 /// used for client or server authentication
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Credentials<'a> {
     /// Certificate (chain)
     certificate: Certificate<'a>,
@@ -534,6 +563,7 @@ pub struct Credentials<'a> {
 
 /// Configuration for a TLS session
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct ClientSessionConfig<'a> {
     /// Trusted CA (Certificate Authority) chain to be used for certificate
     /// verification during the SSL/TLS handshake.
@@ -568,6 +598,7 @@ impl<'a> ClientSessionConfig<'a> {
 }
 
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct ServerSessionConfig<'a> {
     /// Trusted CA (Certificate Authority) chain to be used for certificate
     /// verification during the SSL/TLS handshake.
@@ -597,6 +628,7 @@ impl<'a> ServerSessionConfig<'a> {
 
 /// Configuration for a TLS session
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum SessionConfig<'a> {
     Client(ClientSessionConfig<'a>),
     Server(ServerSessionConfig<'a>),
@@ -1857,6 +1889,7 @@ impl MInit for mbedtls_pk_context {
 /// A uniquely-owned box-like wrapper type for MbedTLS structures that need to be allocated/deallocated
 /// using `mbedtls_calloc`/`mbedtls_free`, and initialized/deinitialized using the `MInit` trait
 #[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 struct MBox<T>(NonNull<T>)
 where
     T: MInit;
@@ -1927,6 +1960,7 @@ where
 /// A reference-counted `Rc`-like wrapper type for MbedTLS structures that need to be allocated/deallocated
 /// using `mbedtls_calloc`/`mbedtls_free`, and initialized/deinitialized using the `MInit` trait
 #[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 struct MRc<T>(NonNull<(T, usize)>)
 where
     T: MInit;
