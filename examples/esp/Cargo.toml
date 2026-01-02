@@ -1,5 +1,5 @@
 [package]
-name = "examples"
+name = "examples-esp"
 version = "0.1.0"
 authors = ["bjoernQ <bjoern.quentin@mobile-j.de>"]
 edition = "2021"
@@ -24,31 +24,15 @@ opt-level = "z"
 opt-level = 3
 
 [dependencies]
-esp-hal = { version = "=1.0.0-rc.0", optional = true }
-esp-backtrace = { version = "0.16", optional = true, features = [
-    "panic-handler",
-    "println",
-    "exception-handler",
-] }
-esp-println = { version = "0.14", optional = true, features = ["log-04"] }
-esp-hal-embassy = { version = "0.8", optional = true }
+embassy-time = { version = "0.5.0", optional = true }
+embassy-net = { version = "0.7", features = ["tcp", "udp", "dhcpv4", "medium-ethernet"], optional = true }
 
-embassy-time = { version = "0.4.0", optional = true }
-embassy-executor = { version = "0.7", package = "embassy-executor", features = [
-    "nightly",
-], optional = true }
-embassy-net = { version = "0.6.0", features = [
-    "tcp",
-    "udp",
-    "dhcpv4",
-    "medium-ethernet",
-], optional = true }
+esp-hal = { version = "1", optional = true }
+esp-backtrace = { version = "0.18", optional = true, features = ["panic-handler", "println", "exception-handler"] }
+esp-println = { version = "0.16", optional = true, features = ["log-04"] }
 
-esp-wifi = { version = "0.15.0", optional = true, features = [
-    "sys-logs",
-    "wifi",
-] }
-blocking-network-stack = { git = "https://github.com/bjoernQ/blocking-network-stack", rev = "b3ecefc222d8806edd221f266999ca339c52d34e" }
+
+embassy-executor = { version = "0.9", package = "embassy-executor", features = ["nightly"], optional = true }
 smoltcp = { version = "0.12.0", optional = true, default-features = false, features = [
     "proto-ipv4",
     "socket-tcp",

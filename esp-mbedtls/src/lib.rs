@@ -11,11 +11,13 @@ use critical_section::Mutex;
 
 use embedded_io::ErrorKind;
 
-use esp_mbedtls_sys::bindings::*;
+use esp_mbedtls_sys::*;
 
 use rand_core::CryptoRng;
 
 pub use cert::*;
+#[cfg(feature = "edge-nal")]
+pub use edge_nal::*;
 pub use session::*;
 
 pub(crate) mod fmt;
@@ -33,17 +35,11 @@ mod edge_nal;
 mod esp_hal;
 mod session;
 
-/// Re-export of the `embedded-io` crate so that users don't have to explicitly depend on it
-/// to use e.g. `write_all` or `read_exact`.
-pub mod io {
-    pub use embedded_io::*;
-}
-
 macro_rules! err {
     ($block:expr) => {{
         let res = $block;
         if res != 0 {
-            Err(TlsError::MbedTlsError(res))
+            Err(TlsError::MbedTls(res))
         } else {
             Ok(())
         }
@@ -62,7 +58,7 @@ pub enum TlsError {
     /// Out of heap
     OutOfMemory,
     /// MBedTLS error
-    MbedTlsError(i32),
+    MbedTls(i32),
     /// End of stream
     Eof,
     /// X509 certificate missing null terminator
@@ -81,7 +77,7 @@ impl core::fmt::Display for TlsError {
             Self::AlreadyCreated => write!(f, "TLS already created"),
             Self::Unknown => write!(f, "Unknown error"),
             Self::OutOfMemory => write!(f, "Out of memory"),
-            Self::MbedTlsError(e) => write!(f, "MbedTLS error: {e}"),
+            Self::MbedTls(e) => write!(f, "MbedTLS error: {e}"),
             Self::Eof => write!(f, "End of stream"),
             Self::X509MissingNullTerminator => {
                 write!(f, "X509 certificate missing null terminator")
@@ -393,7 +389,7 @@ where
     /// - Ok(MBox<T>) if the allocation was successful
     /// - Err(TlsError::OutOfMemory) if the allocation failed
     fn new() -> Result<Self, TlsError> {
-        NonNull::new(unsafe { mbedtls_calloc(align_of::<T>(), size_of::<T>()) }.cast::<T>())
+        NonNull::new(unsafe { mbedtls_calloc(1, size_of::<T>()) }.cast::<T>())
             .map(|mut ptr| {
                 unsafe { ptr.as_mut() }.init();
 
@@ -461,11 +457,14 @@ where
     /// Create a new MRc
     fn new() -> Result<Self, TlsError> {
         NonNull::new(
-            unsafe { mbedtls_calloc(align_of::<(T, usize)>(), size_of::<(T, usize)>()) }
+            unsafe { mbedtls_calloc(1, size_of::<(T, usize)>()) }
                 .cast::<(T, usize)>(),
         )
         .map(|mut ptr| {
-            unsafe { ptr.as_mut() }.0.init();
+            let this = unsafe { ptr.as_mut() };
+            
+            this.0.init();
+            this.1 = 1;
 
             Self(ptr)
         })

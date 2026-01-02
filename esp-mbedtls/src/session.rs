@@ -1,6 +1,6 @@
-use core::ffi::{c_int, c_void};
+use core::ffi::{CStr, c_int, c_void};
 
-use esp_mbedtls_sys::bindings::*;
+use esp_mbedtls_sys::*;
 
 use super::{
     err, mbedtls_dbg_print, mbedtls_rng, Certificate, MBox, PrivateKey, TlsError, TlsReference,
@@ -44,9 +44,9 @@ impl AuthMode {
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Credentials<'a> {
     /// Certificate (chain)
-    certificate: Certificate<'a>,
+    pub certificate: Certificate<'a>,
     /// Private key paired with the certificate.
-    private_key: PrivateKey,
+    pub private_key: PrivateKey,
 }
 
 /// Configuration for a TLS session
@@ -57,10 +57,13 @@ pub struct ClientSessionConfig<'a> {
     /// verification during the SSL/TLS handshake.
     ///
     /// The CA chain should contain the trusted CA certificates
-    /// that will be used to verify the client's certificate by the server during the handshake.
+    /// that will be used to verify the server's certificate by the client during the handshake.
     pub ca_chain: Option<Certificate<'a>>,
     /// Optional client credentials used for authenticating the client to the server
     pub creds: Option<Credentials<'a>>,
+    /// The server name to verify in the certificate provided by the server
+    /// Optional, because it can also be provided later
+    pub server_name: Option<&'a CStr>,
     /// Certificate verification mode. Can be overriden.
     /// By default, [AuthMode::Required] will be used
     pub auth_mode: AuthMode,
@@ -79,6 +82,7 @@ impl<'a> ClientSessionConfig<'a> {
         Self {
             ca_chain: None,
             creds: None,
+            server_name: None,
             auth_mode: AuthMode::Required,
             min_version: TlsVersion::Tls1_2,
         }
@@ -92,11 +96,11 @@ pub struct ServerSessionConfig<'a> {
     /// verification during the SSL/TLS handshake.
     ///
     /// The CA chain should contain the trusted CA certificates
-    /// that will be used to verify the server's certificate by the clientduring the handshake.
+    /// that will be used to verify the client's certificate by the server during the handshake.
     pub ca_chain: Option<Certificate<'a>>,
     /// Server credentials used for authenticating the server to the client
     pub creds: Credentials<'a>,
-    /// Certificate verification mode. Can be overriden.
+    /// Client certificate verification mode. Can be overriden.
     /// By default, [AuthMode::None] will be used
     pub auth_mode: AuthMode,
     /// The minimum TLS version that will be supported by a particular `Session` instance
@@ -192,25 +196,6 @@ impl<'a> SessionState<'a> {
 
         let mut ssl_config = MBox::new()?;
 
-        unsafe {
-            mbedtls_ssl_conf_dbg(
-                &mut *ssl_config,
-                Some(mbedtls_dbg_print),
-                core::ptr::null_mut(),
-            );
-        }
-
-        let mut drbg_context = MBox::new()?;
-
-        // Init RNG
-        unsafe {
-            mbedtls_ssl_conf_rng(
-                &mut *ssl_config,
-                Some(mbedtls_rng),
-                &mut *drbg_context as *mut _ as *mut c_void,
-            );
-        }
-
         err!(unsafe {
             mbedtls_ssl_config_defaults(
                 &mut *ssl_config,
@@ -221,8 +206,16 @@ impl<'a> SessionState<'a> {
         })?;
 
         // Set the minimum TLS version
-        // Use a ddirect field modified for compatibility with the `esp-idf-svc` mbedtls
+        // Use a direct field modified for compatibility with the `esp-idf-svc` mbedtls
         ssl_config.private_min_tls_version = conf.min_version().mbed_tls_version();
+
+        unsafe {
+            mbedtls_ssl_conf_dbg(
+                &mut *ssl_config,
+                Some(mbedtls_dbg_print),
+                core::ptr::null_mut(),
+            );
+        }
 
         unsafe {
             mbedtls_ssl_conf_authmode(&mut *ssl_config, conf.auth_mode().mbedtls_authmode());
@@ -242,15 +235,34 @@ impl<'a> SessionState<'a> {
             unsafe {
                 mbedtls_ssl_conf_ca_chain(
                     &mut *ssl_config,
-                    ca_chain as *const _ as *mut mbedtls_x509_crt,
+                    &*ca_chain.crt as *const _ as *mut _,
                     core::ptr::null_mut(),
                 );
             }
         }
 
+        let mut drbg_context = MBox::new()?;
+
+        // Init RNG
+        unsafe {
+            mbedtls_ssl_conf_rng(
+                &mut *ssl_config,
+                Some(mbedtls_rng),
+                &mut *drbg_context as *mut _ as *mut c_void,
+            );
+        }
+
         let mut ssl_context = MBox::new()?;
 
         err!(unsafe { mbedtls_ssl_setup(&mut *ssl_context, &*ssl_config) })?;
+
+        if let SessionConfig::Client(conf) = conf {
+            if let Some(server_name) = conf.server_name {
+                err!(unsafe {
+                    mbedtls_ssl_set_hostname(&mut *ssl_context, server_name.as_ptr())
+                })?;
+            }
+        }
 
         Ok(Self {
             ssl_context,

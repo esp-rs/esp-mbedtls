@@ -1,96 +1,30 @@
-use core::ffi::c_uchar;
+use core::ffi::CStr;
 use core::marker::PhantomData;
 
-use esp_mbedtls_sys::bindings::*;
+use esp_mbedtls_sys::*;
 
 use super::{err, MRc, TlsError};
 
-/// Format type for [X509]
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-#[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub enum CertificateFormat {
-    PEM,
-    DER,
-}
-
-/// Holds a X509 certificate
+/// Holds a reference to a PEM or DER-encoded X509 certificate or private key.
 ///
 /// # Examples
 /// Initialize with a PEM certificate
 /// ```
-/// const CERTIFICATE: &[u8] = include_bytes!("certificate.pem");
-/// let cert = X509::pem(CERTIFICATE).unwrap();
+/// let x509 = X509::PEM(CStr::from_bytes_with_nul(concat!(include_str!("cert.pem"), "\0").as_bytes()).unwrap());
 /// ```
 ///
 /// Initialize with a DER certificate
 /// ```
-/// const CERTIFICATE: &[u8] = include_bytes!("certificate.der");
-/// let cert = X509::der(CERTIFICATE);
+/// let x509 = X509::DER(include_bytes!("cert.der"));
 /// ```
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub struct X509<'a> {
-    bytes: &'a [u8],
-    format: CertificateFormat,
+pub enum X509<'a> {
+    PEM(&'a CStr),
+    DER(&'a [u8]),
 }
 
-impl<'a> X509<'a> {
-    /// Reads certificate in pem format from bytes
-    ///
-    /// # Error
-    /// This function returns [TlsError::X509MissingNullTerminator] if the certificate
-    /// doesn't end with a null-byte.
-    pub fn pem(bytes: &'a [u8]) -> Result<Self, TlsError> {
-        if let Some(len) = X509::get_null(bytes) {
-            // Get a slice of only the certificate bytes including the \0
-            let bytes = unsafe { core::slice::from_raw_parts(bytes.as_ptr(), len + 1) };
-            Ok(Self {
-                bytes,
-                format: CertificateFormat::PEM,
-            })
-        } else {
-            Err(TlsError::X509MissingNullTerminator)
-        }
-    }
-
-    /// Reads certificate in der format from bytes
-    ///
-    /// *Note*: This function assumes that the size of the size is the exact
-    /// length of the certificate
-    pub fn der(bytes: &'a [u8]) -> Self {
-        Self {
-            bytes,
-            format: CertificateFormat::DER,
-        }
-    }
-
-    /// Returns the bytes of the certificate
-    pub fn data(&self) -> &'a [u8] {
-        self.bytes
-    }
-
-    /// Returns the encoding format of a certificate
-    pub fn format(&self) -> CertificateFormat {
-        self.format
-    }
-
-    /// Returns the length of the certificate
-    pub(crate) fn len(&self) -> usize {
-        self.data().len()
-    }
-
-    /// Returns a pointer to the data for parsing
-    pub(crate) fn as_ptr(&self) -> *const c_uchar {
-        self.data().as_ptr().cast()
-    }
-
-    /// Gets the first null byte in a slice
-    fn get_null(bytes: &[u8]) -> Option<usize> {
-        bytes.iter().position(|&byte| byte == 0)
-    }
-}
-
-/// A X509 certificate or certificate chain.
+/// A parsed X509 certificate or certificate chain.
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Certificate<'d> {
@@ -109,27 +43,27 @@ impl Certificate<'static> {
     ///
     /// This will return an error if an error occurs during parsing such as passing a DER encoded
     /// certificate in a PEM format, and vice-versa.
-    pub fn new(certificate: X509<'_>) -> Result<Self, TlsError> {
+    pub fn new(x509: X509<'_>) -> Result<Self, TlsError> {
         let crt = MRc::new()?;
 
-        match certificate.format {
-            CertificateFormat::PEM => err!(unsafe {
+        match x509 {
+            X509::PEM(str) => err!(unsafe {
                 mbedtls_x509_crt_parse(
                     &*crt as *const _ as *mut _,
-                    certificate.as_ptr(),
-                    certificate.len(),
+                    str.as_ptr() as *const _,
+                    str.count_bytes() + 1,
                 )
             }),
-            CertificateFormat::DER => err!(unsafe {
+            X509::DER(bytes) => err!(unsafe {
                 mbedtls_x509_crt_parse_der(
                     &*crt as *const _ as *mut _,
-                    certificate.as_ptr(),
-                    certificate.len(),
+                    bytes.as_ptr(),
+                    bytes.len(),
                 )
             }),
         }
         .map_err(|err| {
-            if matches!(err, TlsError::MbedTlsError(-8576)) {
+            if matches!(err, TlsError::MbedTls(-8576)) {
                 TlsError::InvalidFormat
             } else {
                 err
@@ -156,23 +90,18 @@ impl<'d> Certificate<'d> {
     ///
     /// This will return an error if an error occurs during parsing.
     /// [TlsError::InvalidFormat] will be returned if a PEM encoded certificate is passed.
-    pub fn new_no_copy(certificate: X509<'d>) -> Result<Self, TlsError> {
-        // Currently no copy is only supported by DER certificates
-        if matches!(certificate.format(), CertificateFormat::PEM) {
-            return Err(TlsError::InvalidFormat);
-        }
-
+    pub fn new_no_copy(x509_der: &'d [u8]) -> Result<Self, TlsError> {
         let crt = MRc::new()?;
 
         err!(unsafe {
             mbedtls_x509_crt_parse_der_nocopy(
                 &*crt as *const _ as *mut _,
-                certificate.as_ptr(),
-                certificate.len(),
+                x509_der.as_ptr(),
+                x509_der.len(),
             )
         })
         .map_err(|err| {
-            if matches!(err, TlsError::MbedTlsError(-8576)) {
+            if matches!(err, TlsError::MbedTls(-8576)) {
                 TlsError::InvalidFormat
             } else {
                 err
@@ -186,7 +115,7 @@ impl<'d> Certificate<'d> {
     }
 }
 
-/// A private key
+/// A parsed private key
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct PrivateKey(pub(crate) MRc<mbedtls_pk_context>);
@@ -203,8 +132,13 @@ impl PrivateKey {
     ///
     /// This will return an error if an error occurs during parsing such as passing a DER encoded
     /// private key in a PEM format, and vice-versa.
-    pub fn new(private_key: X509<'_>, password: Option<&str>) -> Result<Self, TlsError> {
+    pub fn new(x509: X509<'_>, password: Option<&str>) -> Result<Self, TlsError> {
         let pk = MRc::new()?;
+
+        let (ptr, len) = match x509 {
+            X509::PEM(str) => (str.as_ptr() as *const u8, str.count_bytes() + 1),
+            X509::DER(bytes) => (bytes.as_ptr(), bytes.len()),
+        };
 
         let (password_ptr, password_len) = if let Some(password) = password {
             (password.as_ptr(), password.len())
@@ -215,8 +149,8 @@ impl PrivateKey {
         err!(unsafe {
             mbedtls_pk_parse_key(
                 &*pk as *const _ as *mut _,
-                private_key.as_ptr(),
-                private_key.len(),
+                ptr as _,
+                len,
                 password_ptr,
                 password_len,
                 None,

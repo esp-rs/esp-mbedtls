@@ -1,47 +1,59 @@
 use core::ffi::{c_int, c_uchar, c_void, CStr};
 
-use embedded_io::{Error, ErrorType, Read, Write};
+use esp_mbedtls_sys::*;
 
-use esp_mbedtls_sys::bindings::*;
+use io::{Error, ErrorType, Read, Write};
 
 use super::{err, SessionConfig, SessionState, TlsError, TlsReference};
 
+/// Re-export of the `embedded-io` crate so that users don't have to explicitly depend on it
+/// to use e.g. `write_all` or `read_exact`.
+pub mod io {
+    pub use embedded_io::*;
+}
+
+
 /// A blocking TLS session over a stream represented by `embedded-io`'s `Read` and `Write` traits.
-pub struct Session<'a, T> {
-    /// The underlying stream
+pub struct Session<'a, T> 
+where 
+    T: Read + Write,
+{
+    /// The underlying stream implementing `Read` and `Write`
     stream: T,
     /// The session state
     state: SessionState<'a>,
     /// Whether the session is connected
     connected: bool,
+    /// Whether we received a close notify from the peer
+    eof: bool,
     /// Reference to the active Tls instance
     _tls_ref: TlsReference<'a>,
 }
 
-impl<'a, T> Session<'a, T> {
+impl<'a, T> Session<'a, T> 
+where
+    T: Read + Write,
+{
     /// Create a session for a TLS stream.
     ///
     /// # Arguments
+    /// - `tls_ref` - A reference to the active `Tls` instance.
+    /// - `stream` - The stream for the connection.
+    /// - `config` - The session configuration.
     ///
-    /// * `stream` - The stream for the connection.
-    /// * `config` - The session configuration.
-    /// * `tls_ref` - A reference to the active `Tls` instance.
-    ///
-    /// # Errors
-    ///
-    /// This will return a [TlsError] if there were an error during the initialization of the
-    /// session. This can happen if there is not enough memory of if the certificates are in an
-    /// invalid format.
+    /// # Returns
+    /// - A `Session` instance or a `TlsError` on failure.
     pub fn new(
+        tls: TlsReference<'a>,
         stream: T,
         config: &SessionConfig<'a>,
-        tls_ref: TlsReference<'a>,
     ) -> Result<Self, TlsError> {
         Ok(Self {
             stream,
             state: SessionState::new(config)?,
             connected: false,
-            _tls_ref: tls_ref,
+            eof: false,
+            _tls_ref: tls,
         })
     }
 
@@ -49,12 +61,7 @@ impl<'a, T> Session<'a, T> {
     pub fn stream(&mut self) -> &mut T {
         &mut self.stream
     }
-}
 
-impl<T> Session<'_, T>
-where
-    T: Read + Write,
-{
     /// Set the server name for the TLS connection
     ///
     /// # Arguments
@@ -85,53 +92,74 @@ where
                 // See https://github.com/Mbed-TLS/mbedtls/issues/8749
                 MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET => continue,
                 len if len >= 0 => {
+                    self.connected = true;
+                    self.eof = false;
                     break Ok(());
                 }
                 other => {
                     break Err(if other == MBEDTLS_ERR_SSL_NO_CLIENT_CERTIFICATE {
                         TlsError::NoClientCertificate
                     } else {
-                        TlsError::MbedTlsError(other)
+                        TlsError::MbedTls(other)
                     })
                 }
             }
         }
     }
 
+    /// Get the TLS verification details
+    /// 
+    /// The details are a bitmask of various flags indicating the result of the certificate verification.
+    /// 
+    /// # Returns
+    /// - 0 if verification succeeded
+    /// - A bitmask of verification failure flags otherwise
+    /// 
+    /// NOTE: This function should be called only after a `connect()` call.
+    pub fn tls_verification_details(&self) -> u32 {
+        unsafe {
+            mbedtls_ssl_get_verify_result(&*self.state.ssl_context)
+        }
+    }
+
     /// Read unencrypted data from the TLS connection
     ///
     /// # Arguments
-    ///
-    /// * `buf` - The buffer to read the data into
+    /// - `buf` - The buffer to read the data into
     ///
     /// # Returns
-    ///
     /// The number of bytes read or an error
     pub fn read(&mut self, buf: &mut [u8]) -> Result<usize, TlsError> {
         self.connect()?;
+
+        if self.eof {
+            return Ok(0);
+        }
 
         loop {
             match self.call_mbedtls(|ssl_ctx| unsafe {
                 mbedtls_ssl_read(ssl_ctx as *const _ as *mut _, buf.as_mut_ptr(), buf.len())
             }) {
-                MBEDTLS_ERR_SSL_WANT_WRITE => continue,
+                MBEDTLS_ERR_SSL_WANT_READ => continue,
                 // See https://github.com/Mbed-TLS/mbedtls/issues/8749
                 MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET => continue,
+                MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY => {
+                    self.eof = true;
+                    break Ok(0)
+                }
                 len if len >= 0 => break Ok(len as usize),
-                other => break Err(TlsError::MbedTlsError(other)),
+                other => break Err(TlsError::MbedTls(other)),
             }
         }
     }
 
     /// Write unencrypted data to the TLS connection
     ///
-    /// Arguments:
+    /// # Arguments:
+    /// - `data` - The data to write
     ///
-    /// * `data` - The data to write
-    ///
-    /// Returns:
-    ///
-    /// The number of bytes written or an error
+    /// # Returns:
+    /// - The number of bytes written or an error
     pub fn write(&mut self, data: &[u8]) -> Result<usize, TlsError> {
         self.connect()?;
 
@@ -143,7 +171,7 @@ where
                 // See https://github.com/Mbed-TLS/mbedtls/issues/8749
                 MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET => continue,
                 len if len >= 0 => break Ok(len as usize),
-                other => break Err(TlsError::MbedTlsError(other)),
+                other => break Err(TlsError::MbedTls(other)),
             }
         }
     }
@@ -152,9 +180,8 @@ where
     ///
     /// This function will flush the TLS connection, ensuring that all data is sent.
     ///
-    /// Returns:
-    ///
-    /// An error if the flush failed
+    /// # Returns:
+    /// - An error if the flush failed
     pub fn flush(&mut self) -> Result<(), TlsError> {
         self.connect()?;
 
@@ -165,10 +192,9 @@ where
     ///
     /// This function will close the TLS connection, sending the TLS "close notify" info the the peer.
     ///
-    /// Returns:
-    ///
-    /// An error if the close failed
-    pub async fn close(&mut self) -> Result<(), TlsError> {
+    /// # Returns:
+    /// - An error if the close failed
+    pub fn close(&mut self) -> Result<(), TlsError> {
         if !self.connected {
             return Ok(());
         }
@@ -177,7 +203,7 @@ where
             self.call_mbedtls(|ssl| unsafe { mbedtls_ssl_close_notify(ssl as *const _ as *mut _) });
 
         if res != 0 {
-            return Err(TlsError::MbedTlsError(res));
+            return Err(TlsError::MbedTls(res));
         }
 
         self.flush()?;
@@ -187,6 +213,7 @@ where
         Ok(())
     }
 
+    /// Helper function to call MbedTLS functions with BIO callbacks set
     fn call_mbedtls<F>(&mut self, mut f: F) -> c_int
     where
         F: FnMut(&mut mbedtls_ssl_context) -> c_int,
@@ -218,6 +245,7 @@ where
         result
     }
 
+    /// The MbedTLS BIO receive callback
     fn bio_receive(&mut self, buf: &mut [u8]) -> c_int {
         let res = self.stream.read(buf);
 
@@ -233,6 +261,7 @@ where
         }
     }
 
+    /// The MbedTLS BIO send callback
     fn bio_send(&mut self, data: &[u8]) -> c_int {
         let res = self.stream.write(data);
 
@@ -248,12 +277,14 @@ where
         }
     }
 
+    /// The raw MbedTLS BIO receive callback
     unsafe extern "C" fn raw_receive(ctx: *mut c_void, buf: *mut c_uchar, len: usize) -> c_int {
         let session = (ctx as *mut Self).as_mut().unwrap();
 
         session.bio_receive(core::slice::from_raw_parts_mut(buf as *mut _, len))
     }
 
+    /// The raw MbedTLS BIO send callback
     unsafe extern "C" fn raw_send(ctx: *mut c_void, buf: *const c_uchar, len: usize) -> c_int {
         let session = (ctx as *mut Self).as_mut().unwrap();
 
@@ -261,10 +292,13 @@ where
     }
 }
 
-impl<T> Drop for Session<'_, T> {
+impl<T> Drop for Session<'_, T> 
+where
+    T: Read + Write,
+{
     fn drop(&mut self) {
-        unsafe {
-            mbedtls_ssl_close_notify(&mut *self.state.ssl_context);
+        if let Err(e) = self.close() {
+            error!("Error during TLS session close: {:?}", e);
         }
 
         debug!("Session dropped - freeing memory");
