@@ -81,9 +81,9 @@ fn main() -> Result<()> {
             bindings.display()
         );
 
-        println!("cargo:rustc-link-lib=static={}", "mbedtls");
-        println!("cargo:rustc-link-lib=static={}", "mbedx509");
-        println!("cargo:rustc-link-lib=static={}", "mbedcrypto");
+        println!("cargo:rustc-link-lib=static=mbedtls");
+        println!("cargo:rustc-link-lib=static=mbedx509");
+        println!("cargo:rustc-link-lib=static=mbedcrypto");
         println!("cargo:rustc-link-search={}", libs_dir.display());
     }
 

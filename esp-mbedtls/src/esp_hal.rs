@@ -1,5 +1,4 @@
 #[doc(hidden)]
-
 use core::cell::RefCell;
 use critical_section::Mutex;
 

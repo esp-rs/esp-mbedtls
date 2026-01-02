@@ -7,9 +7,9 @@ use embedded_io::ErrorKind;
 
 use esp_mbedtls_sys::*;
 
-use io::{Error, ErrorType, Read, Write};
+use io::{ErrorType, Read, Write};
 
-use crate::{err, TlsError, TlsReference};
+use crate::{merr, SessionError, TlsReference};
 
 use super::{SessionConfig, SessionState};
 
@@ -27,7 +27,7 @@ pub mod nal {
 }
 
 /// An async TLS session over a stream represented by `embedded-io-async`'s `Read` and `Write` traits.
-pub struct Session<'a, T> 
+pub struct Session<'a, T>
 where
     T: Read + Write,
 {
@@ -47,8 +47,8 @@ where
     _token: TlsReference<'a>,
 }
 
-impl<'a, T> Session<'a, T> 
-where 
+impl<'a, T> Session<'a, T>
+where
     T: Read + Write,
 {
     /// Create a session for a TLS stream.
@@ -64,7 +64,7 @@ where
         tls: TlsReference<'a>,
         stream: T,
         config: &SessionConfig<'a>,
-    ) -> Result<Self, TlsError> {
+    ) -> Result<Self, SessionError> {
         Ok(Self {
             stream,
             state: SessionState::new(config)?,
@@ -77,18 +77,16 @@ where
     }
 
     /// Get the TLS verification details
-    /// 
+    ///
     /// The details are a bitmask of various flags indicating the result of the certificate verification.
-    /// 
+    ///
     /// # Returns
     /// - 0 if verification succeeded
     /// - A bitmask of verification failure flags otherwise
-    /// 
+    ///
     /// NOTE: This function should be called only after a `connect()` call.
     pub fn tls_verification_details(&self) -> u32 {
-        unsafe {
-            mbedtls_ssl_get_verify_result(&*self.state.ssl_context)
-        }
+        unsafe { mbedtls_ssl_get_verify_result(&*self.state.ssl_context) }
     }
 
     /// Get a mutable reference to the underlying stream
@@ -100,10 +98,12 @@ where
     ///
     /// # Arguments
     /// - `server_name`: The server name as a C string
-    pub fn set_server_name(&mut self, server_name: &CStr) -> Result<(), TlsError> {
-        err!(unsafe {
+    pub fn set_server_name(&mut self, server_name: &CStr) -> Result<(), SessionError> {
+        merr!(unsafe {
             mbedtls_ssl_set_hostname(&mut *self.state.ssl_context, server_name.as_ptr())
-        })
+        })?;
+
+        Ok(())
     }
 
     /// Negotiate the TLS connection
@@ -112,7 +112,7 @@ where
     ///
     /// Note that calling it is not mandatory, because the TLS session is anyway
     /// negotiated during the first read or write operation, or when splitting the session.
-    pub async fn connect(&mut self) -> Result<(), TlsError> {
+    pub async fn connect(&mut self) -> Result<(), SessionError> {
         if self.connected {
             return Ok(());
         }
@@ -126,7 +126,7 @@ where
     }
 
     /// Split the TLS session into read and write halves
-    /// 
+    ///
     /// # Returns
     /// - A tuple containing the read and write halves of the session
     pub async fn split(
@@ -136,7 +136,7 @@ where
             SessionRead<'_, impl Read + '_>,
             SessionWrite<'_, impl Write + '_>,
         ),
-        TlsError,
+        SessionError,
     >
     where
         T: Split,
@@ -170,7 +170,7 @@ where
     ///
     /// # Returns
     /// - The number of bytes read or an error
-    pub async fn read(&mut self, buf: &mut [u8]) -> Result<usize, TlsError> {
+    pub async fn read(&mut self, buf: &mut [u8]) -> Result<usize, SessionError> {
         self.connect().await?;
 
         if self.eof || buf.is_empty() {
@@ -187,7 +187,7 @@ where
     ///
     /// # Returns:
     /// - The number of bytes written or an error
-    pub async fn write(&mut self, data: &[u8]) -> Result<usize, TlsError> {
+    pub async fn write(&mut self, data: &[u8]) -> Result<usize, SessionError> {
         self.connect().await?;
 
         if data.is_empty() {
@@ -203,7 +203,7 @@ where
     ///
     /// # Returns:
     /// - An error if the flush failed
-    pub async fn flush(&mut self) -> Result<(), TlsError> {
+    pub async fn flush(&mut self) -> Result<(), SessionError> {
         self.connect().await?;
 
         MBio::from_session(self).flush().await
@@ -215,7 +215,7 @@ where
     ///
     /// # Returns:
     /// - An error if the close failed
-    pub async fn close(&mut self) -> Result<(), TlsError> {
+    pub async fn close(&mut self) -> Result<(), SessionError> {
         if !self.connected {
             return Ok(());
         }
@@ -228,7 +228,7 @@ where
     }
 }
 
-impl<T> Drop for Session<'_, T> 
+impl<T> Drop for Session<'_, T>
 where
     T: Read + Write,
 {
@@ -245,7 +245,7 @@ impl<T> ErrorType for Session<'_, T>
 where
     T: Read + Write,
 {
-    type Error = TlsError;
+    type Error = SessionError;
 }
 
 impl<T> Read for Session<'_, T>
@@ -271,10 +271,10 @@ where
 }
 
 /// A trait for splitting a stream into read and write halves.
-/// 
+///
 /// This is used by the `Session::split` method to split the underlying stream and the stream MUST implement
 /// this trait for the `split` method to be available.
-/// 
+///
 /// NOTE: While the `edge-nal` crate does have its own `Split` trait, we provide our own trait
 /// so as to keep the core of this library independent of `edge-nal`.
 pub trait Split: ErrorType {
@@ -311,8 +311,8 @@ where
 
 /// A type representing the read half of a TLS session
 /// when the session has been split into read and write halves.
-pub struct SessionRead<'a, T> 
-where 
+pub struct SessionRead<'a, T>
+where
     T: Read,
 {
     /// The underlying stream
@@ -331,7 +331,7 @@ impl<T> SessionRead<'_, T>
 where
     T: Read,
 {
-    pub async fn read(&mut self, buf: &mut [u8]) -> Result<usize, TlsError> {
+    pub async fn read(&mut self, buf: &mut [u8]) -> Result<usize, SessionError> {
         if *self.eof || buf.is_empty() {
             return Ok(0);
         }
@@ -340,11 +340,11 @@ where
     }
 }
 
-impl<T> ErrorType for SessionRead<'_, T> 
-where 
+impl<T> ErrorType for SessionRead<'_, T>
+where
     T: Read,
 {
-    type Error = TlsError;
+    type Error = SessionError;
 }
 
 impl<T> Read for SessionRead<'_, T>
@@ -358,8 +358,8 @@ where
 
 /// A type representing the write half of a TLS session
 /// when the session has been split into read and write halves.
-pub struct SessionWrite<'a, T> 
-where 
+pub struct SessionWrite<'a, T>
+where
     T: Write,
 {
     /// The underlying stream
@@ -379,13 +379,13 @@ where
     T: Write,
 {
     /// Write unencrypted data to the TLS connection
-    /// 
+    ///
     /// # Arguments
     /// - `data` - The data to write
-    /// 
+    ///
     /// # Returns
     /// - The number of bytes written or an error
-    pub async fn write(&mut self, data: &[u8]) -> Result<usize, TlsError> {
+    pub async fn write(&mut self, data: &[u8]) -> Result<usize, SessionError> {
         if data.is_empty() {
             return Ok(0);
         }
@@ -394,16 +394,16 @@ where
     }
 
     /// Flush the TLS connection
-    pub async fn flush(&mut self) -> Result<(), TlsError> {
+    pub async fn flush(&mut self) -> Result<(), SessionError> {
         MBio::from_write(self).flush().await
     }
 }
 
-impl<T> ErrorType for SessionWrite<'_, T> 
-where 
+impl<T> ErrorType for SessionWrite<'_, T>
+where
     T: Write,
 {
-    type Error = TlsError;
+    type Error = SessionError;
 }
 
 impl<T> Write for SessionWrite<'_, T>
@@ -458,8 +458,8 @@ struct MBio<'a, T> {
     write_byte: &'a mut Option<u8>,
 }
 
-impl<'a, T> MBio<'a, &'a mut T> 
-where 
+impl<'a, T> MBio<'a, &'a mut T>
+where
     T: Read + Write,
 {
     fn from_session(session: &'a mut Session<'_, T>) -> Self {
@@ -473,23 +473,23 @@ where
     }
 }
 
-impl<'a, T> MBio<'a, &'a mut NoWrite<T>> 
-where 
+impl<'a, T> MBio<'a, &'a mut NoWrite<T>>
+where
     T: Read,
 {
     fn from_read(session: &'a mut SessionRead<'_, T>) -> Self {
         Self::new(
             &mut session.stream,
             session.ssl_context,
-            &mut session.eof,
+            session.eof,
             session.read_byte,
             &mut session.write_byte,
         )
     }
 }
 
-impl<'a, T> MBio<'a, &'a mut NoRead<T>> 
-where 
+impl<'a, T> MBio<'a, &'a mut NoRead<T>>
+where
     T: Write,
 {
     fn from_write(session: &'a mut SessionWrite<'_, T>) -> Self {
@@ -503,8 +503,8 @@ where
     }
 }
 
-impl<'a, T> MBio<'a, T> 
-where 
+impl<'a, T> MBio<'a, T>
+where
     T: Read + Write,
 {
     const fn new(
@@ -524,10 +524,10 @@ where
     }
 
     /// Establish the SSL connection
-    async fn connect(&mut self) -> Result<(), TlsError> {
+    async fn connect(&mut self) -> Result<(), SessionError> {
         debug!("Establishing SSL connection");
 
-        err!(unsafe { mbedtls_ssl_session_reset(&*self.ssl_context as *const _ as *mut _) })?;
+        merr!(unsafe { mbedtls_ssl_session_reset(self.ssl_context as *const _ as *mut _) })?;
 
         loop {
             match self
@@ -536,40 +536,32 @@ where
                 })
                 .await
             {
-                MBEDTLS_ERR_SSL_WANT_READ => if !self
-                    .wait_readable()
-                    .await
-                    .map_err(|e| TlsError::Io(e.kind()))? {
-                        return Err(TlsError::Io(ErrorKind::BrokenPipe));
+                MBEDTLS_ERR_SSL_WANT_READ => {
+                    if !self.wait_readable().await.map_err(SessionError::from_io)? {
+                        return Err(SessionError::Io(ErrorKind::BrokenPipe));
                     }
-                MBEDTLS_ERR_SSL_WANT_WRITE => if !self
-                    .wait_writable()
-                    .await
-                    .map_err(|e| TlsError::Io(e.kind()))? {
-                        return Err(TlsError::Io(ErrorKind::BrokenPipe));
+                }
+                MBEDTLS_ERR_SSL_WANT_WRITE => {
+                    if !self.wait_writable().await.map_err(SessionError::from_io)? {
+                        return Err(SessionError::Io(ErrorKind::BrokenPipe));
                     }
+                }
                 // See https://github.com/Mbed-TLS/mbedtls/issues/8749
                 MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET => continue,
                 len if len >= 0 => break Ok(()),
-                other => {
-                    break Err(if other == MBEDTLS_ERR_SSL_NO_CLIENT_CERTIFICATE {
-                        TlsError::NoClientCertificate
-                    } else {
-                        TlsError::MbedTls(other)
-                    })
-                }
+                other => merr!(other)?,
             }
         }
     }
 
     /// Read unencrypted data from the TLS connection
-    /// 
+    ///
     /// # Arguments
     /// - `buf` - The buffer to read the data into
-    /// 
+    ///
     /// # Returns
     /// - The number of bytes read or an error
-    async fn read(&mut self, buf: &mut [u8]) -> Result<usize, TlsError> {
+    async fn read(&mut self, buf: &mut [u8]) -> Result<usize, SessionError> {
         loop {
             match self
                 .call_mbedtls(|ssl_ctx| unsafe {
@@ -581,32 +573,31 @@ where
                 })
                 .await
             {
-                MBEDTLS_ERR_SSL_WANT_READ => if !self
-                    .wait_readable()
-                    .await
-                    .map_err(|e| TlsError::Io(e.kind()))? {
-                        return Err(TlsError::Io(ErrorKind::BrokenPipe));
+                MBEDTLS_ERR_SSL_WANT_READ => {
+                    if !self.wait_readable().await.map_err(SessionError::from_io)? {
+                        return Err(SessionError::Io(ErrorKind::BrokenPipe));
                     }
+                }
                 // See https://github.com/Mbed-TLS/mbedtls/issues/8749
                 MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET => continue,
                 MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY => {
                     *self.eof = true;
-                    break Ok(0)
+                    break Ok(0);
                 }
                 len if len >= 0 => break Ok(len as usize),
-                other => Err(TlsError::MbedTls(other))?,
+                other => merr!(other)?,
             }
         }
     }
 
     /// Write unencrypted data to the TLS connection
-    /// 
+    ///
     /// Arguments:
     /// - `data` - The data to write
-    /// 
+    ///
     /// Returns:
     /// - The number of bytes written or an error
-    async fn write(&mut self, data: &[u8]) -> Result<usize, TlsError> {
+    async fn write(&mut self, data: &[u8]) -> Result<usize, SessionError> {
         loop {
             match self
                 .call_mbedtls(|ssl_ctx| unsafe {
@@ -618,44 +609,35 @@ where
                 })
                 .await
             {
-                MBEDTLS_ERR_SSL_WANT_WRITE => if !self
-                    .wait_writable()
-                    .await
-                    .map_err(|e| TlsError::Io(e.kind()))? {
-                        return Err(TlsError::Io(ErrorKind::BrokenPipe));
+                MBEDTLS_ERR_SSL_WANT_WRITE => {
+                    if !self.wait_writable().await.map_err(SessionError::from_io)? {
+                        return Err(SessionError::Io(ErrorKind::BrokenPipe));
                     }
+                }
                 // See https://github.com/Mbed-TLS/mbedtls/issues/8749
                 MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET => continue,
                 len if len >= 0 => break Ok(len as usize),
-                other => Err(TlsError::MbedTls(other))?,
+                other => merr!(other)?,
             }
         }
     }
 
     /// Flush the TLS connection by writing any outstanding data to the underlying stream
     /// and then flushing the stream
-    async fn flush(&mut self) -> Result<(), TlsError> {
-        if !self.wait_writable()
-            .await
-            .map_err(|e| TlsError::Io(e.kind()))? {
-            return Err(TlsError::Io(ErrorKind::BrokenPipe));
+    async fn flush(&mut self) -> Result<(), SessionError> {
+        if !self.wait_writable().await.map_err(SessionError::from_io)? {
+            return Err(SessionError::Io(ErrorKind::BrokenPipe));
         }
 
-        self.stream
-            .flush()
-            .await
-            .map_err(|e| TlsError::Io(e.kind()))
+        self.stream.flush().await.map_err(SessionError::from_io)
     }
 
     /// Close the TLS connection by sending the "close notify" alert to the peer and flushing the stream
-    pub async fn close(&mut self) -> Result<(), TlsError> {
-        let res = self
-            .call_mbedtls(|ssl| unsafe { mbedtls_ssl_close_notify(ssl as *const _ as *mut _) })
-            .await;
-
-        if res != 0 {
-            return Err(TlsError::MbedTls(res));
-        }
+    pub async fn close(&mut self) -> Result<(), SessionError> {
+        merr!(
+            self.call_mbedtls(|ssl| unsafe { mbedtls_ssl_close_notify(ssl as *const _ as *mut _) })
+                .await
+        )?;
 
         self.flush().await?;
 
@@ -663,10 +645,10 @@ where
     }
 
     /// Wait until the underlying stream is readable
-    /// 
+    ///
     /// A side effect of this function is that it reads one byte from the stream
     /// and stores it for later consumption by the `bio_receive` method.
-    /// 
+    ///
     /// Return `Ok(true)` if the stream is readable, `Ok(false)` if EOF is reached,
     /// or an error otherwise.
     async fn wait_readable(&mut self) -> Result<bool, T::Error> {
@@ -684,10 +666,10 @@ where
     }
 
     /// Wait until the underlying stream is writable
-    /// 
+    ///
     /// A side effect of this function is that it writes one byte to the stream
     /// where that byte had been provided by the `bio_send` method.
-    /// 
+    ///
     /// Return `Ok(true)` if the stream is writable (or there is no byte to write), `Ok(false)` if EOF is reached,
     /// or an error otherwise.
     async fn wait_writable(&mut self) -> Result<bool, T::Error> {
@@ -787,7 +769,7 @@ where
                 len += poll_len;
             }
         }
-        
+
         if len > 0 {
             Poll::Ready(len)
         } else {
@@ -825,7 +807,7 @@ where
             if let Poll::Ready(Ok(poll_len)) = fut.as_mut().poll(ctx) {
                 len += poll_len;
             }
-            
+
             if data.len() > len {
                 // Next, store the next byte to be written later via `wait_writable`
 
@@ -871,10 +853,10 @@ struct MBioCallCtx<'a, 'b, 'c, T> {
 /// A wrapper around a type implementing `Write` which turns it into
 /// a type implementing both `Read` and `Write`, but where the `Read` implementation
 /// is unreachable.
-/// 
+///
 /// Used when splitting a `Session` into a read-only and write-only halves, for the
 /// "write" half.
-/// 
+///
 /// This type is necessary because the `MBio` struct requires both `Read` and `Write`
 /// traits to be implemented on the stream.
 struct NoRead<T>(T);
@@ -911,10 +893,10 @@ where
 /// A wrapper around a type implementing `Read` which turns it into
 /// a type implementing both `Read` and `Write`, but where the `Write` implementation
 /// is unreachable.
-/// 
+///
 /// Used when splitting a `Session` into a read-only and write-only halves, for the
 /// "read" half.
-/// 
+///
 /// This type is necessary because the `MBio` struct requires both `Read` and `Write`
 /// traits to be implemented on the stream.
 struct NoWrite<T>(T);

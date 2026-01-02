@@ -2,9 +2,9 @@ use core::ffi::{c_int, c_uchar, c_void, CStr};
 
 use esp_mbedtls_sys::*;
 
-use io::{Error, ErrorType, Read, Write};
+use io::{ErrorType, Read, Write};
 
-use super::{err, SessionConfig, SessionState, TlsError, TlsReference};
+use super::{merr, SessionConfig, SessionError, SessionState, TlsReference};
 
 /// Re-export of the `embedded-io` crate so that users don't have to explicitly depend on it
 /// to use e.g. `write_all` or `read_exact`.
@@ -12,10 +12,9 @@ pub mod io {
     pub use embedded_io::*;
 }
 
-
 /// A blocking TLS session over a stream represented by `embedded-io`'s `Read` and `Write` traits.
-pub struct Session<'a, T> 
-where 
+pub struct Session<'a, T>
+where
     T: Read + Write,
 {
     /// The underlying stream implementing `Read` and `Write`
@@ -30,7 +29,7 @@ where
     _tls_ref: TlsReference<'a>,
 }
 
-impl<'a, T> Session<'a, T> 
+impl<'a, T> Session<'a, T>
 where
     T: Read + Write,
 {
@@ -47,7 +46,7 @@ where
         tls: TlsReference<'a>,
         stream: T,
         config: &SessionConfig<'a>,
-    ) -> Result<Self, TlsError> {
+    ) -> Result<Self, SessionError> {
         Ok(Self {
             stream,
             state: SessionState::new(config)?,
@@ -66,10 +65,12 @@ where
     ///
     /// # Arguments
     /// - `server_name`: The server name as a C string
-    pub fn set_server_name(&mut self, server_name: &CStr) -> Result<(), TlsError> {
-        err!(unsafe {
+    pub fn set_server_name(&mut self, server_name: &CStr) -> Result<(), SessionError> {
+        merr!(unsafe {
             mbedtls_ssl_set_hostname(&mut *self.state.ssl_context, server_name.as_ptr())
-        })
+        })?;
+
+        Ok(())
     }
 
     /// Negotiate the TLS connection
@@ -78,12 +79,12 @@ where
     ///
     /// Note that calling it is not mandatory, because the TLS session is anyway
     /// negotiated during the first read or write operation.
-    pub fn connect(&mut self) -> Result<(), TlsError> {
+    pub fn connect(&mut self) -> Result<(), SessionError> {
         if self.connected {
             return Ok(());
         }
 
-        err!(unsafe { mbedtls_ssl_session_reset(&mut *self.state.ssl_context) })?;
+        merr!(unsafe { mbedtls_ssl_session_reset(&mut *self.state.ssl_context) })?;
 
         loop {
             match self.call_mbedtls(|ssl_ctx| unsafe { mbedtls_ssl_handshake(ssl_ctx) }) {
@@ -96,30 +97,22 @@ where
                     self.eof = false;
                     break Ok(());
                 }
-                other => {
-                    break Err(if other == MBEDTLS_ERR_SSL_NO_CLIENT_CERTIFICATE {
-                        TlsError::NoClientCertificate
-                    } else {
-                        TlsError::MbedTls(other)
-                    })
-                }
+                other => merr!(other)?,
             }
         }
     }
 
     /// Get the TLS verification details
-    /// 
+    ///
     /// The details are a bitmask of various flags indicating the result of the certificate verification.
-    /// 
+    ///
     /// # Returns
     /// - 0 if verification succeeded
     /// - A bitmask of verification failure flags otherwise
-    /// 
+    ///
     /// NOTE: This function should be called only after a `connect()` call.
     pub fn tls_verification_details(&self) -> u32 {
-        unsafe {
-            mbedtls_ssl_get_verify_result(&*self.state.ssl_context)
-        }
+        unsafe { mbedtls_ssl_get_verify_result(&*self.state.ssl_context) }
     }
 
     /// Read unencrypted data from the TLS connection
@@ -129,7 +122,7 @@ where
     ///
     /// # Returns
     /// The number of bytes read or an error
-    pub fn read(&mut self, buf: &mut [u8]) -> Result<usize, TlsError> {
+    pub fn read(&mut self, buf: &mut [u8]) -> Result<usize, SessionError> {
         self.connect()?;
 
         if self.eof {
@@ -145,10 +138,10 @@ where
                 MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET => continue,
                 MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY => {
                     self.eof = true;
-                    break Ok(0)
+                    break Ok(0);
                 }
                 len if len >= 0 => break Ok(len as usize),
-                other => break Err(TlsError::MbedTls(other)),
+                other => merr!(other)?,
             }
         }
     }
@@ -160,7 +153,7 @@ where
     ///
     /// # Returns:
     /// - The number of bytes written or an error
-    pub fn write(&mut self, data: &[u8]) -> Result<usize, TlsError> {
+    pub fn write(&mut self, data: &[u8]) -> Result<usize, SessionError> {
         self.connect()?;
 
         loop {
@@ -171,7 +164,7 @@ where
                 // See https://github.com/Mbed-TLS/mbedtls/issues/8749
                 MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET => continue,
                 len if len >= 0 => break Ok(len as usize),
-                other => break Err(TlsError::MbedTls(other)),
+                other => merr!(other)?,
             }
         }
     }
@@ -182,10 +175,10 @@ where
     ///
     /// # Returns:
     /// - An error if the flush failed
-    pub fn flush(&mut self) -> Result<(), TlsError> {
+    pub fn flush(&mut self) -> Result<(), SessionError> {
         self.connect()?;
 
-        self.stream.flush().map_err(|e| TlsError::Io(e.kind()))
+        self.stream.flush().map_err(SessionError::from_io)
     }
 
     /// Close the TLS connection
@@ -194,17 +187,14 @@ where
     ///
     /// # Returns:
     /// - An error if the close failed
-    pub fn close(&mut self) -> Result<(), TlsError> {
+    pub fn close(&mut self) -> Result<(), SessionError> {
         if !self.connected {
             return Ok(());
         }
 
-        let res =
-            self.call_mbedtls(|ssl| unsafe { mbedtls_ssl_close_notify(ssl as *const _ as *mut _) });
-
-        if res != 0 {
-            return Err(TlsError::MbedTls(res));
-        }
+        merr!(
+            self.call_mbedtls(|ssl| unsafe { mbedtls_ssl_close_notify(ssl as *const _ as *mut _) })
+        )?;
 
         self.flush()?;
 
@@ -292,7 +282,7 @@ where
     }
 }
 
-impl<T> Drop for Session<'_, T> 
+impl<T> Drop for Session<'_, T>
 where
     T: Read + Write,
 {
@@ -309,7 +299,7 @@ impl<T> ErrorType for Session<'_, T>
 where
     T: Read + Write,
 {
-    type Error = TlsError;
+    type Error = SessionError;
 }
 
 impl<T> Read for Session<'_, T>

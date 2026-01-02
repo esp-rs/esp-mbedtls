@@ -98,7 +98,7 @@ impl MbedtlsBuilder {
         }
 
         if let Some(target) = &self.clang_target {
-            builder = builder.clang_arg(&format!("--target={target}"));
+            builder = builder.clang_arg(format!("--target={target}"));
         }
 
         let bindings = builder
@@ -167,8 +167,7 @@ impl MbedtlsBuilder {
             .define("MBEDTLS_FATAL_WARNINGS", "OFF")
             .define(
                 "MBEDTLS_CONFIG_FILE",
-                &self
-                    .crate_root_path
+                self.crate_root_path
                     .join("gen")
                     .join("include")
                     .join("soc")
@@ -177,13 +176,12 @@ impl MbedtlsBuilder {
             )
             .define(
                 "CMAKE_TOOLCHAIN_FILE",
-                &self
-                    .crate_root_path
+                self.crate_root_path
                     .join("gen")
                     .join("toolchains")
                     .join(format!("toolchain-clang-{}.cmake", self.soc_config)),
             )
-            .cflag(&format!(
+            .cflag(format!(
                 "-I{}",
                 self.crate_root_path
                     .join("gen")
@@ -192,8 +190,8 @@ impl MbedtlsBuilder {
                     .join(&self.soc_config)
                     .display()
             ))
-            .cflag(&format!("-DMBEDTLS_CONFIG_FILE='<config.h>'"))
-            .cxxflag(&format!("-DMBEDTLS_CONFIG_FILE='<config.h>'"))
+            .cflag("-DMBEDTLS_CONFIG_FILE='<config.h>'")
+            .cxxflag("-DMBEDTLS_CONFIG_FILE='<config.h>'")
             .profile("Release")
             .out_dir(&target_dir);
 

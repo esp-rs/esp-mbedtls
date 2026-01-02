@@ -3,7 +3,7 @@ use core::marker::PhantomData;
 
 use esp_mbedtls_sys::*;
 
-use super::{err, MRc, TlsError};
+use super::{merr, MRc, SessionError};
 
 /// Holds a reference to a PEM or DER-encoded X509 certificate or private key.
 ///
@@ -43,32 +43,21 @@ impl Certificate<'static> {
     ///
     /// This will return an error if an error occurs during parsing such as passing a DER encoded
     /// certificate in a PEM format, and vice-versa.
-    pub fn new(x509: X509<'_>) -> Result<Self, TlsError> {
-        let crt = MRc::new()?;
+    pub fn new(x509: X509<'_>) -> Result<Self, MbedtlsError> {
+        let crt = MRc::new().ok_or(MbedtlsError::new(MBEDTLS_ERR_X509_ALLOC_FAILED))?;
 
         match x509 {
-            X509::PEM(str) => err!(unsafe {
+            X509::PEM(str) => merr!(unsafe {
                 mbedtls_x509_crt_parse(
                     &*crt as *const _ as *mut _,
                     str.as_ptr() as *const _,
                     str.count_bytes() + 1,
                 )
             }),
-            X509::DER(bytes) => err!(unsafe {
-                mbedtls_x509_crt_parse_der(
-                    &*crt as *const _ as *mut _,
-                    bytes.as_ptr(),
-                    bytes.len(),
-                )
+            X509::DER(bytes) => merr!(unsafe {
+                mbedtls_x509_crt_parse_der(&*crt as *const _ as *mut _, bytes.as_ptr(), bytes.len())
             }),
-        }
-        .map_err(|err| {
-            if matches!(err, TlsError::MbedTls(-8576)) {
-                TlsError::InvalidFormat
-            } else {
-                err
-            }
-        })?;
+        }?;
 
         Ok(Self {
             crt,
@@ -90,22 +79,15 @@ impl<'d> Certificate<'d> {
     ///
     /// This will return an error if an error occurs during parsing.
     /// [TlsError::InvalidFormat] will be returned if a PEM encoded certificate is passed.
-    pub fn new_no_copy(x509_der: &'d [u8]) -> Result<Self, TlsError> {
-        let crt = MRc::new()?;
+    pub fn new_no_copy(x509_der: &'d [u8]) -> Result<Self, SessionError> {
+        let crt = MRc::new().ok_or(MbedtlsError::new(MBEDTLS_ERR_X509_ALLOC_FAILED))?;
 
-        err!(unsafe {
+        merr!(unsafe {
             mbedtls_x509_crt_parse_der_nocopy(
                 &*crt as *const _ as *mut _,
                 x509_der.as_ptr(),
                 x509_der.len(),
             )
-        })
-        .map_err(|err| {
-            if matches!(err, TlsError::MbedTls(-8576)) {
-                TlsError::InvalidFormat
-            } else {
-                err
-            }
         })?;
 
         Ok(Self {
@@ -132,8 +114,8 @@ impl PrivateKey {
     ///
     /// This will return an error if an error occurs during parsing such as passing a DER encoded
     /// private key in a PEM format, and vice-versa.
-    pub fn new(x509: X509<'_>, password: Option<&str>) -> Result<Self, TlsError> {
-        let pk = MRc::new()?;
+    pub fn new(x509: X509<'_>, password: Option<&str>) -> Result<Self, SessionError> {
+        let pk = MRc::new().ok_or(MbedtlsError::new(MBEDTLS_ERR_PK_ALLOC_FAILED))?;
 
         let (ptr, len) = match x509 {
             X509::PEM(str) => (str.as_ptr() as *const u8, str.count_bytes() + 1),
@@ -146,7 +128,7 @@ impl PrivateKey {
             (core::ptr::null(), 0)
         };
 
-        err!(unsafe {
+        merr!(unsafe {
             mbedtls_pk_parse_key(
                 &*pk as *const _ as *mut _,
                 ptr as _,

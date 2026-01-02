@@ -16,11 +16,13 @@ esp32c6 = []
 esp32s2 = []
 esp32s3 = []
 
+[dependencies]
+defmt = { version = "1", optional = true }
+
 # ESP-IDF: The mbedtls lib distributed with ESP-IDF is used
+# All other platforms: mbedtls libs and bindings are created on the fly
 [target.'cfg(target_os = "espidf")'.dependencies]
 esp-idf-sys = { version = "0.36", default-features = false }
-
-# All other platforms: mbedtls libs and bindings are created on the fly
 
 [build-dependencies]
 anyhow = "1"

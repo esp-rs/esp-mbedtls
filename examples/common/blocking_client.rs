@@ -4,7 +4,7 @@ use core::ffi::CStr;
 
 use esp_mbedtls::blocking::io::{Read, Write};
 use esp_mbedtls::blocking::Session;
-use esp_mbedtls::{SessionConfig, TlsError, TlsReference};
+use esp_mbedtls::{SessionConfig, SessionError, TlsReference};
 
 use log::info;
 
@@ -27,7 +27,7 @@ pub fn request<T>(
     server_path: &str,
     mtls: bool,
     buf: &mut [u8],
-) -> Result<(), TlsError>
+) -> Result<(), SessionError>
 where
     T: Read + Write,
 {

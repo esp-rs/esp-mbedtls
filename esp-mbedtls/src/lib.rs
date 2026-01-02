@@ -9,8 +9,6 @@ use core::ptr::NonNull;
 
 use critical_section::Mutex;
 
-use embedded_io::ErrorKind;
-
 use esp_mbedtls_sys::*;
 
 use rand_core::CryptoRng;
@@ -34,96 +32,6 @@ mod edge_nal;
 ))]
 mod esp_hal;
 mod session;
-
-macro_rules! err {
-    ($block:expr) => {{
-        let res = $block;
-        if res != 0 {
-            Err(TlsError::MbedTls(res))
-        } else {
-            Ok(())
-        }
-    }};
-}
-
-pub(crate) use err;
-
-/// Error type for TLS operations
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum TlsError {
-    /// A `Tls` instance has already been created
-    AlreadyCreated,
-    /// An unknown error occurred
-    Unknown,
-    /// Out of heap
-    OutOfMemory,
-    /// MBedTLS error
-    MbedTls(i32),
-    /// End of stream
-    Eof,
-    /// X509 certificate missing null terminator
-    X509MissingNullTerminator,
-    /// The X509 is in an unexpected format (PEM instead of DER and vice-versa)
-    InvalidFormat,
-    /// The client has given no certificates for the request
-    NoClientCertificate,
-    /// IO error
-    Io(ErrorKind),
-}
-
-impl core::fmt::Display for TlsError {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        match self {
-            Self::AlreadyCreated => write!(f, "TLS already created"),
-            Self::Unknown => write!(f, "Unknown error"),
-            Self::OutOfMemory => write!(f, "Out of memory"),
-            Self::MbedTls(e) => write!(f, "MbedTLS error: {e}"),
-            Self::Eof => write!(f, "End of stream"),
-            Self::X509MissingNullTerminator => {
-                write!(f, "X509 certificate missing null terminator")
-            }
-            Self::InvalidFormat => write!(
-                f,
-                "The X509 is in an unexpected format (PEM instead of DER and vice-versa)"
-            ),
-            Self::NoClientCertificate => write!(f, "No client certificate"),
-            Self::Io(e) => write!(f, "IO error: {e:?}"),
-        }
-    }
-}
-
-#[cfg(feature = "defmt")]
-impl defmt::Format for TlsError {
-    fn format(&self, f: defmt::Formatter<'_>) {
-        match self {
-            Self::AlreadyCreated => defmt::write!(f, "TLS already created"),
-            Self::Unknown => defmt::write!(f, "Unknown error"),
-            Self::OutOfMemory => defmt::write!(f, "Out of memory"),
-            Self::MbedTlsError(e) => defmt::write!(f, "MbedTLS error: {}", e),
-            Self::Eof => defmt::write!(f, "End of stream"),
-            Self::X509MissingNullTerminator => {
-                defmt::write!(f, "X509 certificate missing null terminator")
-            }
-            Self::InvalidFormat => defmt::write!(
-                f,
-                "The X509 is in an unexpected format (PEM instead of DER and vice-versa)"
-            ),
-            Self::NoClientCertificate => defmt::write!(f, "No client certificate"),
-            Self::Io(e) => defmt::write!(f, "IO error: {:?}", debug2format!(e)),
-        }
-    }
-}
-
-impl core::error::Error for TlsError {}
-
-impl embedded_io::Error for TlsError {
-    fn kind(&self) -> embedded_io::ErrorKind {
-        match self {
-            Self::Io(e) => *e,
-            _ => embedded_io::ErrorKind::Other,
-        }
-    }
-}
 
 /// A TLS self-test type
 #[derive(enumset::EnumSetType, Debug)]
@@ -158,6 +66,13 @@ impl core::fmt::Display for TlsTest {
 
 static TLS_RNG: Mutex<RefCell<Option<&mut (dyn CryptoRng + Send)>>> =
     Mutex::new(RefCell::new(None));
+
+/// An error returned when creating a `Tls` instance
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub enum TlsError {
+    AlreadyCreated,
+}
 
 /// A TLS instance
 ///
@@ -388,14 +303,12 @@ where
     /// # Returns
     /// - Ok(MBox<T>) if the allocation was successful
     /// - Err(TlsError::OutOfMemory) if the allocation failed
-    fn new() -> Result<Self, TlsError> {
-        NonNull::new(unsafe { mbedtls_calloc(1, size_of::<T>()) }.cast::<T>())
-            .map(|mut ptr| {
-                unsafe { ptr.as_mut() }.init();
+    fn new() -> Option<Self> {
+        NonNull::new(unsafe { mbedtls_calloc(1, size_of::<T>()) }.cast::<T>()).map(|mut ptr| {
+            unsafe { ptr.as_mut() }.init();
 
-                Self(ptr)
-            })
-            .ok_or(TlsError::OutOfMemory)
+            Self(ptr)
+        })
     }
 
     /// Get a reference to the inner value
@@ -455,20 +368,16 @@ where
     T: MInit,
 {
     /// Create a new MRc
-    fn new() -> Result<Self, TlsError> {
-        NonNull::new(
-            unsafe { mbedtls_calloc(1, size_of::<(T, usize)>()) }
-                .cast::<(T, usize)>(),
-        )
-        .map(|mut ptr| {
-            let this = unsafe { ptr.as_mut() };
-            
-            this.0.init();
-            this.1 = 1;
+    fn new() -> Option<Self> {
+        NonNull::new(unsafe { mbedtls_calloc(1, size_of::<(T, usize)>()) }.cast::<(T, usize)>())
+            .map(|mut ptr| {
+                let this = unsafe { ptr.as_mut() };
 
-            Self(ptr)
-        })
-        .ok_or(TlsError::OutOfMemory)
+                this.0.init();
+                this.1 = 1;
+
+                Self(ptr)
+            })
     }
 
     /// Get a reference to the inner value

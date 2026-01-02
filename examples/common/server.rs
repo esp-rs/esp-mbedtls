@@ -1,7 +1,7 @@
 //! A platform-agnostic HTTPS 1.0 server using the async API.
 
 use esp_mbedtls::io::{Read, Write};
-use esp_mbedtls::{Session, SessionConfig, TlsError, TlsReference};
+use esp_mbedtls::{Session, SessionConfig, SessionError, TlsReference};
 
 use log::{info, warn};
 
@@ -13,7 +13,7 @@ pub async fn reply<T>(
     socket: T,
     mtls: bool,
     buf: &mut [u8],
-) -> Result<(), TlsError>
+) -> Result<(), SessionError>
 where
     T: Read + Write,
 {

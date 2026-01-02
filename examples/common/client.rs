@@ -3,7 +3,7 @@
 use core::ffi::CStr;
 
 use esp_mbedtls::io::{Read, Write};
-use esp_mbedtls::{Session, SessionConfig, TlsError, TlsReference};
+use esp_mbedtls::{Session, SessionConfig, SessionError, TlsReference};
 
 use log::info;
 
@@ -26,7 +26,7 @@ pub async fn request<T>(
     server_path: &str,
     mtls: bool,
     buf: &mut [u8],
-) -> Result<(), TlsError>
+) -> Result<(), SessionError>
 where
     T: Read + Write,
 {

@@ -1,10 +1,10 @@
-use core::ffi::{CStr, c_int, c_void};
+use core::ffi::{c_int, c_void, CStr};
 
+use embedded_io::{Error, ErrorKind};
 use esp_mbedtls_sys::*;
 
 use super::{
-    err, mbedtls_dbg_print, mbedtls_rng, Certificate, MBox, PrivateKey, TlsError, TlsReference,
-    TlsVersion,
+    mbedtls_dbg_print, mbedtls_rng, merr, Certificate, MBox, PrivateKey, TlsReference, TlsVersion,
 };
 
 pub use asynch::*;
@@ -191,12 +191,12 @@ struct SessionState<'a> {
 
 impl<'a> SessionState<'a> {
     /// Initialize the Session state using the given configuration
-    fn new(conf: &SessionConfig<'a>) -> Result<Self, TlsError> {
-        err!(unsafe { psa_crypto_init() })?;
+    fn new(conf: &SessionConfig<'a>) -> Result<Self, MbedtlsError> {
+        merr!(unsafe { psa_crypto_init() })?;
 
-        let mut ssl_config = MBox::new()?;
+        let mut ssl_config = MBox::new().ok_or(MbedtlsError::new(MBEDTLS_ERR_SSL_ALLOC_FAILED))?;
 
-        err!(unsafe {
+        merr!(unsafe {
             mbedtls_ssl_config_defaults(
                 &mut *ssl_config,
                 conf.raw_mode(),
@@ -222,7 +222,7 @@ impl<'a> SessionState<'a> {
         }
 
         if let Some(creds) = conf.creds() {
-            err!(unsafe {
+            merr!(unsafe {
                 mbedtls_ssl_conf_own_cert(
                     &mut *ssl_config,
                     &*creds.certificate.crt as *const _ as *mut _,
@@ -241,7 +241,8 @@ impl<'a> SessionState<'a> {
             }
         }
 
-        let mut drbg_context = MBox::new()?;
+        let mut drbg_context =
+            MBox::new().ok_or(MbedtlsError::new(MBEDTLS_ERR_SSL_ALLOC_FAILED))?;
 
         // Init RNG
         unsafe {
@@ -252,13 +253,13 @@ impl<'a> SessionState<'a> {
             );
         }
 
-        let mut ssl_context = MBox::new()?;
+        let mut ssl_context = MBox::new().ok_or(MbedtlsError::new(MBEDTLS_ERR_SSL_ALLOC_FAILED))?;
 
-        err!(unsafe { mbedtls_ssl_setup(&mut *ssl_context, &*ssl_config) })?;
+        merr!(unsafe { mbedtls_ssl_setup(&mut *ssl_context, &*ssl_config) })?;
 
         if let SessionConfig::Client(conf) = conf {
             if let Some(server_name) = conf.server_name {
-                err!(unsafe {
+                merr!(unsafe {
                     mbedtls_ssl_set_hostname(&mut *ssl_context, server_name.as_ptr())
                 })?;
             }
@@ -271,5 +272,63 @@ impl<'a> SessionState<'a> {
             _ca_chain: conf.ca_chain().cloned(),
             _creds: conf.creds().cloned(),
         })
+    }
+}
+
+/// Error type for session operations
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SessionError {
+    /// MBedTLS error
+    MbedTls(MbedtlsError),
+    /// IO error
+    Io(ErrorKind),
+}
+
+impl SessionError {
+    /// Create a SessionError from an embedded-io Error
+    pub fn from_io<E: Error>(err: E) -> Self {
+        Self::Io(err.kind())
+    }
+}
+
+impl From<MbedtlsError> for SessionError {
+    fn from(e: MbedtlsError) -> Self {
+        Self::MbedTls(e)
+    }
+}
+
+impl From<ErrorKind> for SessionError {
+    fn from(e: ErrorKind) -> Self {
+        Self::Io(e)
+    }
+}
+
+impl core::fmt::Display for SessionError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Self::MbedTls(e) => write!(f, "{}", e),
+            Self::Io(e) => write!(f, "IO({:?})", e),
+        }
+    }
+}
+
+#[cfg(feature = "defmt")]
+impl defmt::Format for SessionError {
+    fn format(&self, f: defmt::Formatter<'_>) {
+        match self {
+            Self::MbedTls(e) => defmt::write!(f, "{}", e),
+            Self::Io(e) => defmt::write!(f, "IO({:?})", debug2format!(e)),
+        }
+    }
+}
+
+impl core::error::Error for SessionError {}
+
+impl embedded_io::Error for SessionError {
+    fn kind(&self) -> embedded_io::ErrorKind {
+        match self {
+            Self::Io(e) => *e,
+            _ => embedded_io::ErrorKind::Other,
+        }
     }
 }

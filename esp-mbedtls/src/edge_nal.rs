@@ -1,10 +1,13 @@
 use core::net::SocketAddr;
 
-use embedded_io_async::{Error, ErrorType, Read, Write};
+use embedded_io_async::{ErrorType, Read, Write};
 
 use edge_nal::{Readable, TcpAccept, TcpConnect, TcpShutdown, TcpSplit};
 
-use crate::{ClientSessionConfig, ServerSessionConfig, Session, SessionConfig, Split, TlsError, TlsReference};
+use crate::{
+    ClientSessionConfig, ServerSessionConfig, Session, SessionConfig, SessionError, Split,
+    TlsReference,
+};
 
 /// An implementation of `edge-nal`'s `TcpAccept` trait over TLS.
 #[derive(Debug)]
@@ -25,11 +28,7 @@ where
     /// - `tls` - A reference to the active `Tls` instance
     /// - `acceptor` - The underlying TCP acceptor
     /// - `config` - The server session configuration
-    pub fn new(
-        tls: TlsReference<'d>,
-        acceptor: T,
-        config: &ServerSessionConfig<'d>,
-    ) -> Self {
+    pub fn new(tls: TlsReference<'d>, acceptor: T, config: &ServerSessionConfig<'d>) -> Self {
         Self {
             acceptor,
             config: config.clone(),
@@ -42,20 +41,18 @@ impl<T> TcpAccept for TlsAcceptor<'_, T>
 where
     T: TcpAccept,
 {
-    type Error = TlsError;
+    type Error = SessionError;
     type Socket<'a>
         = Session<'a, FromTcpSplit<T::Socket<'a>>>
     where
         Self: 'a;
 
-    async fn accept(
-        &self,
-    ) -> Result<(SocketAddr, Self::Socket<'_>), <Self as TcpAccept>::Error> {
+    async fn accept(&self) -> Result<(SocketAddr, Self::Socket<'_>), <Self as TcpAccept>::Error> {
         let (addr, socket) = self
             .acceptor
             .accept()
             .await
-            .map_err(|e| TlsError::Io(e.kind()))?;
+            .map_err(SessionError::from_io)?;
         debug!("Accepted new connection on socket");
 
         let session = Session::new(
@@ -87,11 +84,7 @@ where
     /// - `tls` - A reference to the active `Tls` instance
     /// - `connector` - The underlying TCP connector
     /// - `config` - The client session configuration
-    pub fn new(
-        tls: TlsReference<'d>,
-        connector: T,
-        config: &ClientSessionConfig<'d>,
-    ) -> Self {
+    pub fn new(tls: TlsReference<'d>, connector: T, config: &ClientSessionConfig<'d>) -> Self {
         Self {
             connector,
             config: config.clone(),
@@ -104,7 +97,7 @@ impl<T> TcpConnect for TlsConnector<'_, T>
 where
     T: TcpConnect,
 {
-    type Error = TlsError;
+    type Error = SessionError;
 
     type Socket<'a>
         = Session<'a, FromTcpSplit<T::Socket<'a>>>
@@ -116,7 +109,7 @@ where
             .connector
             .connect(remote)
             .await
-            .map_err(|e| TlsError::Io(e.kind()))?;
+            .map_err(SessionError::from_io)?;
         debug!("Connected to {}", remote);
 
         let session = Session::new(
@@ -170,19 +163,16 @@ where
         self.stream()
             .close(what)
             .await
-            .map_err(|e| TlsError::Io(e.kind()))
+            .map_err(SessionError::from_io)
     }
 
     async fn abort(&mut self) -> Result<(), Self::Error> {
-        self.stream()
-            .abort()
-            .await
-            .map_err(|e| TlsError::Io(e.kind()))
+        self.stream().abort().await.map_err(SessionError::from_io)
     }
 }
 
 /// An adaptor from `TcpSplit` to `Split` for types that implement `TcpSplit`.
-/// 
+///
 /// Necessary so that `Session::split` works for streams implementing `edge-nal`'s `TcpSplit`.
 pub struct FromTcpSplit<T>(T);
 

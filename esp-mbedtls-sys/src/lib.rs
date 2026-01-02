@@ -1,17 +1,22 @@
+//! Raw bindings to the MbedTLS library
+
 #![no_std]
 
 pub use bindings::*;
+pub use error::*;
 
 #[cfg(not(target_os = "espidf"))]
 mod c_types;
+mod error;
 mod extra_impls;
 
-#[allow(
-    non_camel_case_types,
-    non_snake_case,
-    non_upper_case_globals,
-    dead_code
-)]
+#[allow(clippy::all)]
+#[allow(unnecessary_transmutes)]
+#[allow(non_upper_case_globals)]
+#[allow(non_camel_case_types)]
+#[allow(non_snake_case)]
+#[allow(rustdoc::all)]
+#[allow(dead_code)]
 mod bindings {
     #[cfg(all(
         not(target_os = "espidf"),
