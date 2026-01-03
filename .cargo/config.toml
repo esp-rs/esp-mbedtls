@@ -1,2 +1,12 @@
+[build]
+target = "xtensa-esp32s3-none-elf"
+
+[target.xtensa-esp32s2-none-elf]
+runner = "espflash flash --monitor --baud 921600"
+rustflags = ["-C", "link-arg=-Tlinkall.x"]
+
+[unstable]
+build-std = ["core", "alloc"]
+
 [alias]
 xtask = "run --manifest-path ./xtask/Cargo.toml --"

@@ -17,7 +17,7 @@ pub trait MbedtlsMpiExpMod {
         x: &mbedtls_mpi,
         y: &mbedtls_mpi,
         m: &mbedtls_mpi,
-        prec_rr: &mut mbedtls_mpi,
+        prec_rr: Option<&mut mbedtls_mpi>,
     );
 }
 
@@ -32,7 +32,7 @@ where
         x: &mbedtls_mpi,
         y: &mbedtls_mpi,
         m: &mbedtls_mpi,
-        prec_rr: &mut mbedtls_mpi,
+        prec_rr: Option<&mut mbedtls_mpi>,
     ) {
         self.deref().exp_mod(z, x, y, m, prec_rr);
     }
@@ -59,10 +59,18 @@ impl MbedtlsMpiExpMod for FallbackMpiExpMod {
         x: &mbedtls_mpi,
         y: &mbedtls_mpi,
         m: &mbedtls_mpi,
-        prec_rr: &mut mbedtls_mpi,
+        prec_rr: Option<&mut mbedtls_mpi>,
     ) {
         unsafe {
-            mbedtls_mpi_exp_mod_soft(z, x, y, m, prec_rr);
+            mbedtls_mpi_exp_mod_soft(
+                z,
+                x,
+                y,
+                m,
+                prec_rr
+                    .map(|rr| rr as *mut _)
+                    .unwrap_or(core::ptr::null_mut()),
+            );
         }
     }
 }
@@ -77,9 +85,9 @@ unsafe extern "C" fn mbedtls_mpi_exp_mod(
     prec_rr: *mut mbedtls_mpi,
 ) -> c_int {
     if let Some(exp_mod) = critical_section::with(|cs| EXP_MOD.borrow(cs).get()) {
-        exp_mod.exp_mod(&mut *z, &*x, &*y, &*m, &mut *prec_rr);
+        exp_mod.exp_mod(&mut *z, &*x, &*y, &*m, prec_rr.as_mut());
     } else {
-        EXP_MOD_FALLBACK.exp_mod(&mut *z, &*x, &*y, &*m, &mut *prec_rr);
+        EXP_MOD_FALLBACK.exp_mod(&mut *z, &*x, &*y, &*m, prec_rr.as_mut());
     }
 
     0

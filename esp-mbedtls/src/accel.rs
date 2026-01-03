@@ -1,5 +1,6 @@
 pub mod digest;
 pub mod exp_mod;
+pub mod platform;
 
 pub trait WorkArea {
     fn area(&self) -> &[u8];

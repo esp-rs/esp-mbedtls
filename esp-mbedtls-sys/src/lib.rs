@@ -1,6 +1,7 @@
 //! Raw bindings to the MbedTLS library
 
 #![no_std]
+#![allow(clippy::uninlined_format_args)]
 
 pub use bindings::*;
 pub use error::*;

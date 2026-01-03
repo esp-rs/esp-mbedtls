@@ -2,7 +2,7 @@ use core::ffi::{c_int, c_uchar};
 use core::marker::PhantomData;
 use core::ops::Deref;
 
-use digest::{Digest, FixedOutputReset};
+use digest::Digest;
 
 use super::WorkArea;
 
@@ -15,7 +15,7 @@ mod sha256;
 mod sha512;
 
 pub trait MbedtlsDigest {
-    fn output_size(&self) -> usize;
+    fn output_size(&self, work_area: &[u8]) -> usize;
 
     fn init(&self, work_area: &mut [u8]);
 
@@ -32,8 +32,8 @@ impl<T: Deref> MbedtlsDigest for T
 where
     T::Target: MbedtlsDigest,
 {
-    fn output_size(&self) -> usize {
-        self.deref().output_size()
+    fn output_size(&self, work_area: &[u8]) -> usize {
+        self.deref().output_size(work_area)
     }
 
     fn init(&self, work_area: &mut [u8]) {
@@ -73,34 +73,44 @@ impl<T> RustCryptoDigest<T> {
 
 impl<T> MbedtlsDigest for RustCryptoDigest<T>
 where
-    T: Digest + FixedOutputReset + Clone,
+    T: Digest, /*Clone*/
 {
-    fn output_size(&self) -> usize {
+    fn output_size(&self, _work_area: &[u8]) -> usize {
         <T as Digest>::output_size()
     }
 
     fn init(&self, work_area: &mut [u8]) {
-        unsafe {
-            (work_area.cast_mut::<T>() as *mut T).write(T::new());
-        }
+        unsafe { work_area.cast_mut_maybe::<Option<T>>() }.write(Some(T::new()));
     }
 
     fn reset(&self, work_area: &mut [u8]) {
-        *unsafe { work_area.cast_mut() } = T::new();
+        *unsafe { work_area.cast_mut() } = Some(T::new());
     }
 
     fn update(&self, work_area: &mut [u8], data: &[u8]) {
-        Digest::update(unsafe { work_area.cast_mut::<T>() }, data);
+        Digest::update(
+            unsafe { work_area.cast_mut::<Option<T>>() }
+                .as_mut()
+                .unwrap(),
+            data,
+        );
     }
 
     fn finish(&self, work_area: &mut [u8], output: &mut [u8]) {
-        output.copy_from_slice(&unsafe { work_area.cast_mut::<T>() }.finalize_reset());
+        output.copy_from_slice(
+            &unsafe { work_area.cast_mut::<Option<T>>() }
+                .take()
+                .unwrap()
+                .finalize(),
+        );
     }
 
-    fn clone(&self, src_work_area: &[u8], dst_work_area: &mut [u8]) {
-        unsafe {
-            (dst_work_area.cast_mut::<T>() as *mut T).write(src_work_area.cast::<T>().clone());
-        }
+    fn clone(&self, _src_work_area: &[u8], _dst_work_area: &mut [u8]) {
+        unimplemented!()
+        // TODO: Needs a Clone bound on T which is not yet possible with `esp-hal`
+        // unsafe {
+        //     (dst_work_area.cast_mut::<T>() as *mut T).write(src_work_area.cast::<T>().clone());
+        // }
     }
 }
 
@@ -155,7 +165,12 @@ unsafe fn digest_finish<T: WorkArea>(
     work_area: *mut T,
     output: *mut c_uchar,
 ) -> c_int {
-    let output_slice = unsafe { core::slice::from_raw_parts_mut(output, algo.output_size()) };
+    let output_slice = unsafe {
+        core::slice::from_raw_parts_mut(
+            output,
+            algo.output_size(work_area.as_ref().unwrap().area()),
+        )
+    };
 
     algo.finish(work_area.as_mut().unwrap().area_mut(), output_slice);
 

@@ -1,4 +1,5 @@
 #![no_std]
+#![allow(clippy::uninlined_format_args)]
 
 use core::cell::RefCell;
 use core::ffi::{c_char, c_int, c_uchar, c_void, CStr};
@@ -24,14 +25,6 @@ pub mod accel;
 mod cert;
 #[cfg(feature = "edge-nal")]
 mod edge_nal;
-#[cfg(any(
-    feature = "esp32",
-    feature = "esp32c3",
-    feature = "esp32c6",
-    feature = "esp32s2",
-    feature = "esp32s3"
-))]
-mod esp_hal;
 mod session;
 
 /// A TLS self-test type
