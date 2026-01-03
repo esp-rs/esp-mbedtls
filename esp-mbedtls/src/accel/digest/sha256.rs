@@ -1,0 +1,117 @@
+use core::cell::Cell;
+use core::ffi::{c_int, c_uchar};
+use core::ops::Deref;
+
+use critical_section::Mutex;
+
+use esp_mbedtls_sys::mbedtls_sha256_context;
+
+use crate::accel::{digest::RustCryptoDigest, WorkArea};
+
+use super::{
+    digest_clone, digest_finish, digest_free, digest_init, digest_starts, digest_update,
+    MbedtlsDigest,
+};
+
+pub trait MbedtlsSha256: MbedtlsDigest {}
+pub trait MbedtlsSha224: MbedtlsDigest {}
+
+impl<T: Deref> MbedtlsSha256 for T where T::Target: MbedtlsSha256 {}
+impl<T: Deref> MbedtlsSha224 for T where T::Target: MbedtlsSha224 {}
+
+type RustCryptoSha256 = RustCryptoDigest<sha2::Sha256>;
+type RustCryptoSha224 = RustCryptoDigest<sha2::Sha224>;
+
+impl MbedtlsSha256 for RustCryptoSha256 {}
+impl MbedtlsSha224 for RustCryptoSha224 {}
+
+pub(crate) static SHA256: Mutex<Cell<Option<&(dyn MbedtlsSha256 + Send + Sync)>>> =
+    Mutex::new(Cell::new(None));
+static SHA256_RUST_CRYPTO: RustCryptoSha256 = RustCryptoSha256::new();
+
+pub(crate) static SHA224: Mutex<Cell<Option<&(dyn MbedtlsSha224 + Send + Sync)>>> =
+    Mutex::new(Cell::new(None));
+static SHA224_RUST_CRYPTO: RustCryptoSha224 = RustCryptoSha224::new();
+
+#[inline(always)]
+fn algo<'a>(ctx: *const mbedtls_sha256_context) -> &'a dyn MbedtlsDigest {
+    algo_for(unsafe { (*ctx).is224 } != 0)
+}
+
+#[inline(always)]
+fn algo_for<'a>(sha224: bool) -> &'a dyn MbedtlsDigest {
+    if sha224 {
+        if let Some(sha) = critical_section::with(|cs| SHA224.borrow(cs).get()) {
+            sha
+        } else {
+            &SHA224_RUST_CRYPTO
+        }
+    } else if let Some(sha) = critical_section::with(|cs| SHA256.borrow(cs).get()) {
+        sha
+    } else {
+        &SHA256_RUST_CRYPTO
+    }
+}
+
+impl WorkArea for mbedtls_sha256_context {
+    fn area(&self) -> &[u8] {
+        &self.work_area
+    }
+
+    fn area_mut(&mut self) -> &mut [u8] {
+        &mut self.work_area
+    }
+}
+
+#[no_mangle]
+unsafe extern "C" fn mbedtls_sha256_init(ctx: *mut mbedtls_sha256_context) {
+    digest_init(algo_for(false), ctx);
+    unsafe {
+        (*ctx).is224 = 0;
+    }
+}
+
+#[no_mangle]
+unsafe extern "C" fn mbedtls_sha256_free(ctx: *mut mbedtls_sha256_context) {
+    digest_free(algo(ctx), ctx);
+}
+
+#[no_mangle]
+unsafe extern "C" fn mbedtls_sha256_clone(
+    dst: *mut mbedtls_sha256_context,
+    src: *const mbedtls_sha256_context,
+) {
+    digest_clone(algo(src), src, dst);
+}
+
+#[no_mangle]
+unsafe extern "C" fn mbedtls_sha256_starts(
+    ctx: *mut mbedtls_sha256_context,
+    is224: c_int,
+) -> c_int {
+    let ctx = unsafe { &mut *ctx };
+
+    if (is224 != 0) != (ctx.is224 != 0) {
+        digest_init(algo_for(is224 != 0), ctx);
+        ctx.is224 = if is224 != 0 { 1 } else { 0 };
+    }
+
+    digest_starts(algo(ctx), ctx)
+}
+
+#[no_mangle]
+unsafe extern "C" fn mbedtls_sha256_update(
+    ctx: *mut mbedtls_sha256_context,
+    input: *const c_uchar,
+    ilen: usize,
+) -> c_int {
+    digest_update(algo(ctx), ctx, input, ilen)
+}
+
+#[no_mangle]
+unsafe extern "C" fn mbedtls_sha256_finish(
+    ctx: *mut mbedtls_sha256_context,
+    output: *mut c_uchar,
+) -> c_int {
+    digest_finish(algo(ctx), ctx, output)
+}

@@ -6,15 +6,6 @@ edition = "2021"
 license = "MIT OR Apache-2.0"
 rust-version = "1.84"
 
-[features]
-# Enable mTLS for the running example. See example documentation for further details.
-# Applies to:
-#  - client
-#  - server
-#  - blocking_client
-#  - blocking_server
-mtls = []
-
 [dependencies]
 log = "0.4"
 esp-mbedtls = { path = "../../esp-mbedtls", features = ["log", "edge-nal"] }

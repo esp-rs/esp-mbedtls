@@ -8,21 +8,6 @@ rust-version = "1.84"
 [lib]
 harness = false
 
-[dependencies]
-esp-mbedtls-sys = { path = "../esp-mbedtls-sys" }
-defmt = { version = "1", optional = true }
-log = { version = "0.4", default-features = false, optional = true }
-embedded-io = { version = "0.7" }
-embedded-io-async = { version = "0.7" }
-enumset = { version = "1", default-features = false }
-rand_core = "0.9"
-edge-nal = { version = "0.6", optional = true }
-critical-section = "1"
-
-# esp-hal
-esp-hal = { version = "1", features = ["unstable"], optional = true }
-crypto-bigint = { version = "0.5.3", optional = true, default-features = false, features = ["extra-sizes"] }
-
 [features]
 default = ["edge-nal"]
 esp32 = ["esp-hal/esp32", "esp-mbedtls-sys/esp32"]
@@ -33,3 +18,21 @@ esp32s3 = ["esp-hal/esp32s3", "esp-mbedtls-sys/esp32s3"]
 
 # Enable dependencies related to esp-hal (baremetal)
 esp-hal = ["dep:esp-hal", "crypto-bigint"]
+
+[dependencies]
+esp-mbedtls-sys = { path = "../esp-mbedtls-sys" }
+defmt = { version = "1", optional = true }
+log = { version = "0.4", default-features = false, optional = true }
+embedded-io = { version = "0.7" }
+embedded-io-async = { version = "0.7" }
+enumset = { version = "1", default-features = false }
+rand_core = "0.9"
+critical-section = "1"
+edge-nal = { version = "0.6", optional = true }
+digest = "0.10"
+sha1 = "0.10"
+sha2 = "0.10"
+
+# esp-hal
+esp-hal = { version = "1", features = ["unstable"], optional = true }
+crypto-bigint = { version = "0.5.3", optional = true, default-features = false, features = ["extra-sizes"] }

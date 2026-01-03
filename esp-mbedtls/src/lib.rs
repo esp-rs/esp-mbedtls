@@ -18,8 +18,9 @@ pub use cert::*;
 pub use edge_nal::*;
 pub use session::*;
 
-pub(crate) mod fmt;
+pub(crate) mod fmt; // MUST be the first so that the other modules can see it
 
+pub mod accel;
 mod cert;
 #[cfg(feature = "edge-nal")]
 mod edge_nal;
@@ -64,8 +65,7 @@ impl core::fmt::Display for TlsTest {
     }
 }
 
-static TLS_RNG: Mutex<RefCell<Option<&mut (dyn CryptoRng + Send)>>> =
-    Mutex::new(RefCell::new(None));
+static RNG: Mutex<RefCell<Option<&mut (dyn CryptoRng + Send)>>> = Mutex::new(RefCell::new(None));
 
 /// An error returned when creating a `Tls` instance
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
@@ -85,26 +85,15 @@ impl<'d> Tls<'d> {
     ///
     /// Note that there could be only one active `Tls` instance at any point in time,
     /// and the function will return an error if there is already an active instance.
-    #[cfg(not(any(
-        feature = "esp32",
-        feature = "esp32c3",
-        feature = "esp32c6",
-        feature = "esp32s2",
-        feature = "esp32s3"
-    )))]
     pub fn new(rng: &'d mut (dyn CryptoRng + Send)) -> Result<Self, TlsError> {
-        Self::create(rng)
-    }
-
-    pub(crate) fn create(rng: &'d mut (dyn CryptoRng + Send)) -> Result<Self, TlsError> {
         critical_section::with(|cs| {
-            let created = TLS_RNG.borrow(cs).borrow().is_some();
+            let created = RNG.borrow(cs).borrow().is_some();
 
             if created {
                 return Err(TlsError::AlreadyCreated);
             }
 
-            *TLS_RNG.borrow(cs).borrow_mut() = Some(unsafe {
+            *RNG.borrow(cs).borrow_mut() = Some(unsafe {
                 core::mem::transmute::<
                     &'d mut (dyn CryptoRng + Send),
                     &'static mut (dyn CryptoRng + Send),
@@ -115,9 +104,114 @@ impl<'d> Tls<'d> {
         })
     }
 
+    pub fn with_sha1(self, sha1: &'d (dyn accel::digest::MbedtlsSha1 + Send + Sync)) -> Self {
+        critical_section::with(|cs| {
+            accel::digest::SHA1.borrow(cs).replace(Some(unsafe {
+                core::mem::transmute::<
+                    &'d (dyn accel::digest::MbedtlsSha1 + Send + Sync),
+                    &'static (dyn accel::digest::MbedtlsSha1 + Send + Sync),
+                >(sha1)
+            }));
+        });
+
+        self
+    }
+
+    pub fn with_sha224(self, sha224: &'d (dyn accel::digest::MbedtlsSha224 + Send + Sync)) -> Self {
+        critical_section::with(|cs| {
+            accel::digest::SHA224.borrow(cs).replace(Some(unsafe {
+                core::mem::transmute::<
+                    &'d (dyn accel::digest::MbedtlsSha224 + Send + Sync),
+                    &'static (dyn accel::digest::MbedtlsSha224 + Send + Sync),
+                >(sha224)
+            }));
+        });
+
+        self
+    }
+
+    pub fn with_sha256(self, sha256: &'d (dyn accel::digest::MbedtlsSha256 + Send + Sync)) -> Self {
+        critical_section::with(|cs| {
+            accel::digest::SHA256.borrow(cs).replace(Some(unsafe {
+                core::mem::transmute::<
+                    &'d (dyn accel::digest::MbedtlsSha256 + Send + Sync),
+                    &'static (dyn accel::digest::MbedtlsSha256 + Send + Sync),
+                >(sha256)
+            }));
+        });
+
+        self
+    }
+
+    pub fn with_sha384(self, sha384: &'d (dyn accel::digest::MbedtlsSha384 + Send + Sync)) -> Self {
+        critical_section::with(|cs| {
+            accel::digest::SHA384.borrow(cs).replace(Some(unsafe {
+                core::mem::transmute::<
+                    &'d (dyn accel::digest::MbedtlsSha384 + Send + Sync),
+                    &'static (dyn accel::digest::MbedtlsSha384 + Send + Sync),
+                >(sha384)
+            }));
+        });
+
+        self
+    }
+
+    pub fn with_sha512(self, sha512: &'d (dyn accel::digest::MbedtlsSha512 + Send + Sync)) -> Self {
+        critical_section::with(|cs| {
+            accel::digest::SHA512.borrow(cs).replace(Some(unsafe {
+                core::mem::transmute::<
+                    &'d (dyn accel::digest::MbedtlsSha512 + Send + Sync),
+                    &'static (dyn accel::digest::MbedtlsSha512 + Send + Sync),
+                >(sha512)
+            }));
+        });
+
+        self
+    }
+
+    pub fn with_exp_mod(
+        self,
+        exp_mod: &'d (dyn accel::exp_mod::MbedtlsMpiExpMod + Send + Sync),
+    ) -> Self {
+        critical_section::with(|cs| {
+            accel::exp_mod::EXP_MOD.borrow(cs).replace(Some(unsafe {
+                core::mem::transmute::<
+                    &'d (dyn accel::exp_mod::MbedtlsMpiExpMod + Send + Sync),
+                    &'static (dyn accel::exp_mod::MbedtlsMpiExpMod + Send + Sync),
+                >(exp_mod)
+            }));
+        });
+
+        self
+    }
+
     pub(crate) fn release(&mut self) {
         critical_section::with(|cs| {
-            *TLS_RNG.borrow(cs).borrow_mut() = None;
+            *RNG.borrow(cs).borrow_mut() = None;
+        });
+
+        critical_section::with(|cs| {
+            accel::digest::SHA1.borrow(cs).replace(None);
+        });
+
+        critical_section::with(|cs| {
+            accel::digest::SHA224.borrow(cs).replace(None);
+        });
+
+        critical_section::with(|cs| {
+            accel::digest::SHA256.borrow(cs).replace(None);
+        });
+
+        critical_section::with(|cs| {
+            accel::digest::SHA384.borrow(cs).replace(None);
+        });
+
+        critical_section::with(|cs| {
+            accel::digest::SHA512.borrow(cs).replace(None);
+        });
+
+        critical_section::with(|cs| {
+            accel::exp_mod::EXP_MOD.borrow(cs).replace(None);
         });
     }
 
@@ -165,13 +259,6 @@ impl<'d> Tls<'d> {
     }
 }
 
-#[cfg(not(any(
-    feature = "esp32",
-    feature = "esp32c3",
-    feature = "esp32c6",
-    feature = "esp32s2",
-    feature = "esp32s3"
-)))]
 impl<'d> Drop for Tls<'d> {
     fn drop(&mut self) {
         self.release();
@@ -457,7 +544,7 @@ pub(crate) unsafe extern "C" fn mbedtls_rng(
     let buf = core::slice::from_raw_parts_mut(buf, len as _);
 
     critical_section::with(|cs| {
-        let mut rng = TLS_RNG.borrow(cs).borrow_mut();
+        let mut rng = RNG.borrow(cs).borrow_mut();
 
         rng.as_mut().unwrap().fill_bytes(buf);
     });

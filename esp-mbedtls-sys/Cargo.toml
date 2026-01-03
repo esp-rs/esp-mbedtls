@@ -6,6 +6,9 @@ links = "mbedtls"
 license = "MIT OR Apache-2.0"
 rust-version = "1.84"
 
+[lib]
+harness = false
+
 [features]
 default = []
 
