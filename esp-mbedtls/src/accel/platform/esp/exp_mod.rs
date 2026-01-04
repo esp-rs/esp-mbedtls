@@ -110,17 +110,17 @@ impl EspModExp {
     fn calculate_rinv(prec_rr: &mut mbedtls_mpi, m: &mbedtls_mpi, num_words: usize) -> c_int {
         let ret = 0;
         let num_bits = num_words * 32;
-        let mut RR = mbedtls_mpi {
+        let mut rr = mbedtls_mpi {
             private_s: 0,
             private_n: 0,
             private_p: core::ptr::null_mut(),
         };
 
         unsafe {
-            mbedtls_mpi_init(&mut RR);
-            err!(mbedtls_mpi_set_bit(&mut RR, num_bits * 2, 1));
-            err!(mbedtls_mpi_mod_mpi(prec_rr, &RR, m));
-            mbedtls_mpi_free(&mut RR);
+            mbedtls_mpi_init(&mut rr);
+            err!(mbedtls_mpi_set_bit(&mut rr, num_bits * 2, 1));
+            err!(mbedtls_mpi_mod_mpi(prec_rr, &rr, m));
+            mbedtls_mpi_free(&mut rr);
         }
 
         ret

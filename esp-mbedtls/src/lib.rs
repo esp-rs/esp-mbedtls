@@ -27,6 +27,12 @@ mod cert;
 mod edge_nal;
 mod session;
 
+/// Re-export of the esp-mbedtls-sys crate so that users do not have to
+/// explicitly depend on it if they want to use the raw MbedTLS bindings.
+pub mod sys {
+    use esp_mbedtls::*;
+}
+
 /// A TLS self-test type
 #[derive(enumset::EnumSetType, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
