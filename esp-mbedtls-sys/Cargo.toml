@@ -10,14 +10,18 @@ rust-version = "1.84"
 harness = false
 
 [features]
-default = []
-
-# ESP-HAL: Exactly *one* chip MUST be selected via its feature:
-esp32 = []
-esp32c3 = []
-esp32c6 = []
-esp32s2 = []
-esp32s3 = []
+default = ["accel"]
+# Always generate the bindings during build, even if pre-built bindings for the build target are available
+force-generate-bindings = []
+# Force the use of the Espressif Riscv GCC toolchain, if the target is a `riscv32*-` target
+# If this feature is not enabled, the build will assume and use the "official" RiscV GCC toolchain:
+# https://github.com/riscv-collab/riscv-gnu-toolchain
+force-esp-riscv-toolchain = []
+accel = ["accel-sha1", "accel-sha256", "accel-sha512", "accel-exp-mod"]
+accel-sha1 = []
+accel-sha256 = []
+accel-sha512 = []
+accel-exp-mod = []
 
 [dependencies]
 defmt = { version = "1", optional = true }
@@ -30,8 +34,10 @@ esp-idf-sys = { version = "0.36", default-features = false }
 [build-dependencies]
 anyhow = "1"
 bindgen = "0.71"
+enumset = "1"
 env_logger = "0.11"
 log = "0.4"
 cmake = "0.1.52"
+cc = "1.1"
 fs_extra = "1.3"
 embuild = "0.33"

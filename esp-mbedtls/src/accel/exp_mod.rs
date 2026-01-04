@@ -1,14 +1,6 @@
-use core::cell::Cell;
-use core::ffi::c_int;
 use core::ops::Deref;
 
-use critical_section::Mutex;
-
-use esp_mbedtls_sys::{mbedtls_mpi, mbedtls_mpi_exp_mod_soft};
-
-pub(crate) static EXP_MOD: Mutex<Cell<Option<&(dyn MbedtlsMpiExpMod + Send + Sync)>>> =
-    Mutex::new(Cell::new(None));
-static EXP_MOD_FALLBACK: FallbackMpiExpMod = FallbackMpiExpMod::new();
+use esp_mbedtls_sys::mbedtls_mpi;
 
 pub trait MbedtlsMpiExpMod {
     fn exp_mod(
@@ -38,57 +30,73 @@ where
     }
 }
 
-pub struct FallbackMpiExpMod(());
+#[cfg(feature = "accel-exp-mod")]
+pub(crate) mod alt {
+    use core::cell::Cell;
+    use core::ffi::c_int;
 
-impl FallbackMpiExpMod {
-    pub const fn new() -> Self {
-        Self(())
-    }
-}
+    use critical_section::Mutex;
 
-impl Default for FallbackMpiExpMod {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+    use esp_mbedtls_sys::{mbedtls_mpi, mbedtls_mpi_exp_mod_soft};
 
-impl MbedtlsMpiExpMod for FallbackMpiExpMod {
-    fn exp_mod(
-        &self,
-        z: &mut mbedtls_mpi,
-        x: &mbedtls_mpi,
-        y: &mbedtls_mpi,
-        m: &mbedtls_mpi,
-        prec_rr: Option<&mut mbedtls_mpi>,
-    ) {
-        unsafe {
-            mbedtls_mpi_exp_mod_soft(
-                z,
-                x,
-                y,
-                m,
-                prec_rr
-                    .map(|rr| rr as *mut _)
-                    .unwrap_or(core::ptr::null_mut()),
-            );
+    use super::MbedtlsMpiExpMod;
+
+    pub(crate) static EXP_MOD: Mutex<Cell<Option<&(dyn MbedtlsMpiExpMod + Send + Sync)>>> =
+        Mutex::new(Cell::new(None));
+    static EXP_MOD_FALLBACK: FallbackMpiExpMod = FallbackMpiExpMod::new();
+
+    pub struct FallbackMpiExpMod(());
+
+    impl FallbackMpiExpMod {
+        pub const fn new() -> Self {
+            Self(())
         }
     }
-}
 
-/// Z = X ^ Y mod M
-#[no_mangle]
-unsafe extern "C" fn mbedtls_mpi_exp_mod(
-    z: *mut mbedtls_mpi,
-    x: *const mbedtls_mpi,
-    y: *const mbedtls_mpi,
-    m: *const mbedtls_mpi,
-    prec_rr: *mut mbedtls_mpi,
-) -> c_int {
-    if let Some(exp_mod) = critical_section::with(|cs| EXP_MOD.borrow(cs).get()) {
-        exp_mod.exp_mod(&mut *z, &*x, &*y, &*m, prec_rr.as_mut());
-    } else {
-        EXP_MOD_FALLBACK.exp_mod(&mut *z, &*x, &*y, &*m, prec_rr.as_mut());
+    impl Default for FallbackMpiExpMod {
+        fn default() -> Self {
+            Self::new()
+        }
     }
 
-    0
+    impl MbedtlsMpiExpMod for FallbackMpiExpMod {
+        fn exp_mod(
+            &self,
+            z: &mut mbedtls_mpi,
+            x: &mbedtls_mpi,
+            y: &mbedtls_mpi,
+            m: &mbedtls_mpi,
+            prec_rr: Option<&mut mbedtls_mpi>,
+        ) {
+            unsafe {
+                mbedtls_mpi_exp_mod_soft(
+                    z,
+                    x,
+                    y,
+                    m,
+                    prec_rr
+                        .map(|rr| rr as *mut _)
+                        .unwrap_or_default(),
+                );
+            }
+        }
+    }
+
+    /// Z = X ^ Y mod M
+    #[no_mangle]
+    unsafe extern "C" fn mbedtls_mpi_exp_mod(
+        z: *mut mbedtls_mpi,
+        x: *const mbedtls_mpi,
+        y: *const mbedtls_mpi,
+        m: *const mbedtls_mpi,
+        prec_rr: *mut mbedtls_mpi,
+    ) -> c_int {
+        if let Some(exp_mod) = critical_section::with(|cs| EXP_MOD.borrow(cs).get()) {
+            exp_mod.exp_mod(&mut *z, &*x, &*y, &*m, prec_rr.as_mut());
+        } else {
+            EXP_MOD_FALLBACK.exp_mod(&mut *z, &*x, &*y, &*m, prec_rr.as_mut());
+        }
+
+        0
+    }
 }

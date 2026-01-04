@@ -30,7 +30,8 @@ mod session;
 /// Re-export of the esp-mbedtls-sys crate so that users do not have to
 /// explicitly depend on it if they want to use the raw MbedTLS bindings.
 pub mod sys {
-    use esp_mbedtls::*;
+    #[allow(unused)]
+    use esp_mbedtls_sys::*;
 }
 
 /// A TLS self-test type
@@ -103,9 +104,10 @@ impl<'d> Tls<'d> {
         })
     }
 
+    #[cfg(feature = "accel-sha1")]
     pub fn with_sha1(self, sha1: &'d (dyn accel::digest::MbedtlsSha1 + Send + Sync)) -> Self {
         critical_section::with(|cs| {
-            accel::digest::SHA1.borrow(cs).replace(Some(unsafe {
+            accel::digest::sha1::alt::SHA1.borrow(cs).replace(Some(unsafe {
                 core::mem::transmute::<
                     &'d (dyn accel::digest::MbedtlsSha1 + Send + Sync),
                     &'static (dyn accel::digest::MbedtlsSha1 + Send + Sync),
@@ -116,9 +118,10 @@ impl<'d> Tls<'d> {
         self
     }
 
+    #[cfg(feature = "accel-sha256")]
     pub fn with_sha224(self, sha224: &'d (dyn accel::digest::MbedtlsSha224 + Send + Sync)) -> Self {
         critical_section::with(|cs| {
-            accel::digest::SHA224.borrow(cs).replace(Some(unsafe {
+            accel::digest::sha256::alt::SHA224.borrow(cs).replace(Some(unsafe {
                 core::mem::transmute::<
                     &'d (dyn accel::digest::MbedtlsSha224 + Send + Sync),
                     &'static (dyn accel::digest::MbedtlsSha224 + Send + Sync),
@@ -129,9 +132,10 @@ impl<'d> Tls<'d> {
         self
     }
 
+    #[cfg(feature = "accel-sha256")]
     pub fn with_sha256(self, sha256: &'d (dyn accel::digest::MbedtlsSha256 + Send + Sync)) -> Self {
         critical_section::with(|cs| {
-            accel::digest::SHA256.borrow(cs).replace(Some(unsafe {
+            accel::digest::sha256::alt::SHA256.borrow(cs).replace(Some(unsafe {
                 core::mem::transmute::<
                     &'d (dyn accel::digest::MbedtlsSha256 + Send + Sync),
                     &'static (dyn accel::digest::MbedtlsSha256 + Send + Sync),
@@ -142,9 +146,10 @@ impl<'d> Tls<'d> {
         self
     }
 
+    #[cfg(feature = "accel-sha512")]
     pub fn with_sha384(self, sha384: &'d (dyn accel::digest::MbedtlsSha384 + Send + Sync)) -> Self {
         critical_section::with(|cs| {
-            accel::digest::SHA384.borrow(cs).replace(Some(unsafe {
+            accel::digest::sha512::alt::SHA384.borrow(cs).replace(Some(unsafe {
                 core::mem::transmute::<
                     &'d (dyn accel::digest::MbedtlsSha384 + Send + Sync),
                     &'static (dyn accel::digest::MbedtlsSha384 + Send + Sync),
@@ -155,9 +160,10 @@ impl<'d> Tls<'d> {
         self
     }
 
+    #[cfg(feature = "accel-sha512")]
     pub fn with_sha512(self, sha512: &'d (dyn accel::digest::MbedtlsSha512 + Send + Sync)) -> Self {
         critical_section::with(|cs| {
-            accel::digest::SHA512.borrow(cs).replace(Some(unsafe {
+            accel::digest::sha512::alt::SHA512.borrow(cs).replace(Some(unsafe {
                 core::mem::transmute::<
                     &'d (dyn accel::digest::MbedtlsSha512 + Send + Sync),
                     &'static (dyn accel::digest::MbedtlsSha512 + Send + Sync),
@@ -168,12 +174,13 @@ impl<'d> Tls<'d> {
         self
     }
 
+    #[cfg(feature = "accel-exp-mod")]
     pub fn with_exp_mod(
         self,
         exp_mod: &'d (dyn accel::exp_mod::MbedtlsMpiExpMod + Send + Sync),
     ) -> Self {
         critical_section::with(|cs| {
-            accel::exp_mod::EXP_MOD.borrow(cs).replace(Some(unsafe {
+            accel::exp_mod::alt::EXP_MOD.borrow(cs).replace(Some(unsafe {
                 core::mem::transmute::<
                     &'d (dyn accel::exp_mod::MbedtlsMpiExpMod + Send + Sync),
                     &'static (dyn accel::exp_mod::MbedtlsMpiExpMod + Send + Sync),
@@ -189,28 +196,34 @@ impl<'d> Tls<'d> {
             *RNG.borrow(cs).borrow_mut() = None;
         });
 
+        #[cfg(feature = "accel-sha1")]
         critical_section::with(|cs| {
-            accel::digest::SHA1.borrow(cs).replace(None);
+            accel::digest::sha1::alt::SHA1.borrow(cs).replace(None);
         });
 
+        #[cfg(feature = "accel-sha256")]
         critical_section::with(|cs| {
-            accel::digest::SHA224.borrow(cs).replace(None);
+            accel::digest::sha256::alt::SHA224.borrow(cs).replace(None);
         });
 
+        #[cfg(feature = "accel-sha256")]
         critical_section::with(|cs| {
-            accel::digest::SHA256.borrow(cs).replace(None);
+            accel::digest::sha256::alt::SHA256.borrow(cs).replace(None);
         });
 
+        #[cfg(feature = "accel-sha512")]
         critical_section::with(|cs| {
-            accel::digest::SHA384.borrow(cs).replace(None);
+            accel::digest::sha512::alt::SHA384.borrow(cs).replace(None);
         });
 
+        #[cfg(feature = "accel-sha512")]
         critical_section::with(|cs| {
-            accel::digest::SHA512.borrow(cs).replace(None);
+            accel::digest::sha512::alt::SHA512.borrow(cs).replace(None);
         });
 
+        #[cfg(feature = "accel-exp-mod")]
         critical_section::with(|cs| {
-            accel::exp_mod::EXP_MOD.borrow(cs).replace(None);
+            accel::exp_mod::alt::EXP_MOD.borrow(cs).replace(None);
         });
     }
 
@@ -570,14 +583,15 @@ unsafe extern "C" fn mbedtls_platform_zeroize(dst: *mut c_uchar, len: u32) {
     }
 }
 
-#[cfg(feature = "esp32c6")]
-#[no_mangle]
-unsafe extern "C" fn memchr(ptr: *const u8, ch: u8, count: usize) -> *const u8 {
-    for i in 0..count {
-        if ptr.add(i).read() == ch {
-            return ptr.add(i);
-        }
-    }
+// TODO
+// #[cfg(feature = "esp32c6")]
+// #[no_mangle]
+// unsafe extern "C" fn memchr(ptr: *const u8, ch: u8, count: usize) -> *const u8 {
+//     for i in 0..count {
+//         if ptr.add(i).read() == ch {
+//             return ptr.add(i);
+//         }
+//     }
 
-    return core::ptr::null();
-}
+//     return core::ptr::null();
+// }

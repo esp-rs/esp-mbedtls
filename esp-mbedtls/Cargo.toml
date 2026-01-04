@@ -9,18 +9,19 @@ rust-version = "1.84"
 harness = false
 
 [features]
-default = ["edge-nal", "esp32s3"]
-esp32 = ["esp-hal/esp32", "esp-mbedtls-sys/esp32"]
-esp32c3 = ["esp-hal/esp32c3", "esp-mbedtls-sys/esp32c3"]
-esp32c6 = ["esp-hal/esp32c6", "esp-mbedtls-sys/esp32c6"]
-esp32s2 = ["esp-hal/esp32s2", "esp-mbedtls-sys/esp32s2"]
-esp32s3 = ["esp-hal/esp32s3", "esp-mbedtls-sys/esp32s3"]
-
-# Enable dependencies related to esp-hal (baremetal)
-esp-hal = ["dep:esp-hal", "crypto-bigint"]
+default = ["accel", "edge-nal"]
+# Enable HW acceleration for the ESP series of MCUs via `esp-hal`
+esp = ["dep:esp-hal", "crypto-bigint", "accel"]
+force-generate-bindings = ["esp-mbedtls-sys/force-generate-bindings"]
+force-esp-riscv-toolchain = ["esp-mbedtls-sys/force-esp-riscv-toolchain"]
+accel = ["accel-sha1", "accel-sha256", "accel-sha512", "accel-exp-mod", "esp-mbedtls-sys/accel"]
+accel-sha1 = ["esp-mbedtls-sys/accel-sha1"]
+accel-sha256 = ["esp-mbedtls-sys/accel-sha256"]
+accel-sha512 = ["esp-mbedtls-sys/accel-sha512"]
+accel-exp-mod = ["esp-mbedtls-sys/accel-exp-mod"]
 
 [dependencies]
-esp-mbedtls-sys = { path = "../esp-mbedtls-sys" }
+esp-mbedtls-sys = { path = "../esp-mbedtls-sys", default-features = false }
 defmt = { version = "1", optional = true }
 log = { version = "0.4", default-features = false, optional = true }
 embedded-io = { version = "0.7" }

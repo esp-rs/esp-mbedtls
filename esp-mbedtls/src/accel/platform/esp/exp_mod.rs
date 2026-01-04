@@ -1,5 +1,3 @@
-#![allow(non_snake_case)]
-
 use core::ffi::c_int;
 
 #[cfg(not(any(feature = "esp32c3", feature = "esp32c6")))]

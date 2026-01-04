@@ -10,9 +10,9 @@ pub use sha1::*;
 pub use sha256::*;
 pub use sha512::*;
 
-mod sha1;
-mod sha256;
-mod sha512;
+pub(crate) mod sha1;
+pub(crate) mod sha256;
+pub(crate) mod sha512;
 
 pub trait MbedtlsDigest {
     fn output_size(&self, work_area: &[u8]) -> usize;
