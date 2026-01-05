@@ -71,6 +71,7 @@ async fn main(_s: Spawner) {
     let _rsa_backend = rsa.start();
 
     static SHA1: accel_digest::EspSha1 = accel_digest::EspSha1::new();
+    #[cfg(not(feature = "esp32"))]
     static SHA224: accel_digest::EspSha224 = accel_digest::EspSha224::new();
     static SHA256: accel_digest::EspSha256 = accel_digest::EspSha256::new();
     #[cfg(any(feature = "esp32", feature = "esp32s2", feature = "esp32s3"))]
@@ -82,6 +83,7 @@ async fn main(_s: Spawner) {
 
     unsafe {
         digest::hook_sha1(Some(&SHA1));
+        #[cfg(not(feature = "esp32"))]
         digest::hook_sha224(Some(&SHA224));
         digest::hook_sha256(Some(&SHA256));
         #[cfg(any(feature = "esp32", feature = "esp32s2", feature = "esp32s3"))]
@@ -143,7 +145,7 @@ fn run_tests(hw_accel: bool, summary: &mut [u64]) {
         let mut test_name = heapless::String::<14>::new();
         write!(&mut test_name, "{:?}", test).unwrap();
 
-        info!("Test {:14} took {:?} cycles", test_name, cycles);
+        info!("Test {:14} took {:17?} cycles", test_name, cycles);
 
         summary[test as usize] = cycles;
     }

@@ -21,7 +21,7 @@ pub enum Hook {
 
 /// The MbedTLS builder
 pub struct MbedtlsBuilder {
-    hook: EnumSet<Hook>,
+    hooks: EnumSet<Hook>,
     crate_root_path: PathBuf,
     cmake_configurer: CMakeConfigurer,
     clang_path: Option<PathBuf>,
@@ -33,7 +33,7 @@ impl MbedtlsBuilder {
     /// Create a new MbedtlsBuilder
     ///
     /// Arguments:
-    /// - `hook` - Set of algorithm hooks to enable
+    /// - `hooks` - Set of algorithm hooks to enable
     /// - `crate_root_path`: Path to the root of the crate
     /// - `cmake_rust_target`: Optional target for CMake when building Openthread, with Rust target-triple syntax. If not specified, the "TARGET" env variable will be used
     /// - `cmake_host_rust_target`: Optional host target for the build
@@ -46,7 +46,7 @@ impl MbedtlsBuilder {
     ///   (https://github.com/riscv-collab/riscv-gnu-toolchain)
     #[allow(clippy::too_many_arguments)]
     pub fn new(
-        hook: EnumSet<Hook>,
+        hooks: EnumSet<Hook>,
         force_clang: bool,
         crate_root_path: PathBuf,
         cmake_rust_target: Option<String>,
@@ -57,7 +57,7 @@ impl MbedtlsBuilder {
         force_esp_riscv_toolchain: bool,
     ) -> Self {
         Self {
-            hook,
+            hooks,
             cmake_configurer: CMakeConfigurer::new(
                 force_clang,
                 crate_root_path.join("mbedtls"),
@@ -156,8 +156,14 @@ impl MbedtlsBuilder {
             builder = builder.clang_arg(format!("--target={target}"));
         }
 
-        for hook in self.hooks() {
-            builder = builder.clang_arg(format!("-D{hook}"));
+        for hook in self.hooks {
+            let def = self.hook_def(hook);
+
+            builder = builder.clang_arg(format!("-D{def}"));
+
+            if let Some(size_def) = self.hook_work_area_size_def(hook) {
+                builder = builder.clang_arg(format!("-D{def}_WORK_AREA_SIZE={size_def}"));
+            }
         }
 
         let bindings = builder
@@ -200,7 +206,7 @@ impl MbedtlsBuilder {
         std::fs::create_dir_all(lib_dir)?;
 
         // Compile OpenThread and generate libraries to link against
-        log::info!("Compiling MbedTLS with accel {:?}", self.hook);
+        log::info!("Compiling MbedTLS with accel {:?}", self.hooks);
 
         let mut config = self.cmake_configurer.configure(Some(lib_dir));
 
@@ -228,10 +234,16 @@ impl MbedtlsBuilder {
             .profile("Release")
             .out_dir(&target_dir);
 
-        for hook in self.hooks() {
-            config
-                .cflag(format!("-D{hook}"))
-                .cxxflag(format!("-D{hook}"));
+        for hook in self.hooks {
+            let def = self.hook_def(hook);
+
+            config.cflag(format!("-D{def}")).cxxflag(format!("-D{def}"));
+
+            if let Some(size_def) = self.hook_work_area_size_def(hook) {
+                config
+                    .cflag(format!("-D{def}_WORK_AREA_SIZE={size_def}"))
+                    .cxxflag(format!("-D{def}_WORK_AREA_SIZE={size_def}"));
+            }
         }
 
         config.build();
@@ -245,26 +257,32 @@ impl MbedtlsBuilder {
         println!("cargo:rerun-if-changed={}", file_or_dir.display())
     }
 
-    fn hooks(&self) -> Vec<&'static str> {
-        let mut hooks = Vec::new();
-
-        if self.hook.contains(Hook::Sha1) {
-            hooks.push("MBEDTLS_SHA1_ALT");
+    fn hook_def(&self, hook: Hook) -> &'static str {
+        match hook {
+            Hook::Sha1 => "MBEDTLS_SHA1_ALT",
+            Hook::Sha256 => "MBEDTLS_SHA256_ALT",
+            Hook::Sha512 => "MBEDTLS_SHA512_ALT",
+            Hook::ExpMod => "MBEDTLS_MPI_EXP_MOD_ALT_FALLBACK",
         }
+    }
 
-        if self.hook.contains(Hook::Sha256) {
-            hooks.push("MBEDTLS_SHA256_ALT");
+    fn hook_work_area_size_def(&self, hook: Hook) -> Option<usize> {
+        if self.cmake_configurer.target() == "xtensa-esp32-none-elf" {
+            // esp32 needs copuous amounts of RAM for the accel algorithms
+            match hook {
+                Hook::Sha1 => Some(400),
+                Hook::Sha256 => Some(400),
+                Hook::Sha512 => Some(500),
+                _ => None,
+            }
+        } else {
+            match hook {
+                Hook::Sha1 => Some(200),
+                Hook::Sha256 => Some(200),
+                Hook::Sha512 => Some(300),
+                _ => None,
+            }
         }
-
-        if self.hook.contains(Hook::Sha512) {
-            hooks.push("MBEDTLS_SHA512_ALT");
-        }
-
-        if self.hook.contains(Hook::ExpMod) {
-            hooks.push("MBEDTLS_MPI_EXP_MOD_ALT_FALLBACK");
-        }
-
-        hooks
     }
 
     /// A heuristics (we don't have anything better) to signal to `bindgen` whether the GCC toolchain

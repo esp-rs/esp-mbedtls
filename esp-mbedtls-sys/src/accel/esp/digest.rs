@@ -1,6 +1,6 @@
 //! Digest implementations using ESP32 hardware acceleration.
 
-use crate::hook::digest::{MbedtlsSha1, MbedtlsSha224, MbedtlsSha256, RustCryptoDigest};
+use crate::hook::digest::{MbedtlsSha1, MbedtlsSha256, RustCryptoDigest};
 
 /// SHA-1 digest implementation using ESP32 hardware acceleration.
 ///
@@ -11,6 +11,7 @@ pub type EspSha1 = RustCryptoDigest<esp_hal::sha::Sha1Context>;
 ///
 /// Essentially, a specialization of the `RustCryptoDigest` MbedTLS hook
 /// for the `esp-hal`-specific hardware accelerated sha224 impl that implements the RustCrypto `Digest` trait.
+#[cfg(not(any(feature = "accel-esp32")))]
 pub type EspSha224 = RustCryptoDigest<esp_hal::sha::Sha224Context>;
 /// SHA-256 digest implementation using ESP32 hardware acceleration.
 ///
@@ -39,7 +40,8 @@ pub type EspSha384 = RustCryptoDigest<esp_hal::sha::Sha384Context>;
 pub type EspSha512 = RustCryptoDigest<esp_hal::sha::Sha512Context>;
 
 impl MbedtlsSha1 for EspSha1 {}
-impl MbedtlsSha224 for EspSha224 {}
+#[cfg(not(any(feature = "accel-esp32")))]
+impl crate::hook::digest::MbedtlsSha224 for EspSha224 {}
 impl MbedtlsSha256 for EspSha256 {}
 #[cfg(any(
     feature = "accel-esp32",

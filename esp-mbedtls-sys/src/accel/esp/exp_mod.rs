@@ -8,7 +8,9 @@ use core::ffi::c_int;
     feature = "accel-esp32h2"
 )))]
 use crypto_bigint::U4096;
-use crypto_bigint::{U1024, U2048, U256, U384, U512};
+use crypto_bigint::{U1024, U2048, U512};
+#[cfg(not(feature = "accel-esp32"))]
+use crypto_bigint::{U256, U384};
 
 use crate::{
     mbedtls_mpi, mbedtls_mpi_add_mpi, mbedtls_mpi_cmp_int, mbedtls_mpi_exp_mod_soft,
@@ -19,6 +21,11 @@ use crate::{
 use esp_hal::rsa::{operand_sizes, RsaContext};
 
 use crate::hook::exp_mod::MbedtlsMpiExpMod;
+
+#[cfg(not(feature = "accel-esp32"))]
+const SOC_RSA_MIN_BIT_LEN: usize = 256;
+#[cfg(feature = "accel-esp32")]
+const SOC_RSA_MIN_BIT_LEN: usize = 512;
 
 #[cfg(not(any(
     feature = "accel-esp32c3",
@@ -53,7 +60,9 @@ macro_rules! modular_exponentiate {
 
         let mut rsa = RsaContext::new();
 
+        #[cfg(not(feature = "accel-esp32"))]
         rsa.enable_acceleration();
+        #[cfg(not(feature = "accel-esp32"))]
         rsa.enable_search_acceleration();
 
         let mut base = [0u32; OP_SIZE];
@@ -158,7 +167,7 @@ impl MbedtlsMpiExpMod for EspExpMod {
         // cardinal length of operation
         let num_words = Self::calculate_hw_words(m_words.max(x_words.max(y_words)));
 
-        if num_words * 32 > SOC_RSA_MAX_BIT_LEN {
+        if num_words * 32 < SOC_RSA_MIN_BIT_LEN || num_words * 32 > SOC_RSA_MAX_BIT_LEN {
             unsafe {
                 mbedtls_mpi_exp_mod_soft(
                     z,
@@ -211,6 +220,7 @@ impl MbedtlsMpiExpMod for EspExpMod {
         err!(unsafe { mbedtls_mpi_grow(z, m_words) });
 
         match num_words {
+            #[cfg(not(feature = "accel-esp32"))]
             U256::LIMBS => modular_exponentiate!(
                 operand_sizes::Op256,
                 x,
@@ -223,6 +233,7 @@ impl MbedtlsMpiExpMod for EspExpMod {
                 m_words,
                 U256::LIMBS
             ),
+            #[cfg(not(feature = "accel-esp32"))]
             U384::LIMBS => modular_exponentiate!(
                 operand_sizes::Op384,
                 x,
