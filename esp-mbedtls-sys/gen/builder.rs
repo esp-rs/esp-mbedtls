@@ -6,16 +6,22 @@ use bindgen::Builder;
 use cmake::Config;
 use enumset::{EnumSet, EnumSetType};
 
+/// What hooks to install in MbedTLS
 #[derive(EnumSetType, Debug)]
-pub enum Accel {
+pub enum Hook {
+    /// SHA-1
     Sha1,
+    /// SHA-224 and SHA-256
     Sha256,
+    /// SHA-384 and SHA-512
     Sha512,
+    /// MPI modular exponentiation
     ExpMod,
 }
 
+/// The MbedTLS builder
 pub struct MbedtlsBuilder {
-    accel: EnumSet<Accel>,
+    hook: EnumSet<Hook>,
     crate_root_path: PathBuf,
     cmake_configurer: CMakeConfigurer,
     clang_path: Option<PathBuf>,
@@ -27,7 +33,7 @@ impl MbedtlsBuilder {
     /// Create a new MbedtlsBuilder
     ///
     /// Arguments:
-    /// - `accel` - Set of hardware accelerations to enable
+    /// - `hook` - Set of algorithm hooks to enable
     /// - `crate_root_path`: Path to the root of the crate
     /// - `cmake_rust_target`: Optional target for CMake when building Openthread, with Rust target-triple syntax. If not specified, the "TARGET" env variable will be used
     /// - `cmake_host_rust_target`: Optional host target for the build
@@ -40,7 +46,7 @@ impl MbedtlsBuilder {
     ///   (https://github.com/riscv-collab/riscv-gnu-toolchain)
     #[allow(clippy::too_many_arguments)]
     pub fn new(
-        accel: EnumSet<Accel>,
+        hook: EnumSet<Hook>,
         force_clang: bool,
         crate_root_path: PathBuf,
         cmake_rust_target: Option<String>,
@@ -48,10 +54,10 @@ impl MbedtlsBuilder {
         clang_path: Option<PathBuf>,
         clang_sysroot_path: Option<PathBuf>,
         clang_target: Option<String>,
-        force_esp_riscv_toolchain: bool,    
+        force_esp_riscv_toolchain: bool,
     ) -> Self {
         Self {
-            accel,
+            hook,
             cmake_configurer: CMakeConfigurer::new(
                 force_clang,
                 crate_root_path.join("mbedtls"),
@@ -63,7 +69,8 @@ impl MbedtlsBuilder {
             crate_root_path,
             clang_path,
             clang_sysroot_path,
-            clang_target,        }
+            clang_target,
+        }
     }
 
     /// Generate bindings for esp-mbedtls-sys
@@ -86,7 +93,7 @@ impl MbedtlsBuilder {
             // Necessary for bindgen. See this:
             // https://github.com/rust-lang/rust-bindgen/blob/af7fd38d5e80514406fb6a8bba2d407d252c30b9/bindgen/lib.rs#L711
             std::env::set_var("TARGET", cmake_rust_target);
-        }        
+        }
 
         let canon = |path: &Path| {
             // TODO: Is this really necessary?
@@ -122,15 +129,17 @@ impl MbedtlsBuilder {
             .clang_args([
                 &format!(
                     "-I{}",
-                    canon(&self.crate_root_path.join("mbedtls").join("include"))),
+                    canon(&self.crate_root_path.join("mbedtls").join("include"))
+                ),
                 &format!(
                     "-I{}",
-                    canon(&self.crate_root_path.join("gen").join("include"))),
+                    canon(&self.crate_root_path.join("gen").join("include"))
+                ),
             ]);
 
         if self.short_enums() {
             builder = builder.clang_arg("-fshort-enums");
-        }            
+        }
 
         if let Some(sysroot_path) = self
             .clang_sysroot_path
@@ -141,10 +150,14 @@ impl MbedtlsBuilder {
                 &format!("-I{}", canon(&sysroot_path.join("include"))),
                 &format!("--sysroot={}", canon(&sysroot_path)),
             ]);
-        }        
+        }
 
         if let Some(target) = &self.clang_target {
             builder = builder.clang_arg(format!("--target={target}"));
+        }
+
+        for hook in self.hooks() {
+            builder = builder.clang_arg(format!("-D{hook}"));
         }
 
         let bindings = builder
@@ -187,7 +200,7 @@ impl MbedtlsBuilder {
         std::fs::create_dir_all(lib_dir)?;
 
         // Compile OpenThread and generate libraries to link against
-        log::info!("Compiling MbedTLS with accel {:?}", self.accel);
+        log::info!("Compiling MbedTLS with accel {:?}", self.hook);
 
         let mut config = self.cmake_configurer.configure(Some(lib_dir));
 
@@ -206,54 +219,52 @@ impl MbedtlsBuilder {
                     .join("include")
                     .join("config.h"),
             )
-            // .define(
-            //     "CMAKE_TOOLCHAIN_FILE",
-            //     self.crate_root_path
-            //         .join("gen")
-            //         .join("toolchains")
-            //         .join(format!("toolchain-clang-{}.cmake", self.arch)),
-            // )
             .cflag(format!(
                 "-I{}",
-                self.crate_root_path
-                    .join("gen")
-                    .join("include")
-                    .display()
+                self.crate_root_path.join("gen").join("include").display()
             ))
             .cflag("-DMBEDTLS_CONFIG_FILE='<config.h>'")
             .cxxflag("-DMBEDTLS_CONFIG_FILE='<config.h>'")
             .profile("Release")
             .out_dir(&target_dir);
 
-        // if let Some(target) = &self.cmake_target {
-        //     config.target(target);
-        // }
-
-        // if let Some(host) = &self.host {
-        //     config.host(host);
-        // }
+        for hook in self.hooks() {
+            config
+                .cflag(format!("-D{hook}"))
+                .cxxflag(format!("-D{hook}"));
+        }
 
         config.build();
 
-        Ok(lib_dir.to_path_buf())   
-        // let lib_dir = target_dir.join("lib");
-
-        // if let Some(copy_path) = copy_path {
-        //     log::info!("Copying mbedtls libraries to {}", copy_path.display());
-        //     std::fs::create_dir_all(copy_path)?;
-
-        //     for file in ["libmbedcrypto.a", "libmbedx509.a", "libmbedtls.a"] {
-        //         std::fs::copy(lib_dir.join(file), copy_path.join(file))?;
-        //     }
-        // }
-
-        // Ok(lib_dir)
+        Ok(lib_dir.to_path_buf())
     }
 
     /// Re-run the build script if the file or directory has changed.
     #[allow(unused)]
     pub fn track(file_or_dir: &Path) {
         println!("cargo:rerun-if-changed={}", file_or_dir.display())
+    }
+
+    fn hooks(&self) -> Vec<&'static str> {
+        let mut hooks = Vec::new();
+
+        if self.hook.contains(Hook::Sha1) {
+            hooks.push("MBEDTLS_SHA1_ALT");
+        }
+
+        if self.hook.contains(Hook::Sha256) {
+            hooks.push("MBEDTLS_SHA256_ALT");
+        }
+
+        if self.hook.contains(Hook::Sha512) {
+            hooks.push("MBEDTLS_SHA512_ALT");
+        }
+
+        if self.hook.contains(Hook::ExpMod) {
+            hooks.push("MBEDTLS_MPI_EXP_MOD_ALT_FALLBACK");
+        }
+
+        hooks
     }
 
     /// A heuristics (we don't have anything better) to signal to `bindgen` whether the GCC toolchain
@@ -422,12 +433,15 @@ impl CMakeConfigurer {
             Some((PathBuf::from("clang"), false))
         } else {
             match self.target().as_str() {
-                "xtensa-esp32-none-elf"
-                | "xtensa-esp32-espidf" => Some((PathBuf::from("xtensa-esp32-elf-gcc"), true)),
-                | "xtensa-esp32s2-none-elf"
-                | "xtensa-esp32s2-espidf" => Some((PathBuf::from("xtensa-esp32s2-elf-gcc"), true)),
-                | "xtensa-esp32s3-none-elf"
-                | "xtensa-esp32s3-espidf" => Some((PathBuf::from("xtensa-esp32s3-elf-gcc"), true)),
+                "xtensa-esp32-none-elf" | "xtensa-esp32-espidf" => {
+                    Some((PathBuf::from("xtensa-esp32-elf-gcc"), true))
+                }
+                "xtensa-esp32s2-none-elf" | "xtensa-esp32s2-espidf" => {
+                    Some((PathBuf::from("xtensa-esp32s2-elf-gcc"), true))
+                }
+                "xtensa-esp32s3-none-elf" | "xtensa-esp32s3-espidf" => {
+                    Some((PathBuf::from("xtensa-esp32s3-elf-gcc"), true))
+                }
                 "riscv32imc-unknown-none-elf"
                 | "riscv32imc-esp-espidf"
                 | "riscv32imac-unknown-none-elf"
@@ -450,13 +464,15 @@ impl CMakeConfigurer {
             match self.target().as_str() {
                 "riscv32imc-unknown-none-elf" | "riscv32imc-esp-espidf" => {
                     &["--target=riscv32-esp-elf", "-march=rv32imc", "-mabi=ilp32"]
-                },
+                }
                 "riscv32imac-unknown-none-elf" | "riscv32imac-esp-espidf" => {
                     &["--target=riscv32-esp-elf", "-march=rv32imac", "-mabi=ilp32"]
-                },
-                "riscv32imafc-unknown-none-elf" | "riscv32imafc-esp-espidf" => {
-                    &["--target=riscv32-esp-elf", "-march=rv32imafc", "-mabi=ilp32"]
-                },
+                }
+                "riscv32imafc-unknown-none-elf" | "riscv32imafc-esp-espidf" => &[
+                    "--target=riscv32-esp-elf",
+                    "-march=rv32imafc",
+                    "-mabi=ilp32",
+                ],
                 "xtensa-esp32-none-elf" | "xtensa-esp32-espidf" => {
                     &["--target=xtensa-esp-elf", "-mcpu=esp32"]
                 }
@@ -467,27 +483,21 @@ impl CMakeConfigurer {
                     &["--target=xtensa-esp-elf", "-mcpu=esp32s3"]
                 }
                 _ => &[],
-            }            
+            }
         } else {
             match self.target().as_str() {
                 "riscv32imc-unknown-none-elf" | "riscv32imc-esp-espidf" => {
                     &["-march=rv32imc", "-mabi=ilp32"]
-                },
+                }
                 "riscv32imac-unknown-none-elf" | "riscv32imac-esp-espidf" => {
                     &["-march=rv32imac", "-mabi=ilp32"]
-                },
+                }
                 "riscv32imafc-unknown-none-elf" | "riscv32imafc-esp-espidf" => {
                     &["-march=rv32imafc", "-mabi=ilp32"]
-                },
-                "xtensa-esp32-none-elf" | "xtensa-esp32-espidf" => {
-                    &[]
                 }
-                "xtensa-esp32s2-none-elf" | "xtensa-esp32s2-espidf" => {
-                    &[]
-                }
-                "xtensa-esp32s3-none-elf" | "xtensa-esp32s3-espidf" => {
-                    &[]
-                }
+                "xtensa-esp32-none-elf" | "xtensa-esp32-espidf" => &[],
+                "xtensa-esp32s2-none-elf" | "xtensa-esp32s2-espidf" => &[],
+                "xtensa-esp32s3-none-elf" | "xtensa-esp32s3-espidf" => &[],
                 _ => &[],
             }
         }

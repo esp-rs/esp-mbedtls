@@ -21,7 +21,6 @@ pub use session::*;
 
 pub(crate) mod fmt; // MUST be the first so that the other modules can see it
 
-pub mod accel;
 mod cert;
 #[cfg(feature = "edge-nal")]
 mod edge_nal;
@@ -104,126 +103,9 @@ impl<'d> Tls<'d> {
         })
     }
 
-    #[cfg(feature = "accel-sha1")]
-    pub fn with_sha1(self, sha1: &'d (dyn accel::digest::MbedtlsSha1 + Send + Sync)) -> Self {
-        critical_section::with(|cs| {
-            accel::digest::sha1::alt::SHA1.borrow(cs).replace(Some(unsafe {
-                core::mem::transmute::<
-                    &'d (dyn accel::digest::MbedtlsSha1 + Send + Sync),
-                    &'static (dyn accel::digest::MbedtlsSha1 + Send + Sync),
-                >(sha1)
-            }));
-        });
-
-        self
-    }
-
-    #[cfg(feature = "accel-sha256")]
-    pub fn with_sha224(self, sha224: &'d (dyn accel::digest::MbedtlsSha224 + Send + Sync)) -> Self {
-        critical_section::with(|cs| {
-            accel::digest::sha256::alt::SHA224.borrow(cs).replace(Some(unsafe {
-                core::mem::transmute::<
-                    &'d (dyn accel::digest::MbedtlsSha224 + Send + Sync),
-                    &'static (dyn accel::digest::MbedtlsSha224 + Send + Sync),
-                >(sha224)
-            }));
-        });
-
-        self
-    }
-
-    #[cfg(feature = "accel-sha256")]
-    pub fn with_sha256(self, sha256: &'d (dyn accel::digest::MbedtlsSha256 + Send + Sync)) -> Self {
-        critical_section::with(|cs| {
-            accel::digest::sha256::alt::SHA256.borrow(cs).replace(Some(unsafe {
-                core::mem::transmute::<
-                    &'d (dyn accel::digest::MbedtlsSha256 + Send + Sync),
-                    &'static (dyn accel::digest::MbedtlsSha256 + Send + Sync),
-                >(sha256)
-            }));
-        });
-
-        self
-    }
-
-    #[cfg(feature = "accel-sha512")]
-    pub fn with_sha384(self, sha384: &'d (dyn accel::digest::MbedtlsSha384 + Send + Sync)) -> Self {
-        critical_section::with(|cs| {
-            accel::digest::sha512::alt::SHA384.borrow(cs).replace(Some(unsafe {
-                core::mem::transmute::<
-                    &'d (dyn accel::digest::MbedtlsSha384 + Send + Sync),
-                    &'static (dyn accel::digest::MbedtlsSha384 + Send + Sync),
-                >(sha384)
-            }));
-        });
-
-        self
-    }
-
-    #[cfg(feature = "accel-sha512")]
-    pub fn with_sha512(self, sha512: &'d (dyn accel::digest::MbedtlsSha512 + Send + Sync)) -> Self {
-        critical_section::with(|cs| {
-            accel::digest::sha512::alt::SHA512.borrow(cs).replace(Some(unsafe {
-                core::mem::transmute::<
-                    &'d (dyn accel::digest::MbedtlsSha512 + Send + Sync),
-                    &'static (dyn accel::digest::MbedtlsSha512 + Send + Sync),
-                >(sha512)
-            }));
-        });
-
-        self
-    }
-
-    #[cfg(feature = "accel-exp-mod")]
-    pub fn with_exp_mod(
-        self,
-        exp_mod: &'d (dyn accel::exp_mod::MbedtlsMpiExpMod + Send + Sync),
-    ) -> Self {
-        critical_section::with(|cs| {
-            accel::exp_mod::alt::EXP_MOD.borrow(cs).replace(Some(unsafe {
-                core::mem::transmute::<
-                    &'d (dyn accel::exp_mod::MbedtlsMpiExpMod + Send + Sync),
-                    &'static (dyn accel::exp_mod::MbedtlsMpiExpMod + Send + Sync),
-                >(exp_mod)
-            }));
-        });
-
-        self
-    }
-
     pub(crate) fn release(&mut self) {
         critical_section::with(|cs| {
             *RNG.borrow(cs).borrow_mut() = None;
-        });
-
-        #[cfg(feature = "accel-sha1")]
-        critical_section::with(|cs| {
-            accel::digest::sha1::alt::SHA1.borrow(cs).replace(None);
-        });
-
-        #[cfg(feature = "accel-sha256")]
-        critical_section::with(|cs| {
-            accel::digest::sha256::alt::SHA224.borrow(cs).replace(None);
-        });
-
-        #[cfg(feature = "accel-sha256")]
-        critical_section::with(|cs| {
-            accel::digest::sha256::alt::SHA256.borrow(cs).replace(None);
-        });
-
-        #[cfg(feature = "accel-sha512")]
-        critical_section::with(|cs| {
-            accel::digest::sha512::alt::SHA384.borrow(cs).replace(None);
-        });
-
-        #[cfg(feature = "accel-sha512")]
-        critical_section::with(|cs| {
-            accel::digest::sha512::alt::SHA512.borrow(cs).replace(None);
-        });
-
-        #[cfg(feature = "accel-exp-mod")]
-        critical_section::with(|cs| {
-            accel::exp_mod::alt::EXP_MOD.borrow(cs).replace(None);
         });
     }
 

@@ -1,10 +1,12 @@
+//! Modular exponentiation using ESP hardware acceleration.
+
 use core::ffi::c_int;
 
-#[cfg(not(any(feature = "esp32c3", feature = "esp32c6")))]
+#[cfg(not(any(feature = "accel-esp32c3", feature = "accel-esp32c6", feature = "accel-esp32h2")))]
 use crypto_bigint::U4096;
 use crypto_bigint::{U1024, U2048, U256, U384, U512};
 
-use esp_mbedtls_sys::{
+use crate::{
     mbedtls_mpi, mbedtls_mpi_add_mpi, mbedtls_mpi_cmp_int, mbedtls_mpi_exp_mod_soft,
     mbedtls_mpi_free, mbedtls_mpi_grow, mbedtls_mpi_init, mbedtls_mpi_lset, mbedtls_mpi_mod_mpi,
     mbedtls_mpi_set_bit,
@@ -12,21 +14,15 @@ use esp_mbedtls_sys::{
 
 use esp_hal::rsa::{operand_sizes, RsaContext};
 
-use crate::accel::exp_mod::MbedtlsMpiExpMod;
+use crate::hook::exp_mod::MbedtlsMpiExpMod;
 
-#[cfg(feature = "esp32")]
+#[cfg(not(any(feature = "accel-esp32c3", feature = "accel-esp32c6", feature = "accel-esp32h2")))]
 const SOC_RSA_MAX_BIT_LEN: usize = 4096;
-#[cfg(feature = "esp32c3")]
+#[cfg(any(feature = "accel-esp32c3", feature = "accel-esp32c6", feature = "accel-esp32h2"))]
 const SOC_RSA_MAX_BIT_LEN: usize = 3072;
-#[cfg(feature = "esp32c6")]
-const SOC_RSA_MAX_BIT_LEN: usize = 3072;
-#[cfg(feature = "esp32s2")]
-const SOC_RSA_MAX_BIT_LEN: usize = 4096;
-#[cfg(feature = "esp32s3")]
-const SOC_RSA_MAX_BIT_LEN: usize = 4096;
 
-/// Bad input parameters to function.
-const MBEDTLS_ERR_MPI_BAD_INPUT_DATA: c_int = -0x0004;
+// Bad input parameters to function.
+// TODO const MBEDTLS_ERR_MPI_BAD_INPUT_DATA: c_int = -0x0004;
 
 macro_rules! err {
     ($block:expr) => {{
@@ -75,9 +71,17 @@ macro_rules! modular_exponentiate {
     }};
 }
 
-pub struct EspModExp(());
+/// Modular exponentiation using ESP hardware acceleration.
+pub struct EspExpMod(());
 
-impl EspModExp {
+impl Default for EspExpMod {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl EspExpMod {
+    /// Create a new `EspExpMod` instance.
     pub const fn new() -> Self {
         Self(())
     }
@@ -89,9 +93,9 @@ impl EspModExp {
     const fn calculate_hw_words(words: usize) -> usize {
         // Round up number of words to nearest
         // 512 bit (16 word) block count.
-        #[cfg(feature = "esp32")]
+        #[cfg(feature = "accel-esp32")]
         return (words + 0xF) & !0xF;
-        #[cfg(not(feature = "esp32"))]
+        #[cfg(not(feature = "accel-esp32"))]
         words
     }
 
@@ -125,7 +129,7 @@ impl EspModExp {
     }
 }
 
-impl MbedtlsMpiExpMod for EspModExp {
+impl MbedtlsMpiExpMod for EspExpMod {
     fn exp_mod(
         &self,
         z: &mut mbedtls_mpi,
@@ -152,7 +156,7 @@ impl MbedtlsMpiExpMod for EspModExp {
                     prec_rr
                         .as_mut()
                         .map(|rr| *rr as *mut _)
-                        .unwrap_or(core::ptr::null_mut()),
+                        .unwrap_or_default(),
                 )
             };
         }
@@ -185,7 +189,7 @@ impl MbedtlsMpiExpMod for EspModExp {
 
         // Determine RR pointer, either _RR for cached value or local RR_new
         let rinv: &mut mbedtls_mpi = if let Some(prec_rr) = prec_rr.as_mut() {
-            *prec_rr
+            prec_rr
         } else {
             unsafe { mbedtls_mpi_init(&mut rinv_new) };
             &mut rinv_new
@@ -258,7 +262,7 @@ impl MbedtlsMpiExpMod for EspModExp {
                 m_words,
                 U2048::LIMBS
             ),
-            #[cfg(not(any(feature = "esp32c3", feature = "esp32c6")))]
+            #[cfg(not(any(feature = "accel-esp32c3", feature = "accel-esp32c6", feature = "accel-esp32h2")))]
             U4096::LIMBS => modular_exponentiate!(
                 operand_sizes::Op4096,
                 x,
@@ -271,12 +275,11 @@ impl MbedtlsMpiExpMod for EspModExp {
                 m_words,
                 U4096::LIMBS
             ),
-            op => {
-                unimplemented!("Implement operand: {}", op);
-            }
+            _ => unreachable!(),
         }
 
         assert_eq!(x.private_s, 1);
+
         // Compensate for negative X
         if x.private_s == -1 && unsafe { y.private_p.read() & 1 } != 0 {
             z.private_s = -1;
@@ -321,6 +324,7 @@ fn mpi_words(x: &mbedtls_mpi) -> usize {
     0
 }
 
+/// A fast copying of non-overlapping bytes from source to destination
 #[inline(always)]
 fn copy_bytes<T>(src: *const T, dst: *mut T, count: usize)
 where

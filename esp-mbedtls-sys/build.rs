@@ -3,7 +3,7 @@ use std::{env, path::PathBuf};
 use anyhow::Result;
 use enumset::EnumSet;
 
-use crate::builder::Accel;
+use crate::builder::Hook;
 
 #[path = "gen/builder.rs"]
 mod builder;
@@ -23,39 +23,47 @@ fn main() -> Result<()> {
         .join("src")
         .join("include")
         .join(format!("{target}.rs"));
-    let pregen_libs_dir = crate_root_path.join("libs").join(&target);            
+    let pregen_libs_dir = crate_root_path.join("libs").join(&target);
 
-    let dirs = if pregen_bindings && pregen_bindings_rs_file.exists() {
+    // Figure out what MbedTLS hook options (ALT modules) to enable
+    let mut hook = EnumSet::all();
+
+    if env::var("CARGO_FEATURE_NOHOOK_SHA1").is_ok() {
+        hook &= Hook::Sha1;
+    }
+
+    if env::var("CARGO_FEATURE_NOHOOK_SHA256").is_ok() {
+        hook &= Hook::Sha256;
+    }
+
+    if env::var("CARGO_FEATURE_NOHOOK_SHA512").is_ok() {
+        hook &= Hook::Sha512;
+    }
+
+    if env::var("CARGO_FEATURE_NOHOOK_EXP_MOD").is_ok() {
+        hook &= Hook::ExpMod;
+    }
+
+    let dirs = if pregen_bindings && pregen_bindings_rs_file.exists() && hook == EnumSet::all() {
         // Use the pre-generated bindings
         Some((pregen_bindings_rs_file, pregen_libs_dir))
     } else if target.ends_with("-espidf") {
         // Nothing to do for ESP-IDF, `esp-idf-sys` will do everything for us
         None
     } else {
+        if pregen_bindings_rs_file.exists() {
+            if pregen_bindings {
+                println!("cargo::warning=Forcing on-the-fly build for target {target}");
+            } else {
+                println!("cargo::warning=Forcing on-the-fly build for {target} because some or all hooks are disabled");
+            }
+        }
+
         // Need to do on-the-fly build and bindings' generation
         let out = PathBuf::from(env::var_os("OUT_DIR").unwrap());
 
-        // Figure out what MbedTLS HW acceleration options (ALT modules) to enable
-        let mut accel = EnumSet::empty();
-
-        if env::var("CARGO_FEATURE_ACCEL_SHA1").is_ok() {
-            accel |= Accel::Sha1;
-        }
-
-        if env::var("CARGO_FEATURE_ACCEL_SHA256").is_ok() {
-            accel |= Accel::Sha256;
-        }
-
-        if env::var("CARGO_FEATURE_ACCEL_SHA512").is_ok() {
-            accel |= Accel::Sha512;
-        }
-
-        if env::var("CARGO_FEATURE_ACCEL_EXP_MOD").is_ok() {
-            accel |= Accel::ExpMod;
-        }
-
         let builder = builder::MbedtlsBuilder::new(
-            accel,
+            hook,
             false,
             crate_root_path.clone(),
             Some(target),
@@ -94,7 +102,7 @@ fn main() -> Result<()> {
 
                 println!("cargo:rustc-link-lib=static={lib_name}");
             }
-        }        
+        }
     }
 
     Ok(())

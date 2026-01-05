@@ -1,8 +1,8 @@
-//! mbedTLS error representation and handling.
+//! MbedTLS error representation and handling.
 
 use core::fmt::{Debug, Display};
 
-/// Represents an error returned by the mbedTLS library.
+/// Represents an error returned by the MbedTLS library.
 #[derive(Copy, Clone, Eq, PartialEq, Hash)]
 pub struct MbedtlsError(i32);
 

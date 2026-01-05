@@ -1,6 +1,9 @@
+//! Hooking for MbedTLS Digest algorithms
+
 use core::ffi::{c_int, c_uchar};
 use core::marker::PhantomData;
 use core::ops::Deref;
+use core::ptr::drop_in_place;
 
 use digest::Digest;
 
@@ -10,21 +13,58 @@ pub use sha1::*;
 pub use sha256::*;
 pub use sha512::*;
 
-pub(crate) mod sha1;
-pub(crate) mod sha256;
-pub(crate) mod sha512;
+pub mod sha1;
+pub mod sha256;
+pub mod sha512;
 
+/// Trait representing a custom (hooked) MbedTLS Digest algorithm
 pub trait MbedtlsDigest {
+    /// Get the output size of the digest algorithm
+    ///
+    /// # Arguments
+    /// - `work_area` - The work area used by the digest algorithm
+    ///
+    /// # Returns
+    /// - The output size in bytes
     fn output_size(&self, work_area: &[u8]) -> usize;
 
+    /// Initialize the digest algorithm
+    ///
+    /// # Arguments
+    /// - `work_area` - The work area used by the digest algorithm
     fn init(&self, work_area: &mut [u8]);
 
+    /// Free the digest algorithm (i.e. execute drop-in-place)
+    ///
+    /// # Arguments
+    /// - `work_area` - The work area used by the digest algorithm
+    fn free(&self, work_area: &mut [u8]);
+
+    /// Reset the digest algorithm
+    ///
+    /// # Arguments
+    /// - `work_area` - The work area used by the digest algorithm
     fn reset(&self, work_area: &mut [u8]);
 
+    /// Update the digest algorithm with data
+    ///
+    /// # Arguments
+    /// - `work_area` - The work area used by the digest algorithm
+    /// - `data` - The data to update the digest with
     fn update(&self, work_area: &mut [u8], data: &[u8]);
 
+    /// Finish the digest algorithm and produce the output
+    ///
+    /// # Arguments
+    /// - `work_area` - The work area used by the digest algorithm
+    /// - `output` - The output buffer to write the digest to
     fn finish(&self, work_area: &mut [u8], output: &mut [u8]);
 
+    /// Clone the digest state from one work area to another
+    ///
+    /// # Arguments
+    /// - `src_work_area` - The source work area to clone from
+    /// - `dst_workarea` - The destination work area to clone to
     fn clone(&self, src_work_area: &[u8], dst_workarea: &mut [u8]);
 }
 
@@ -38,6 +78,10 @@ where
 
     fn init(&self, work_area: &mut [u8]) {
         self.deref().init(work_area);
+    }
+
+    fn free(&self, work_area: &mut [u8]) {
+        self.deref().free(work_area);
     }
 
     fn reset(&self, work_area: &mut [u8]) {
@@ -57,7 +101,16 @@ where
     }
 }
 
+/// MbedTLS Digest algorithm implementation that delegates
+/// to implementations based on the RustCrypto `Digest` trait
 pub struct RustCryptoDigest<T>(PhantomData<fn() -> T>);
+
+impl<T> RustCryptoDigest<T> {
+    /// Create a new `RustCryptoDigest` instance
+    pub const fn new() -> Self {
+        Self(PhantomData)
+    }
+}
 
 impl<T> Default for RustCryptoDigest<T> {
     fn default() -> Self {
@@ -65,15 +118,9 @@ impl<T> Default for RustCryptoDigest<T> {
     }
 }
 
-impl<T> RustCryptoDigest<T> {
-    pub const fn new() -> Self {
-        Self(PhantomData)
-    }
-}
-
 impl<T> MbedtlsDigest for RustCryptoDigest<T>
 where
-    T: Digest, /*Clone*/
+    T: Digest, /*+ Clone*/
 {
     fn output_size(&self, _work_area: &[u8]) -> usize {
         <T as Digest>::output_size()
@@ -81,6 +128,16 @@ where
 
     fn init(&self, work_area: &mut [u8]) {
         unsafe { work_area.cast_mut_maybe::<Option<T>>() }.write(Some(T::new()));
+    }
+
+    fn free(&self, work_area: &mut [u8]) {
+        let ptr = unsafe { work_area.cast_mut::<Option<T>>() } as *mut _;
+
+        unsafe {
+            drop_in_place(ptr);
+        }
+
+        work_area.fill(0);
     }
 
     fn reset(&self, work_area: &mut [u8]) {
@@ -121,7 +178,7 @@ unsafe fn digest_init<T: WorkArea>(algo: &dyn MbedtlsDigest, work_area: *mut T) 
 
 #[inline(always)]
 unsafe fn digest_free<T: WorkArea>(algo: &dyn MbedtlsDigest, work_area: *mut T) {
-    algo.reset(work_area.as_mut().unwrap().area_mut());
+    algo.free(work_area.as_mut().unwrap().area_mut());
 }
 
 #[inline(always)]

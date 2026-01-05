@@ -1,8 +1,20 @@
+//! Hook for mbedtls_mpi_exp_mod
+
 use core::ops::Deref;
 
-use esp_mbedtls_sys::mbedtls_mpi;
+use crate::mbedtls_mpi;
 
+/// Trait representing a custom (hooked) MbedTLS modular exponentiation function
+/// Z = X ^ Y mod M
 pub trait MbedtlsMpiExpMod {
+    /// Perform modular exponentiation
+    ///
+    /// # Arguments
+    /// - `z` - The result of the modular exponentiation
+    /// - `x` - The base
+    /// - `y` - The exponent
+    /// - `m` - The modulus
+    /// - `prec_rr` - Optional precomputed value for optimization
     fn exp_mod(
         &self,
         z: &mut mbedtls_mpi,
@@ -30,14 +42,28 @@ where
     }
 }
 
-#[cfg(feature = "accel-exp-mod")]
-pub(crate) mod alt {
+/// Hook the modular exponentiation function
+///
+/// # Safety
+/// - This function is unsafe because it modifies global state that affects
+///   the behavior of MbedTLS. The caller MUST call this hook BEFORE
+///   any MbedTLS functions that use modular exponentiation, and ensure that the
+///   `exp_mod` implementation is valid for the duration of its use.
+#[cfg(not(feature = "nohook-exp-mod"))]
+pub unsafe fn hook_exp_mod(exp_mod: Option<&'static (dyn MbedtlsMpiExpMod + Send + Sync)>) {
+    critical_section::with(|cs| {
+        alt::EXP_MOD.borrow(cs).set(exp_mod);
+    });
+}
+
+#[cfg(not(feature = "nohook-exp-mod"))]
+mod alt {
     use core::cell::Cell;
     use core::ffi::c_int;
 
     use critical_section::Mutex;
 
-    use esp_mbedtls_sys::{mbedtls_mpi, mbedtls_mpi_exp_mod_soft};
+    use crate::{mbedtls_mpi, mbedtls_mpi_exp_mod_soft};
 
     use super::MbedtlsMpiExpMod;
 
@@ -74,9 +100,7 @@ pub(crate) mod alt {
                     x,
                     y,
                     m,
-                    prec_rr
-                        .map(|rr| rr as *mut _)
-                        .unwrap_or_default(),
+                    prec_rr.map(|rr| rr as *mut _).unwrap_or_default(),
                 );
             }
         }

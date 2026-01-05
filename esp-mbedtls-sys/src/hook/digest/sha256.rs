@@ -2,23 +2,55 @@ use core::ops::Deref;
 
 use super::MbedtlsDigest;
 
+/// Trait representing a custom (hooked) MbedTLS SHA-256 algorithm
 pub trait MbedtlsSha256: MbedtlsDigest {}
+/// Trait representing a custom (hooked) MbedTLS SHA-224 algorithm
 pub trait MbedtlsSha224: MbedtlsDigest {}
 
 impl<T: Deref> MbedtlsSha256 for T where T::Target: MbedtlsSha256 {}
 impl<T: Deref> MbedtlsSha224 for T where T::Target: MbedtlsSha224 {}
 
-#[cfg(feature = "accel-sha256")]
-pub(crate) mod alt {
+/// Hook the SHA1 implementation used by MbedTLS
+///
+/// # Safety
+/// - This function is unsafe because it modifies global state that affects
+///   the behavior of MbedTLS. The caller MUST call this hook BEFORE
+///   any MbedTLS functions that use SHA-256 or SHA-224, and ensure that the
+///   `sha256` or `sha224` implementation is valid for the duration of its use.
+#[cfg(not(feature = "nohook-sha256"))]
+pub unsafe fn hook_sha256(sha256: Option<&'static (dyn MbedtlsSha256 + Send + Sync)>) {
+    critical_section::with(|cs| {
+        alt::SHA256.borrow(cs).set(sha256);
+    });
+}
+
+/// Hook the SHA224 implementation used by MbedTLS
+///
+/// # Safety
+/// - This function is unsafe because it modifies global state that affects
+///   the behavior of MbedTLS. The caller MUST call this hook BEFORE
+///   any MbedTLS functions that use SHA-224, and ensure that the
+///   `sha224` implementation is valid for the duration of its use.
+#[cfg(not(feature = "nohook-sha256"))]
+pub unsafe fn hook_sha224(sha224: Option<&'static (dyn MbedtlsSha224 + Send + Sync)>) {
+    critical_section::with(|cs| {
+        alt::SHA224.borrow(cs).set(sha224);
+    });
+}
+
+#[cfg(not(feature = "nohook-sha256"))]
+mod alt {
     use core::cell::Cell;
     use core::ffi::{c_int, c_uchar};
 
     use critical_section::Mutex;
-    
-    use esp_mbedtls_sys::mbedtls_sha256_context;
 
-    use crate::accel::digest::{MbedtlsDigest, RustCryptoDigest, digest_clone, digest_finish, digest_free, digest_init, digest_starts, digest_update};
-    use crate::accel::WorkArea;
+    use crate::hook::digest::{
+        digest_clone, digest_finish, digest_free, digest_init, digest_starts, digest_update,
+        MbedtlsDigest, RustCryptoDigest,
+    };
+    use crate::hook::WorkArea;
+    use crate::mbedtls_sha256_context;
 
     use super::{MbedtlsSha224, MbedtlsSha256};
 

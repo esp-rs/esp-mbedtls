@@ -8,7 +8,12 @@ pub use bindings::*;
 pub use error::*;
 
 mod error;
-mod extra_impls;
+mod extra_impls; // TODO: Figure out if we still need this
+
+#[cfg(not(target_os = "espidf"))]
+pub mod accel;
+#[cfg(not(target_os = "espidf"))]
+pub mod hook;
 
 #[allow(
     non_camel_case_types,
