@@ -58,7 +58,7 @@ Finally, when hooking stateless algorithms that do their job with a single funct
 
 Laboriously checking the integer result when calling each `mbedtls_*` function is deemed unergonomic enough so that esp-mbedtls-sys provides:
 - A Rust `core::error::Error` wrapper over the integer codes of MbedTLS: `MbedtlsError`
-- A small macro - `merr!` that turns MbedTLS error codes into a `Result<u32, MbedtlsError>` where `Ok(u32)` is returned for non-negative error codes, and `Err(MbedtlsError)` is returned for 0 or positive error codes
+- A small macro - `merr!` that turns MbedTLS error codes into a `Result<i32, MbedtlsError>` where `Ok(i32)` is returned for non-negative error codes, and `Err(MbedtlsError)` is returned for negative error codes
 
 ## Future
 

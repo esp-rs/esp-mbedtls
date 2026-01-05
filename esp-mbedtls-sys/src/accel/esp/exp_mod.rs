@@ -2,7 +2,11 @@
 
 use core::ffi::c_int;
 
-#[cfg(not(any(feature = "accel-esp32c3", feature = "accel-esp32c6", feature = "accel-esp32h2")))]
+#[cfg(not(any(
+    feature = "accel-esp32c3",
+    feature = "accel-esp32c6",
+    feature = "accel-esp32h2"
+)))]
 use crypto_bigint::U4096;
 use crypto_bigint::{U1024, U2048, U256, U384, U512};
 
@@ -16,9 +20,17 @@ use esp_hal::rsa::{operand_sizes, RsaContext};
 
 use crate::hook::exp_mod::MbedtlsMpiExpMod;
 
-#[cfg(not(any(feature = "accel-esp32c3", feature = "accel-esp32c6", feature = "accel-esp32h2")))]
+#[cfg(not(any(
+    feature = "accel-esp32c3",
+    feature = "accel-esp32c6",
+    feature = "accel-esp32h2"
+)))]
 const SOC_RSA_MAX_BIT_LEN: usize = 4096;
-#[cfg(any(feature = "accel-esp32c3", feature = "accel-esp32c6", feature = "accel-esp32h2"))]
+#[cfg(any(
+    feature = "accel-esp32c3",
+    feature = "accel-esp32c6",
+    feature = "accel-esp32h2"
+))]
 const SOC_RSA_MAX_BIT_LEN: usize = 3072;
 
 // Bad input parameters to function.
@@ -153,10 +165,7 @@ impl MbedtlsMpiExpMod for EspExpMod {
                     x,
                     y,
                     m,
-                    prec_rr
-                        .as_mut()
-                        .map(|rr| *rr as *mut _)
-                        .unwrap_or_default(),
+                    prec_rr.as_mut().map(|rr| *rr as *mut _).unwrap_or_default(),
                 )
             };
         }
@@ -262,7 +271,11 @@ impl MbedtlsMpiExpMod for EspExpMod {
                 m_words,
                 U2048::LIMBS
             ),
-            #[cfg(not(any(feature = "accel-esp32c3", feature = "accel-esp32c6", feature = "accel-esp32h2")))]
+            #[cfg(not(any(
+                feature = "accel-esp32c3",
+                feature = "accel-esp32c6",
+                feature = "accel-esp32h2"
+            )))]
             U4096::LIMBS => modular_exponentiate!(
                 operand_sizes::Op4096,
                 x,

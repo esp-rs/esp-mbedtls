@@ -56,10 +56,10 @@ impl core::error::Error for MbedtlsError {}
 macro_rules! merr {
     ($block:expr) => {{
         let res = $block;
-        if res != 0 {
+        if res < 0 {
             Err($crate::MbedtlsError::new(res))
         } else {
-            Ok(())
+            Ok(res)
         }
     }};
 }

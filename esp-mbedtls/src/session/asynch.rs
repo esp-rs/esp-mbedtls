@@ -548,8 +548,10 @@ where
                 }
                 // See https://github.com/Mbed-TLS/mbedtls/issues/8749
                 MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET => continue,
-                len if len >= 0 => break Ok(()),
-                other => merr!(other)?,
+                other => {
+                    merr!(other)?;
+                    break Ok(());
+                }
             }
         }
     }
@@ -584,8 +586,10 @@ where
                     *self.eof = true;
                     break Ok(0);
                 }
-                len if len >= 0 => break Ok(len as usize),
-                other => merr!(other)?,
+                other => {
+                    let len = merr!(other)?;
+                    break Ok(len as usize);
+                }
             }
         }
     }
@@ -616,8 +620,10 @@ where
                 }
                 // See https://github.com/Mbed-TLS/mbedtls/issues/8749
                 MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET => continue,
-                len if len >= 0 => break Ok(len as usize),
-                other => merr!(other)?,
+                other => {
+                    let len = merr!(other)?;
+                    break Ok(len as usize);
+                }
             }
         }
     }

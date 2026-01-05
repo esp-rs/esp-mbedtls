@@ -1,4 +1,8 @@
-use crate::{mbedtls_aes_self_test, mbedtls_md5_self_test, mbedtls_mpi_self_test, mbedtls_rsa_self_test, mbedtls_sha1_self_test, mbedtls_sha224_self_test, mbedtls_sha256_self_test, mbedtls_sha384_self_test, mbedtls_sha512_self_test};
+use crate::{
+    mbedtls_aes_self_test, mbedtls_md5_self_test, mbedtls_mpi_self_test, mbedtls_rsa_self_test,
+    mbedtls_sha1_self_test, mbedtls_sha224_self_test, mbedtls_sha256_self_test,
+    mbedtls_sha384_self_test, mbedtls_sha512_self_test,
+};
 
 /// An MbedTLS self-test type
 #[derive(enumset::EnumSetType, Debug)]
