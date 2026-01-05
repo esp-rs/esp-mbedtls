@@ -29,39 +29,7 @@ mod session;
 /// Re-export of the esp-mbedtls-sys crate so that users do not have to
 /// explicitly depend on it if they want to use the raw MbedTLS bindings.
 pub mod sys {
-    #[allow(unused)]
-    use esp_mbedtls_sys::*;
-}
-
-/// A TLS self-test type
-#[derive(enumset::EnumSetType, Debug)]
-#[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub enum TlsTest {
-    Mpi,
-    Rsa,
-    Sha1,
-    Sha224,
-    Sha256,
-    Sha384,
-    Sha512,
-    Aes,
-    Md5,
-}
-
-impl core::fmt::Display for TlsTest {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        match self {
-            TlsTest::Mpi => write!(f, "MPI"),
-            TlsTest::Rsa => write!(f, "RSA"),
-            TlsTest::Sha1 => write!(f, "SHA1"),
-            TlsTest::Sha224 => write!(f, "SHA224"),
-            TlsTest::Sha256 => write!(f, "SHA256"),
-            TlsTest::Sha384 => write!(f, "SHA384"),
-            TlsTest::Sha512 => write!(f, "SHA512"),
-            TlsTest::Aes => write!(f, "AES"),
-            TlsTest::Md5 => write!(f, "MD5"),
-        }
-    }
+    pub use esp_mbedtls_sys::*;
 }
 
 static RNG: Mutex<RefCell<Option<&mut (dyn CryptoRng + Send)>>> = Mutex::new(RefCell::new(None));
@@ -116,32 +84,6 @@ impl<'d> Tls<'d> {
         unsafe {
             mbedtls_debug_set_threshold(level as c_int);
         }
-    }
-
-    /// Run a self-test on the MbedTLS library
-    ///
-    /// # Arguments
-    ///
-    /// * `test` - The test to run
-    /// * `verbose` - Whether to run the test in verbose mode
-    pub fn self_test(&mut self, test: TlsTest, verbose: bool) -> bool {
-        let verbose = verbose as _;
-
-        let result = unsafe {
-            match test {
-                TlsTest::Mpi => mbedtls_mpi_self_test(verbose),
-                TlsTest::Rsa => mbedtls_rsa_self_test(verbose),
-                TlsTest::Sha1 => mbedtls_sha1_self_test(verbose),
-                TlsTest::Sha224 => mbedtls_sha224_self_test(verbose),
-                TlsTest::Sha256 => mbedtls_sha256_self_test(verbose),
-                TlsTest::Sha384 => mbedtls_sha384_self_test(verbose),
-                TlsTest::Sha512 => mbedtls_sha512_self_test(verbose),
-                TlsTest::Aes => mbedtls_aes_self_test(verbose),
-                TlsTest::Md5 => mbedtls_md5_self_test(verbose),
-            }
-        };
-
-        result != 0
     }
 
     /// Get a reference to the `Tls` instance

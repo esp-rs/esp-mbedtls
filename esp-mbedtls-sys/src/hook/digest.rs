@@ -171,16 +171,19 @@ where
     }
 }
 
+#[allow(unused)]
 #[inline(always)]
 unsafe fn digest_init<T: WorkArea>(algo: &dyn MbedtlsDigest, work_area: *mut T) {
     algo.init(work_area.as_mut().unwrap().area_mut());
 }
 
+#[allow(unused)]
 #[inline(always)]
 unsafe fn digest_free<T: WorkArea>(algo: &dyn MbedtlsDigest, work_area: *mut T) {
     algo.free(work_area.as_mut().unwrap().area_mut());
 }
 
+#[allow(unused)]
 #[inline(always)]
 unsafe fn digest_clone<T: WorkArea>(
     algo: &dyn MbedtlsDigest,
@@ -193,6 +196,7 @@ unsafe fn digest_clone<T: WorkArea>(
     );
 }
 
+#[allow(unused)]
 #[inline(always)]
 unsafe fn digest_starts<T: WorkArea>(algo: &dyn MbedtlsDigest, work_area: *mut T) -> c_int {
     algo.reset(work_area.as_mut().unwrap().area_mut());
@@ -200,6 +204,7 @@ unsafe fn digest_starts<T: WorkArea>(algo: &dyn MbedtlsDigest, work_area: *mut T
     0
 }
 
+#[allow(unused)]
 #[inline(always)]
 unsafe fn digest_update<T: WorkArea>(
     algo: &dyn MbedtlsDigest,
@@ -216,6 +221,7 @@ unsafe fn digest_update<T: WorkArea>(
     0
 }
 
+#[allow(unused)]
 #[inline(always)]
 unsafe fn digest_finish<T: WorkArea>(
     algo: &dyn MbedtlsDigest,

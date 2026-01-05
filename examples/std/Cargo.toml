@@ -8,7 +8,7 @@ rust-version = "1.84"
 
 [dependencies]
 log = "0.4"
-esp-mbedtls = { path = "../../esp-mbedtls", features = ["log", "edge-nal"] }
+esp-mbedtls = { path = "../../esp-mbedtls", features = ["log", "edge-nal", "nohook"] }
 enumset = { version = "1", default-features = false }
 edge-http = { version = "0.7", features = ["io"] }
 

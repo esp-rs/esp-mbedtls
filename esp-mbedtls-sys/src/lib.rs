@@ -14,6 +14,7 @@ mod extra_impls; // TODO: Figure out if we still need this
 pub mod accel;
 #[cfg(not(target_os = "espidf"))]
 pub mod hook;
+pub mod self_test;
 
 #[allow(
     non_camel_case_types,

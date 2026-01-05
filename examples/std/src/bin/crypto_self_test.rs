@@ -2,33 +2,23 @@
 
 use std::time::Instant;
 
-use esp_mbedtls::Tls;
+use esp_mbedtls::sys::self_test::MbedtlsSelfTest;
 
 use log::info;
-
-#[path = "../../../common/std_rng.rs"]
-mod rng;
 
 fn main() {
     env_logger::init();
 
-    info!("Initializing TLS");
-
-    let mut rng = rng::StdRng;
-    let mut tls = Tls::new(&mut rng).unwrap();
-
-    tls.set_debug(1);
-
-    info!("Running TLS crypto self tests...");
+    info!("Running MbedTLS self tests...");
 
     info!("TESTS OUTPUT >>>>>>>>");
 
-    for test in enumset::EnumSet::all() {
+    for mut test in enumset::EnumSet::<MbedtlsSelfTest>::all() {
         println!("Testing {:?}", test);
 
         let before = Instant::now();
 
-        tls.self_test(test, true);
+        test.run(false);
 
         println!("Took {:?}", before.elapsed());
     }

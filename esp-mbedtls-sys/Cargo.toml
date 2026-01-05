@@ -34,6 +34,7 @@ accel-esp32s3 = ["esp-hal/esp32s3", "crypto-bigint"]
 
 [dependencies]
 defmt = { version = "1", optional = true }
+enumset = { version = "1", default-features = false }
 # For hooking
 digest = { version = "0.10", default-features = false }
 sha1 = { version = "0.10", default-features = false }
