@@ -259,14 +259,15 @@ pub const PSA_WANT_KEY_TYPE_RAW_DATA: u32 = 1;
 pub const _LIBC_LIMITS_H_: u32 = 1;
 pub const __NEWLIB_H__: u32 = 1;
 pub const _NEWLIB_VERSION_H__: u32 = 1;
-pub const _NEWLIB_VERSION: &[u8; 6] = b"4.3.0\0";
+pub const _NEWLIB_VERSION: &[u8; 6] = b"4.5.0\0";
 pub const __NEWLIB__: u32 = 4;
-pub const __NEWLIB_MINOR__: u32 = 3;
+pub const __NEWLIB_MINOR__: u32 = 5;
 pub const __NEWLIB_PATCHLEVEL__: u32 = 0;
 pub const _ATEXIT_DYNAMIC_ALLOC: u32 = 1;
 pub const _FSEEK_OPTIMIZATION: u32 = 1;
 pub const _FVWRITE_IN_STREAMIO: u32 = 1;
 pub const _HAVE_CC_INHIBIT_LOOP_TO_LIBCALL: u32 = 1;
+pub const _HAVE_HW_MISALIGNED_ACCESS: u32 = 1;
 pub const _HAVE_INITFINI_ARRAY: u32 = 1;
 pub const _HAVE_LONG_DOUBLE: u32 = 1;
 pub const _ICONV_ENABLED: u32 = 1;
@@ -381,7 +382,6 @@ pub const __OBSOLETE_MATH_DEFAULT: u32 = 1;
 pub const __OBSOLETE_MATH: u32 = 1;
 pub const __BUFSIZ__: u32 = 128;
 pub const __RAND_MAX: u32 = 2147483647;
-pub const __GNUC_VA_LIST: u32 = 1;
 pub const _NULL: u32 = 0;
 pub const _ATEXIT_SIZE: u32 = 32;
 pub const _RAND48_SEED_0: u32 = 13070;
@@ -1222,8 +1222,8 @@ pub type uint_fast32_t = ::core::ffi::c_uint;
 pub type int_fast64_t = ::core::ffi::c_longlong;
 pub type uint_fast64_t = ::core::ffi::c_ulonglong;
 pub type mbedtls_iso_c_forbids_empty_translation_units = ::core::ffi::c_int;
-pub type va_list = __builtin_va_list;
 pub type __gnuc_va_list = __builtin_va_list;
+pub type va_list = __gnuc_va_list;
 pub type wint_t = ::core::ffi::c_uint;
 pub type __blkcnt_t = ::core::ffi::c_long;
 pub type __blksize_t = ::core::ffi::c_long;
@@ -15502,7 +15502,7 @@ unsafe extern "C" {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_sha1_context {
-    pub work_area: [::core::ffi::c_uchar; 128usize],
+    pub work_area: [::core::ffi::c_uchar; 200usize],
 }
 impl Default for mbedtls_sha1_context {
     fn default() -> Self {
@@ -15662,7 +15662,7 @@ unsafe extern "C" {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_sha256_context {
-    pub work_area: [::core::ffi::c_uchar; 256usize],
+    pub work_area: [::core::ffi::c_uchar; 200usize],
     pub is224: ::core::ffi::c_uchar,
 }
 impl Default for mbedtls_sha256_context {
@@ -15813,7 +15813,7 @@ unsafe extern "C" {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_sha512_context {
-    pub work_area: [::core::ffi::c_uchar; 512usize],
+    pub work_area: [::core::ffi::c_uchar; 300usize],
     pub is384: ::core::ffi::c_uchar,
 }
 impl Default for mbedtls_sha512_context {

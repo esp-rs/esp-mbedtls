@@ -11,150 +11,42 @@ debug = true
 lto = "fat"
 opt-level = "s"
 
-
-[profile.release.package.esp-wifi]
-opt-level = 3
-
 [profile.dev]
 debug = true
 lto = "fat"
 opt-level = "z"
 
-[profile.dev.package.esp-wifi]
-opt-level = 3
+[features]
+default = ["esp32c6"]
+esp32 = ["esp-rtos/esp32", "esp-hal/esp32", "esp-backtrace/esp32", "esp-println/esp32", "esp-radio/esp32", "esp-bootloader-esp-idf/esp32", "esp-metadata-generated/esp32", "esp-mbedtls/accel-esp32"]
+esp32c2 = ["esp-rtos/esp32c2", "esp-hal/esp32c2", "esp-backtrace/esp32c2", "esp-println/esp32c2", "esp-radio/esp32c2", "esp-bootloader-esp-idf/esp32c2", "esp-metadata-generated/esp32c2", "esp-mbedtls/accel-esp32c2"]
+esp32c3 = ["esp-rtos/esp32c3", "esp-hal/esp32c3", "esp-backtrace/esp32c3", "esp-println/esp32c3", "esp-radio/esp32c3", "esp-bootloader-esp-idf/esp32c3", "esp-metadata-generated/esp32c3", "esp-mbedtls/accel-esp32c3"]
+esp32c6 = ["esp-rtos/esp32c6", "esp-hal/esp32c6", "esp-backtrace/esp32c6", "esp-println/esp32c6", "esp-radio/esp32c6", "esp-bootloader-esp-idf/esp32c6", "esp-metadata-generated/esp32c6", "esp-mbedtls/accel-esp32c6"]
+esp32h2 = ["esp-rtos/esp32h2", "esp-hal/esp32h2", "esp-backtrace/esp32h2", "esp-println/esp32h2", "esp-radio/esp32h2", "esp-bootloader-esp-idf/esp32h2", "esp-metadata-generated/esp32h2", "esp-mbedtls/accel-esp32h2"]
+esp32s2 = ["esp-rtos/esp32s2", "esp-hal/esp32s2", "esp-backtrace/esp32s2", "esp-println/esp32s2", "esp-radio/esp32s2", "esp-bootloader-esp-idf/esp32s2", "esp-metadata-generated/esp32s2", "esp-mbedtls/accel-esp32s2"]
+esp32s3 = ["esp-rtos/esp32s3", "esp-hal/esp32s3", "esp-backtrace/esp32s3", "esp-println/esp32s3", "esp-radio/esp32s3", "esp-bootloader-esp-idf/esp32s3", "esp-metadata-generated/esp32s3", "esp-mbedtls/accel-esp32s3"]
 
 [dependencies]
-embassy-time = { version = "0.5.0", optional = true }
-embassy-net = { version = "0.7", features = ["tcp", "udp", "dhcpv4", "medium-ethernet"], optional = true }
-
-esp-hal = { version = "1", optional = true }
-esp-backtrace = { version = "0.18", optional = true, features = ["panic-handler", "println", "exception-handler"] }
-esp-println = { version = "0.16", optional = true, features = ["log-04"] }
-
-
-embassy-executor = { version = "0.9", package = "embassy-executor", features = ["nightly"], optional = true }
-smoltcp = { version = "0.12.0", optional = true, default-features = false, features = [
-    "proto-ipv4",
-    "socket-tcp",
-    "socket-icmp",
-    "socket-udp",
-    "medium-ethernet",
-    "proto-dhcpv4",
-    "socket-raw",
-    "socket-dhcpv4",
-] }
-log = "0.4.16"
-embedded-io = "0.6.1"
-embedded-io-async = "0.6.0"
-heapless = "0.8.0"
-critical-section = "1.0.1"
-static_cell = { version = "2.1", features = ["nightly"] }
-
-esp-mbedtls = { path = "./esp-mbedtls" }
-
-edge-http = { version = "0.5.0", optional = true }
-edge-nal = { version = "0.5.0", optional = true }
-edge-nal-embassy = { version = "0.5.0", optional = true }
-cfg-if = "1.0.0"
-esp-alloc = { version = "0.8.0", optional = true }
-esp-bootloader-esp-idf = { version = "0.1.0", optional = true }
+log = "0.4"
+critical-section = "1"
+heapless = "0.9"
+static_cell = "2"
 enumset = { version = "1", default-features = false }
+rand_core = "0.9"
+esp-mbedtls = { path = "../../esp-mbedtls" } #, features = ["nohook-sha512"]
 
-[target.'cfg(target_os = "espidf")'.dependencies]
-esp-idf-svc = { version = "0.51", features = ["binstart"] }
+embassy-time = "0.5"
+embassy-executor = "0.9"
 
-[[example]]
-name = "crypto_self_test"
-required-features = ["examples"]
+# For the `edge_*` examples
+edge-http = { version = "0.7", features = ["io"] }
+edge-nal-embassy = "0.8"
 
-[[example]]
-name = "crypto_self_test_std"
-
-[[example]]
-name = "async_client"
-required-features = ["examples-async"]
-
-[[example]]
-name = "async_server"
-required-features = ["examples-async"]
-
-[[example]]
-name = "edge_server"
-required-features = ["examples-async", "edge-http"]
-
-[features]
-examples = [
-    "esp-hal",
-    "esp-backtrace",
-    "esp-println",
-    "esp-wifi",
-    "esp-wifi/smoltcp",
-    "smoltcp",
-    "esp-alloc",
-    "esp-bootloader-esp-idf",
-]
-examples-async = [
-    "examples",
-    "esp-hal-embassy",
-    "embassy-time",
-    "embassy-executor",
-    "embassy-net",
-    "edge-http",
-    "edge-nal",
-    "edge-nal-embassy",
-    "esp-mbedtls/async",
-    "esp-mbedtls/edge-nal",
-]
-examples-std = ["critical-section/std"]
-
-esp32 = [
-    "esp-hal?/esp32",
-    "esp-hal-embassy?/esp32",
-    "esp-backtrace?/esp32",
-    "esp-println?/esp32",
-    "esp-wifi?/esp32",
-    "esp-mbedtls/esp32",
-]
-esp32c3 = [
-    "esp-hal?/esp32c3",
-    "esp-hal-embassy?/esp32c3",
-    "esp-backtrace?/esp32c3",
-    "esp-println?/esp32c3",
-    "esp-wifi?/esp32c3",
-    "esp-mbedtls/esp32c3",
-]
-esp32c6 = [
-    "esp-hal?/esp32c6",
-    "esp-hal-embassy?/esp32c6",
-    "esp-backtrace?/esp32c6",
-    "esp-println?/esp32c6",
-    "esp-wifi?/esp32c6",
-    "esp-mbedtls/esp32c6",
-]
-esp32s2 = [
-    "esp-hal?/esp32s2",
-    "esp-hal-embassy?/esp32s2",
-    "esp-backtrace?/esp32s2",
-    "esp-println?/esp32s2",
-    "esp-wifi?/esp32s2",
-    "esp-mbedtls/esp32s2",
-]
-esp32s3 = [
-    "esp-hal?/esp32s3",
-    "esp-hal-embassy?/esp32s3",
-    "esp-backtrace?/esp32s3",
-    "esp-println?/esp32s3",
-    "esp-wifi?/esp32s3",
-    "esp-mbedtls/esp32s3",
-]
-
-# Enable mTLS for the running example. See example documentation for further details.
-# Applies to:
-#  - async_client
-#  - async_server
-#  - sync_client
-#  - sync_server
-mtls = []
-
-[build-dependencies]
-embuild = { version = "0.33", features = ["espidf"] }
+esp-rtos = { version = "0.2", features = ["esp-radio", "embassy"] }
+esp-hal = { version = "1", features = ["log-04", "unstable", "exception-handler"] }
+esp-alloc = { version = "0.9" }
+esp-backtrace = { version = "0.18.1", features = ["panic-handler", "println"] }
+esp-println = { version = "0.16", optional = true, features = ["log-04"] }
+esp-radio = { version = "0.17", features = ["log-04", "unstable"] }
+esp-bootloader-esp-idf = { version = "0.4", features = ["log-04"] }
+esp-metadata-generated = "0.3"

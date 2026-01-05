@@ -42,7 +42,10 @@ pub trait WorkArea {
         let (_, array, _) = unsafe { self.area_mut().align_to_mut::<core::mem::MaybeUninit<T>>() };
 
         if array.is_empty() {
-            panic!("work area is not properly aligned for the target type");
+            panic!(
+                "work area cannot fit target type {}",
+                core::any::type_name::<T>()
+            );
         }
 
         &mut array[0]
@@ -57,7 +60,10 @@ pub trait WorkArea {
         let (_, array, _) = unsafe { self.area().align_to::<T>() };
 
         if array.is_empty() {
-            panic!("work area is not properly aligned for the target type");
+            panic!(
+                "work area cannot fit target type {}",
+                core::any::type_name::<T>()
+            );
         }
 
         &array[0]

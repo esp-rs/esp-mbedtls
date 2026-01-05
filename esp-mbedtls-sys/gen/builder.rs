@@ -495,9 +495,9 @@ impl CMakeConfigurer {
                 "riscv32imafc-unknown-none-elf" | "riscv32imafc-esp-espidf" => {
                     &["-march=rv32imafc", "-mabi=ilp32"]
                 }
-                "xtensa-esp32-none-elf" | "xtensa-esp32-espidf" => &[],
-                "xtensa-esp32s2-none-elf" | "xtensa-esp32s2-espidf" => &[],
-                "xtensa-esp32s3-none-elf" | "xtensa-esp32s3-espidf" => &[],
+                "xtensa-esp32-none-elf" | "xtensa-esp32-espidf" => &["-mlongcalls"],
+                "xtensa-esp32s2-none-elf" | "xtensa-esp32s2-espidf" => &["-mlongcalls"],
+                "xtensa-esp32s3-none-elf" | "xtensa-esp32s3-espidf" => &["-mlongcalls"],
                 _ => &[],
             }
         }

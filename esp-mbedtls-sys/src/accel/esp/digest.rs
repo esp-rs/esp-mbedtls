@@ -1,8 +1,6 @@
 //! Digest implementations using ESP32 hardware acceleration.
 
-use crate::hook::digest::{
-    MbedtlsSha1, MbedtlsSha224, MbedtlsSha256, MbedtlsSha384, MbedtlsSha512, RustCryptoDigest,
-};
+use crate::hook::digest::{MbedtlsSha1, MbedtlsSha224, MbedtlsSha256, RustCryptoDigest};
 
 /// SHA-1 digest implementation using ESP32 hardware acceleration.
 ///
@@ -48,10 +46,10 @@ impl MbedtlsSha256 for EspSha256 {}
     feature = "accel-esp32s2",
     feature = "accel-esp32s3"
 ))]
-impl MbedtlsSha384 for EspSha384 {}
+impl crate::hook::digest::MbedtlsSha384 for EspSha384 {}
 #[cfg(any(
     feature = "accel-esp32",
     feature = "accel-esp32s2",
     feature = "accel-esp32s3"
 ))]
-impl MbedtlsSha512 for EspSha512 {}
+impl crate::hook::digest::MbedtlsSha512 for EspSha512 {}

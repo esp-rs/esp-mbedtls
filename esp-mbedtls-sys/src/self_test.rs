@@ -7,15 +7,15 @@ use crate::{
 /// An MbedTLS self-test type
 #[derive(enumset::EnumSetType, Debug)]
 pub enum MbedtlsSelfTest {
-    Mpi,
-    Rsa,
-    Sha1,
-    Sha224,
-    Sha256,
-    Sha384,
-    Sha512,
-    Aes,
-    Md5,
+    Mpi = 0,
+    Rsa = 1,
+    Sha1 = 2,
+    Sha224 = 3,
+    Sha256 = 4,
+    Sha384 = 5,
+    Sha512 = 6,
+    Aes = 7,
+    Md5 = 8,
 }
 
 impl MbedtlsSelfTest {

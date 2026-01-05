@@ -269,9 +269,9 @@ pub const PSA_WANT_KEY_TYPE_RAW_DATA: u32 = 1;
 pub const _LIBC_LIMITS_H_: u32 = 1;
 pub const __NEWLIB_H__: u32 = 1;
 pub const _NEWLIB_VERSION_H__: u32 = 1;
-pub const _NEWLIB_VERSION: &[u8; 6] = b"4.3.0\0";
+pub const _NEWLIB_VERSION: &[u8; 6] = b"4.5.0\0";
 pub const __NEWLIB__: u32 = 4;
-pub const __NEWLIB_MINOR__: u32 = 3;
+pub const __NEWLIB_MINOR__: u32 = 5;
 pub const __NEWLIB_PATCHLEVEL__: u32 = 0;
 pub const _ATEXIT_DYNAMIC_ALLOC: u32 = 1;
 pub const _FSEEK_OPTIMIZATION: u32 = 1;
@@ -362,8 +362,8 @@ pub const LINE_MAX: u32 = 2048;
 pub const RE_DUP_MAX: u32 = 255;
 pub const MB_LEN_MAX: u32 = 1;
 pub const NL_ARGMAX: u32 = 32;
-pub const CHAR_MIN: u32 = 0;
 pub const _POSIX2_RE_DUP_MAX: u32 = 255;
+pub const CHAR_MIN: u32 = 0;
 pub const __int20: u32 = 2;
 pub const __int20__: u32 = 2;
 pub const __INT8: &[u8; 3] = b"hh\0";
@@ -15510,7 +15510,7 @@ unsafe extern "C" {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_sha1_context {
-    pub work_area: [::core::ffi::c_uchar; 128usize],
+    pub work_area: [::core::ffi::c_uchar; 200usize],
 }
 impl Default for mbedtls_sha1_context {
     fn default() -> Self {
@@ -15670,7 +15670,7 @@ unsafe extern "C" {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_sha256_context {
-    pub work_area: [::core::ffi::c_uchar; 256usize],
+    pub work_area: [::core::ffi::c_uchar; 200usize],
     pub is224: ::core::ffi::c_uchar,
 }
 impl Default for mbedtls_sha256_context {
@@ -15821,7 +15821,7 @@ unsafe extern "C" {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_sha512_context {
-    pub work_area: [::core::ffi::c_uchar; 512usize],
+    pub work_area: [::core::ffi::c_uchar; 300usize],
     pub is384: ::core::ffi::c_uchar,
 }
 impl Default for mbedtls_sha512_context {

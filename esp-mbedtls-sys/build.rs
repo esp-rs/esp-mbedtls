@@ -26,25 +26,20 @@ fn main() -> Result<()> {
     let pregen_libs_dir = crate_root_path.join("libs").join(&target);
 
     // Figure out what MbedTLS hook options (ALT modules) to enable
-    let mut hook = EnumSet::all();
+    let mut removed_hooks = EnumSet::empty();
 
-    if env::var("CARGO_FEATURE_NOHOOK_SHA1").is_ok() {
-        hook &= Hook::Sha1;
+    for (feature, hook) in [
+        ("CARGO_FEATURE_NOHOOK_SHA1", Hook::Sha1),
+        ("CARGO_FEATURE_NOHOOK_SHA256", Hook::Sha256),
+        ("CARGO_FEATURE_NOHOOK_SHA512", Hook::Sha512),
+        ("CARGO_FEATURE_NOHOOK_EXP_MOD", Hook::ExpMod),
+    ] {
+        if env::var(feature).is_ok() {
+            removed_hooks.insert(hook);
+        }
     }
 
-    if env::var("CARGO_FEATURE_NOHOOK_SHA256").is_ok() {
-        hook &= Hook::Sha256;
-    }
-
-    if env::var("CARGO_FEATURE_NOHOOK_SHA512").is_ok() {
-        hook &= Hook::Sha512;
-    }
-
-    if env::var("CARGO_FEATURE_NOHOOK_EXP_MOD").is_ok() {
-        hook &= Hook::ExpMod;
-    }
-
-    let dirs = if pregen_bindings && pregen_bindings_rs_file.exists() && hook == EnumSet::all() {
+    let dirs = if pregen_bindings && pregen_bindings_rs_file.exists() && removed_hooks.is_empty() {
         // Use the pre-generated bindings
         Some((pregen_bindings_rs_file, pregen_libs_dir))
     } else if target.ends_with("-espidf") {
@@ -52,10 +47,10 @@ fn main() -> Result<()> {
         None
     } else {
         if pregen_bindings_rs_file.exists() {
-            if pregen_bindings {
+            if !pregen_bindings {
                 println!("cargo::warning=Forcing on-the-fly build for target {target}");
             } else {
-                println!("cargo::warning=Forcing on-the-fly build for {target} because some or all hooks are disabled");
+                println!("cargo::warning=Forcing on-the-fly build for {target} because some or all hooks are disabled: {removed_hooks:?}");
             }
         }
 
@@ -63,7 +58,7 @@ fn main() -> Result<()> {
         let out = PathBuf::from(env::var_os("OUT_DIR").unwrap());
 
         let builder = builder::MbedtlsBuilder::new(
-            hook,
+            removed_hooks.complement(),
             false,
             crate_root_path.clone(),
             Some(target),
