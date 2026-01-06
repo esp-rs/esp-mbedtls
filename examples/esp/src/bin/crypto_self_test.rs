@@ -1,4 +1,5 @@
-//! Run crypto self tests to ensure their functionnality
+//! Run crypto self tests to ensure their functionnality and benchmark hardware acceleration
+
 #![no_std]
 #![no_main]
 
@@ -23,7 +24,7 @@ use esp_mbedtls::sys::self_test::MbedtlsSelfTest;
 use esp_metadata_generated::memory_range;
 use esp_radio as _;
 
-use log::info;
+use log::{error, info};
 
 extern crate alloc;
 
@@ -136,7 +137,9 @@ fn run_tests(hw_accel: bool, summary: &mut [u64]) {
     for mut test in enumset::EnumSet::<MbedtlsSelfTest>::all() {
         let before = cycles();
 
-        test.run(false);
+        if !test.run(false) {
+            error!("Self-test {:?} failed!", test);
+        }
 
         let after = cycles();
 

@@ -5,7 +5,7 @@ use core::ffi::CStr;
 use esp_mbedtls::{Certificate, ClientSessionConfig, Credentials, ServerSessionConfig, X509};
 
 const CA_BUNDLE: &CStr = match CStr::from_bytes_with_nul(
-    concat!(include_str!("certs/ca-bundle.pem"), "\0").as_bytes(),
+    concat!(include_str!("certs/ca-bundle-small.pem"), "\0").as_bytes(),
 ) {
     Ok(bundle) => bundle,
     _ => panic!("CA bundle is not a valid text file"),

@@ -116,6 +116,10 @@ mod alt {
         dst: *mut mbedtls_sha256_context,
         src: *const mbedtls_sha256_context,
     ) {
+        let dst = unsafe { &mut *dst };
+        let src = unsafe { &*src };
+        dst.is224 = src.is224;
+
         digest_clone(algo(src), src, dst);
     }
 
@@ -127,6 +131,7 @@ mod alt {
         let ctx = unsafe { &mut *ctx };
 
         if (is224 != 0) != (ctx.is224 != 0) {
+            digest_free(algo(ctx), ctx);
             digest_init(algo_for(is224 != 0), ctx);
             ctx.is224 = if is224 != 0 { 1 } else { 0 };
         }

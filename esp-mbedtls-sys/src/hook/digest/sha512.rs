@@ -116,6 +116,10 @@ mod alt {
         dst: *mut mbedtls_sha512_context,
         src: *const mbedtls_sha512_context,
     ) {
+        let dst = unsafe { &mut *dst };
+        let src = unsafe { &*src };
+        dst.is384 = src.is384;
+
         digest_clone(algo(src), src, dst);
     }
 
@@ -127,6 +131,7 @@ mod alt {
         let ctx = unsafe { &mut *ctx };
 
         if (is384 != 0) != (ctx.is384 != 0) {
+            digest_free(algo(ctx), ctx);
             digest_init(algo_for(is384 != 0), ctx);
             ctx.is384 = if is384 != 0 { 1 } else { 0 };
         }

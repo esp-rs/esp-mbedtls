@@ -4,7 +4,7 @@ use std::time::Instant;
 
 use esp_mbedtls::sys::self_test::MbedtlsSelfTest;
 
-use log::info;
+use log::{error, info};
 
 fn main() {
     env_logger::init();
@@ -18,7 +18,9 @@ fn main() {
 
         let before = Instant::now();
 
-        test.run(false);
+        if !test.run(false) {
+            error!("Self-test {:?} failed!", test);
+        }
 
         println!("Took {:?}", before.elapsed());
     }

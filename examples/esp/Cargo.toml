@@ -33,10 +33,11 @@ heapless = "0.9"
 static_cell = "2"
 enumset = { version = "1", default-features = false }
 rand_core = "0.9"
-esp-mbedtls = { path = "../../esp-mbedtls" } #, features = ["nohook-sha512"]
+esp-mbedtls = { path = "../../esp-mbedtls", features = [] }
 
 embassy-time = "0.5"
 embassy-executor = "0.9"
+embassy-net = "0.8"
 
 # For the `edge_*` examples
 edge-http = { version = "0.7", features = ["io"] }
@@ -47,6 +48,6 @@ esp-hal = { version = "1", features = ["log-04", "unstable", "exception-handler"
 esp-alloc = { version = "0.9" }
 esp-backtrace = { version = "0.18.1", features = ["panic-handler", "println"] }
 esp-println = { version = "0.16", optional = true, features = ["log-04"] }
-esp-radio = { version = "0.17", features = ["log-04", "unstable"] }
+esp-radio = { version = "0.17", features = ["wifi", "log-04", "unstable"] }
 esp-bootloader-esp-idf = { version = "0.4", features = ["log-04"] }
 esp-metadata-generated = "0.3"

@@ -1,103 +1,104 @@
-//! Example for a client connection to a server.
-//! This example connects to either `Google.com` or `certauth.cryptomix.com` (mTLS) and then prints out the result.
+//! Example of a client connection to a server, using the async API.
 //!
-//! # mTLS
-//! Use the mTLS feature to enable client authentication and send client certificates when doing a
-//! request. Note that this will connect to `certauth.cryptomix.com` instead of `google.com`
+//! This example connects to `https://httpbin.org/ip` and then to `https://certauth.cryptomix.com/json/` (mTLS)
+//! and performs a simple HTTPS 1.0 GET request to each.
+
 #![no_std]
 #![no_main]
-#![feature(type_alias_impl_trait)]
-#![feature(impl_trait_in_assoc_type)]
 
-use core::ffi::CStr;
-
-#[doc(hidden)]
-pub use esp_hal as hal;
-
-use embassy_net::tcp::TcpSocket;
-use embassy_net::{Config, Ipv4Address, Runner, StackResources};
+use core::net::SocketAddr;
 
 use embassy_executor::Spawner;
-use embassy_time::{Duration, Timer};
-use esp_backtrace as _;
-use esp_mbedtls::{asynch::Session, Certificates, Mode, PrivateKey, TlsVersion};
-use esp_mbedtls::{Certificate, ClientSessionConfig, Credentials, SessionConfig, Tls, X509};
-use esp_println::logger::init_logger;
-use esp_println::{print, println};
-use esp_wifi::wifi::{
-    ClientConfiguration, Configuration, WifiController, WifiDevice, WifiEvent, WifiState,
-};
-use esp_wifi::{init, EspWifiController};
-use hal::{clock::CpuClock, rng::Rng, timer::timg::TimerGroup};
 
-// Patch until https://github.com/embassy-rs/static-cell/issues/16 is fixed
+use embassy_net::Runner;
+use embassy_net::StackResources;
+use embassy_time::Duration;
+use embassy_time::Timer;
+use esp_alloc::heap_allocator;
+use esp_backtrace as _;
+use esp_hal::ram;
+use esp_hal::rng::Trng;
+use esp_hal::rng::TrngSource;
+use esp_hal::rsa::RsaBackend;
+use esp_hal::sha::ShaBackend;
+use esp_hal::timer::timg::TimerGroup;
+use esp_mbedtls::sys::accel::esp::digest as accel_digest;
+use esp_mbedtls::sys::accel::esp::exp_mod as accel_exp_mod;
+use esp_mbedtls::sys::hook::digest;
+use esp_mbedtls::Tls;
+use esp_metadata_generated::memory_range;
+use esp_radio as _;
+use esp_radio::wifi::ClientConfig;
+use esp_radio::wifi::ModeConfig;
+use esp_radio::wifi::WifiController;
+use esp_radio::wifi::WifiDevice;
+use esp_radio::wifi::WifiEvent;
+use esp_radio::wifi::WifiStaState;
+use esp_radio::Controller;
+
+use log::info;
+
+extern crate alloc;
+
+#[path = "../../../common/client.rs"]
+mod client;
+
 macro_rules! mk_static {
-    ($t:ty,$val:expr) => {{
+    ($t:ty) => {{
         static STATIC_CELL: static_cell::StaticCell<$t> = static_cell::StaticCell::new();
-        #[deny(unused_attributes)]
-        let x = STATIC_CELL.uninit().write(($val));
-        x
+        STATIC_CELL.uninit()
+    }};
+    ($t:ty,$val:expr) => {{
+        mk_static!($t).write($val)
     }};
 }
+
+const HEAP_SIZE: usize = 120 * 1024;
+
+const RECLAIMED_RAM: usize =
+    memory_range!("DRAM2_UNINIT").end - memory_range!("DRAM2_UNINIT").start;
+
+esp_bootloader_esp_idf::esp_app_desc!();
 
 const SSID: &str = env!("SSID");
 const PASSWORD: &str = env!("PASSWORD");
 
-// Setup configuration based on mTLS feature.
-cfg_if::cfg_if! {
-    if #[cfg(feature = "mtls")] {
-        const REMOTE_IP: Ipv4Address = Ipv4Address::new(62, 210, 201, 125); // certauth.cryptomix.com
-        const SERVERNAME: &CStr = c"certauth.cryptomix.com";
-        const REQUEST: &[u8] = b"GET /json/ HTTP/1.0\r\nHost: certauth.cryptomix.com\r\n\r\n";
-    } else {
-        const REMOTE_IP: Ipv4Address = Ipv4Address::new(142, 250, 185, 68); // google.com
-        const SERVERNAME: &CStr = c"www.google.com";
-        const REQUEST: &[u8] = b"GET /notfound HTTP/1.0\r\nHost: www.google.com\r\n\r\n";
-    }
-}
+#[esp_rtos::main]
+async fn main(spawner: Spawner) {
+    esp_println::logger::init_logger(log::LevelFilter::Info);
 
-esp_bootloader_esp_idf::esp_app_desc!();
+    info!("Starting...");
 
-#[esp_hal_embassy::main]
-async fn main(spawner: Spawner) -> ! {
-    init_logger(log::LevelFilter::Info);
+    heap_allocator!(size: HEAP_SIZE - RECLAIMED_RAM);
+    heap_allocator!(#[ram(reclaimed)] size: RECLAIMED_RAM);
 
-    let config = esp_hal::Config::default().with_cpu_clock(CpuClock::max());
-    let peripherals = esp_hal::init(config);
-
-    esp_alloc::heap_allocator!(size: 72 * 1024);
-    esp_alloc::heap_allocator!(#[unsafe(link_section = ".dram2_uninit")] size: 64 * 1024);
+    let peripherals = esp_hal::init(esp_hal::Config::default());
 
     let timg0 = TimerGroup::new(peripherals.TIMG0);
-    let mut rng = Rng::new(peripherals.RNG);
-
-    let esp_wifi_ctrl = &*mk_static!(
-        EspWifiController<'_>,
-        init(timg0.timer0, rng.clone()).unwrap()
+    esp_rtos::start(
+        timg0.timer0,
+        #[cfg(target_arch = "riscv32")]
+        esp_hal::interrupt::software::SoftwareInterruptControl::new(peripherals.SW_INTERRUPT)
+            .software_interrupt0,
     );
 
-    let (controller, interfaces) = esp_wifi::wifi::new(&esp_wifi_ctrl, peripherals.WIFI).unwrap();
+    let _trng_source = TrngSource::new(peripherals.RNG, peripherals.ADC1);
 
-    let wifi_interface = interfaces.sta;
+    let trng = mk_static!(Trng, Trng::try_new().unwrap());
 
-    cfg_if::cfg_if! {
-        if #[cfg(feature = "esp32")] {
-            let timg1 = TimerGroup::new(peripherals.TIMG1);
-            esp_hal_embassy::init(timg1.timer0);
-        } else {
-            use esp_hal::timer::systimer::SystemTimer;
-            let systimer = SystemTimer::new(peripherals.SYSTIMER);
-            esp_hal_embassy::init(systimer.alarm0);
-        }
-    }
+    let init = mk_static!(Controller, esp_radio::init().unwrap());
 
-    let config = Config::dhcpv4(Default::default());
+    // Configure and start the Wifi first
+    let wifi = peripherals.WIFI;
+    let (controller, wifi_interfaces) =
+        esp_radio::wifi::new(init, wifi, esp_radio::wifi::Config::default()).unwrap();
+    let config = embassy_net::Config::dhcpv4(Default::default());
 
-    let seed = (rng.random() as u64) << 32 | rng.random() as u64;
+    let seed = (trng.random() as u64) << 32 | trng.random() as u64;
 
     // Init network stack
     let (stack, runner) = embassy_net::new(
-        wifi_interface,
+        wifi_interfaces.sta,
         config,
         mk_static!(StackResources<3>, StackResources::<3>::new()),
         seed,
@@ -106,9 +107,95 @@ async fn main(spawner: Spawner) -> ! {
     spawner.spawn(connection(controller)).ok();
     spawner.spawn(net_task(runner)).ok();
 
-    let mut rx_buffer = [0; 4096];
-    let mut tx_buffer = [0; 4096];
+    wait_ip(stack).await;
 
+    let mut sha = ShaBackend::new(peripherals.SHA);
+    let _sha_backend = sha.start();
+
+    let mut rsa = RsaBackend::new(peripherals.RSA);
+    let _rsa_backend = rsa.start();
+
+    static SHA1: accel_digest::EspSha1 = accel_digest::EspSha1::new();
+    #[cfg(not(feature = "esp32"))]
+    static SHA224: accel_digest::EspSha224 = accel_digest::EspSha224::new();
+    static SHA256: accel_digest::EspSha256 = accel_digest::EspSha256::new();
+    #[cfg(any(feature = "esp32", feature = "esp32s2", feature = "esp32s3"))]
+    static SHA384: accel_digest::EspSha384 = accel_digest::EspSha384::new();
+    #[cfg(any(feature = "esp32", feature = "esp32s2", feature = "esp32s3"))]
+    static SHA512: accel_digest::EspSha512 = accel_digest::EspSha512::new();
+    static EXP_MOD: accel_exp_mod::EspExpMod = accel_exp_mod::EspExpMod::new();
+
+    unsafe {
+        digest::hook_sha1(Some(&SHA1));
+        #[cfg(not(feature = "esp32"))]
+        digest::hook_sha224(Some(&SHA224));
+        digest::hook_sha256(Some(&SHA256));
+        #[cfg(any(feature = "esp32", feature = "esp32s2", feature = "esp32s3"))]
+        digest::hook_sha384(Some(&SHA384));
+        #[cfg(any(feature = "esp32", feature = "esp32s2", feature = "esp32s3"))]
+        digest::hook_sha512(Some(&SHA512));
+        //exp_mod::hook_exp_mod(Some(&EXP_MOD));
+    }
+
+    let mut tls = Tls::new(trng).unwrap();
+
+    tls.set_debug(0);
+
+    for (index, (server_name_cstr, server_path, mtls)) in [
+        (c"httpbin.org", "/ip", false),
+        (c"certauth.cryptomix.com", "/json/", true),
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        let server_name = server_name_cstr.to_str().unwrap();
+
+        info!(
+            "\n\n\n\nREQUEST {}, MTLS: {} =============================",
+            index, mtls
+        );
+
+        info!("Resolving server {}", server_name);
+
+        let ip = *stack
+            .dns_query(server_name, embassy_net::dns::DnsQueryType::A)
+            .await
+            .unwrap()
+            .iter()
+            .next()
+            .unwrap();
+
+        info!("Using IP addr {}", ip);
+
+        info!("Creating TCP connection");
+
+        let mut rx_buf = [0; 1024];
+        let mut tx_buf = [0; 1024];
+
+        let mut socket = embassy_net::tcp::TcpSocket::new(stack, &mut rx_buf, &mut tx_buf);
+
+        //socket.set_timeout(Some(Duration::from_secs(10)));
+        socket
+            .connect(SocketAddr::new(ip.into(), 443))
+            .await
+            .unwrap();
+
+        let mut buf = [0u8; 1024];
+
+        client::request(
+            tls.reference(),
+            socket,
+            server_name_cstr,
+            server_path,
+            mtls,
+            &mut buf,
+        )
+        .await
+        .unwrap();
+    }
+}
+
+async fn wait_ip(stack: embassy_net::Stack<'_>) {
     loop {
         if stack.is_link_up() {
             break;
@@ -116,121 +203,48 @@ async fn main(spawner: Spawner) -> ! {
         Timer::after(Duration::from_millis(500)).await;
     }
 
-    println!("Waiting to get IP address...");
+    info!("Waiting to get IP address...");
     loop {
         if let Some(config) = stack.config_v4() {
-            println!("Got IP: {}", config.address);
+            info!("Got IP: {}", config.address);
             break;
         }
         Timer::after(Duration::from_millis(500)).await;
     }
-
-    let mut socket = TcpSocket::new(stack, &mut rx_buffer, &mut tx_buffer);
-
-    socket.set_timeout(Some(Duration::from_secs(10)));
-
-    let remote_endpoint = (REMOTE_IP, 443);
-    println!("connecting...");
-    let r = socket.connect(remote_endpoint).await;
-    if let Err(e) = r {
-        println!("connect error: {:?}", e);
-        #[allow(clippy::empty_loop)]
-        loop {}
-    }
-
-    cfg_if::cfg_if! {
-        if #[cfg(feature = "mtls")] {
-            let creds = Some(Credentials {
-                certificate: Certificate::new(X509::pem(concat!(include_str!("./certs/certificate.pem"), "\0").as_bytes()).unwrap()).unwrap(),
-                private_key: PrivateKey::new(X509::pem(concat!(include_str!("./certs/private_key.pem"), "\0").as_bytes()).unwrap(), None).unwrap(),
-            });
-            let ca_chain = Certificate::new(X509::pem(concat!(include_str!("./certs/certauth.cryptomix.com.pem"), "\0").as_bytes()).unwrap()).unwrap();
-        } else {
-            let creds = None;
-            let ca_chain = Certificate::new(X509::pem(concat!(include_str!("./certs/www.google.com.pem"), "\0").as_bytes()).unwrap()).unwrap();
-        }
-    }
-
-    let mut tls = Tls::new(peripherals.SHA)
-        .unwrap()
-        .with_hardware_rsa(peripherals.RSA);
-
-    tls.set_debug(0);
-
-    let mut session = Session::new(
-        &mut socket,
-        SessionConfig::Client(ClientSessionConfig {
-            min_version: TlsVersion::Tls1_3,
-            ca_chain,
-            creds,
-            ..ClientSessionConfig::new(SERVERNAME)
-        }),
-        tls.reference(),
-    )
-    .unwrap();
-
-    println!("Start tls connect");
-    session.connect().await.unwrap();
-
-    println!("connected!");
-    let mut buf = [0; 1024];
-
-    use embedded_io_async::Write;
-
-    let r = session.write_all(REQUEST).await;
-    if let Err(e) = r {
-        println!("write error: {:?}", e);
-        #[allow(clippy::empty_loop)]
-        loop {}
-    }
-
-    loop {
-        let n = match session.read(&mut buf).await {
-            Ok(n) => n,
-            Err(esp_mbedtls::TlsError::Eof) => {
-                break;
-            }
-            Err(e) => {
-                println!("read error: {:?}", e);
-                break;
-            }
-        };
-        print!("{}", core::str::from_utf8(&buf[..n]).unwrap());
-    }
-    println!();
-    println!("Done");
-
-    #[allow(clippy::empty_loop)]
-    loop {}
 }
 
 #[embassy_executor::task]
 async fn connection(mut controller: WifiController<'static>) {
-    println!("start connection task");
-    println!("Device capabilities: {:?}", controller.capabilities());
+    info!("Start connection task");
+    info!("Device capabilities: {:?}", controller.capabilities());
+
     loop {
-        if matches!(esp_wifi::wifi::wifi_state(), WifiState::StaConnected) {
-            // wait until we're no longer connected
-            controller.wait_for_event(WifiEvent::StaDisconnected).await;
-            Timer::after(Duration::from_millis(5000)).await
+        match esp_radio::wifi::sta_state() {
+            WifiStaState::Connected => {
+                // wait until we're no longer connected
+                controller.wait_for_event(WifiEvent::StaDisconnected).await;
+                Timer::after(Duration::from_millis(5000)).await
+            }
+            _ => {}
         }
         if !matches!(controller.is_started(), Ok(true)) {
-            let client_config = Configuration::Client(ClientConfiguration {
-                ssid: SSID.try_into().unwrap(),
-                password: PASSWORD.try_into().unwrap(),
-                ..Default::default()
-            });
-            controller.set_configuration(&client_config).unwrap();
-            println!("Starting wifi");
+            let client_config = ModeConfig::Client(
+                ClientConfig::default()
+                    .with_ssid(SSID.into())
+                    .with_password(PASSWORD.into()),
+            );
+            controller.set_config(&client_config).unwrap();
+            info!("Starting wifi");
             controller.start_async().await.unwrap();
-            println!("Wifi started!");
+            info!("Wifi started!");
         }
-        println!("About to connect...");
+
+        info!("About to connect...");
 
         match controller.connect_async().await {
-            Ok(_) => println!("Wifi connected!"),
+            Ok(_) => info!("Wifi connected!"),
             Err(e) => {
-                println!("Failed to connect to wifi: {e:?}");
+                info!("Failed to connect to wifi: {e:?}");
                 Timer::after(Duration::from_millis(5000)).await
             }
         }
