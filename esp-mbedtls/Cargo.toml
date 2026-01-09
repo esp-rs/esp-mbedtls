@@ -10,6 +10,8 @@ harness = false
 
 [features]
 default = ["edge-nal"]
+defmt = ["dep:defmt", "esp-mbedtls-sys/defmt"]
+log = ["dep:log", "esp-mbedtls-sys/log"]
 
 # Re-expose esp-mbedtls-sys features
 force-generate-bindings = ["esp-mbedtls-sys/force-generate-bindings"]

@@ -20,6 +20,12 @@ impl<T: Deref> MbedtlsSha384 for T where T::Target: MbedtlsSha384 {}
 #[cfg(not(feature = "nohook-sha512"))]
 pub unsafe fn hook_sha512(sha512: Option<&'static (dyn MbedtlsSha512 + Send + Sync)>) {
     critical_section::with(|cs| {
+        if sha512.is_some() {
+            info!("SHA-512 hook: added custom/HW accelerated impl");
+        } else {
+            info!("SHA-512 hook: removed");
+        }
+
         alt::SHA512.borrow(cs).set(sha512);
     });
 }
@@ -34,6 +40,12 @@ pub unsafe fn hook_sha512(sha512: Option<&'static (dyn MbedtlsSha512 + Send + Sy
 #[cfg(not(feature = "nohook-sha512"))]
 pub unsafe fn hook_sha384(sha384: Option<&'static (dyn MbedtlsSha384 + Send + Sync)>) {
     critical_section::with(|cs| {
+        if sha384.is_some() {
+            info!("SHA-384 hook: added custom/HW accelerated impl");
+        } else {
+            info!("SHA-384 hook: removed");
+        }
+
         alt::SHA384.borrow(cs).set(sha384);
     });
 }
@@ -70,12 +82,7 @@ mod alt {
 
     #[inline(always)]
     fn algo<'a>(ctx: *const mbedtls_sha512_context) -> &'a dyn MbedtlsDigest {
-        algo_for(unsafe { (*ctx).is384 } != 0)
-    }
-
-    #[inline(always)]
-    fn algo_for<'a>(sha224: bool) -> &'a dyn MbedtlsDigest {
-        if sha224 {
+        if unsafe { (*ctx).is384 } != 0 {
             if let Some(sha) = critical_section::with(|cs| SHA384.borrow(cs).get()) {
                 sha
             } else {
@@ -100,10 +107,10 @@ mod alt {
 
     #[no_mangle]
     unsafe extern "C" fn mbedtls_sha512_init(ctx: *mut mbedtls_sha512_context) {
-        digest_init(algo_for(false), ctx);
-        unsafe {
-            (*ctx).is384 = 0;
-        }
+        let ctx = unsafe { &mut *ctx };
+        ctx.is384 = 0;
+
+        digest_init(algo(ctx), ctx);
     }
 
     #[no_mangle]
@@ -118,7 +125,13 @@ mod alt {
     ) {
         let dst = unsafe { &mut *dst };
         let src = unsafe { &*src };
-        dst.is384 = src.is384;
+
+        if src.is384 != dst.is384 {
+            digest_free(algo(dst), dst);
+
+            dst.is384 = src.is384;
+            digest_init(algo(dst), dst);
+        }
 
         digest_clone(algo(src), src, dst);
     }
@@ -130,10 +143,11 @@ mod alt {
     ) -> c_int {
         let ctx = unsafe { &mut *ctx };
 
-        if (is384 != 0) != (ctx.is384 != 0) {
+        if is384 != ctx.is384 as _ {
             digest_free(algo(ctx), ctx);
-            digest_init(algo_for(is384 != 0), ctx);
-            ctx.is384 = if is384 != 0 { 1 } else { 0 };
+
+            ctx.is384 = is384 as _;
+            digest_init(algo(ctx), ctx);
         }
 
         digest_starts(algo(ctx), ctx)

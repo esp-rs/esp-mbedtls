@@ -7,6 +7,8 @@
 pub use bindings::*;
 pub use error::*;
 
+pub(crate) mod fmt;
+
 mod error;
 mod extra_impls; // TODO: Figure out if we still need this
 

@@ -131,22 +131,20 @@ impl EspExpMod {
     ///
     /// DO NOT call this function while holding esp_mpi_enable_hardware_hw_op().
     fn calculate_rinv(prec_rr: &mut mbedtls_mpi, m: &mbedtls_mpi, num_words: usize) -> c_int {
-        let ret = 0;
-        let num_bits = num_words * 32;
         let mut rr = mbedtls_mpi {
             private_s: 0,
             private_n: 0,
             private_p: core::ptr::null_mut(),
         };
 
-        unsafe {
-            mbedtls_mpi_init(&mut rr);
-            err!(mbedtls_mpi_set_bit(&mut rr, num_bits * 2, 1));
-            err!(mbedtls_mpi_mod_mpi(prec_rr, &rr, m));
-            mbedtls_mpi_free(&mut rr);
-        }
+        unsafe { mbedtls_mpi_init(&mut rr) };
 
-        ret
+        err!(unsafe { mbedtls_mpi_set_bit(&mut rr, num_words * 32 * 2, 1) });
+        err!(unsafe { mbedtls_mpi_mod_mpi(prec_rr, &rr, m) });
+
+        unsafe { mbedtls_mpi_free(&mut rr) };
+
+        0
     }
 }
 
@@ -168,7 +166,7 @@ impl MbedtlsMpiExpMod for EspExpMod {
         let num_words = Self::calculate_hw_words(m_words.max(x_words.max(y_words)));
 
         if num_words * 32 < SOC_RSA_MIN_BIT_LEN || num_words * 32 > SOC_RSA_MAX_BIT_LEN {
-            unsafe {
+            err!(unsafe {
                 mbedtls_mpi_exp_mod_soft(
                     z,
                     x,
@@ -176,7 +174,9 @@ impl MbedtlsMpiExpMod for EspExpMod {
                     m,
                     prec_rr.as_mut().map(|rr| *rr as *mut _).unwrap_or_default(),
                 )
-            };
+            });
+
+            return;
         }
 
         if m.private_p.is_null() {
@@ -205,7 +205,7 @@ impl MbedtlsMpiExpMod for EspExpMod {
             private_p: core::ptr::null_mut(),
         };
 
-        // Determine RR pointer, either _RR for cached value or local RR_new
+        // Determine rinv, either `prec_rr` for cached value or the local `rinv_new`
         let rinv: &mut mbedtls_mpi = if let Some(prec_rr) = prec_rr.as_mut() {
             prec_rr
         } else {

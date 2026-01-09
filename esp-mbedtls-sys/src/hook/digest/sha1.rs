@@ -19,6 +19,12 @@ impl<T: Deref> MbedtlsSha1 for T where T::Target: MbedtlsSha1 {}
 #[cfg(not(feature = "nohook-sha1"))]
 pub unsafe fn hook_sha1(sha1: Option<&'static (dyn MbedtlsSha1 + Send + Sync)>) {
     critical_section::with(|cs| {
+        if sha1.is_some() {
+            info!("SHA-1 hook: added custom/HW accelerated impl");
+        } else {
+            info!("SHA-1 hook: removed");
+        }
+
         alt::SHA1.borrow(cs).set(sha1);
     });
 }

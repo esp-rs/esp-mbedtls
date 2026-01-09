@@ -20,6 +20,12 @@ impl<T: Deref> MbedtlsSha224 for T where T::Target: MbedtlsSha224 {}
 #[cfg(not(feature = "nohook-sha256"))]
 pub unsafe fn hook_sha256(sha256: Option<&'static (dyn MbedtlsSha256 + Send + Sync)>) {
     critical_section::with(|cs| {
+        if sha256.is_some() {
+            info!("SHA-256 hook: added custom/HW accelerated impl");
+        } else {
+            info!("SHA-256 hook: removed");
+        }
+
         alt::SHA256.borrow(cs).set(sha256);
     });
 }
@@ -34,6 +40,12 @@ pub unsafe fn hook_sha256(sha256: Option<&'static (dyn MbedtlsSha256 + Send + Sy
 #[cfg(not(feature = "nohook-sha256"))]
 pub unsafe fn hook_sha224(sha224: Option<&'static (dyn MbedtlsSha224 + Send + Sync)>) {
     critical_section::with(|cs| {
+        if sha224.is_some() {
+            info!("SHA-224 hook: added custom/HW accelerated impl");
+        } else {
+            info!("SHA-224 hook: removed");
+        }
+
         alt::SHA224.borrow(cs).set(sha224);
     });
 }
@@ -70,12 +82,7 @@ mod alt {
 
     #[inline(always)]
     fn algo<'a>(ctx: *const mbedtls_sha256_context) -> &'a dyn MbedtlsDigest {
-        algo_for(unsafe { (*ctx).is224 } != 0)
-    }
-
-    #[inline(always)]
-    fn algo_for<'a>(sha224: bool) -> &'a dyn MbedtlsDigest {
-        if sha224 {
+        if unsafe { (*ctx).is224 } != 0 {
             if let Some(sha) = critical_section::with(|cs| SHA224.borrow(cs).get()) {
                 sha
             } else {
@@ -100,10 +107,10 @@ mod alt {
 
     #[no_mangle]
     unsafe extern "C" fn mbedtls_sha256_init(ctx: *mut mbedtls_sha256_context) {
-        digest_init(algo_for(false), ctx);
-        unsafe {
-            (*ctx).is224 = 0;
-        }
+        let ctx = unsafe { &mut *ctx };
+        ctx.is224 = 0;
+
+        digest_init(algo(ctx), ctx);
     }
 
     #[no_mangle]
@@ -118,7 +125,13 @@ mod alt {
     ) {
         let dst = unsafe { &mut *dst };
         let src = unsafe { &*src };
-        dst.is224 = src.is224;
+
+        if src.is224 != dst.is224 {
+            digest_free(algo(dst), dst);
+
+            dst.is224 = src.is224;
+            digest_init(algo(dst), dst);
+        }
 
         digest_clone(algo(src), src, dst);
     }
@@ -130,10 +143,11 @@ mod alt {
     ) -> c_int {
         let ctx = unsafe { &mut *ctx };
 
-        if (is224 != 0) != (ctx.is224 != 0) {
+        if is224 != ctx.is224 as _ {
             digest_free(algo(ctx), ctx);
-            digest_init(algo_for(is224 != 0), ctx);
-            ctx.is224 = if is224 != 0 { 1 } else { 0 };
+
+            ctx.is224 = is224 as _;
+            digest_init(algo(ctx), ctx);
         }
 
         digest_starts(algo(ctx), ctx)

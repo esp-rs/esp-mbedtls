@@ -8,20 +8,20 @@ use core::ffi::c_int;
 use core::fmt::Write as _;
 
 use critical_section::Mutex;
+
 use embassy_executor::Spawner;
 
 use esp_alloc::heap_allocator;
+
 use esp_backtrace as _;
+
 use esp_hal::ram;
-use esp_hal::rsa::RsaBackend;
-use esp_hal::sha::ShaBackend;
 use esp_hal::timer::timg::TimerGroup;
-use esp_mbedtls::sys::accel::esp::digest as accel_digest;
-use esp_mbedtls::sys::accel::esp::exp_mod as accel_exp_mod;
-use esp_mbedtls::sys::hook::digest;
-use esp_mbedtls::sys::hook::exp_mod;
+
+use esp_mbedtls::sys::accel::esp::EspAccel;
 use esp_mbedtls::sys::self_test::MbedtlsSelfTest;
 use esp_metadata_generated::memory_range;
+
 use esp_radio as _;
 
 use log::{error, info};
@@ -55,44 +55,18 @@ async fn main(_s: Spawner) {
     let timg0 = TimerGroup::new(peripherals.TIMG0);
     esp_rtos::start(
         timg0.timer0,
-        #[cfg(target_arch = "riscv32")]
         esp_hal::interrupt::software::SoftwareInterruptControl::new(peripherals.SW_INTERRUPT)
             .software_interrupt0,
     );
+
+    let mut accel = EspAccel::new(peripherals.SHA, peripherals.RSA);
 
     let mut sw_cycles = [0; 20];
     let mut hw_cycles = [0; 20];
 
     run_tests(false, &mut sw_cycles);
 
-    let mut sha = ShaBackend::new(peripherals.SHA);
-    let _sha_backend = sha.start();
-
-    let mut rsa = RsaBackend::new(peripherals.RSA);
-    let _rsa_backend = rsa.start();
-
-    static SHA1: accel_digest::EspSha1 = accel_digest::EspSha1::new();
-    #[cfg(not(feature = "esp32"))]
-    static SHA224: accel_digest::EspSha224 = accel_digest::EspSha224::new();
-    static SHA256: accel_digest::EspSha256 = accel_digest::EspSha256::new();
-    #[cfg(any(feature = "esp32", feature = "esp32s2", feature = "esp32s3"))]
-    static SHA384: accel_digest::EspSha384 = accel_digest::EspSha384::new();
-    #[cfg(any(feature = "esp32", feature = "esp32s2", feature = "esp32s3"))]
-    static SHA512: accel_digest::EspSha512 = accel_digest::EspSha512::new();
-
-    static EXP_MOD: accel_exp_mod::EspExpMod = accel_exp_mod::EspExpMod::new();
-
-    unsafe {
-        digest::hook_sha1(Some(&SHA1));
-        #[cfg(not(feature = "esp32"))]
-        digest::hook_sha224(Some(&SHA224));
-        digest::hook_sha256(Some(&SHA256));
-        #[cfg(any(feature = "esp32", feature = "esp32s2", feature = "esp32s3"))]
-        digest::hook_sha384(Some(&SHA384));
-        #[cfg(any(feature = "esp32", feature = "esp32s2", feature = "esp32s3"))]
-        digest::hook_sha512(Some(&SHA512));
-        exp_mod::hook_exp_mod(Some(&EXP_MOD));
-    }
+    let _accel_queue = accel.start();
 
     run_tests(true, &mut hw_cycles);
 
@@ -137,13 +111,13 @@ fn run_tests(hw_accel: bool, summary: &mut [u64]) {
     for mut test in enumset::EnumSet::<MbedtlsSelfTest>::all() {
         let before = cycles();
 
-        if !test.run(false) {
+        if !test.run(true) {
             error!("Self-test {:?} failed!", test);
         }
 
         let after = cycles();
 
-        let cycles = after.checked_sub(before).unwrap_or(0);
+        let cycles = after.saturating_sub(before);
 
         let mut test_name = heapless::String::<14>::new();
         write!(&mut test_name, "{:?}", test).unwrap();

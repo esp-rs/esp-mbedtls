@@ -12,29 +12,31 @@ use embassy_executor::Spawner;
 
 use embassy_net::Runner;
 use embassy_net::StackResources;
+
 use embassy_time::Duration;
 use embassy_time::Timer;
+
 use esp_alloc::heap_allocator;
+
 use esp_backtrace as _;
+
 use esp_hal::ram;
 use esp_hal::rng::Trng;
 use esp_hal::rng::TrngSource;
-use esp_hal::rsa::RsaBackend;
-use esp_hal::sha::ShaBackend;
 use esp_hal::timer::timg::TimerGroup;
-use esp_mbedtls::sys::accel::esp::digest as accel_digest;
-use esp_mbedtls::sys::accel::esp::exp_mod as accel_exp_mod;
-use esp_mbedtls::sys::hook::digest;
+
+use esp_mbedtls::sys::accel::esp::EspAccel;
 use esp_mbedtls::Tls;
+
 use esp_metadata_generated::memory_range;
+
 use esp_radio as _;
-use esp_radio::wifi::ClientConfig;
+use esp_radio::wifi::sta::StationConfig;
 use esp_radio::wifi::ModeConfig;
 use esp_radio::wifi::WifiController;
 use esp_radio::wifi::WifiDevice;
 use esp_radio::wifi::WifiEvent;
-use esp_radio::wifi::WifiStaState;
-use esp_radio::Controller;
+use esp_radio::wifi::WifiStationState;
 
 use log::info;
 
@@ -77,28 +79,27 @@ async fn main(spawner: Spawner) {
     let timg0 = TimerGroup::new(peripherals.TIMG0);
     esp_rtos::start(
         timg0.timer0,
-        #[cfg(target_arch = "riscv32")]
         esp_hal::interrupt::software::SoftwareInterruptControl::new(peripherals.SW_INTERRUPT)
             .software_interrupt0,
     );
+
+    let mut accel = EspAccel::new(peripherals.SHA, peripherals.RSA);
+    let _accel_queue = accel.start();
 
     let _trng_source = TrngSource::new(peripherals.RNG, peripherals.ADC1);
 
     let trng = mk_static!(Trng, Trng::try_new().unwrap());
 
-    let init = mk_static!(Controller, esp_radio::init().unwrap());
-
     // Configure and start the Wifi first
-    let wifi = peripherals.WIFI;
     let (controller, wifi_interfaces) =
-        esp_radio::wifi::new(init, wifi, esp_radio::wifi::Config::default()).unwrap();
+        esp_radio::wifi::new(peripherals.WIFI, esp_radio::wifi::Config::default()).unwrap();
     let config = embassy_net::Config::dhcpv4(Default::default());
 
     let seed = (trng.random() as u64) << 32 | trng.random() as u64;
 
     // Init network stack
     let (stack, runner) = embassy_net::new(
-        wifi_interfaces.sta,
+        wifi_interfaces.station,
         config,
         mk_static!(StackResources<3>, StackResources::<3>::new()),
         seed,
@@ -109,37 +110,9 @@ async fn main(spawner: Spawner) {
 
     wait_ip(stack).await;
 
-    let mut sha = ShaBackend::new(peripherals.SHA);
-    let _sha_backend = sha.start();
-
-    let mut rsa = RsaBackend::new(peripherals.RSA);
-    let _rsa_backend = rsa.start();
-
-    static SHA1: accel_digest::EspSha1 = accel_digest::EspSha1::new();
-    #[cfg(not(feature = "esp32"))]
-    static SHA224: accel_digest::EspSha224 = accel_digest::EspSha224::new();
-    static SHA256: accel_digest::EspSha256 = accel_digest::EspSha256::new();
-    #[cfg(any(feature = "esp32", feature = "esp32s2", feature = "esp32s3"))]
-    static SHA384: accel_digest::EspSha384 = accel_digest::EspSha384::new();
-    #[cfg(any(feature = "esp32", feature = "esp32s2", feature = "esp32s3"))]
-    static SHA512: accel_digest::EspSha512 = accel_digest::EspSha512::new();
-    static EXP_MOD: accel_exp_mod::EspExpMod = accel_exp_mod::EspExpMod::new();
-
-    unsafe {
-        digest::hook_sha1(Some(&SHA1));
-        #[cfg(not(feature = "esp32"))]
-        digest::hook_sha224(Some(&SHA224));
-        digest::hook_sha256(Some(&SHA256));
-        #[cfg(any(feature = "esp32", feature = "esp32s2", feature = "esp32s3"))]
-        digest::hook_sha384(Some(&SHA384));
-        #[cfg(any(feature = "esp32", feature = "esp32s2", feature = "esp32s3"))]
-        digest::hook_sha512(Some(&SHA512));
-        //exp_mod::hook_exp_mod(Some(&EXP_MOD));
-    }
-
     let mut tls = Tls::new(trng).unwrap();
 
-    tls.set_debug(0);
+    tls.set_debug(4);
 
     for (index, (server_name_cstr, server_path, mtls)) in [
         (c"httpbin.org", "/ip", false),
@@ -219,17 +192,16 @@ async fn connection(mut controller: WifiController<'static>) {
     info!("Device capabilities: {:?}", controller.capabilities());
 
     loop {
-        match esp_radio::wifi::sta_state() {
-            WifiStaState::Connected => {
-                // wait until we're no longer connected
-                controller.wait_for_event(WifiEvent::StaDisconnected).await;
-                Timer::after(Duration::from_millis(5000)).await
-            }
-            _ => {}
+        if esp_radio::wifi::station_state() == WifiStationState::Connected {
+            // wait until we're no longer connected
+            controller
+                .wait_for_event(WifiEvent::StationDisconnected)
+                .await;
+            Timer::after(Duration::from_millis(5000)).await
         }
         if !matches!(controller.is_started(), Ok(true)) {
-            let client_config = ModeConfig::Client(
-                ClientConfig::default()
+            let client_config = ModeConfig::Station(
+                StationConfig::default()
                     .with_ssid(SSID.into())
                     .with_password(PASSWORD.into()),
             );

@@ -120,14 +120,14 @@ impl<T> Default for RustCryptoDigest<T> {
 
 impl<T> MbedtlsDigest for RustCryptoDigest<T>
 where
-    T: Digest, /*+ Clone TODO */
+    T: Digest + Clone,
 {
     fn output_size(&self, _work_area: &[u8]) -> usize {
         <T as Digest>::output_size()
     }
 
     fn init(&self, work_area: &mut [u8]) {
-        unsafe { work_area.cast_mut_maybe::<Option<T>>() }.write(Some(T::new()));
+        unsafe { work_area.cast_mut_maybe::<Option<T>>() }.write(None);
     }
 
     fn free(&self, work_area: &mut [u8]) {
@@ -163,21 +163,7 @@ where
     }
 
     fn clone(&self, src_work_area: &[u8], dst_work_area: &mut [u8]) {
-        // TODO: Needs a Clone bound on T which is not yet possible with `esp-hal`
-        // unsafe {
-        //     (dst_work_area.cast_mut::<Option<T>>() as *mut Option<T>).write(src_work_area.cast::<Option<T>>().clone());
-        // }
-
-        self.free(dst_work_area);
-        self.init(dst_work_area);
-
-        unsafe {
-            core::ptr::copy_nonoverlapping(
-                src_work_area.cast::<Option<T>>(),
-                dst_work_area.cast_mut::<Option<T>>(),
-                1,
-            );
-        }
+        *unsafe { dst_work_area.cast_mut() } = unsafe { src_work_area.cast::<Option<T>>() }.clone();
     }
 }
 

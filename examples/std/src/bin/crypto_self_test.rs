@@ -18,7 +18,7 @@ fn main() {
 
         let before = Instant::now();
 
-        if !test.run(false) {
+        if !test.run(true) {
             error!("Self-test {:?} failed!", test);
         }
 

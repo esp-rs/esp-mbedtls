@@ -52,6 +52,12 @@ where
 #[cfg(not(feature = "nohook-exp-mod"))]
 pub unsafe fn hook_exp_mod(exp_mod: Option<&'static (dyn MbedtlsMpiExpMod + Send + Sync)>) {
     critical_section::with(|cs| {
+        if exp_mod.is_some() {
+            info!("RSA-EXP-MOD hook: added custom/HW accelerated impl");
+        } else {
+            info!("RSA-EXP-MOD hook: removed");
+        }
+
         alt::EXP_MOD.borrow(cs).set(exp_mod);
     });
 }
