@@ -15,7 +15,7 @@ use crypto_bigint::{U256, U384};
 use crate::{
     mbedtls_mpi, mbedtls_mpi_add_mpi, mbedtls_mpi_cmp_int, mbedtls_mpi_exp_mod_soft,
     mbedtls_mpi_free, mbedtls_mpi_grow, mbedtls_mpi_init, mbedtls_mpi_lset, mbedtls_mpi_mod_mpi,
-    mbedtls_mpi_set_bit,
+    mbedtls_mpi_set_bit, merr, MbedtlsError,
 };
 
 use esp_hal::rsa::{operand_sizes, RsaContext};
@@ -42,17 +42,6 @@ const SOC_RSA_MAX_BIT_LEN: usize = 3072;
 
 // Bad input parameters to function.
 // TODO const MBEDTLS_ERR_MPI_BAD_INPUT_DATA: c_int = -0x0004;
-
-macro_rules! err {
-    ($block:expr) => {{
-        let res = $block;
-        if res != 0 {
-            panic!("Non zero error {:?}", res);
-        } else {
-            // Do nothing for now
-        }
-    }};
-}
 
 macro_rules! modular_exponentiate {
     ($op:ty, $x:expr, $y:expr, $m:expr, $rinv:expr, $z:expr, $x_words:expr, $y_words:expr, $m_words:expr, $op_size:expr) => {{
@@ -139,8 +128,10 @@ impl EspExpMod {
 
         unsafe { mbedtls_mpi_init(&mut rr) };
 
-        err!(unsafe { mbedtls_mpi_set_bit(&mut rr, num_words * 32 * 2, 1) });
-        err!(unsafe { mbedtls_mpi_mod_mpi(prec_rr, &rr, m) });
+        unwrap!(merr!(unsafe {
+            mbedtls_mpi_set_bit(&mut rr, num_words * 32 * 2, 1)
+        }));
+        unwrap!(merr!(unsafe { mbedtls_mpi_mod_mpi(prec_rr, &rr, m) }));
 
         unsafe { mbedtls_mpi_free(&mut rr) };
 
@@ -156,7 +147,7 @@ impl MbedtlsMpiExpMod for EspExpMod {
         y: &mbedtls_mpi,
         m: &mbedtls_mpi,
         mut prec_rr: Option<&mut mbedtls_mpi>,
-    ) {
+    ) -> Result<(), MbedtlsError> {
         let x_words = mpi_words(x);
         let y_words = mpi_words(y);
         let m_words = mpi_words(m);
@@ -166,7 +157,7 @@ impl MbedtlsMpiExpMod for EspExpMod {
         let num_words = Self::calculate_hw_words(m_words.max(x_words.max(y_words)));
 
         if num_words * 32 < SOC_RSA_MIN_BIT_LEN || num_words * 32 > SOC_RSA_MAX_BIT_LEN {
-            err!(unsafe {
+            unwrap!(merr!(unsafe {
                 mbedtls_mpi_exp_mod_soft(
                     z,
                     x,
@@ -174,9 +165,9 @@ impl MbedtlsMpiExpMod for EspExpMod {
                     m,
                     prec_rr.as_mut().map(|rr| *rr as *mut _).unwrap_or_default(),
                 )
-            });
+            }));
 
-            return;
+            return Ok(());
         }
 
         if m.private_p.is_null() {
@@ -217,7 +208,7 @@ impl MbedtlsMpiExpMod for EspExpMod {
             Self::calculate_rinv(rinv, m, num_words);
         }
 
-        err!(unsafe { mbedtls_mpi_grow(z, m_words) });
+        unwrap!(merr!(unsafe { mbedtls_mpi_grow(z, m_words) }));
 
         match num_words {
             #[cfg(not(feature = "accel-esp32"))]
@@ -307,7 +298,7 @@ impl MbedtlsMpiExpMod for EspExpMod {
         // Compensate for negative X
         if x.private_s == -1 && unsafe { y.private_p.read() & 1 } != 0 {
             z.private_s = -1;
-            err!(unsafe { mbedtls_mpi_add_mpi(z, m, z) });
+            unwrap!(merr!(unsafe { mbedtls_mpi_add_mpi(z, m, z) }));
         } else {
             z.private_s = 1;
         }
@@ -315,6 +306,8 @@ impl MbedtlsMpiExpMod for EspExpMod {
         if prec_rr.is_none() {
             unsafe { mbedtls_mpi_free(&mut rinv_new) };
         }
+
+        Ok(())
     }
 }
 
@@ -339,9 +332,9 @@ fn compute_mprime(m: &mbedtls_mpi) -> u32 {
 /// Return the number of words actually used to represent an mpi number.
 #[inline(always)]
 fn mpi_words(x: &mbedtls_mpi) -> usize {
-    for index in (0..=x.private_n).rev() {
-        if unsafe { x.private_p.add(index - 1).read() } != 0 {
-            return index;
+    for index in (0..x.private_n).rev() {
+        if unsafe { x.private_p.add(index).read() } != 0 {
+            return index + 1;
         }
     }
 

@@ -2,7 +2,7 @@
 
 use core::ops::Deref;
 
-use crate::mbedtls_mpi;
+use crate::{mbedtls_mpi, MbedtlsError};
 
 /// Trait representing a custom (hooked) MbedTLS modular exponentiation function
 /// Z = X ^ Y mod M
@@ -15,6 +15,9 @@ pub trait MbedtlsMpiExpMod {
     /// - `y` - The exponent
     /// - `m` - The modulus
     /// - `prec_rr` - Optional precomputed value for optimization
+    ///
+    /// # Returns
+    /// - `Ok(())` on success, or `Err(MbedtlsError)` on failure
     fn exp_mod(
         &self,
         z: &mut mbedtls_mpi,
@@ -22,7 +25,7 @@ pub trait MbedtlsMpiExpMod {
         y: &mbedtls_mpi,
         m: &mbedtls_mpi,
         prec_rr: Option<&mut mbedtls_mpi>,
-    );
+    ) -> Result<(), MbedtlsError>;
 }
 
 impl<T> MbedtlsMpiExpMod for T
@@ -37,8 +40,8 @@ where
         y: &mbedtls_mpi,
         m: &mbedtls_mpi,
         prec_rr: Option<&mut mbedtls_mpi>,
-    ) {
-        self.deref().exp_mod(z, x, y, m, prec_rr);
+    ) -> Result<(), MbedtlsError> {
+        self.deref().exp_mod(z, x, y, m, prec_rr)
     }
 }
 
@@ -69,7 +72,7 @@ mod alt {
 
     use critical_section::Mutex;
 
-    use crate::{mbedtls_mpi, mbedtls_mpi_exp_mod_soft};
+    use crate::{mbedtls_mpi, mbedtls_mpi_exp_mod_soft, merr, MbedtlsError};
 
     use super::MbedtlsMpiExpMod;
 
@@ -99,16 +102,18 @@ mod alt {
             y: &mbedtls_mpi,
             m: &mbedtls_mpi,
             prec_rr: Option<&mut mbedtls_mpi>,
-        ) {
-            unsafe {
+        ) -> Result<(), MbedtlsError> {
+            merr!(unsafe {
                 mbedtls_mpi_exp_mod_soft(
                     z,
                     x,
                     y,
                     m,
                     prec_rr.map(|rr| rr as *mut _).unwrap_or_default(),
-                );
-            }
+                )
+            })?;
+
+            Ok(())
         }
     }
 
@@ -121,12 +126,12 @@ mod alt {
         m: *const mbedtls_mpi,
         prec_rr: *mut mbedtls_mpi,
     ) -> c_int {
-        if let Some(exp_mod) = critical_section::with(|cs| EXP_MOD.borrow(cs).get()) {
-            exp_mod.exp_mod(&mut *z, &*x, &*y, &*m, prec_rr.as_mut());
+        let result = if let Some(exp_mod) = critical_section::with(|cs| EXP_MOD.borrow(cs).get()) {
+            exp_mod.exp_mod(&mut *z, &*x, &*y, &*m, prec_rr.as_mut())
         } else {
-            EXP_MOD_FALLBACK.exp_mod(&mut *z, &*x, &*y, &*m, prec_rr.as_mut());
-        }
+            EXP_MOD_FALLBACK.exp_mod(&mut *z, &*x, &*y, &*m, prec_rr.as_mut())
+        };
 
-        0
+        result.map_or_else(|e| e.code(), |_| 0)
     }
 }
