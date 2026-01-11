@@ -12,8 +12,7 @@
 ## Non-goals
 
 - Provide type-safe bindings for the crypto algorithms in MbedTLS
-  - This goal seems too ambitious, especially given that `esp-mbedtls` might end up being just a stop-gap until Rust gets a proper `no_std` TLS layer
-  - For general type-safe crypto in Rust there is `RustCrypto`
+  - The above use cases are too few and a bit corner-case to justify the effort
 
 (*) NOTE: Name to be changed soon as this crate is no longer ESP-specific.
 
@@ -27,7 +26,7 @@ For user-convenience, the MbedTLS C library also comes pre-compiled for the foll
 - `xtensa-esp32s3-none-elf`
 - (PRs for other Rust baremetal targets appreciated!)
 
-For other MCU baremetal targets as well as for STD platforms, the MbedTLS C library will be compiled on the fly, but that requires GCC (cross-compiler, for MCUs) or Clang installed.
+For other MCU baremetal targets as well as for STD platforms, the MbedTLS C library will be compiled on the fly, but that requires GCC (the cross-compiler flavor for your MCU) and Clang pre-installed.
 
 ESP-IDF is also supported and in that case `esp-mbedtls-sys` becomes just an alias for `esp-idf-sys` and uses the MbedTLS library which is built-in inside ESP-IDF.
 

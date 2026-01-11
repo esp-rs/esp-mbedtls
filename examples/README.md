@@ -1,68 +1,71 @@
-## Status
+# `esp-mbedtls` Examples
 
-This should work together with `esp-wifi`. It currently won't work without. However it's not well tested yet besides the included examples.
+The examples currently run on the following platforms:
 
-In general this is heavy in terms of heap memory used and code size. If you can, you should prefer using something like `embedded-tls`.
+## STD
 
-For now it's missing advanced configuration options which will be added step-by-step.
+Check folder [std](std).
 
-The examples use one hard-coded address of `www.google.com` which might not always work.
-
-### Certificates
-
-These examples use certificates that expire after a given time.
-
-The script `genssl.sh` is there to renew expired certificates, without having to manually update them within the code.
-
-## Running Examples
-
-Examples are available for:
-
-- esp32
-- esp32c3
-- esp32c6
-- esp32s2
-- esp32s3
-
-To run examples, you need to specify the architecture as a feature, the example name, the target and the toolchain.
-
-You also need to set `SSID` and `PASSWORD` as your environment variables
-
-### Examples
-
-Xtensa:
-
-```shell
-SSID=<your_ssid> PASSWORD=<your_password> cargo +esp run --release --example sync_client -F esp32s3 --target xtensa-esp32s3-none-elf
+Building:
+```
+cd examples/std
+cargo build
 ```
 
-RISC-V: 
+## Baremetal ESP32-XX with `esp-hal` and `embassy-net`
 
-```shell
-SSID=<your_ssid> PASSWORD=<your_password> cargo +nightly run --release --example async_client -F esp32c3,async --target riscv32imc-unknown-none-elf
+Check folder [esp](esp).
+
+Building:
+```
+cd examples/esp
+cargo build --features <esp32XX> --target <esp32XX-target>
 ```
 
-Here's a table of the architectures with their corresponding target for quick reference:
+To build and run one example, i.e. `client`:
+```
+cd examples/esp
+cargo run --bin client --features <esp32XX> --target <esp32XX-target>
+```
 
-| Architecture | Target                      | Toolchain          |
-| ------------ | --------------------------- | ------------------ |
-| esp32        | xtensa-esp32-none-elf       | esp                |
-| esp32c3      | riscv32imc-unknown-none-elf | nightly            |
-| esp32c6      | riscv32imac-unknown-none-elf| nightly            |
-| esp32s2      | xtensa-esp32s2-none-elf     | esp                |
-| esp32s3      | xtensa-esp32s3-none-elf     | esp                |
+...where:
+- `<esp32XX>` - the ESP32 MCU you would like to build for
+- `<esp32XX-target>` - the target corresponding to the ESP32MCU
 
-Heres's a list of all the examples with their description, and the required features to enable them:
+Supported `esp32xx` MCUs,and their corresponding `<esp32XX-target>` targets:
+| MCU          | Target                       | Hardware Acceleration                            |
+| ------------ | ---------------------------- | ------------------------------------------------ |
+| esp32        | xtensa-esp32-none-elf        | RSA-ExpMod                                       |
+| esp32c2      | riscv32imac-unknown-none-elf | SHA1, SHA224, SHA256                             |
+| esp32c3      | riscv32imc-unknown-none-elf  | RSA-ExpMod, SHA1, SHA224, SHA256                 |
+| esp32c6      | riscv32imac-unknown-none-elf | RSA-ExpMod, SHA1, SHA224, SHA256                 |
+| esp32h2      | riscv32imac-unknown-none-elf | RSA-ExpMod, SHA1, SHA224, SHA256                 |
+| esp32s2      | xtensa-esp32s2-none-elf      | RSA-ExpMod, SHA1, SHA224, SHA256, SHA384, SHA512 |
+| esp32s3      | xtensa-esp32s3-none-elf      | RSA-ExpMod, SHA1, SHA224, SHA256, SHA384, SHA512 |
 
-| Example                  | Features | Description                                                  |
-| :----------------------- | -------- | ------------------------------------------------------------ |
-| async_client             | -        | Example of a HTTPS connection using the async client.        |
-| async_client (with mTLS) | mtls     | Example of a HTTPS connection using the async client, with certificate authentication. This sends client certificates to a server, and the response indicates informations about the certificates. |
-| sync_client              | -        | Example of a HTTPS connection using the sync client.         |
-| sync_client (with mTLS)  | mtls     | Example of a HTTPS connection using the sync client, with certificate authentication. This sends client certificates to a server, and the response indicates informations about the certificates. |
-| async_server             | -        | Example of a simple async server with HTTPS support. This uses self-signed certificates, so you will need to enable an exception in your browser. |
-| async_server (with mTLS) | mtls     | Example of a simple async server with HTTPS support, with client authentication. You will need to pass client certificates in your request in order to have a successful connection. Refer to the documentation inside the example. |
-| sync_server              | -        | Example of a simple sync server with HTTPS support. This uses self-signed certificates, so you will need to enable an exception in your browser. |
-| sync_server (with mTLS)  | mtls     | Example of a simple sync server with HTTPS support, with client authentication. You will need to pass client certificates in your request in order to have a successful connection. Refer to the documentation inside the example. |
+## Upcoming soon
 
-This needs `espflash` version 2.x. If you are using version 1.x you need to remove the `flash` command from the runner in `.cargo/config.toml`
+- Baremetal Raspberry Pi Pico
+- Baremetal NRF52
+  
+## Available example binaries
+
+### client
+
+A basic TLS (HTTPS) client demonstrating a TLS and an mTLS client
+
+### server
+
+A basic TLS (HTTPS) server with a self-signed certificate
+
+### edge_client
+
+Similar to `client` but utilizing the true HTTP client from `edge-http`
+
+### edge_server
+
+Similar to `server` but utilizing the true HTTP server from `edge-http`
+
+### crypto_self_tests
+
+Runs the MbedTLS crypto self tests for all hookable MbedTLS algorithms in `esp-mbedtls-sys`
