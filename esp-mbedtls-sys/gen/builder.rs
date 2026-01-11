@@ -35,10 +35,10 @@ impl MbedtlsBuilder {
     /// Arguments:
     /// - `hooks` - Set of algorithm hooks to enable
     /// - `crate_root_path`: Path to the root of the crate
-    /// - `cmake_rust_target`: Optional target for CMake when building Openthread, with Rust target-triple syntax. If not specified, the "TARGET" env variable will be used
+    /// - `cmake_rust_target`: Optional target for CMake when building MbedTLS, with Rust target-triple syntax. If not specified, the "TARGET" env variable will be used
     /// - `cmake_host_rust_target`: Optional host target for the build
     /// - `clang_path`: Optional path to the Clang compiler. If not specified, the system Clang will be used for generating bindings,
-    ///   and the system compiler (likely GCC) would be used for building the OpenThread C/C++ code itself
+    ///   and the system compiler (likely GCC) would be used for building the MbedTLS C code itself
     /// - `clang_sysroot_path`: Optional path to the compiler sysroot directory. If not specified, the host sysroot will be used
     /// - `clang_target`: Optional target for Clang when generating bindings. If not specified, the "TARGET" env variable target will be used
     /// - `force_esp_riscv_toolchain`: If true, and if the target is a riscv32 target, force the use of the Espressif RISCV GCC toolchain
@@ -197,15 +197,15 @@ impl MbedtlsBuilder {
     /// Arguments:
     /// - `out_path`: Path to write the compiled libraries to
     pub fn compile(&self, out_path: &Path, copy_path: Option<&Path>) -> Result<PathBuf> {
-        let target_dir = out_path.join("openthread").join("build");
+        let target_dir = out_path.join("mbedtls").join("build");
         std::fs::create_dir_all(&target_dir)?;
 
-        let target_lib_dir = out_path.join("openthread").join("lib");
+        let target_lib_dir = out_path.join("mbedtls").join("lib");
 
         let lib_dir = copy_path.unwrap_or(&target_lib_dir);
         std::fs::create_dir_all(lib_dir)?;
 
-        // Compile OpenThread and generate libraries to link against
+        // Compile MbedTLS and generate libraries to link against
         log::info!("Compiling MbedTLS with accel {:?}", self.hooks);
 
         let mut config = self.cmake_configurer.configure(Some(lib_dir));
@@ -288,7 +288,7 @@ impl MbedtlsBuilder {
     /// A heuristics (we don't have anything better) to signal to `bindgen` whether the GCC toolchain
     /// for the target emits short enums or not.
     ///
-    /// This is necessary for `bindgen` to generate correct bindings for OpenThread.
+    /// This is necessary for `bindgen` to generate correct bindings for mbedTLS.
     /// See https://github.com/rust-lang/rust-bindgen/issues/711
     fn short_enums(&self) -> bool {
         let target = std::env::var("TARGET").unwrap();
@@ -313,7 +313,7 @@ impl CMakeConfigurer {
     ///
     /// Arguments:
     /// - `project_path`: Path to the root of the CMake project
-    /// - `cmake_rust_target`: Optional target for CMake when building Openthread, with Rust target-triple syntax. If not specified, the "TARGET" env variable will be used
+    /// - `cmake_rust_target`: Optional target for CMake when building MbedTLS, with Rust target-triple syntax. If not specified, the "TARGET" env variable will be used
     /// - `cmake_host_rust_target`: Optional host target for the build
     /// - `force_esp_riscv_toolchain`: If true, and if the target is a riscv32 target, force the use of the Espressif RISCV GCC toolchain
     ///   (`riscv32-esp-elf-gcc`) rather than the derived `riscv32-unknown-elf-gcc` toolchain which is the "official" RISC-V one
