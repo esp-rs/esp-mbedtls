@@ -41,14 +41,12 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
 
 jobs:
-  build-test:
+  build:
+    name: Build
     runs-on: ubuntu-latest
     permissions: read-all
-    outputs:
-      upload-libs: ${{ steps.detect-changes.outputs.libs == 'true' }}
 
     steps:
-      # ==== Setup ====
       - uses: actions/checkout@v4
 
       - name: mbedtls init
@@ -60,12 +58,39 @@ jobs:
           toolchain: stable
           components: rust-src,rustfmt
 
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: |
-            ./
-            xtask
+      # - uses: Swatinem/rust-cache@v2
+      #   with:
+      #     workspaces: |
+      #       ./
+      #       xtask
 
+      - name: Fmt Check
+        run: cargo fmt -- --check
+
+      - name: Clippy
+        run: cargo clippy -- -D warnings
+
+      - name: Build
+        run: cargo build
+
+      - name: Fmt Check - STD Examples
+        run: cd examples/std; cargo fmt -- --check
+
+      - name: Clippy - STD Examples
+        run: cd examples/std; cargo clippy -- -D warnings
+
+      - name: Build - STD Examples
+        run: cd examples/std; cargo build
+
+  build-mbedtls:
+    name: Build MbedTLS
+    runs-on: ubuntu-latest
+    permissions: read-all
+    needs: build
+    outputs:
+      upload-libs: ${{ steps.detect-changes.outputs.libs == 'true' }}
+
+    steps:
       - name: Detect esp-mbedtls-sys/ changes
         uses: dorny/paths-filter@v3
         id: detect-changes
@@ -86,7 +111,7 @@ jobs:
           chmod +x "$HOME/.cargo/bin/espup"*
           echo "ESPUP_EXPORT_FILE=$HOME/exports" >> $GITHUB_ENV
 
-      - name: Install espup toolchains
+      - name: Install espup toolchains (xtensa and riscv)
         run: |
           source "$HOME/.cargo/env"
           "$HOME/.cargo/bin/espup" install -l debug -e -r
@@ -94,7 +119,10 @@ jobs:
           echo "$PATH" >> "$GITHUB_PATH"
           echo "LIBCLANG_PATH=${LIBCLANG_PATH}" >> "$GITHUB_ENV"
           echo "CLANG_PATH=${CLANG_PATH}" >> "$GITHUB_ENV"
-
+  
+# TODO: Remove the manual espup installation and run once the action below
+# supports the `-r` flag to install the Espressif RISCV GCC toolchain
+# See https://github.com/esp-rs/xtensa-toolchain/issues/45 for more info
 #      - name: Install Rust for Xtensa and Espressif LLVM installation (optional)
 #        uses: esp-rs/xtensa-toolchain@v1.6
 #        with:
@@ -105,8 +133,7 @@ jobs:
 #            contains(github.event.pull_request.labels.*.name, 'rebuild-libs')
 #            }}
 
-      # ==== Build libs ====
-      - name: Build libraries and bindings
+      - name: Build MbedTLS libraries and bindings
         if: |
           steps.detect-changes.outputs.libs == 'true' ||
           contains(github.event.pull_request.labels.*.name, 'rebuild-libs')
@@ -118,22 +145,22 @@ jobs:
           cargo +stable xtask gen -e riscv32imc-unknown-none-elf
           cargo +stable xtask gen -e riscv32imac-unknown-none-elf
 
-      # ==== Test ====
-      # If the libs are rebuilt, the tests are executed against the new libraries,
-      # else they get executed against the latest version in HEAD
+      # # ==== Test ====
+      # # If the libs are rebuilt, the tests are executed against the new libraries,
+      # # else they get executed against the latest version in HEAD
 
-      # Tests requires nightly riscv32imc-unknown-none-elf to be installed
-      - uses: dtolnay/rust-toolchain@v1
-        with:
-          target: riscv32imc-unknown-none-elf
-          toolchain: nightly
-          components: rust-src,rustfmt
-      - uses: extractions/setup-just@v1
-        with:
-          just-version: 1.13.0
+      # # Tests requires nightly riscv32imc-unknown-none-elf to be installed
+      # - uses: dtolnay/rust-toolchain@v1
+      #   with:
+      #     target: riscv32imc-unknown-none-elf
+      #     toolchain: nightly
+      #     components: rust-src,rustfmt
+      # - uses: extractions/setup-just@v1
+      #   with:
+      #     just-version: 1.13.0
 
-      - name: check
-        run: just
+      # - name: check
+      #   run: just
 
       - name: Upload libraries artifacts for commit
         if: |
@@ -148,13 +175,52 @@ jobs:
             esp-mbedtls-sys/libs
             esp-mbedtls-sys/src
 
+  build-mcu:
+    name: Build-MCU
+    runs-on: ubuntu-latest
+    permissions: read-all
+    needs: build-mbedtls
+    strategy:
+      fail-fast: false
+      matrix:
+        mcu:
+          - [esp, esp32, xtensa-esp32-espidf]
+          - [esp, esp32s2, xtensa-esp32s2-espidf]
+          - [esp, esp32s3, xtensa-esp32s3-espidf]
+          - [esp, esp32c2, riscv32imac-esp-espidf]
+          - [esp, esp32c3, riscv32imc-esp-espidf]
+          - [esp, esp32c6, riscv32imac-esp-espidf]
+          - [esp, esp32h2, riscv32imac-esp-espidf]
+    steps:
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          target: x86_64-unknown-linux-gnu
+          toolchain: nightly
+          components: rust-src,rustfmt
+
+      - name: Clippy
+        run: cargo clippy --features ${{ matrix.mcu[1] }} --target ${{ matrix.mcu[2] }} -- -D warnings
+
+      - name: Build
+        run: cargo build --features ${{ matrix.mcu[1] }} --target ${{ matrix.mcu[2] }}
+
+      - name: Fmt Check - Examples
+        run: cd examples/${{ matrix.mcu[0] }}; cargo fmt -- --check
+
+      - name: Clippy - Examples
+        run: cd examples/${{ matrix.mcu[0] }}; cargo clippy --features ${{ matrix.mcu[1] }} --target ${{ matrix.mcu[2] }} -- -D warnings
+
+      - name: Build - Examples
+        run: cd examples/${{ matrix.mcu[0] }}; cargo build --features ${{ matrix.mcu[1] }} --target ${{ matrix.mcu[2] }}
+
   # If libraries are rebuilt and tests are successful, we upload them in a specific job
   # that has write access to prevent security breaches, and unwanted use of the token
   commit-libs:
+    name: Commit MbedTLS libs
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    needs: build-test
+    needs: build-mcu
     # TODO: Currently GitHub doesn't allow pushing to a forked repo's branch when running an action on a PR to upstream.
     if: |
       github.event.pull_request.head.repo.full_name == github.repository &&
