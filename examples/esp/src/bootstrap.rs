@@ -71,7 +71,14 @@ pub async fn bootstrap_stack<const SOCKETS: usize>(
             .software_interrupt0,
     );
 
+    #[cfg(not(any(feature = "esp32", feature = "esp32c2")))]
     let accel = EspAccel::new(peripherals.SHA, peripherals.RSA);
+
+    #[cfg(feature = "esp32")]
+    let accel = EspAccel::new(peripherals.RSA);
+
+    #[cfg(feature = "esp32c2")]
+    let accel = EspAccel::new(peripherals.SHA);
 
     let _trng_source = TrngSource::new(peripherals.RNG, peripherals.ADC1);
 

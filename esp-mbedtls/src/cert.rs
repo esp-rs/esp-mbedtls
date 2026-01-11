@@ -117,6 +117,7 @@ impl PrivateKey {
     pub fn new(x509: X509<'_>, password: Option<&str>) -> Result<Self, SessionError> {
         let pk = MRc::new().ok_or(MbedtlsError::new(MBEDTLS_ERR_PK_ALLOC_FAILED))?;
 
+        #[allow(clippy::unnecessary_cast)]
         let (ptr, len) = match x509 {
             X509::PEM(str) => (str.as_ptr() as *const u8, str.count_bytes() + 1),
             X509::DER(bytes) => (bytes.as_ptr(), bytes.len()),

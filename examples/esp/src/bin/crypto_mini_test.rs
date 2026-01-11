@@ -1,5 +1,6 @@
 #![no_std]
 #![no_main]
+#![recursion_limit = "256"]
 
 use embassy_executor::Spawner;
 
@@ -17,7 +18,7 @@ use log::{error, info};
 
 extern crate alloc;
 
-const HEAP_SIZE: usize = 100 * 1024;
+const HEAP_SIZE: usize = 140 * 1024;
 
 const RECLAIMED_RAM: usize =
     memory_range!("DRAM2_UNINIT").end - memory_range!("DRAM2_UNINIT").start;

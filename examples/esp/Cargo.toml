@@ -27,7 +27,7 @@ lto = "fat"
 opt-level = "z"
 
 [features]
-default = ["esp32s3"]
+default = ["esp32c6"]
 esp32 = ["esp-rtos/esp32", "esp-hal/esp32", "esp-backtrace/esp32", "esp-println/esp32", "esp-radio/esp32", "esp-bootloader-esp-idf/esp32", "esp-metadata-generated/esp32", "esp-mbedtls/accel-esp32"]
 esp32c2 = ["esp-rtos/esp32c2", "esp-hal/esp32c2", "esp-backtrace/esp32c2", "esp-println/esp32c2", "esp-radio/esp32c2", "esp-bootloader-esp-idf/esp32c2", "esp-metadata-generated/esp32c2", "esp-mbedtls/accel-esp32c2"]
 esp32c3 = ["esp-rtos/esp32c3", "esp-hal/esp32c3", "esp-backtrace/esp32c3", "esp-println/esp32c3", "esp-radio/esp32c3", "esp-bootloader-esp-idf/esp32c3", "esp-metadata-generated/esp32c3", "esp-mbedtls/accel-esp32c3"]

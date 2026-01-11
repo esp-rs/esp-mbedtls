@@ -19,13 +19,13 @@ Check folder [esp](esp).
 Building:
 ```
 cd examples/esp
-cargo build --features <esp32XX> --target <esp32XX-target>
+cargo build --no-default-features --features <esp32XX> --target <esp32XX-target>
 ```
 
 To build and run one example, i.e. `client`:
 ```
 cd examples/esp
-cargo run --bin client --features <esp32XX> --target <esp32XX-target>
+cargo run --bin client --no-default-features --features <esp32XX> --target <esp32XX-target>
 ```
 
 ...where:

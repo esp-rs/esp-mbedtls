@@ -11,6 +11,7 @@
 
 #![no_std]
 #![no_main]
+#![recursion_limit = "256"]
 
 use edge_http::io::server::Server;
 

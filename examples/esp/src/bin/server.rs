@@ -10,6 +10,7 @@
 
 #![no_std]
 #![no_main]
+#![recursion_limit = "256"]
 
 use embassy_executor::Spawner;
 

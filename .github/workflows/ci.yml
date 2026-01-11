@@ -1,9 +1,9 @@
-# This CI optionally builds libraries and then builds examples against them.
+# This CI builds the `esp-mbedtls*` crates and their examples.
 #
 # If a change is detected within `esp-mbedtls-sys/`, a rebuild is triggered and this CI will automatically
 # rebuild the libraries using the xtask. Then the tests are executed against the rebuilt libraries.
 #
-# If no rebuild occurs, the tests are executed against the current libraries.
+# If no rebuild occurs, the examples are built against the latest libraries present in the main branch.
 #
 # The libraries are pushed on either of these conditions:
 # 1. The PR is labelled with `rebuild-libs`.
@@ -58,11 +58,12 @@ jobs:
           toolchain: stable
           components: rust-src,rustfmt
 
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: |
-            ./
-            xtask
+      # TODO: Double-check and uncomment
+      # - uses: Swatinem/rust-cache@v2
+      #   with:
+      #     workspaces: |
+      #       ./
+      #       xtask
 
       - name: Fmt Check
         run: cargo fmt -- --check
@@ -91,6 +92,24 @@ jobs:
       upload-libs: ${{ steps.detect-changes.outputs.libs == 'true' }}
 
     steps:
+      - uses: actions/checkout@v4
+
+      - name: mbedtls init
+        run: git submodule update --init --recursive
+
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          target: x86_64-unknown-linux-gnu
+          toolchain: nightly
+          components: rust-src,rustfmt
+
+      # TODO: Double-check and uncomment
+      # - uses: Swatinem/rust-cache@v2
+      #   with:
+      #     workspaces: |
+      #       ./
+      #       xtask
+
       - name: Detect esp-mbedtls-sys/ changes
         uses: dorny/paths-filter@v3
         id: detect-changes
@@ -114,7 +133,7 @@ jobs:
       - name: Install espup toolchains (xtensa and riscv)
         run: |
           source "$HOME/.cargo/env"
-          "$HOME/.cargo/bin/espup" install -l debug -e -r
+          "$HOME/.cargo/bin/espup" install -e -r
           source "$HOME/exports"
           echo "$PATH" >> "$GITHUB_PATH"
           echo "LIBCLANG_PATH=${LIBCLANG_PATH}" >> "$GITHUB_ENV"
@@ -145,23 +164,6 @@ jobs:
           cargo +stable xtask gen -e riscv32imc-unknown-none-elf
           cargo +stable xtask gen -e riscv32imac-unknown-none-elf
 
-      # # ==== Test ====
-      # # If the libs are rebuilt, the tests are executed against the new libraries,
-      # # else they get executed against the latest version in HEAD
-
-      # # Tests requires nightly riscv32imc-unknown-none-elf to be installed
-      # - uses: dtolnay/rust-toolchain@v1
-      #   with:
-      #     target: riscv32imc-unknown-none-elf
-      #     toolchain: nightly
-      #     components: rust-src,rustfmt
-      # - uses: extractions/setup-just@v1
-      #   with:
-      #     just-version: 1.13.0
-
-      # - name: check
-      #   run: just
-
       - name: Upload libraries artifacts for commit
         if: |
           (steps.detect-changes.outputs.libs == 'true' &&
@@ -184,34 +186,55 @@ jobs:
       fail-fast: false
       matrix:
         mcu:
-          - [esp, esp32, xtensa-esp32-espidf]
-          - [esp, esp32s2, xtensa-esp32s2-espidf]
-          - [esp, esp32s3, xtensa-esp32s3-espidf]
-          - [esp, esp32c2, riscv32imac-esp-espidf]
-          - [esp, esp32c3, riscv32imc-esp-espidf]
-          - [esp, esp32c6, riscv32imac-esp-espidf]
-          - [esp, esp32h2, riscv32imac-esp-espidf]
+          - [esp, esp32, xtensa-esp32-none-elf]
+          - [esp, esp32s2, xtensa-esp32s2-none-elf]
+          - [esp, esp32s3, xtensa-esp32s3-none-elf]
+          - [esp, esp32c2, riscv32imc-unknown-none-elf]
+          - [esp, esp32c3, riscv32imc-unknown-none-elf]
+          - [esp, esp32c6, riscv32imac-unknown-none-elf]
+# No Wifi support on esp32h2
+#          - [esp, esp32h2, riscv32imac-unknown-none-elf]
     steps:
+      - uses: actions/checkout@v4
+
       - uses: dtolnay/rust-toolchain@v1
         with:
           target: x86_64-unknown-linux-gnu
           toolchain: nightly
-          components: rust-src,rustfmt
+          components: rust-src,rustfmt,clippy
+
+      - name: Install MCU target
+        if: startsWith(matrix.mcu[2], 'riscv32')
+        run: rustup target add ${{ matrix.mcu[2] }}
+
+      - name: Install Rust for Xtensa
+        if: startsWith(matrix.mcu[2], 'xtensa-')
+        uses: esp-rs/xtensa-toolchain@v1.6
+        with:
+          default: true
+          ldproxy: false
+
+      # TODO: Double-check and uncomment
+      # - uses: Swatinem/rust-cache@v2
+      #   with:
+      #     workspaces: |
+      #       ./
+      #       xtask
 
       - name: Clippy
-        run: cargo clippy --features accel-${{ matrix.mcu[1] }} --target ${{ matrix.mcu[2] }} -- -D warnings
+        run: cargo clippy --features accel-${{ matrix.mcu[1] }} --target ${{ matrix.mcu[2] }} -Zbuild-std=core,alloc,panic_abort -- -D warnings
 
       - name: Build
-        run: cargo build --features accel-${{ matrix.mcu[1] }} --target ${{ matrix.mcu[2] }}
+        run: cargo build --features accel-${{ matrix.mcu[1] }} --target ${{ matrix.mcu[2] }} -Zbuild-std=core,alloc,panic_abort
 
       - name: Fmt Check - Examples
         run: cd examples/${{ matrix.mcu[0] }}; cargo fmt -- --check
 
       - name: Clippy - Examples
-        run: cd examples/${{ matrix.mcu[0] }}; cargo clippy --features ${{ matrix.mcu[1] }} --target ${{ matrix.mcu[2] }} -- -D warnings
+        run: export SSID=ssid; export PASSWORD=pass; cd examples/${{ matrix.mcu[0] }}; cargo clippy --no-default-features --features ${{ matrix.mcu[1] }} --target ${{ matrix.mcu[2] }} -Zbuild-std=core,alloc,panic_abort -- -D warnings
 
       - name: Build - Examples
-        run: cd examples/${{ matrix.mcu[0] }}; cargo build --features ${{ matrix.mcu[1] }} --target ${{ matrix.mcu[2] }}
+        run: export SSID=ssid; export PASSWORD=pass; cd examples/${{ matrix.mcu[0] }}; cargo build --no-default-features --features ${{ matrix.mcu[1] }} --target ${{ matrix.mcu[2] }} -Zbuild-std=core,alloc,panic_abort
 
   # If libraries are rebuilt and tests are successful, we upload them in a specific job
   # that has write access to prevent security breaches, and unwanted use of the token
@@ -224,7 +247,7 @@ jobs:
     # TODO: Currently GitHub doesn't allow pushing to a forked repo's branch when running an action on a PR to upstream.
     if: |
       github.event.pull_request.head.repo.full_name == github.repository &&
-      ((needs.build-test.outputs.upload-libs &&
+      ((needs.build-mbedtls.outputs.upload-libs &&
       github.ref == 'refs/heads/main') ||
       contains(github.event.pull_request.labels.*.name, 'rebuild-libs'))
     steps:

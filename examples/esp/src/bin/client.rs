@@ -5,6 +5,7 @@
 
 #![no_std]
 #![no_main]
+#![recursion_limit = "256"]
 
 use core::net::SocketAddr;
 
@@ -25,7 +26,7 @@ mod bootstrap;
 #[path = "../../../common/client.rs"]
 mod client;
 
-const HEAP_SIZE: usize = 120 * 1024;
+const HEAP_SIZE: usize = 140 * 1024;
 
 #[esp_rtos::main]
 async fn main(spawner: Spawner) {
