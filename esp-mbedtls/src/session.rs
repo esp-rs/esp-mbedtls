@@ -1,11 +1,10 @@
 use core::ffi::{c_int, c_void, CStr};
 
 use embedded_io::{Error, ErrorKind};
+
 use esp_mbedtls_sys::*;
 
-use super::{
-    mbedtls_dbg_print, mbedtls_rng, merr, Certificate, MBox, PrivateKey, TlsReference, TlsVersion,
-};
+use super::{Tls, mbedtls_rng, merr, Certificate, MBox, PrivateKey, TlsReference, TlsVersion};
 
 pub use asynch::*;
 
@@ -209,13 +208,7 @@ impl<'a> SessionState<'a> {
         // Use a direct field modified for compatibility with the `esp-idf-svc` mbedtls
         ssl_config.private_min_tls_version = conf.min_version().mbed_tls_version();
 
-        unsafe {
-            mbedtls_ssl_conf_dbg(
-                &mut *ssl_config,
-                Some(mbedtls_dbg_print),
-                core::ptr::null_mut(),
-            );
-        }
+        Tls::hook_debug_logs(&mut ssl_config);
 
         unsafe {
             mbedtls_ssl_conf_authmode(&mut *ssl_config, conf.auth_mode().mbedtls_authmode());

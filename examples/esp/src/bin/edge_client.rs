@@ -1,17 +1,16 @@
-//! Example of a client connection to a server, using the async API.
+//! Example of a client connection to a server, using the `edge-nal` support in `esp-mbedtls`.
 //!
 //! This example connects to `https://httpbin.org/ip` and then to `https://certauth.cryptomix.com/json/` (mTLS)
-//! and performs a simple HTTPS 1.0 GET request to each.
+//! and performs a simple HTTPS 1.1 GET request to each.
 
 #![no_std]
 #![no_main]
 
-use core::net::SocketAddr;
+use edge_nal_embassy::{Dns, Tcp, TcpBuffers};
 
 use embassy_executor::Spawner;
 
 use embassy_net::StackResources;
-use embassy_net::tcp::TcpSocket;
 
 use esp_alloc::heap_allocator;
 use esp_backtrace as _;
@@ -22,10 +21,10 @@ use crate::bootstrap::RECLAIMED_RAM;
 
 #[path = "../bootstrap.rs"]
 mod bootstrap;
-#[path = "../../../common/client.rs"]
+#[path = "../../../common/edge_client.rs"]
 mod client;
 
-const HEAP_SIZE: usize = 120 * 1024;
+const HEAP_SIZE: usize = 130 * 1024;
 
 #[esp_rtos::main]
 async fn main(spawner: Spawner) {
@@ -39,6 +38,11 @@ async fn main(spawner: Spawner) {
 
     let _accel_queue = accel.start();
 
+    let tcp_buffers = mk_static!(TcpBuffers<2, 1024, 1024>, TcpBuffers::new());
+
+    let dns = Dns::new(stack);
+    let tcp = Tcp::new(stack, tcp_buffers);
+
     for (index, (server_name_cstr, server_path, mtls)) in [
         (c"httpbin.org", "/ip", false),
         (c"certauth.cryptomix.com", "/json/", true),
@@ -46,49 +50,20 @@ async fn main(spawner: Spawner) {
     .into_iter()
     .enumerate()
     {
-        let server_name = server_name_cstr.to_str().unwrap();
-
         info!(
             "\n\n\n\nREQUEST {}, MTLS: {} =============================",
             index, mtls
         );
 
-        info!("Resolving server {}", server_name);
-
-        let ip = *stack
-            .dns_query(server_name, embassy_net::dns::DnsQueryType::A)
-            .await
-            .unwrap()
-            .iter()
-            .next()
-            .unwrap();
-
-        info!("Using IP addr {}", ip);
-
-        info!("Creating TCP connection");
-
-        let mut rx_buf = [0; 1024];
-        let mut tx_buf = [0; 1024];
-
-        let mut socket = TcpSocket::new(stack, &mut rx_buf, &mut tx_buf);
-
-        //socket.set_timeout(Some(Duration::from_secs(10)));
-        socket
-            .connect(SocketAddr::new(ip.into(), 443))
-            .await
-            .unwrap();
-
-        let mut buf = [0u8; 1024];
-
         client::request(
-            tls.reference(),
-            socket,
+            &tls,
+            tcp,
+            dns,
+            &mut [0; 4096],
             server_name_cstr,
             server_path,
             mtls,
-            &mut buf,
         )
-        .await
-        .unwrap();
+        .await;
     }
 }

@@ -2,7 +2,7 @@
 #![allow(clippy::uninlined_format_args)]
 
 use core::cell::RefCell;
-use core::ffi::{c_char, c_int, c_uchar, c_void, CStr};
+use core::ffi::{CStr, c_char, c_int, c_uchar, c_void};
 use core::marker::PhantomData;
 use core::mem::size_of;
 use core::ops::{Deref, DerefMut};
@@ -92,6 +92,43 @@ impl<'d> Tls<'d> {
     /// throughout its lifetime.
     pub fn reference(&self) -> TlsReference<'_> {
         TlsReference(PhantomData)
+    }
+
+    /// Hook MbedTLS SSL debug logging into the Rust log system
+    /// 
+    /// # Arguments
+    /// - `ssl_config`: The MbedTLS SSL configuration to hook the debug logging into
+    pub(crate) fn hook_debug_logs(ssl_config: &mut mbedtls_ssl_config) {
+        /// Output the MbedTLS debug messages to the log
+        #[no_mangle]
+        unsafe extern "C" fn mbedtls_dbg_print(
+            _arg: *mut c_void,
+            lvl: i32,
+            file: *const c_char,
+            line: i32,
+            msg: *const c_char,
+        ) {
+            let file = CStr::from_ptr(file);
+            let msg = CStr::from_ptr(msg);
+
+            let file = file.to_str().unwrap_or("???").trim();
+            let msg = msg.to_str().unwrap_or("???").trim();
+
+            match lvl {
+                0 => warn!("(MbedTLS) {} (at {}:{})", msg, file, line),
+                1 => info!("(MbedTLS) {} (at {}:{})", msg, file, line),
+                2 => debug!("(MbedTLS) {} (at {}:{})", msg, file, line),
+                _ => trace!("(MbedTLS) {} (at {}:{})", msg, file, line),
+            }
+        }
+
+        unsafe {
+            mbedtls_ssl_conf_dbg(
+                &mut *ssl_config,
+                Some(mbedtls_dbg_print),
+                core::ptr::null_mut(),
+            );
+        }
     }
 }
 
@@ -347,28 +384,6 @@ where
                 mbedtls_free(self.0.as_ptr() as *mut c_void);
             }
         }
-    }
-}
-
-/// Outputs the MbedTLS debug messages to the log
-pub(crate) unsafe extern "C" fn mbedtls_dbg_print(
-    _arg: *mut c_void,
-    lvl: i32,
-    file: *const c_char,
-    line: i32,
-    msg: *const c_char,
-) {
-    let file = CStr::from_ptr(file);
-    let msg = CStr::from_ptr(msg);
-
-    let file = file.to_str().unwrap_or("???").trim();
-    let msg = msg.to_str().unwrap_or("???").trim();
-
-    match lvl {
-        0 => error!("{} ({}:{}) {}", lvl, file, line, msg),
-        1 => warn!("{} ({}:{}) {}", lvl, file, line, msg),
-        2 => debug!("{} ({}:{}) {}", lvl, file, line, msg),
-        _ => trace!("{} ({}:{}) {}", lvl, file, line, msg),
     }
 }
 
