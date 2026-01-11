@@ -1,5 +1,5 @@
-//! Example of an HTTPS server implemented with the `edge-http` crate.
-//! Demonstrates the usage of the `edge-nal` `TcpAcceptor` trait implementation in `esp-mbedtls`.
+//! Example of an HTTPS server.
+//! Demonstrates the usage of the async API of esp-mbedtls.
 //!
 //! Since the server certificates are self-signed, the easiest way to test is with:
 //! ```sh
