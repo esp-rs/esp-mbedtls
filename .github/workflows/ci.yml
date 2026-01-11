@@ -74,15 +74,36 @@ jobs:
             libs:
               - 'esp-mbedtls-sys/**'
 
-      - name: Install Rust for Xtensa and Espressif LLVM installation (optional)
-        uses: esp-rs/xtensa-toolchain@v1.6
-        with:
-          ldproxy: true
-          override: false
-          extended-llvm: ${{
-            steps.detect-changes.outputs.libs == 'true' ||
-            contains(github.event.pull_request.labels.*.name, 'rebuild-libs')
-            }}
+      - name: Detect host target triple
+        run: |
+          export HOST_TARGET=$(rustup show | grep "Default host" | sed -e 's/.* //')
+          echo "HOST_TARGET=$HOST_TARGET" >> $GITHUB_ENV
+
+      - name: Install espup
+        run: |
+          curl -LO https://github.com/esp-rs/espup/releases/latest/download/espup-${{ env.HOST_TARGET }}.zip
+          unzip -o espup-${{ env.HOST_TARGET }}.zip -d "$HOME/.cargo/bin"
+          chmod +x "$HOME/.cargo/bin/espup"*
+          echo "ESPUP_EXPORT_FILE=$HOME/exports" >> $GITHUB_ENV
+
+      - name: Install espup toolchains
+        run: |
+          source "$HOME/.cargo/env"
+          "$HOME/.cargo/bin/espup" install -l debug -e -r
+          source "$HOME/exports"
+          echo "$PATH" >> "$GITHUB_PATH"
+          echo "LIBCLANG_PATH=${LIBCLANG_PATH}" >> "$GITHUB_ENV"
+          echo "CLANG_PATH=${CLANG_PATH}" >> "$GITHUB_ENV"
+
+#      - name: Install Rust for Xtensa and Espressif LLVM installation (optional)
+#        uses: esp-rs/xtensa-toolchain@v1.6
+#        with:
+#          ldproxy: true
+#          override: false
+#          extended-llvm: ${{
+#            steps.detect-changes.outputs.libs == 'true' ||
+#            contains(github.event.pull_request.labels.*.name, 'rebuild-libs')
+#            }}
 
       # ==== Build libs ====
       - name: Build libraries and bindings
