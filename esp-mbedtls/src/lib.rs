@@ -166,8 +166,10 @@ impl TlsVersion {
     }
 }
 
-/// An internal trait for MbedTLS structuremodeling the (security-induced) initialization and deinitialization
-/// sequence for a number of MBedTLS structures
+/// An internal trait to be implemented on MbedTLS structures.
+///
+/// The trait models the initialization and deinitialization
+/// sequence available on a number of MBedTLS structures.
 trait MInit {
     /// Initialize the structure
     fn init(&mut self) {}

@@ -189,7 +189,7 @@ where
 
     /// Close the TLS connection
     ///
-    /// This function will close the TLS connection, sending the TLS "close notify" info the the peer.
+    /// This function will close the TLS connection, sending the TLS "close notify" info to the peer.
     ///
     /// # Returns:
     /// - An error if the close failed

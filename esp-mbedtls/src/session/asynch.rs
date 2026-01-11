@@ -55,7 +55,7 @@ where
     ///
     /// # Arguments
     /// - `tls` - A reference to the active `Tls` instance.
-    /// - `stream` - The stream for the connection, imolementing `Read` and `Write`.
+    /// - `stream` - The stream for the connection, implementing `Read` and `Write`.
     /// - `config`` - The session configuration
     ///
     /// # Returns
@@ -211,7 +211,7 @@ where
 
     /// Close the TLS connection
     ///
-    /// This function will close the TLS connection, sending the TLS "close notify" info the the peer.
+    /// This function will close the TLS connection, sending the TLS "close notify" info to the peer.
     ///
     /// # Returns:
     /// - An error if the close failed
@@ -658,7 +658,7 @@ where
     /// Return `Ok(true)` if the stream is readable, `Ok(false)` if EOF is reached,
     /// or an error otherwise.
     async fn wait_readable(&mut self) -> Result<bool, T::Error> {
-        if !self.read_byte.is_some() {
+        if self.read_byte.is_none() {
             let mut buf = [0u8; 1];
             let len = self.stream.read(&mut buf).await?;
             if len == 0 {
