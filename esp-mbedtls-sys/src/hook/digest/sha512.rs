@@ -20,6 +20,7 @@ impl<T: Deref> MbedtlsSha384 for T where T::Target: MbedtlsSha384 {}
 #[cfg(not(feature = "nohook-sha512"))]
 pub unsafe fn hook_sha512(sha512: Option<&'static (dyn MbedtlsSha512 + Send + Sync)>) {
     critical_section::with(|cs| {
+        #[allow(clippy::if_same_then_else)]
         if sha512.is_some() {
             info!("SHA-512 hook: added custom/HW accelerated impl");
         } else {
@@ -40,6 +41,7 @@ pub unsafe fn hook_sha512(sha512: Option<&'static (dyn MbedtlsSha512 + Send + Sy
 #[cfg(not(feature = "nohook-sha512"))]
 pub unsafe fn hook_sha384(sha384: Option<&'static (dyn MbedtlsSha384 + Send + Sync)>) {
     critical_section::with(|cs| {
+        #[allow(clippy::if_same_then_else)]
         if sha384.is_some() {
             info!("SHA-384 hook: added custom/HW accelerated impl");
         } else {
