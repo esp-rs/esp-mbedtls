@@ -199,10 +199,10 @@ jobs:
           components: rust-src,rustfmt
 
       - name: Clippy
-        run: cargo clippy --features ${{ matrix.mcu[1] }} --target ${{ matrix.mcu[2] }} -- -D warnings
+        run: cargo clippy --features accel-${{ matrix.mcu[1] }} --target ${{ matrix.mcu[2] }} -- -D warnings
 
       - name: Build
-        run: cargo build --features ${{ matrix.mcu[1] }} --target ${{ matrix.mcu[2] }}
+        run: cargo build --features accel-${{ matrix.mcu[1] }} --target ${{ matrix.mcu[2] }}
 
       - name: Fmt Check - Examples
         run: cd examples/${{ matrix.mcu[0] }}; cargo fmt -- --check

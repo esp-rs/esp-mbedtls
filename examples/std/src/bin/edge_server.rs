@@ -34,5 +34,11 @@ async fn run() {
 
     tls.set_debug(1);
 
-    server::run(&tls, edge_nal_std::Stack::new(), &mut DefaultServer::new(), 8443).await;
+    server::run(
+        &tls,
+        edge_nal_std::Stack::new(),
+        &mut DefaultServer::new(),
+        8443,
+    )
+    .await;
 }
