@@ -91,7 +91,11 @@ jobs:
           contains(github.event.pull_request.labels.*.name, 'rebuild-libs')
         run: |
           rm -rf esp-mbedtls-sys/libs/*
-          cargo +stable xtask gen
+          cargo +stable xtask gen xtensa-esp32-none-elf
+          cargo +stable xtask gen xtensa-esp32s2-none-elf
+          cargo +stable xtask gen xtensa-esp32s3-none-elf
+          cargo +stable xtask gen -e riscv32imc-unknown-none-elf
+          cargo +stable xtask gen -e riscv32imac-unknown-none-elf
 
       # ==== Test ====
       # If the libs are rebuilt, the tests are executed against the new libraries,

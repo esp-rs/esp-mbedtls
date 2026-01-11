@@ -59,12 +59,12 @@ async fn main(_s: Spawner) {
             .software_interrupt0,
     );
 
-    let mut accel = EspAccel::new(peripherals.SHA, peripherals.RSA);
-
     let mut sw_cycles = [0; 20];
     let mut hw_cycles = [0; 20];
 
     run_tests(false, &mut sw_cycles);
+
+    let mut accel = EspAccel::new(peripherals.SHA, peripherals.RSA);
 
     let _accel_queue = accel.start();
 

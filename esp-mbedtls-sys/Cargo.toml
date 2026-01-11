@@ -39,7 +39,8 @@ enumset = { version = "1", default-features = false }
 # For hooking
 digest = { version = "0.10", default-features = false }
 sha1 = { version = "0.10", default-features = false }
-sha2 = { version = "0.10", default-features = false }
+# For some reason, `soft` results in enormous slowdowns on xtensa and riscv32
+sha2 = { version = "0.10", default-features = false, features = ["force-soft-compact"] }
 critical-section = "1"
 
 # For esp-hal accel

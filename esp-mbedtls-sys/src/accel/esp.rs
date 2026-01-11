@@ -43,10 +43,7 @@ impl<'d> EspAccel<'d> {
 
     #[must_use]
     pub fn start(&mut self) -> EspAccelQueue<'_, 'd> {
-        EspAccelQueue {
-            _sha_queue: self.sha.start(),
-            _rsa_queue: self.rsa.start(),
-        }
+        EspAccelQueue::new(self)
     }
 }
 
@@ -56,10 +53,10 @@ pub struct EspAccelQueue<'a, 'd> {
 }
 
 impl<'a, 'd> EspAccelQueue<'a, 'd> {
-    pub fn new(
-        sha_queue: ShaWorkQueueDriver<'a, 'd>,
-        rsa_queue: RsaWorkQueueDriver<'a, 'd>,
-    ) -> Self {
+    fn new(accel: &'a mut EspAccel<'d>) -> Self {
+        let sha_queue = accel.sha.start();
+        let rsa_queue = accel.rsa.start();
+
         unsafe {
             crate::hook::digest::hook_sha1(Some(&SHA1));
             #[cfg(not(feature = "accel-esp32"))]
