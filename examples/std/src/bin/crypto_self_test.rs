@@ -1,4 +1,4 @@
-//! Run crypto self tests to ensure their functionnality
+//! Run crypto self tests to ensure their functionality
 
 use std::time::Instant;
 

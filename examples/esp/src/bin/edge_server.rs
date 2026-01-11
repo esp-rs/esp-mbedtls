@@ -12,7 +12,7 @@
 #![no_std]
 #![no_main]
 
-use edge_http::io::server::DefaultServer;
+use edge_http::io::server::Server;
 
 use edge_nal_embassy::{Tcp, TcpBuffers};
 
@@ -30,7 +30,7 @@ mod bootstrap;
 #[path = "../../../common/edge_server.rs"]
 mod server;
 
-const HEAP_SIZE: usize = 120 * 1024;
+const HEAP_SIZE: usize = 160 * 1024;
 
 #[esp_rtos::main]
 async fn main(spawner: Spawner) {
@@ -48,5 +48,5 @@ async fn main(spawner: Spawner) {
 
     let tcp = Tcp::new(stack, tcp_buffers);
 
-    server::run(&tls, tcp, &mut DefaultServer::new()).await;
+    server::run(&tls, tcp, &mut Server::<2, 2048, 32>::new(), 443).await;
 }

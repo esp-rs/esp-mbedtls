@@ -32,7 +32,7 @@ fn main() {
     let mut rng = rng::StdRng;
     let mut tls = Tls::new(&mut rng).unwrap();
 
-    tls.set_debug(0);
+    tls.set_debug(1);
 
     let listener = TcpListener::bind(SocketAddr::V4(SocketAddrV4::new(
         Ipv4Addr::UNSPECIFIED,

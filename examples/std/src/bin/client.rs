@@ -30,7 +30,7 @@ async fn run() {
     let mut rng = rng::StdRng;
     let mut tls = Tls::new(&mut rng).unwrap();
 
-    tls.set_debug(0);
+    tls.set_debug(1);
 
     for (index, (server_name_cstr, server_path, mtls)) in [
         (c"httpbin.org", "/ip", false),

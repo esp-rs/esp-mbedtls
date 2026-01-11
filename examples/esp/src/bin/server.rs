@@ -13,7 +13,7 @@
 
 use embassy_executor::Spawner;
 
-use embassy_net::{IpListenEndpoint, StackResources, tcp::TcpSocket};
+use embassy_net::{tcp::TcpSocket, IpListenEndpoint, StackResources};
 
 use esp_alloc::heap_allocator;
 use esp_backtrace as _;

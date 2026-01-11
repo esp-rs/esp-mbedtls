@@ -11,6 +11,8 @@ use esp_mbedtls::io::{Read, Write};
 use esp_mbedtls::nal::{TcpBind, WithTimeout};
 use esp_mbedtls::{Tls, TlsAcceptor};
 
+use log::info;
+
 #[path = "certs.rs"]
 mod certs;
 
@@ -18,14 +20,17 @@ pub async fn run<const HANDLERS: usize, const BUF: usize, const HEADERS: usize, 
     tls: &Tls<'_>,
     tcp: T,
     server: &mut Server<HANDLERS, BUF, HEADERS>,
+    port: u16,
 ) where
     T: TcpBind,
 {
     // First, create a raw TCP acceptor on port 8443
     let tcp_acceptor = tcp
-        .bind(SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), 8443))
+        .bind(SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), port))
         .await
         .unwrap();
+
+    info!("Listening for incoming HTTPs connections on port {}", port);
 
     // Next, layer the esp-mbedtls TLS stack on top of it
     let tls_acceptor = TlsAcceptor::new(tls.reference(), tcp_acceptor, &certs::server_conf(false));
@@ -57,7 +62,7 @@ impl Handler for HttpHandler {
     where
         T: Read + Write,
     {
-        println!("Got new connection");
+        info!("Got new connection");
         let headers = connection.headers()?;
 
         if headers.method != Method::Get {

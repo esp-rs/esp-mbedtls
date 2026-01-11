@@ -4,7 +4,7 @@ use embedded_io::{Error, ErrorKind};
 
 use esp_mbedtls_sys::*;
 
-use super::{Tls, mbedtls_rng, merr, Certificate, MBox, PrivateKey, TlsReference, TlsVersion};
+use super::{mbedtls_rng, merr, Certificate, MBox, PrivateKey, Tls, TlsReference, TlsVersion};
 
 pub use asynch::*;
 

@@ -10,8 +10,8 @@ use core::net::SocketAddr;
 
 use embassy_executor::Spawner;
 
-use embassy_net::StackResources;
 use embassy_net::tcp::TcpSocket;
+use embassy_net::StackResources;
 
 use esp_alloc::heap_allocator;
 use esp_backtrace as _;

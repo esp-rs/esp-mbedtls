@@ -2,7 +2,7 @@
 #![allow(clippy::uninlined_format_args)]
 
 use core::cell::RefCell;
-use core::ffi::{CStr, c_char, c_int, c_uchar, c_void};
+use core::ffi::{c_char, c_int, c_uchar, c_void, CStr};
 use core::marker::PhantomData;
 use core::mem::size_of;
 use core::ops::{Deref, DerefMut};
@@ -95,7 +95,7 @@ impl<'d> Tls<'d> {
     }
 
     /// Hook MbedTLS SSL debug logging into the Rust log system
-    /// 
+    ///
     /// # Arguments
     /// - `ssl_config`: The MbedTLS SSL configuration to hook the debug logging into
     pub(crate) fn hook_debug_logs(ssl_config: &mut mbedtls_ssl_config) {

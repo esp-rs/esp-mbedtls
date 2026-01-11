@@ -1,4 +1,4 @@
-//! Run crypto self tests to ensure their functionnality and benchmark hardware acceleration
+//! Run crypto self tests to ensure their functionality and benchmark hardware acceleration
 
 #![no_std]
 #![no_main]

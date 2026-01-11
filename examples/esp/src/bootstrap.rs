@@ -52,7 +52,10 @@ esp_bootloader_esp_idf::esp_app_desc!();
 const SSID: &str = env!("SSID");
 const PASSWORD: &str = env!("PASSWORD");
 
-pub async fn bootstrap_stack<const SOCKETS: usize>(spawner: Spawner, stack_resources: &'static mut StackResources<SOCKETS>) -> (Tls<'static>, Stack<'static>, EspAccel<'static>) {
+pub async fn bootstrap_stack<const SOCKETS: usize>(
+    spawner: Spawner,
+    stack_resources: &'static mut StackResources<SOCKETS>,
+) -> (Tls<'static>, Stack<'static>, EspAccel<'static>) {
     esp_println::logger::init_logger(log::LevelFilter::Info);
 
     info!("Starting...");
@@ -82,12 +85,7 @@ pub async fn bootstrap_stack<const SOCKETS: usize>(spawner: Spawner, stack_resou
     let seed = (trng.random() as u64) << 32 | trng.random() as u64;
 
     // Init network stack
-    let (stack, runner) = embassy_net::new(
-        wifi_interfaces.station,
-        config,
-        stack_resources,
-        seed,
-    );
+    let (stack, runner) = embassy_net::new(wifi_interfaces.station, config, stack_resources, seed);
 
     spawner.spawn(connection(controller)).ok();
     spawner.spawn(net_task(runner)).ok();
