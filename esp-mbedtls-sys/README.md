@@ -65,6 +65,6 @@ The [backwards-incompatible MbedTLS 4.0 released in Oct 2025](https://github.com
 - [TF-PSA-Crypto](https://github.com/Mbed-TLS/TF-PSA-Crypto) - for "I'm a generic library for crypto algorithms" - implementing the PSA API and having a special new driver layer for HW accel
 - [MBedTLS](https://github.com/Mbed-TLS/mbedtls) - for "I'm a library for doing TLS IO" - and for now - relying **specifically** on the TF-PSA-Crypto for doing that rather than capable of using any library implementing the PSA API
 
-Whether, and how exactly a migration to MbedTLS 4.0 would happen is still unclear but that's on the table once it sarts to see wider use overall.
+Whether, and how exactly a migration to MbedTLS 4.0 would happen is still unclear but that's on the table once it starts to see wider use overall.
 
 One way would be to have a new crate - `tf-psa-crypto-sys` which provides raw bindings to `TF-PSA-Crypto` (and somehow still does hooking). `esp-mbedtls-sys` would then only provide bindings for the "I'm a library for doing TLS IO" which is what MBedTLS 4.0 is.
