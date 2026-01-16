@@ -51,6 +51,7 @@ enumset = { version = "1", default-features = false }
 rand_core = "0.9"
 esp-mbedtls = { path = "../../esp-mbedtls", features = ["log"] }
 sha1 = { version = "0.10", default-features = false }
+tinyrlibc = { version = "0.5", default-features = false, features = ["memchr"] }
 
 embassy-time = "0.5"
 embassy-executor = "0.9"

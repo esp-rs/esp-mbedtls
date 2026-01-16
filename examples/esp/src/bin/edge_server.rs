@@ -24,6 +24,8 @@ use embassy_net::StackResources;
 use esp_alloc::heap_allocator;
 use esp_backtrace as _;
 
+use tinyrlibc as _;
+
 use crate::bootstrap::RECLAIMED_RAM;
 
 #[path = "../bootstrap.rs"]

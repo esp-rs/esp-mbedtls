@@ -23,6 +23,8 @@ use esp_mbedtls::Tls;
 
 use log::{info, warn};
 
+use tinyrlibc as _;
+
 use crate::bootstrap::RECLAIMED_RAM;
 
 extern crate alloc;

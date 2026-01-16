@@ -34,6 +34,7 @@ impl MbedtlsBuilder {
     ///
     /// Arguments:
     /// - `hooks` - Set of algorithm hooks to enable
+    /// - `force_clang`: If true, force the use of Clang as the C/C++ compiler
     /// - `crate_root_path`: Path to the root of the crate
     /// - `cmake_rust_target`: Optional target for CMake when building MbedTLS, with Rust target-triple syntax. If not specified, the "TARGET" env variable will be used
     /// - `cmake_host_rust_target`: Optional host target for the build
@@ -54,16 +55,17 @@ impl MbedtlsBuilder {
         clang_path: Option<PathBuf>,
         clang_sysroot_path: Option<PathBuf>,
         clang_target: Option<String>,
-        force_esp_riscv_toolchain: bool,
+        force_esp_riscv_gcc: bool,
     ) -> Self {
         Self {
             hooks,
             cmake_configurer: CMakeConfigurer::new(
                 force_clang,
+                clang_sysroot_path.clone(),
                 crate_root_path.join("mbedtls"),
                 cmake_rust_target,
                 cmake_host_rust_target,
-                force_esp_riscv_toolchain,
+                force_esp_riscv_gcc,
                 crate_root_path.join("gen").join("toolchain.cmake"),
             ),
             crate_root_path,
@@ -291,10 +293,11 @@ impl MbedtlsBuilder {
 #[derive(Debug, Clone)]
 pub struct CMakeConfigurer {
     pub force_clang: bool,
+    pub clang_sysroot_path: Option<PathBuf>,
     pub project_path: PathBuf,
     pub cmake_rust_target: Option<String>,
     pub cmake_host_rust_target: Option<String>,
-    pub force_esp_riscv_toolchain: bool,
+    pub force_esp_riscv_gcc: bool,
     pub empty_toolchain_file: PathBuf,
 }
 
@@ -302,26 +305,29 @@ impl CMakeConfigurer {
     /// Create a new CMakeConfigurer
     ///
     /// Arguments:
+    /// - `force_clang`: If true, force the use of Clang as the C/C++ compiler
     /// - `project_path`: Path to the root of the CMake project
     /// - `cmake_rust_target`: Optional target for CMake when building MbedTLS, with Rust target-triple syntax. If not specified, the "TARGET" env variable will be used
     /// - `cmake_host_rust_target`: Optional host target for the build
-    /// - `force_esp_riscv_toolchain`: If true, and if the target is a riscv32 target, force the use of the Espressif RISCV GCC toolchain
+    /// - `force_esp_riscv_gcc`: If true, and if the target is a riscv32 target, force the use of the Espressif RISCV GCC toolchain
     ///   (`riscv32-esp-elf-gcc`) rather than the derived `riscv32-unknown-elf-gcc` toolchain which is the "official" RISC-V one
     ///   (https://github.com/riscv-collab/riscv-gnu-toolchain)
     pub const fn new(
         force_clang: bool,
+        clang_sysroot_path: Option<PathBuf>,
         project_path: PathBuf,
         cmake_rust_target: Option<String>,
         cmake_host_rust_target: Option<String>,
-        force_esp_riscv_toolchain: bool,
+        force_esp_riscv_gcc: bool,
         empty_toolchain_file: PathBuf,
     ) -> Self {
         Self {
             force_clang,
+            clang_sysroot_path,
             project_path,
             cmake_rust_target,
             cmake_host_rust_target,
-            force_esp_riscv_toolchain,
+            force_esp_riscv_gcc,
             empty_toolchain_file,
         }
     }
@@ -377,7 +383,7 @@ impl CMakeConfigurer {
         }
 
         for arg in self.derive_c_args() {
-            config.cflag(arg).cxxflag(arg);
+            config.cflag(&arg).cxxflag(arg);
         }
 
         if let Some(target) = &self.cmake_rust_target {
@@ -392,6 +398,13 @@ impl CMakeConfigurer {
     }
 
     pub fn derive_sysroot(&self) -> Option<PathBuf> {
+        if self.force_clang {
+            if let Some(clang_sysroot_path) = self.clang_sysroot_path.clone() {
+                // If clang is used and there is a pre-defined sysroot path for it, use it
+                return Some(clang_sysroot_path);
+            }
+        }
+
         // Only GCC has a sysroot, so try to locate the sysroot using GCC first
         let unforce_clang = Self {
             force_clang: false,
@@ -456,7 +469,7 @@ impl CMakeConfigurer {
                 | "riscv32imac-esp-espidf"
                 | "riscv32imafc-unknown-none-elf"
                 | "riscv32imafc-esp-espidf" => {
-                    if self.force_esp_riscv_toolchain {
+                    if self.force_esp_riscv_gcc {
                         Some((PathBuf::from("riscv32-esp-elf-gcc"), true))
                     } else {
                         None
@@ -467,7 +480,27 @@ impl CMakeConfigurer {
         }
     }
 
-    fn derive_c_args(&self) -> &[&str] {
+    fn derive_c_args(&self) -> Vec<String> {
+        let mut args = Vec::new();
+
+        args.extend(
+            self.derive_c_target_args()
+                .iter()
+                .map(|arg| arg.to_string()),
+        );
+
+        if self.force_clang {
+            if let Some(sysroot_path) = self.derive_sysroot() {
+                args.push("-fbuiltin".to_string());
+                args.push(format!("-I{}", sysroot_path.join("include").display()));
+                args.push(format!("--sysroot={}", sysroot_path.display()));
+            }
+        }
+
+        args
+    }
+
+    fn derive_c_target_args(&self) -> &[&str] {
         if self.force_clang {
             match self.target().as_str() {
                 "riscv32imc-unknown-none-elf" | "riscv32imc-esp-espidf" => {

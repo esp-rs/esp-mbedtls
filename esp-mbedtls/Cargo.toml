@@ -14,8 +14,9 @@ defmt = ["dep:defmt", "esp-mbedtls-sys/defmt"]
 log = ["dep:log", "esp-mbedtls-sys/log"]
 
 # Re-expose esp-mbedtls-sys features
+use-gcc = ["esp-mbedtls-sys/use-gcc"]
 force-generate-bindings = ["esp-mbedtls-sys/force-generate-bindings"]
-force-esp-riscv-toolchain = ["esp-mbedtls-sys/force-esp-riscv-toolchain"]
+force-esp-riscv-gcc = ["esp-mbedtls-sys/force-esp-riscv-gcc"]
 nohook = ["esp-mbedtls-sys/nohook"]
 nohook-sha1 = ["esp-mbedtls-sys/nohook-sha1"]
 nohook-sha256 = ["esp-mbedtls-sys/nohook-sha256"]

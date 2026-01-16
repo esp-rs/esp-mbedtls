@@ -5,17 +5,17 @@ pub mod digest;
 pub mod exp_mod;
 
 #[cfg(not(feature = "accel-esp32"))]
-static SHA1: digest::EspSha1 = digest::EspSha1::new();
+pub static SHA1: digest::EspSha1 = digest::EspSha1::new();
 #[cfg(not(feature = "accel-esp32"))]
-static SHA224: digest::EspSha224 = digest::EspSha224::new();
+pub static SHA224: digest::EspSha224 = digest::EspSha224::new();
 #[cfg(not(feature = "accel-esp32"))]
-static SHA256: digest::EspSha256 = digest::EspSha256::new();
+pub static SHA256: digest::EspSha256 = digest::EspSha256::new();
 #[cfg(any(feature = "accel-esp32s2", feature = "accel-esp32s3"))]
-static SHA384: digest::EspSha384 = digest::EspSha384::new();
+pub static SHA384: digest::EspSha384 = digest::EspSha384::new();
 #[cfg(any(feature = "accel-esp32s2", feature = "accel-esp32s3"))]
-static SHA512: digest::EspSha512 = digest::EspSha512::new();
-#[cfg(not(feature = "accel-esp32c2"))]
-static EXP_MOD: exp_mod::EspExpMod = exp_mod::EspExpMod::new();
+pub static SHA512: digest::EspSha512 = digest::EspSha512::new();
+#[cfg(not(any(feature = "accel-esp32c2", feature = "nohook-exp-mod")))]
+pub static EXP_MOD: exp_mod::EspExpMod = exp_mod::EspExpMod::new();
 
 pub struct EspAccel<'d> {
     #[cfg(not(feature = "accel-esp32"))]
@@ -67,18 +67,34 @@ impl<'a, 'd> EspAccelQueue<'a, 'd> {
         #[cfg(not(feature = "accel-esp32c2"))]
         let rsa_queue = accel.rsa.start();
 
+        #[cfg(not(any(feature = "accel-esp32", feature = "nohook-sha1")))]
         unsafe {
-            #[cfg(not(feature = "accel-esp32"))]
             crate::hook::digest::hook_sha1(Some(&SHA1));
-            #[cfg(not(feature = "accel-esp32"))]
+        }
+        #[cfg(not(any(feature = "accel-esp32", feature = "nohook-sha256")))]
+        unsafe {
             crate::hook::digest::hook_sha224(Some(&SHA224));
-            #[cfg(not(feature = "accel-esp32"))]
+        }
+        #[cfg(not(any(feature = "accel-esp32", feature = "nohook-sha256")))]
+        unsafe {
             crate::hook::digest::hook_sha256(Some(&SHA256));
-            #[cfg(any(feature = "accel-esp32s2", feature = "accel-esp32s3"))]
+        }
+        #[cfg(all(
+            any(feature = "accel-esp32s2", feature = "accel-esp32s3"),
+            not(feature = "nohook-sha512")
+        ))]
+        unsafe {
             crate::hook::digest::hook_sha384(Some(&SHA384));
-            #[cfg(any(feature = "accel-esp32s2", feature = "accel-esp32s3"))]
+        }
+        #[cfg(all(
+            any(feature = "accel-esp32s2", feature = "accel-esp32s3"),
+            not(feature = "nohook-sha512")
+        ))]
+        unsafe {
             crate::hook::digest::hook_sha512(Some(&SHA512));
-            #[cfg(not(feature = "accel-esp32c2"))]
+        }
+        #[cfg(all(not(feature = "accel-esp32c2"), not(feature = "nohook-exp-mod")))]
+        unsafe {
             crate::hook::exp_mod::hook_exp_mod(Some(&EXP_MOD));
         }
 
@@ -93,18 +109,34 @@ impl<'a, 'd> EspAccelQueue<'a, 'd> {
 
 impl Drop for EspAccelQueue<'_, '_> {
     fn drop(&mut self) {
+        #[cfg(not(any(feature = "accel-esp32", feature = "nohook-sha1")))]
         unsafe {
-            #[cfg(not(feature = "accel-esp32"))]
             crate::hook::digest::hook_sha1(None);
-            #[cfg(not(feature = "accel-esp32"))]
+        }
+        #[cfg(not(any(feature = "accel-esp32", feature = "nohook-sha256")))]
+        unsafe {
             crate::hook::digest::hook_sha224(None);
-            #[cfg(not(feature = "accel-esp32"))]
+        }
+        #[cfg(not(any(feature = "accel-esp32", feature = "nohook-sha256")))]
+        unsafe {
             crate::hook::digest::hook_sha256(None);
-            #[cfg(any(feature = "accel-esp32s2", feature = "accel-esp32s3"))]
+        }
+        #[cfg(all(
+            any(feature = "accel-esp32s2", feature = "accel-esp32s3"),
+            not(feature = "nohook-sha512")
+        ))]
+        unsafe {
             crate::hook::digest::hook_sha384(None);
-            #[cfg(any(feature = "accel-esp32s2", feature = "accel-esp32s3"))]
+        }
+        #[cfg(all(
+            any(feature = "accel-esp32s2", feature = "accel-esp32s3"),
+            not(feature = "nohook-sha512")
+        ))]
+        unsafe {
             crate::hook::digest::hook_sha512(None);
-            #[cfg(not(feature = "accel-esp32c2"))]
+        }
+        #[cfg(all(not(feature = "accel-esp32c2"), not(feature = "nohook-exp-mod")))]
+        unsafe {
             crate::hook::exp_mod::hook_exp_mod(None);
         }
     }

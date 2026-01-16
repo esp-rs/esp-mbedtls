@@ -423,16 +423,3 @@ unsafe extern "C" fn mbedtls_platform_zeroize(dst: *mut c_uchar, len: u32) {
         dst.offset(i).write_volatile(0);
     }
 }
-
-// TODO
-// #[cfg(feature = "esp32c6")]
-// #[no_mangle]
-// unsafe extern "C" fn memchr(ptr: *const u8, ch: u8, count: usize) -> *const u8 {
-//     for i in 0..count {
-//         if ptr.add(i).read() == ch {
-//             return ptr.add(i);
-//         }
-//     }
-
-//     return core::ptr::null();
-// }
