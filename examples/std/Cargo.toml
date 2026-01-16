@@ -1,0 +1,28 @@
+[package]
+name = "examples-std"
+version = "0.1.0"
+authors = ["bjoernQ <bjoern.quentin@mobile-j.de>"]
+edition = "2021"
+license = "MIT OR Apache-2.0"
+rust-version = "1.84"
+
+[dependencies]
+log = "0.4"
+esp-mbedtls = { path = "../../esp-mbedtls", features = ["log", "edge-nal"] }
+enumset = { version = "1", default-features = false }
+
+# For the `edge_*` examples
+edge-http = { version = "0.7", features = ["io"] }
+edge-nal-std = "0.6"
+
+# STD-only dependencies
+env_logger = "0.11"
+rand = "0.9"
+critical-section = { version = "1", features = ["std"] }
+embedded-io-adapters = { version = "0.7", features = ["std", "futures-03"] }
+async-io = "2"
+async-executor = "1"
+embassy-time = { version = "0.5", features = ["std", "generic-queue-64"] }
+
+[build-dependencies]
+embuild = { version = "0.33", features = ["espidf"] }

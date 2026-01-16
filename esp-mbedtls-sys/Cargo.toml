@@ -6,33 +6,59 @@ links = "mbedtls"
 license = "MIT OR Apache-2.0"
 rust-version = "1.84"
 
-[build-dependencies]
-anyhow      = "1.0.68"
-bindgen     = "0.71.1"
-env_logger  = "0.10.0"
-log         = "0.4.17"
-cmake       = "0.1.52"
-fs_extra    = "1.3.0"
-embuild     = "0.33"
-
-[dependencies]
-# For malloc/free
-# TODO: Replace with `esp-alloc` once `esp-alloc` starts to provide `malloc` and `free` in future
-# ... or switch to our own `mbedtls_malloc/free`
-esp-wifi = { version = "0.15.0", default-features = false, optional = true }
-
-# ESP-IDF: The mbedtls lib distributed with ESP-IDF is used
-[target.'cfg(target_os = "espidf")'.dependencies]
-esp-idf-sys = { version = "0.36", default-features = false }
-
-# All other platforms: mbedtls libs and bindings are created on the fly
+[lib]
+harness = false
 
 [features]
 default = []
+# Always generate the bindings during build, even if pre-built bindings for the build target are available
+force-generate-bindings = []
+# Force the use of the Espressif Riscv GCC toolchain, if the target is a `riscv32*-` target
+# If this feature is not enabled, the build will assume and use the "official" RiscV GCC toolchain:
+# https://github.com/riscv-collab/riscv-gnu-toolchain
+force-esp-riscv-toolchain = []
+# Disable all or some hooks; this would preclude hooking custom HW-accelerated algos
+nohook = ["nohook-sha1", "nohook-sha256", "nohook-sha512", "nohook-exp-mod"]
+nohook-sha1 = []
+nohook-sha256 = []
+nohook-sha512 = []
+nohook-exp-mod = []
+# Enable HW acceleration drivers for the ESP series of MCUs via `esp-hal`
+accel-esp32 = ["esp-hal/esp32", "crypto-bigint"]
+accel-esp32c2 = ["esp-hal/esp32c2"]
+accel-esp32c3 = ["esp-hal/esp32c3", "crypto-bigint"]
+accel-esp32c6 = ["esp-hal/esp32c6", "crypto-bigint"]
+accel-esp32h2 = ["esp-hal/esp32h2", "crypto-bigint"]
+accel-esp32s2 = ["esp-hal/esp32s2", "crypto-bigint"]
+accel-esp32s3 = ["esp-hal/esp32s3", "crypto-bigint"]
 
-# ESP-HAL: Exactly *one* chip MUST be selected via its feature:
-esp32 = ["esp-wifi/esp32"]
-esp32c3 = ["esp-wifi/esp32c3"]
-esp32c6 = ["esp-wifi/esp32c6"]
-esp32s2 = ["esp-wifi/esp32s2"]
-esp32s3 = ["esp-wifi/esp32s3"]
+[dependencies]
+defmt = { version = "1", optional = true }
+log = { version = "0.4", optional = true }
+enumset = { version = "1", default-features = false }
+# For hooking
+digest = { version = "0.10", default-features = false }
+sha1 = { version = "0.10", default-features = false }
+# For some reason, `soft` results in enormous slowdowns on xtensa and riscv32
+sha2 = { version = "0.10", default-features = false, features = ["force-soft-compact"] }
+critical-section = "1"
+
+# For esp-hal accel
+esp-hal = { version = "1", features = ["unstable"], optional = true }
+crypto-bigint = { version = "0.5.3", default-features = false, features = ["extra-sizes"], optional = true }
+
+# ESP-IDF: The mbedtls lib distributed with ESP-IDF is used
+# All other platforms: mbedtls libs and bindings are created on the fly
+[target.'cfg(target_os = "espidf")'.dependencies]
+esp-idf-sys = { version = "0.36", default-features = false }
+
+[build-dependencies]
+anyhow = "1"
+bindgen = "0.71"
+enumset = "1"
+env_logger = "0.11"
+log = "0.4"
+cmake = "0.1.52"
+cc = "1.1"
+fs_extra = "1.3"
+embuild = "0.33"
