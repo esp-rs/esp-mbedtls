@@ -15510,7 +15510,7 @@ unsafe extern "C" {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_sha1_context {
-    pub work_area: [::core::ffi::c_uchar; 400usize],
+    pub work_area: [::core::ffi::c_uchar; 200usize],
 }
 impl Default for mbedtls_sha1_context {
     fn default() -> Self {
@@ -15670,7 +15670,7 @@ unsafe extern "C" {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_sha256_context {
-    pub work_area: [::core::ffi::c_uchar; 400usize],
+    pub work_area: [::core::ffi::c_uchar; 200usize],
     pub is224: ::core::ffi::c_uchar,
 }
 impl Default for mbedtls_sha256_context {
@@ -15821,7 +15821,7 @@ unsafe extern "C" {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_sha512_context {
-    pub work_area: [::core::ffi::c_uchar; 500usize],
+    pub work_area: [::core::ffi::c_uchar; 300usize],
     pub is384: ::core::ffi::c_uchar,
 }
 impl Default for mbedtls_sha512_context {

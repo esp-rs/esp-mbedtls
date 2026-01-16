@@ -267,21 +267,11 @@ impl MbedtlsBuilder {
     }
 
     fn hook_work_area_size_def(&self, hook: Hook) -> Option<usize> {
-        if self.cmake_configurer.target() == "xtensa-esp32-none-elf" {
-            // esp32 needs copuous amounts of RAM for the accel algorithms
-            match hook {
-                Hook::Sha1 => Some(400),
-                Hook::Sha256 => Some(400),
-                Hook::Sha512 => Some(500),
-                _ => None,
-            }
-        } else {
-            match hook {
-                Hook::Sha1 => Some(200),
-                Hook::Sha256 => Some(200),
-                Hook::Sha512 => Some(300),
-                _ => None,
-            }
+        match hook {
+            Hook::Sha1 => Some(200),
+            Hook::Sha256 => Some(200),
+            Hook::Sha512 => Some(300),
+            _ => None,
         }
     }
 
