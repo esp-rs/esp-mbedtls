@@ -22,12 +22,12 @@ use esp_mbedtls::Tls;
 use esp_metadata_generated::memory_range;
 
 use esp_radio as _;
+use esp_radio::wifi::scan::ScanConfig;
 use esp_radio::wifi::sta::StationConfig;
 use esp_radio::wifi::ModeConfig;
 use esp_radio::wifi::WifiController;
 use esp_radio::wifi::WifiDevice;
 use esp_radio::wifi::WifiEvent;
-use esp_radio::wifi::WifiStationState;
 
 use log::info;
 
@@ -49,8 +49,8 @@ pub const RECLAIMED_RAM: usize =
 
 esp_bootloader_esp_idf::esp_app_desc!();
 
-const SSID: &str = env!("SSID");
-const PASSWORD: &str = env!("PASSWORD");
+const WIFI_SSID: &str = env!("WIFI_SSID");
+const WIFI_PASS: &str = env!("WIFI_PASS");
 
 pub async fn bootstrap_stack<const SOCKETS: usize>(
     spawner: Spawner,
@@ -126,25 +126,35 @@ async fn connection(mut controller: WifiController<'static>) {
     info!("Device capabilities: {:?}", controller.capabilities());
 
     loop {
-        if esp_radio::wifi::station_state() == WifiStationState::Connected {
+        if matches!(controller.is_connected(), Ok(true)) {
             // wait until we're no longer connected
             controller
                 .wait_for_event(WifiEvent::StationDisconnected)
                 .await;
             Timer::after(Duration::from_millis(5000)).await
         }
+
         if !matches!(controller.is_started(), Ok(true)) {
-            let client_config = ModeConfig::Station(
+            let station_config = ModeConfig::Station(
                 StationConfig::default()
-                    .with_ssid(SSID.into())
-                    .with_password(PASSWORD.into()),
+                    .with_ssid(WIFI_SSID.into())
+                    .with_password(WIFI_PASS.into()),
             );
-            controller.set_config(&client_config).unwrap();
+            controller.set_config(&station_config).unwrap();
             info!("Starting wifi");
             controller.start_async().await.unwrap();
             info!("Wifi started!");
-        }
 
+            info!("Scan");
+            let scan_config = ScanConfig::default().with_max(10);
+            let result = controller
+                .scan_with_config_async(scan_config)
+                .await
+                .unwrap();
+            for ap in result {
+                info!("{:?}", ap);
+            }
+        }
         info!("About to connect...");
 
         match controller.connect_async().await {

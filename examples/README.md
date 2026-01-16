@@ -18,12 +18,16 @@ Check folder [esp](esp).
 
 Building:
 ```
+export WIFI_SSID="your-wifi-ssid"
+export WIFI_PASS="your-wifi-password"
 cd examples/esp
 cargo build --no-default-features --features <esp32XX> --target <esp32XX-target>
 ```
 
 To build and run one example, i.e. `client`:
 ```
+export WIFI_SSID="your-wifi-ssid"
+export WIFI_PASS="your-wifi-password"
 cd examples/esp
 cargo run --bin client --no-default-features --features <esp32XX> --target <esp32XX-target>
 ```

@@ -7,14 +7,14 @@ license = "MIT OR Apache-2.0"
 rust-version = "1.84"
 
 [patch.crates-io]
-esp-rtos = { git = "https://github.com/esp-rs/esp-hal" }
-esp-hal = { git = "https://github.com/esp-rs/esp-hal" }
-esp-alloc = { git = "https://github.com/esp-rs/esp-hal" }
-esp-backtrace = { git = "https://github.com/esp-rs/esp-hal" }
-esp-println = { git = "https://github.com/esp-rs/esp-hal" }
-esp-radio = { git = "https://github.com/esp-rs/esp-hal" }
-esp-bootloader-esp-idf = { git = "https://github.com/esp-rs/esp-hal" }
-esp-metadata-generated = { git = "https://github.com/esp-rs/esp-hal" }
+esp-rtos = { git = "https://github.com/esp-rs/esp-hal", rev="8a9fd5e" }
+esp-hal = { git = "https://github.com/esp-rs/esp-hal", rev="8a9fd5e" }
+esp-alloc = { git = "https://github.com/esp-rs/esp-hal", rev="8a9fd5e" }
+esp-backtrace = { git = "https://github.com/esp-rs/esp-hal", rev="8a9fd5e" }
+esp-println = { git = "https://github.com/esp-rs/esp-hal", rev="8a9fd5e" }
+esp-radio = { git = "https://github.com/esp-rs/esp-hal", rev="8a9fd5e" }
+esp-bootloader-esp-idf = { git = "https://github.com/esp-rs/esp-hal", rev="8a9fd5e" }
+esp-metadata-generated = { git = "https://github.com/esp-rs/esp-hal", rev="8a9fd5e" }
 
 [profile.release]
 debug = true
