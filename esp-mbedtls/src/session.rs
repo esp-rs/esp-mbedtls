@@ -2,9 +2,8 @@ use core::ffi::{c_int, c_void, CStr};
 
 use embedded_io::{Error, ErrorKind};
 
-use esp_mbedtls_sys::*;
-
-use super::{mbedtls_rng, merr, Certificate, MBox, PrivateKey, Tls, TlsReference, TlsVersion};
+use super::sys::*;
+use super::{mbedtls_rng, Certificate, MBox, PrivateKey, Tls, TlsReference, TlsVersion};
 
 pub use asynch::*;
 

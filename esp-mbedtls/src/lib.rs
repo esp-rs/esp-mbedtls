@@ -10,7 +10,14 @@ use core::ptr::NonNull;
 
 use critical_section::Mutex;
 
-use esp_mbedtls_sys::*;
+#[cfg(not(target_os = "espidf"))]
+use crate::sys::{mbedtls_calloc, mbedtls_free};
+use crate::sys::{
+    mbedtls_ctr_drbg_context, mbedtls_ctr_drbg_free, mbedtls_ctr_drbg_init, mbedtls_pk_context,
+    mbedtls_pk_free, mbedtls_pk_init, mbedtls_ssl_conf_dbg, mbedtls_ssl_config,
+    mbedtls_ssl_config_free, mbedtls_ssl_config_init, mbedtls_ssl_context, mbedtls_ssl_free,
+    mbedtls_ssl_init, mbedtls_x509_crt, mbedtls_x509_crt_free, mbedtls_x509_crt_init,
+};
 
 use rand_core::CryptoRng;
 
@@ -82,6 +89,8 @@ impl<'d> Tls<'d> {
     pub fn set_debug(&mut self, level: u32) {
         #[cfg(not(target_os = "espidf"))]
         unsafe {
+            use crate::sys::mbedtls_debug_set_threshold;
+
             mbedtls_debug_set_threshold(level as c_int);
         }
     }
@@ -422,4 +431,12 @@ unsafe extern "C" fn mbedtls_platform_zeroize(dst: *mut c_uchar, len: u32) {
     for i in 0..len as isize {
         dst.offset(i).write_volatile(0);
     }
+}
+
+#[cfg(target_os = "espidf")]
+extern "C" {
+    #[link_name = "calloc"]
+    fn mbedtls_calloc(num: usize, size: usize) -> *mut c_void;
+    #[link_name = "free"]
+    fn mbedtls_free(ptr: *mut c_void);
 }

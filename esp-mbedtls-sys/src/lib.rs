@@ -10,6 +10,7 @@ pub use error::*;
 pub(crate) mod fmt;
 
 mod error;
+#[cfg(not(target_os = "espidf"))]
 mod extra_impls; // TODO: Figure out if we still need this
 
 #[cfg(not(target_os = "espidf"))]

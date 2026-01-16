@@ -7,18 +7,22 @@ use esp_mbedtls::Tls;
 
 use log::info;
 
+#[path = "../bootstrap.rs"]
+mod bootstrap;
 #[path = "../../../common/edge_client.rs"]
 mod client;
 #[path = "../../../common/std_rng.rs"]
 mod rng;
 
 fn main() {
-    env_logger::init();
+    bootstrap::bootstrap();
 
-    async_io::block_on(run());
+    let mut buf = vec![0; 4096];
+
+    bootstrap::block_on(Box::pin(run(&mut buf)));
 }
 
-async fn run() {
+async fn run(buf: &mut [u8]) {
     info!("Initializing TLS");
 
     let mut rng = rng::StdRng;
@@ -40,15 +44,6 @@ async fn run() {
             index, mtls
         );
 
-        client::request(
-            &tls,
-            stack,
-            stack,
-            &mut [0; 4096],
-            server_name_cstr,
-            server_path,
-            mtls,
-        )
-        .await;
+        client::request(&tls, stack, stack, buf, server_name_cstr, server_path, mtls).await;
     }
 }

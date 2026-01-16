@@ -1,9 +1,8 @@
 use core::ffi::CStr;
 use core::marker::PhantomData;
 
-use esp_mbedtls_sys::*;
-
-use super::{merr, MRc, SessionError};
+use super::sys::*;
+use super::{MRc, SessionError};
 
 /// Holds a reference to a PEM or DER-encoded X509 certificate or private key.
 ///

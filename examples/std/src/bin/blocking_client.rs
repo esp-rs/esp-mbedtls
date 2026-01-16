@@ -11,13 +11,15 @@ use esp_mbedtls::Tls;
 
 use log::info;
 
+#[path = "../bootstrap.rs"]
+mod bootstrap;
 #[path = "../../../common/blocking_client.rs"]
 mod client;
 #[path = "../../../common/std_rng.rs"]
 mod rng;
 
 fn main() {
-    env_logger::init();
+    bootstrap::bootstrap();
 
     info!("Initializing TLS");
 

@@ -22,9 +22,9 @@ pub unsafe fn hook_sha512(sha512: Option<&'static (dyn MbedtlsSha512 + Send + Sy
     critical_section::with(|cs| {
         #[allow(clippy::if_same_then_else)]
         if sha512.is_some() {
-            info!("SHA-512 hook: added custom/HW accelerated impl");
+            debug!("SHA-512 hook: added custom/HW accelerated impl");
         } else {
-            info!("SHA-512 hook: removed");
+            debug!("SHA-512 hook: removed");
         }
 
         alt::SHA512.borrow(cs).set(sha512);
@@ -43,9 +43,9 @@ pub unsafe fn hook_sha384(sha384: Option<&'static (dyn MbedtlsSha384 + Send + Sy
     critical_section::with(|cs| {
         #[allow(clippy::if_same_then_else)]
         if sha384.is_some() {
-            info!("SHA-384 hook: added custom/HW accelerated impl");
+            debug!("SHA-384 hook: added custom/HW accelerated impl");
         } else {
-            info!("SHA-384 hook: removed");
+            debug!("SHA-384 hook: removed");
         }
 
         alt::SHA384.borrow(cs).set(sha384);

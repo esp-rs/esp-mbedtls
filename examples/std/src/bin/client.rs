@@ -5,7 +5,7 @@
 
 use std::net::{TcpStream, ToSocketAddrs};
 
-use async_io::Async;
+use async_io_mini::Async;
 
 use embedded_io_adapters::futures_03::FromFutures;
 
@@ -13,18 +13,22 @@ use esp_mbedtls::Tls;
 
 use log::info;
 
+#[path = "../bootstrap.rs"]
+mod bootstrap;
 #[path = "../../../common/client.rs"]
 mod client;
 #[path = "../../../common/std_rng.rs"]
 mod rng;
 
 pub fn main() {
-    async_io::block_on(run());
+    bootstrap::bootstrap();
+
+    let mut buf = vec![0; 1024];
+
+    bootstrap::block_on(run(&mut buf));
 }
 
-async fn run() {
-    env_logger::init();
-
+async fn run(buf: &mut [u8]) {
     info!("Initializing TLS");
 
     let mut rng = rng::StdRng;
@@ -60,15 +64,13 @@ async fn run() {
 
         let socket = Async::<TcpStream>::connect(socket_addr).await.unwrap();
 
-        let mut buf = [0u8; 1024];
-
         client::request(
             tls.reference(),
             FromFutures::new(socket),
             server_name_cstr,
             server_path,
             mtls,
-            &mut buf,
+            buf,
         )
         .await
         .unwrap();

@@ -1,10 +1,10 @@
 use core::ffi::{c_int, c_uchar, c_void, CStr};
 
-use esp_mbedtls_sys::*;
-
 use io::{ErrorType, Read, Write};
 
-use super::{merr, SessionConfig, SessionError, SessionState, TlsReference};
+use crate::sys::*;
+
+use super::{SessionConfig, SessionError, SessionState, TlsReference};
 
 /// Re-export of the `embedded-io` crate so that users don't have to explicitly depend on it
 /// to use e.g. `write_all` or `read_exact`.

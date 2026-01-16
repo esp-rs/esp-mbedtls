@@ -6,11 +6,11 @@
 target = "riscv32imac-unknown-none-elf"
 
 [target.'cfg(all(target_arch = "riscv32", target_os = "none"))']
-runner = "espflash flash --monitor"
+runner = "espflash flash --baud 921600 --monitor"
 rustflags = ["-C", "link-arg=-Tlinkall.x", "-C", "force-frame-pointers"]
 
 [target.'cfg(all(target_arch = "xtensa", target_os = "none"))']
-runner  = "espflash flash --monitor"
+runner  = "espflash flash --baud 921600 --monitor"
 rustflags = ["-C", "link-arg=-Wl,-Tlinkall.x", "-C", "link-arg=-nostartfiles"]
 
 [unstable]

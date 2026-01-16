@@ -9,24 +9,30 @@
 //!
 //! Alternatively, accept the self-signed certificate warning in the browser.
 
-use edge_http::io::server::DefaultServer;
+use edge_http::io::server::Server;
 
 use esp_mbedtls::Tls;
 
 use log::info;
 
+#[path = "../bootstrap.rs"]
+mod bootstrap;
 #[path = "../../../common/std_rng.rs"]
 mod rng;
 #[path = "../../../common/edge_server.rs"]
 mod server;
 
-fn main() {
-    env_logger::init();
+type DemoServer = Server<2, 2048, 20>;
 
-    async_io::block_on(run());
+fn main() {
+    bootstrap::bootstrap();
+
+    let mut server = Box::new(DemoServer::new());
+
+    bootstrap::block_on(Box::pin(run(&mut server)));
 }
 
-async fn run() {
+async fn run(server: &mut DemoServer) {
     info!("Initializing TLS");
 
     let mut rng = rng::StdRng;
@@ -34,11 +40,5 @@ async fn run() {
 
     tls.set_debug(1);
 
-    server::run(
-        &tls,
-        edge_nal_std::Stack::new(),
-        &mut DefaultServer::new(),
-        8443,
-    )
-    .await;
+    server::run(&tls, edge_nal_std::Stack::new(), server, 8443).await;
 }

@@ -14,7 +14,7 @@ use std::net::TcpListener;
 
 use async_executor::LocalExecutor;
 
-use async_io::Async;
+use async_io_mini::Async;
 
 use embedded_io_adapters::futures_03::FromFutures;
 
@@ -22,15 +22,17 @@ use esp_mbedtls::Tls;
 
 use log::{info, warn};
 
+#[path = "../bootstrap.rs"]
+mod bootstrap;
 #[path = "../../../common/std_rng.rs"]
 mod rng;
 #[path = "../../../common/server.rs"]
 mod server;
 
 fn main() {
-    env_logger::init();
+    bootstrap::bootstrap();
 
-    async_io::block_on(run());
+    bootstrap::block_on(run());
 }
 
 async fn run() {
@@ -64,7 +66,7 @@ async fn accept<'a>(executor: &LocalExecutor<'a>, tls: &'a Tls<'_>) {
 
         executor
             .spawn(async move {
-                let mut buf = [0u8; 4096];
+                let mut buf = vec![0; 4096];
 
                 if let Err(e) = server::reply(tls, FromFutures::new(socket), false, &mut buf).await
                 {
