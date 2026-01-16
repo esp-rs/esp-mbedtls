@@ -16,6 +16,12 @@ esp-radio = { git = "https://github.com/esp-rs/esp-hal", rev="8a9fd5e" }
 esp-bootloader-esp-idf = { git = "https://github.com/esp-rs/esp-hal", rev="8a9fd5e" }
 esp-metadata-generated = { git = "https://github.com/esp-rs/esp-hal", rev="8a9fd5e" }
 
+ # For some reason, opt-level "z" or "s" results in a much smaller HW accel
+[profile.release.package.esp-hal]
+opt-level = 3
+[profile.dev.package.esp-hal]
+opt-level = 3
+
 [profile.release]
 debug = true
 lto = "fat"
