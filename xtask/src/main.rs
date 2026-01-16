@@ -69,7 +69,7 @@ fn main() -> Result<()> {
             force_esp_riscv_toolchain,
         );
 
-        let out = TempDir::new("openthread-sys-libs")?;
+        let out = TempDir::new("mbedtls-sys-libs")?;
 
         builder.compile(
             out.path(),
