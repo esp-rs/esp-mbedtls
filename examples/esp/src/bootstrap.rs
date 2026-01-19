@@ -62,7 +62,8 @@ pub async fn bootstrap_stack<const SOCKETS: usize>(
 
     heap_allocator!(#[ram(reclaimed)] size: RECLAIMED_RAM);
 
-    let peripherals = esp_hal::init(esp_hal::Config::default());
+    let peripherals =
+        esp_hal::init(esp_hal::Config::default().with_cpu_clock(esp_hal::clock::CpuClock::max()));
 
     let timg0 = TimerGroup::new(peripherals.TIMG0);
     esp_rtos::start(
