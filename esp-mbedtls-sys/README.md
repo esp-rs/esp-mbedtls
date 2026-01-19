@@ -18,7 +18,7 @@
 
 ## Precompilation
 
-For user-convenience, the MbedTLS C library also comes pre-compiled for the following Rust targets:
+For user-convenience, the MbedTLS C library also comes pre-built for the following Rust targets:
 - `rsicv32imc-unknown-none-elf`
 - `rsicv32imac-unknown-none-elf`
 - `xtensa-esp32-none-elf`
@@ -26,7 +26,11 @@ For user-convenience, the MbedTLS C library also comes pre-compiled for the foll
 - `xtensa-esp32s3-none-elf`
 - (PRs for other Rust baremetal targets appreciated!)
 
-For other MCU baremetal targets as well as for STD platforms, the MbedTLS C library will be compiled on the fly, but that requires GCC (the cross-compiler flavor for your MCU) and Clang pre-installed.
+For other MCU baremetal targets as well as for STD platforms, the MbedTLS C library will be compiled on the fly with `clang` (by default), or with GCC (if the `use-gcc` feature is enabled). 
+
+Note that for the latter, you DO need to have the GCC cross-compiler flavor for your MCU pre-installed and on your $PATH, while with `clang` _ANY_ `clang` instance would do, as `clang` is natively a cross-compiler. `clang` is anyway always necessary during on-the-fly compilation for the Rust bindings' generation, so that's why it is used by default for compiling the MbedTLS C library as well.
+
+The on-the-fly compilation process also needs `cmake` and `ninja` pre-installed (for now).
 
 ESP-IDF is also supported and in that case `esp-mbedtls-sys` becomes just an alias for `esp-idf-sys` and uses the MbedTLS library which is built-in inside ESP-IDF.
 

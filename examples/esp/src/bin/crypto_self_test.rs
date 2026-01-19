@@ -27,6 +27,8 @@ use esp_radio as _;
 
 use log::{error, info};
 
+use tinyrlibc as _;
+
 extern crate alloc;
 
 const HEAP_SIZE: usize = 140 * 1024;

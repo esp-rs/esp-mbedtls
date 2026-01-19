@@ -256,182 +256,8 @@ pub const PSA_WANT_KEY_TYPE_DERIVE: u32 = 1;
 pub const PSA_WANT_KEY_TYPE_PASSWORD: u32 = 1;
 pub const PSA_WANT_KEY_TYPE_PASSWORD_HASH: u32 = 1;
 pub const PSA_WANT_KEY_TYPE_RAW_DATA: u32 = 1;
-pub const _LIBC_LIMITS_H_: u32 = 1;
-pub const __NEWLIB_H__: u32 = 1;
-pub const _NEWLIB_VERSION_H__: u32 = 1;
-pub const _NEWLIB_VERSION: &[u8; 6] = b"4.5.0\0";
-pub const __NEWLIB__: u32 = 4;
-pub const __NEWLIB_MINOR__: u32 = 5;
-pub const __NEWLIB_PATCHLEVEL__: u32 = 0;
-pub const _ATEXIT_DYNAMIC_ALLOC: u32 = 1;
-pub const _FSEEK_OPTIMIZATION: u32 = 1;
-pub const _FVWRITE_IN_STREAMIO: u32 = 1;
-pub const _HAVE_CC_INHIBIT_LOOP_TO_LIBCALL: u32 = 1;
-pub const _HAVE_HW_MISALIGNED_ACCESS: u32 = 1;
-pub const _HAVE_INITFINI_ARRAY: u32 = 1;
-pub const _HAVE_LONG_DOUBLE: u32 = 1;
-pub const _ICONV_ENABLED: u32 = 1;
-pub const _MB_LEN_MAX: u32 = 1;
-pub const _NANO_MALLOC: u32 = 1;
-pub const _REENT_CHECK_VERIFY: u32 = 1;
-pub const _RETARGETABLE_LOCKING: u32 = 1;
-pub const _UNBUF_STREAM_OPT: u32 = 1;
-pub const _WANT_IO_C99_FORMATS: u32 = 1;
-pub const _WANT_IO_LONG_LONG: u32 = 1;
-pub const _WANT_IO_POS_ARGS: u32 = 1;
-pub const _WANT_REENT_BACKWARD_BINARY_COMPAT: u32 = 1;
-pub const _WANT_REENT_SMALL: u32 = 1;
-pub const _WANT_USE_GDTOA: u32 = 1;
-pub const _DEFAULT_SOURCE: u32 = 1;
-pub const _POSIX_SOURCE: u32 = 1;
-pub const _POSIX_C_SOURCE: u32 = 200809;
-pub const _ATFILE_SOURCE: u32 = 1;
-pub const __ATFILE_VISIBLE: u32 = 1;
-pub const __BSD_VISIBLE: u32 = 1;
-pub const __GNU_VISIBLE: u32 = 0;
-pub const __ISO_C_VISIBLE: u32 = 2011;
-pub const __LARGEFILE_VISIBLE: u32 = 0;
-pub const __MISC_VISIBLE: u32 = 1;
-pub const __POSIX_VISIBLE: u32 = 200809;
-pub const __SVID_VISIBLE: u32 = 1;
-pub const __XSI_VISIBLE: u32 = 0;
-pub const __SSP_FORTIFY_LEVEL: u32 = 0;
-pub const _POSIX_THREADS: u32 = 1;
-pub const _POSIX_TIMEOUTS: u32 = 1;
-pub const _POSIX_TIMERS: u32 = 1;
-pub const _POSIX_MONOTONIC_CLOCK: u32 = 200112;
-pub const _POSIX_CLOCK_SELECTION: u32 = 200112;
-pub const _UNIX98_THREAD_MUTEX_ATTRIBUTES: u32 = 1;
-pub const _POSIX_READER_WRITER_LOCKS: u32 = 200112;
-pub const __have_longlong64: u32 = 1;
-pub const __have_long32: u32 = 1;
-pub const ___int8_t_defined: u32 = 1;
-pub const ___int16_t_defined: u32 = 1;
-pub const ___int32_t_defined: u32 = 1;
-pub const ___int64_t_defined: u32 = 1;
-pub const ___int_least8_t_defined: u32 = 1;
-pub const ___int_least16_t_defined: u32 = 1;
-pub const ___int_least32_t_defined: u32 = 1;
-pub const ___int_least64_t_defined: u32 = 1;
-pub const __GNUCLIKE_ASM: u32 = 3;
-pub const __GNUCLIKE___TYPEOF: u32 = 1;
-pub const __GNUCLIKE___SECTION: u32 = 1;
-pub const __GNUCLIKE_CTOR_SECTION_HANDLING: u32 = 1;
-pub const __GNUCLIKE_BUILTIN_CONSTANT_P: u32 = 1;
-pub const __GNUCLIKE_BUILTIN_VARARGS: u32 = 1;
-pub const __GNUCLIKE_BUILTIN_STDARG: u32 = 1;
-pub const __GNUCLIKE_BUILTIN_VAALIST: u32 = 1;
-pub const __GNUC_VA_LIST_COMPATIBILITY: u32 = 1;
-pub const __GNUCLIKE_BUILTIN_NEXT_ARG: u32 = 1;
-pub const __GNUCLIKE_BUILTIN_MEMCPY: u32 = 1;
-pub const __CC_SUPPORTS_INLINE: u32 = 1;
-pub const __CC_SUPPORTS___INLINE: u32 = 1;
-pub const __CC_SUPPORTS___INLINE__: u32 = 1;
-pub const __CC_SUPPORTS___FUNC__: u32 = 1;
-pub const __CC_SUPPORTS_WARNING: u32 = 1;
-pub const __CC_SUPPORTS_VARADIC_XXX: u32 = 1;
-pub const __CC_SUPPORTS_DYNAMIC_ARRAY_INIT: u32 = 1;
-pub const ARG_MAX: u32 = 65536;
-pub const CHILD_MAX: u32 = 40;
-pub const LINK_MAX: u32 = 32767;
-pub const MAX_CANON: u32 = 255;
-pub const MAX_INPUT: u32 = 255;
-pub const NAME_MAX: u32 = 255;
-pub const NGROUPS_MAX: u32 = 16;
-pub const OPEN_MAX: u32 = 64;
-pub const PATH_MAX: u32 = 1024;
-pub const PIPE_BUF: u32 = 512;
-pub const IOV_MAX: u32 = 1024;
-pub const BC_BASE_MAX: u32 = 99;
-pub const BC_DIM_MAX: u32 = 2048;
-pub const BC_SCALE_MAX: u32 = 99;
-pub const BC_STRING_MAX: u32 = 1000;
-pub const COLL_WEIGHTS_MAX: u32 = 0;
-pub const EXPR_NEST_MAX: u32 = 32;
-pub const LINE_MAX: u32 = 2048;
-pub const RE_DUP_MAX: u32 = 255;
 pub const MB_LEN_MAX: u32 = 1;
-pub const NL_ARGMAX: u32 = 32;
-pub const _POSIX2_RE_DUP_MAX: u32 = 255;
 pub const CHAR_MIN: u32 = 0;
-pub const __int20: u32 = 2;
-pub const __int20__: u32 = 2;
-pub const __INT8: &[u8; 3] = b"hh\0";
-pub const __INT16: &[u8; 2] = b"h\0";
-pub const __INT64: &[u8; 3] = b"ll\0";
-pub const __FAST8: &[u8; 3] = b"hh\0";
-pub const __FAST16: &[u8; 2] = b"h\0";
-pub const __FAST64: &[u8; 3] = b"ll\0";
-pub const __LEAST8: &[u8; 3] = b"hh\0";
-pub const __LEAST16: &[u8; 2] = b"h\0";
-pub const __LEAST64: &[u8; 3] = b"ll\0";
-pub const __int8_t_defined: u32 = 1;
-pub const __int16_t_defined: u32 = 1;
-pub const __int32_t_defined: u32 = 1;
-pub const __int64_t_defined: u32 = 1;
-pub const __int_least8_t_defined: u32 = 1;
-pub const __int_least16_t_defined: u32 = 1;
-pub const __int_least32_t_defined: u32 = 1;
-pub const __int_least64_t_defined: u32 = 1;
-pub const __int_fast8_t_defined: u32 = 1;
-pub const __int_fast16_t_defined: u32 = 1;
-pub const __int_fast32_t_defined: u32 = 1;
-pub const __int_fast64_t_defined: u32 = 1;
-pub const WINT_MIN: u32 = 0;
-pub const __OBSOLETE_MATH_DEFAULT: u32 = 1;
-pub const __OBSOLETE_MATH: u32 = 1;
-pub const __BUFSIZ__: u32 = 128;
-pub const __RAND_MAX: u32 = 2147483647;
-pub const _NULL: u32 = 0;
-pub const _ATEXIT_SIZE: u32 = 32;
-pub const _RAND48_SEED_0: u32 = 13070;
-pub const _RAND48_SEED_1: u32 = 43981;
-pub const _RAND48_SEED_2: u32 = 4660;
-pub const _RAND48_MULT_0: u32 = 58989;
-pub const _RAND48_MULT_1: u32 = 57068;
-pub const _RAND48_MULT_2: u32 = 5;
-pub const _RAND48_ADD: u32 = 11;
-pub const _REENT_EMERGENCY_SIZE: u32 = 25;
-pub const _REENT_ASCTIME_SIZE: u32 = 26;
-pub const _REENT_SIGNAL_SIZE: u32 = 24;
-pub const __SLBF: u32 = 1;
-pub const __SNBF: u32 = 2;
-pub const __SRD: u32 = 4;
-pub const __SWR: u32 = 8;
-pub const __SRW: u32 = 16;
-pub const __SEOF: u32 = 32;
-pub const __SERR: u32 = 64;
-pub const __SMBF: u32 = 128;
-pub const __SAPP: u32 = 256;
-pub const __SSTR: u32 = 512;
-pub const __SOPT: u32 = 1024;
-pub const __SNPT: u32 = 2048;
-pub const __SOFF: u32 = 4096;
-pub const __SORD: u32 = 8192;
-pub const __SL64: u32 = 32768;
-pub const __SNLK: u32 = 1;
-pub const __SWID: u32 = 8192;
-pub const _IOFBF: u32 = 0;
-pub const _IOLBF: u32 = 1;
-pub const _IONBF: u32 = 2;
-pub const EOF: i32 = -1;
-pub const BUFSIZ: u32 = 128;
-pub const FOPEN_MAX: u32 = 20;
-pub const FILENAME_MAX: u32 = 1024;
-pub const L_tmpnam: u32 = 1024;
-pub const P_tmpdir: &[u8; 5] = b"/tmp\0";
-pub const SEEK_SET: u32 = 0;
-pub const SEEK_CUR: u32 = 1;
-pub const SEEK_END: u32 = 2;
-pub const TMP_MAX: u32 = 26;
-pub const L_ctermid: u32 = 16;
-pub const EXIT_FAILURE: u32 = 1;
-pub const EXIT_SUCCESS: u32 = 0;
-pub const RAND_MAX: u32 = 2147483647;
-pub const MBEDTLS_PLATFORM_STD_EXIT_SUCCESS: u32 = 0;
-pub const MBEDTLS_PLATFORM_STD_EXIT_FAILURE: u32 = 1;
-pub const MBEDTLS_EXIT_SUCCESS: u32 = 0;
-pub const MBEDTLS_EXIT_FAILURE: u32 = 1;
 pub const MBEDTLS_ERR_MPI_FILE_IO_ERROR: i32 = -2;
 pub const MBEDTLS_ERR_MPI_BAD_INPUT_DATA: i32 = -4;
 pub const MBEDTLS_ERR_MPI_INVALID_CHARACTER: i32 = -6;
@@ -1174,26 +1000,25 @@ pub const MBEDTLS_CTR_DRBG_MAX_SEED_INPUT: u32 = 384;
 pub const MBEDTLS_CTR_DRBG_PR_OFF: u32 = 0;
 pub const MBEDTLS_CTR_DRBG_PR_ON: u32 = 1;
 pub const MBEDTLS_CTR_DRBG_ENTROPY_NONCE_LEN: u32 = 0;
-pub type __int8_t = ::core::ffi::c_schar;
-pub type __uint8_t = ::core::ffi::c_uchar;
-pub type __int16_t = ::core::ffi::c_short;
-pub type __uint16_t = ::core::ffi::c_ushort;
-pub type __int32_t = ::core::ffi::c_int;
-pub type __uint32_t = ::core::ffi::c_uint;
-pub type __int64_t = ::core::ffi::c_longlong;
-pub type __uint64_t = ::core::ffi::c_ulonglong;
-pub type __int_least8_t = ::core::ffi::c_schar;
-pub type __uint_least8_t = ::core::ffi::c_uchar;
-pub type __int_least16_t = ::core::ffi::c_short;
-pub type __uint_least16_t = ::core::ffi::c_ushort;
-pub type __int_least32_t = ::core::ffi::c_int;
-pub type __uint_least32_t = ::core::ffi::c_uint;
-pub type __int_least64_t = ::core::ffi::c_longlong;
-pub type __uint_least64_t = ::core::ffi::c_ulonglong;
-pub type __intmax_t = ::core::ffi::c_longlong;
-pub type __uintmax_t = ::core::ffi::c_ulonglong;
-pub type __intptr_t = ::core::ffi::c_int;
-pub type __uintptr_t = ::core::ffi::c_uint;
+pub type int_least64_t = i64;
+pub type uint_least64_t = u64;
+pub type int_fast64_t = i64;
+pub type uint_fast64_t = u64;
+pub type int_least32_t = i32;
+pub type uint_least32_t = u32;
+pub type int_fast32_t = i32;
+pub type uint_fast32_t = u32;
+pub type int_least16_t = i16;
+pub type uint_least16_t = u16;
+pub type int_fast16_t = i16;
+pub type uint_fast16_t = u16;
+pub type int_least8_t = i8;
+pub type uint_least8_t = u8;
+pub type int_fast8_t = i8;
+pub type uint_fast8_t = u8;
+pub type intmax_t = ::core::ffi::c_longlong;
+pub type uintmax_t = ::core::ffi::c_ulonglong;
+pub type mbedtls_iso_c_forbids_empty_translation_units = ::core::ffi::c_int;
 pub type wchar_t = ::core::ffi::c_int;
 #[repr(C)]
 #[repr(align(16))]
@@ -1202,1886 +1027,6 @@ pub struct max_align_t {
     pub __clang_max_align_nonce1: ::core::ffi::c_longlong,
     pub __bindgen_padding_0: u64,
     pub __clang_max_align_nonce2: u128,
-}
-pub type intmax_t = __intmax_t;
-pub type uintmax_t = __uintmax_t;
-pub type int_least8_t = __int_least8_t;
-pub type uint_least8_t = __uint_least8_t;
-pub type int_least16_t = __int_least16_t;
-pub type uint_least16_t = __uint_least16_t;
-pub type int_least32_t = __int_least32_t;
-pub type uint_least32_t = __uint_least32_t;
-pub type int_least64_t = __int_least64_t;
-pub type uint_least64_t = __uint_least64_t;
-pub type int_fast8_t = ::core::ffi::c_schar;
-pub type uint_fast8_t = ::core::ffi::c_uchar;
-pub type int_fast16_t = ::core::ffi::c_short;
-pub type uint_fast16_t = ::core::ffi::c_ushort;
-pub type int_fast32_t = ::core::ffi::c_int;
-pub type uint_fast32_t = ::core::ffi::c_uint;
-pub type int_fast64_t = ::core::ffi::c_longlong;
-pub type uint_fast64_t = ::core::ffi::c_ulonglong;
-pub type mbedtls_iso_c_forbids_empty_translation_units = ::core::ffi::c_int;
-pub type __gnuc_va_list = __builtin_va_list;
-pub type va_list = __gnuc_va_list;
-pub type wint_t = ::core::ffi::c_uint;
-pub type __blkcnt_t = ::core::ffi::c_long;
-pub type __blksize_t = ::core::ffi::c_long;
-pub type __fsblkcnt_t = __uint64_t;
-pub type __fsfilcnt_t = __uint32_t;
-pub type _off_t = ::core::ffi::c_long;
-pub type __pid_t = ::core::ffi::c_int;
-pub type __dev_t = ::core::ffi::c_short;
-pub type __uid_t = ::core::ffi::c_ushort;
-pub type __gid_t = ::core::ffi::c_ushort;
-pub type __id_t = __uint32_t;
-pub type __ino_t = ::core::ffi::c_ushort;
-pub type __mode_t = __uint32_t;
-pub type _off64_t = ::core::ffi::c_longlong;
-pub type __off_t = _off_t;
-pub type __loff_t = _off64_t;
-pub type __key_t = ::core::ffi::c_long;
-pub type _fpos_t = ::core::ffi::c_long;
-pub type __size_t = ::core::ffi::c_uint;
-pub type _ssize_t = ::core::ffi::c_int;
-pub type __ssize_t = _ssize_t;
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct _mbstate_t {
-    pub __count: ::core::ffi::c_int,
-    pub __value: _mbstate_t__bindgen_ty_1,
-}
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub union _mbstate_t__bindgen_ty_1 {
-    pub __wch: wint_t,
-    pub __wchb: [::core::ffi::c_uchar; 4usize],
-}
-impl Default for _mbstate_t__bindgen_ty_1 {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-impl Default for _mbstate_t {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-pub type _iconv_t = *mut ::core::ffi::c_void;
-pub type __clock_t = ::core::ffi::c_ulong;
-pub type __time_t = __int_least64_t;
-pub type __clockid_t = ::core::ffi::c_ulong;
-pub type __daddr_t = ::core::ffi::c_long;
-pub type __timer_t = ::core::ffi::c_ulong;
-pub type __sa_family_t = __uint8_t;
-pub type __socklen_t = __uint32_t;
-pub type __nl_item = ::core::ffi::c_int;
-pub type __nlink_t = ::core::ffi::c_ushort;
-pub type __suseconds_t = ::core::ffi::c_long;
-pub type __useconds_t = ::core::ffi::c_ulong;
-pub type __va_list = __builtin_va_list;
-pub type __ULong = ::core::ffi::c_ulong;
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct __lock {
-    _unused: [u8; 0],
-}
-pub type _LOCK_T = *mut __lock;
-unsafe extern "C" {
-    pub fn __retarget_lock_init(lock: *mut _LOCK_T);
-}
-unsafe extern "C" {
-    pub fn __retarget_lock_init_recursive(lock: *mut _LOCK_T);
-}
-unsafe extern "C" {
-    pub fn __retarget_lock_close(lock: _LOCK_T);
-}
-unsafe extern "C" {
-    pub fn __retarget_lock_close_recursive(lock: _LOCK_T);
-}
-unsafe extern "C" {
-    pub fn __retarget_lock_acquire(lock: _LOCK_T);
-}
-unsafe extern "C" {
-    pub fn __retarget_lock_acquire_recursive(lock: _LOCK_T);
-}
-unsafe extern "C" {
-    pub fn __retarget_lock_try_acquire(lock: _LOCK_T) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn __retarget_lock_try_acquire_recursive(lock: _LOCK_T) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn __retarget_lock_release(lock: _LOCK_T);
-}
-unsafe extern "C" {
-    pub fn __retarget_lock_release_recursive(lock: _LOCK_T);
-}
-pub type _flock_t = _LOCK_T;
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct __locale_t {
-    _unused: [u8; 0],
-}
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct _Bigint {
-    pub _next: *mut _Bigint,
-    pub _k: ::core::ffi::c_int,
-    pub _maxwds: ::core::ffi::c_int,
-    pub _sign: ::core::ffi::c_int,
-    pub _wds: ::core::ffi::c_int,
-    pub _x: [__ULong; 1usize],
-}
-impl Default for _Bigint {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Default, Copy, Clone)]
-pub struct __tm {
-    pub __tm_sec: ::core::ffi::c_int,
-    pub __tm_min: ::core::ffi::c_int,
-    pub __tm_hour: ::core::ffi::c_int,
-    pub __tm_mday: ::core::ffi::c_int,
-    pub __tm_mon: ::core::ffi::c_int,
-    pub __tm_year: ::core::ffi::c_int,
-    pub __tm_wday: ::core::ffi::c_int,
-    pub __tm_yday: ::core::ffi::c_int,
-    pub __tm_isdst: ::core::ffi::c_int,
-}
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct _on_exit_args {
-    pub _fnargs: [*mut ::core::ffi::c_void; 32usize],
-    pub _dso_handle: [*mut ::core::ffi::c_void; 32usize],
-    pub _fntypes: __ULong,
-    pub _is_cxa: __ULong,
-}
-impl Default for _on_exit_args {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct _atexit {
-    pub _next: *mut _atexit,
-    pub _ind: ::core::ffi::c_int,
-    pub _fns: [::core::option::Option<unsafe extern "C" fn()>; 32usize],
-    pub _on_exit_args_ptr: *mut _on_exit_args,
-}
-impl Default for _atexit {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct __sbuf {
-    pub _base: *mut ::core::ffi::c_uchar,
-    pub _size: ::core::ffi::c_int,
-}
-impl Default for __sbuf {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct __sFILE {
-    pub _p: *mut ::core::ffi::c_uchar,
-    pub _r: ::core::ffi::c_int,
-    pub _w: ::core::ffi::c_int,
-    pub _flags: ::core::ffi::c_short,
-    pub _file: ::core::ffi::c_short,
-    pub _bf: __sbuf,
-    pub _lbfsize: ::core::ffi::c_int,
-    pub _data: *mut _reent,
-    pub _cookie: *mut ::core::ffi::c_void,
-    pub _read: ::core::option::Option<
-        unsafe extern "C" fn(
-            arg1: *mut _reent,
-            arg2: *mut ::core::ffi::c_void,
-            arg3: *mut ::core::ffi::c_char,
-            arg4: ::core::ffi::c_int,
-        ) -> _ssize_t,
-    >,
-    pub _write: ::core::option::Option<
-        unsafe extern "C" fn(
-            arg1: *mut _reent,
-            arg2: *mut ::core::ffi::c_void,
-            arg3: *const ::core::ffi::c_char,
-            arg4: ::core::ffi::c_int,
-        ) -> _ssize_t,
-    >,
-    pub _seek: ::core::option::Option<
-        unsafe extern "C" fn(
-            arg1: *mut _reent,
-            arg2: *mut ::core::ffi::c_void,
-            arg3: _fpos_t,
-            arg4: ::core::ffi::c_int,
-        ) -> _fpos_t,
-    >,
-    pub _close: ::core::option::Option<
-        unsafe extern "C" fn(
-            arg1: *mut _reent,
-            arg2: *mut ::core::ffi::c_void,
-        ) -> ::core::ffi::c_int,
-    >,
-    pub _ub: __sbuf,
-    pub _up: *mut ::core::ffi::c_uchar,
-    pub _ur: ::core::ffi::c_int,
-    pub _ubuf: [::core::ffi::c_uchar; 3usize],
-    pub _nbuf: [::core::ffi::c_uchar; 1usize],
-    pub _lb: __sbuf,
-    pub _blksize: ::core::ffi::c_int,
-    pub _offset: _off_t,
-    pub _lock: _flock_t,
-    pub _mbstate: _mbstate_t,
-    pub _flags2: ::core::ffi::c_int,
-}
-impl Default for __sFILE {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-pub type __FILE = __sFILE;
-unsafe extern "C" {
-    pub static mut __sf: [__FILE; 3usize];
-}
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct _glue {
-    pub _next: *mut _glue,
-    pub _niobs: ::core::ffi::c_int,
-    pub _iobs: *mut __FILE,
-}
-impl Default for _glue {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-unsafe extern "C" {
-    pub static mut __sglue: _glue;
-}
-#[repr(C)]
-#[derive(Default, Copy, Clone)]
-pub struct _rand48 {
-    pub _seed: [::core::ffi::c_ushort; 3usize],
-    pub _mult: [::core::ffi::c_ushort; 3usize],
-    pub _add: ::core::ffi::c_ushort,
-    pub _rand_next: ::core::ffi::c_ulonglong,
-}
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct _mprec {
-    pub _result: *mut _Bigint,
-    pub _result_k: ::core::ffi::c_int,
-    pub _p5s: *mut _Bigint,
-    pub _freelist: *mut *mut _Bigint,
-}
-impl Default for _mprec {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct _misc_reent {
-    pub _strtok_last: *mut ::core::ffi::c_char,
-    pub _mblen_state: _mbstate_t,
-    pub _wctomb_state: _mbstate_t,
-    pub _mbtowc_state: _mbstate_t,
-    pub _l64a_buf: [::core::ffi::c_char; 8usize],
-    pub _getdate_err: ::core::ffi::c_int,
-    pub _mbrlen_state: _mbstate_t,
-    pub _mbrtowc_state: _mbstate_t,
-    pub _mbsrtowcs_state: _mbstate_t,
-    pub _wcrtomb_state: _mbstate_t,
-    pub _wcsrtombs_state: _mbstate_t,
-}
-impl Default for _misc_reent {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct _reent {
-    pub _errno: ::core::ffi::c_int,
-    pub _stdin: *mut __FILE,
-    pub _stdout: *mut __FILE,
-    pub _stderr: *mut __FILE,
-    pub _inc: ::core::ffi::c_int,
-    pub _emergency: *mut ::core::ffi::c_char,
-    pub _reserved_0: ::core::ffi::c_int,
-    pub _reserved_1: ::core::ffi::c_int,
-    pub _locale: *mut __locale_t,
-    pub _mp: *mut _mprec,
-    pub __cleanup: ::core::option::Option<unsafe extern "C" fn(arg1: *mut _reent)>,
-    pub _gamma_signgam: ::core::ffi::c_int,
-    pub _cvtlen: ::core::ffi::c_int,
-    pub _cvtbuf: *mut ::core::ffi::c_char,
-    pub _r48: *mut _rand48,
-    pub _localtime_buf: *mut __tm,
-    pub _asctime_buf: *mut ::core::ffi::c_char,
-    pub _sig_func: *mut ::core::option::Option<unsafe extern "C" fn(arg1: ::core::ffi::c_int)>,
-    pub _reserved_6: *mut _atexit,
-    pub _reserved_7: _atexit,
-    pub _reserved_8: _glue,
-    pub __sf: *mut __FILE,
-    pub _misc: *mut _misc_reent,
-    pub _signal_buf: *mut ::core::ffi::c_char,
-}
-impl Default for _reent {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-unsafe extern "C" {
-    pub fn __assert(
-        arg1: *const ::core::ffi::c_char,
-        arg2: ::core::ffi::c_int,
-        arg3: *const ::core::ffi::c_char,
-    ) -> !;
-}
-unsafe extern "C" {
-    pub fn __assert_func(
-        arg1: *const ::core::ffi::c_char,
-        arg2: ::core::ffi::c_int,
-        arg3: *const ::core::ffi::c_char,
-        arg4: *const ::core::ffi::c_char,
-    ) -> !;
-}
-unsafe extern "C" {
-    pub static mut _impure_ptr: *mut _reent;
-}
-unsafe extern "C" {
-    pub static mut _impure_data: _reent;
-}
-unsafe extern "C" {
-    pub fn __getreent() -> *mut _reent;
-}
-unsafe extern "C" {
-    pub static mut __atexit: *mut _atexit;
-}
-unsafe extern "C" {
-    pub static mut __atexit0: _atexit;
-}
-unsafe extern "C" {
-    pub static mut __stdio_exit_handler: ::core::option::Option<unsafe extern "C" fn()>;
-}
-unsafe extern "C" {
-    pub fn _reclaim_reent(arg1: *mut _reent);
-}
-unsafe extern "C" {
-    pub fn _fwalk_sglue(
-        arg1: *mut _reent,
-        arg2: ::core::option::Option<
-            unsafe extern "C" fn(arg1: *mut _reent, arg2: *mut __FILE) -> ::core::ffi::c_int,
-        >,
-        arg3: *mut _glue,
-    ) -> ::core::ffi::c_int;
-}
-pub type FILE = __FILE;
-pub type fpos_t = _fpos_t;
-pub type off_t = __off_t;
-unsafe extern "C" {
-    pub fn ctermid(arg1: *mut ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
-}
-unsafe extern "C" {
-    pub fn tmpfile() -> *mut FILE;
-}
-unsafe extern "C" {
-    pub fn tmpnam(arg1: *mut ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
-}
-unsafe extern "C" {
-    #[must_use]
-    pub fn tempnam(
-        arg1: *const ::core::ffi::c_char,
-        arg2: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
-}
-unsafe extern "C" {
-    pub fn fclose(arg1: *mut FILE) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn fflush(arg1: *mut FILE) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn freopen(
-        arg1: *const ::core::ffi::c_char,
-        arg2: *const ::core::ffi::c_char,
-        arg3: *mut FILE,
-    ) -> *mut FILE;
-}
-unsafe extern "C" {
-    pub fn setbuf(arg1: *mut FILE, arg2: *mut ::core::ffi::c_char);
-}
-unsafe extern "C" {
-    pub fn setvbuf(
-        arg1: *mut FILE,
-        arg2: *mut ::core::ffi::c_char,
-        arg3: ::core::ffi::c_int,
-        arg4: usize,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn fprintf(arg1: *mut FILE, arg2: *const ::core::ffi::c_char, ...) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn fscanf(arg1: *mut FILE, arg2: *const ::core::ffi::c_char, ...) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn printf(arg1: *const ::core::ffi::c_char, ...) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn scanf(arg1: *const ::core::ffi::c_char, ...) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn sscanf(
-        arg1: *const ::core::ffi::c_char,
-        arg2: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn fgetc(arg1: *mut FILE) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn fgets(
-        arg1: *mut ::core::ffi::c_char,
-        arg2: ::core::ffi::c_int,
-        arg3: *mut FILE,
-    ) -> *mut ::core::ffi::c_char;
-}
-unsafe extern "C" {
-    pub fn fputc(arg1: ::core::ffi::c_int, arg2: *mut FILE) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn fputs(arg1: *const ::core::ffi::c_char, arg2: *mut FILE) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn getc(arg1: *mut FILE) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn getchar() -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn gets(arg1: *mut ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
-}
-unsafe extern "C" {
-    pub fn putc(arg1: ::core::ffi::c_int, arg2: *mut FILE) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn putchar(arg1: ::core::ffi::c_int) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn puts(arg1: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn ungetc(arg1: ::core::ffi::c_int, arg2: *mut FILE) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn fread(
-        arg1: *mut ::core::ffi::c_void,
-        _size: ::core::ffi::c_uint,
-        _n: ::core::ffi::c_uint,
-        arg2: *mut FILE,
-    ) -> ::core::ffi::c_uint;
-}
-unsafe extern "C" {
-    pub fn fwrite(
-        arg1: *const ::core::ffi::c_void,
-        _size: ::core::ffi::c_uint,
-        _n: ::core::ffi::c_uint,
-        arg2: *mut FILE,
-    ) -> ::core::ffi::c_uint;
-}
-unsafe extern "C" {
-    pub fn fgetpos(arg1: *mut FILE, arg2: *mut fpos_t) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn fseek(
-        arg1: *mut FILE,
-        arg2: ::core::ffi::c_long,
-        arg3: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn fsetpos(arg1: *mut FILE, arg2: *const fpos_t) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn ftell(arg1: *mut FILE) -> ::core::ffi::c_long;
-}
-unsafe extern "C" {
-    pub fn rewind(arg1: *mut FILE);
-}
-unsafe extern "C" {
-    pub fn clearerr(arg1: *mut FILE);
-}
-unsafe extern "C" {
-    pub fn feof(arg1: *mut FILE) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn ferror(arg1: *mut FILE) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn perror(arg1: *const ::core::ffi::c_char);
-}
-unsafe extern "C" {
-    pub fn fopen(_name: *const ::core::ffi::c_char, _type: *const ::core::ffi::c_char)
-        -> *mut FILE;
-}
-unsafe extern "C" {
-    pub fn sprintf(
-        arg1: *mut ::core::ffi::c_char,
-        arg2: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn remove(arg1: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn rename(
-        arg1: *const ::core::ffi::c_char,
-        arg2: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn fseeko(arg1: *mut FILE, arg2: off_t, arg3: ::core::ffi::c_int) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn ftello(arg1: *mut FILE) -> off_t;
-}
-unsafe extern "C" {
-    pub fn snprintf(
-        arg1: *mut ::core::ffi::c_char,
-        arg2: ::core::ffi::c_uint,
-        arg3: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn asiprintf(
-        arg1: *mut *mut ::core::ffi::c_char,
-        arg2: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn asniprintf(
-        arg1: *mut ::core::ffi::c_char,
-        arg2: *mut usize,
-        arg3: *const ::core::ffi::c_char,
-        ...
-    ) -> *mut ::core::ffi::c_char;
-}
-unsafe extern "C" {
-    pub fn asnprintf(
-        arg1: *mut ::core::ffi::c_char,
-        arg2: *mut usize,
-        arg3: *const ::core::ffi::c_char,
-        ...
-    ) -> *mut ::core::ffi::c_char;
-}
-unsafe extern "C" {
-    pub fn diprintf(
-        arg1: ::core::ffi::c_int,
-        arg2: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn fiprintf(arg1: *mut FILE, arg2: *const ::core::ffi::c_char, ...) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn fiscanf(arg1: *mut FILE, arg2: *const ::core::ffi::c_char, ...) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn iprintf(arg1: *const ::core::ffi::c_char, ...) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn iscanf(arg1: *const ::core::ffi::c_char, ...) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn siprintf(
-        arg1: *mut ::core::ffi::c_char,
-        arg2: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn siscanf(
-        arg1: *const ::core::ffi::c_char,
-        arg2: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn sniprintf(
-        arg1: *mut ::core::ffi::c_char,
-        arg2: usize,
-        arg3: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn fdopen(arg1: ::core::ffi::c_int, arg2: *const ::core::ffi::c_char) -> *mut FILE;
-}
-unsafe extern "C" {
-    pub fn fileno(arg1: *mut FILE) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn pclose(arg1: *mut FILE) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn popen(arg1: *const ::core::ffi::c_char, arg2: *const ::core::ffi::c_char) -> *mut FILE;
-}
-unsafe extern "C" {
-    pub fn setbuffer(arg1: *mut FILE, arg2: *mut ::core::ffi::c_char, arg3: ::core::ffi::c_int);
-}
-unsafe extern "C" {
-    pub fn setlinebuf(arg1: *mut FILE) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn getw(arg1: *mut FILE) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn putw(arg1: ::core::ffi::c_int, arg2: *mut FILE) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn getc_unlocked(arg1: *mut FILE) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn getchar_unlocked() -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn flockfile(arg1: *mut FILE);
-}
-unsafe extern "C" {
-    pub fn ftrylockfile(arg1: *mut FILE) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn funlockfile(arg1: *mut FILE);
-}
-unsafe extern "C" {
-    pub fn putc_unlocked(arg1: ::core::ffi::c_int, arg2: *mut FILE) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn putchar_unlocked(arg1: ::core::ffi::c_int) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn dprintf(
-        arg1: ::core::ffi::c_int,
-        arg2: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn fmemopen(
-        arg1: *mut ::core::ffi::c_void,
-        arg2: usize,
-        arg3: *const ::core::ffi::c_char,
-    ) -> *mut FILE;
-}
-unsafe extern "C" {
-    pub fn open_memstream(arg1: *mut *mut ::core::ffi::c_char, arg2: *mut usize) -> *mut FILE;
-}
-unsafe extern "C" {
-    pub fn renameat(
-        arg1: ::core::ffi::c_int,
-        arg2: *const ::core::ffi::c_char,
-        arg3: ::core::ffi::c_int,
-        arg4: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _asiprintf_r(
-        arg1: *mut _reent,
-        arg2: *mut *mut ::core::ffi::c_char,
-        arg3: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _asniprintf_r(
-        arg1: *mut _reent,
-        arg2: *mut ::core::ffi::c_char,
-        arg3: *mut usize,
-        arg4: *const ::core::ffi::c_char,
-        ...
-    ) -> *mut ::core::ffi::c_char;
-}
-unsafe extern "C" {
-    pub fn _asnprintf_r(
-        arg1: *mut _reent,
-        arg2: *mut ::core::ffi::c_char,
-        arg3: *mut usize,
-        arg4: *const ::core::ffi::c_char,
-        ...
-    ) -> *mut ::core::ffi::c_char;
-}
-unsafe extern "C" {
-    pub fn _asprintf_r(
-        arg1: *mut _reent,
-        arg2: *mut *mut ::core::ffi::c_char,
-        arg3: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _diprintf_r(
-        arg1: *mut _reent,
-        arg2: ::core::ffi::c_int,
-        arg3: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _dprintf_r(
-        arg1: *mut _reent,
-        arg2: ::core::ffi::c_int,
-        arg3: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _fclose_r(arg1: *mut _reent, arg2: *mut FILE) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _fcloseall_r(arg1: *mut _reent) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _fdopen_r(
-        arg1: *mut _reent,
-        arg2: ::core::ffi::c_int,
-        arg3: *const ::core::ffi::c_char,
-    ) -> *mut FILE;
-}
-unsafe extern "C" {
-    pub fn _fflush_r(arg1: *mut _reent, arg2: *mut FILE) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _fgetc_r(arg1: *mut _reent, arg2: *mut FILE) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _fgetc_unlocked_r(arg1: *mut _reent, arg2: *mut FILE) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _fgets_r(
-        arg1: *mut _reent,
-        arg2: *mut ::core::ffi::c_char,
-        arg3: ::core::ffi::c_int,
-        arg4: *mut FILE,
-    ) -> *mut ::core::ffi::c_char;
-}
-unsafe extern "C" {
-    pub fn _fgets_unlocked_r(
-        arg1: *mut _reent,
-        arg2: *mut ::core::ffi::c_char,
-        arg3: ::core::ffi::c_int,
-        arg4: *mut FILE,
-    ) -> *mut ::core::ffi::c_char;
-}
-unsafe extern "C" {
-    pub fn _fgetpos_r(arg1: *mut _reent, arg2: *mut FILE, arg3: *mut fpos_t) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _fsetpos_r(
-        arg1: *mut _reent,
-        arg2: *mut FILE,
-        arg3: *const fpos_t,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _fiprintf_r(
-        arg1: *mut _reent,
-        arg2: *mut FILE,
-        arg3: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _fiscanf_r(
-        arg1: *mut _reent,
-        arg2: *mut FILE,
-        arg3: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _fmemopen_r(
-        arg1: *mut _reent,
-        arg2: *mut ::core::ffi::c_void,
-        arg3: usize,
-        arg4: *const ::core::ffi::c_char,
-    ) -> *mut FILE;
-}
-unsafe extern "C" {
-    pub fn _fopen_r(
-        arg1: *mut _reent,
-        arg2: *const ::core::ffi::c_char,
-        arg3: *const ::core::ffi::c_char,
-    ) -> *mut FILE;
-}
-unsafe extern "C" {
-    pub fn _freopen_r(
-        arg1: *mut _reent,
-        arg2: *const ::core::ffi::c_char,
-        arg3: *const ::core::ffi::c_char,
-        arg4: *mut FILE,
-    ) -> *mut FILE;
-}
-unsafe extern "C" {
-    pub fn _fprintf_r(
-        arg1: *mut _reent,
-        arg2: *mut FILE,
-        arg3: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _fpurge_r(arg1: *mut _reent, arg2: *mut FILE) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _fputc_r(
-        arg1: *mut _reent,
-        arg2: ::core::ffi::c_int,
-        arg3: *mut FILE,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _fputc_unlocked_r(
-        arg1: *mut _reent,
-        arg2: ::core::ffi::c_int,
-        arg3: *mut FILE,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _fputs_r(
-        arg1: *mut _reent,
-        arg2: *const ::core::ffi::c_char,
-        arg3: *mut FILE,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _fputs_unlocked_r(
-        arg1: *mut _reent,
-        arg2: *const ::core::ffi::c_char,
-        arg3: *mut FILE,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _fread_r(
-        arg1: *mut _reent,
-        arg2: *mut ::core::ffi::c_void,
-        _size: usize,
-        _n: usize,
-        arg3: *mut FILE,
-    ) -> usize;
-}
-unsafe extern "C" {
-    pub fn _fread_unlocked_r(
-        arg1: *mut _reent,
-        arg2: *mut ::core::ffi::c_void,
-        _size: usize,
-        _n: usize,
-        arg3: *mut FILE,
-    ) -> usize;
-}
-unsafe extern "C" {
-    pub fn _fscanf_r(
-        arg1: *mut _reent,
-        arg2: *mut FILE,
-        arg3: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _fseek_r(
-        arg1: *mut _reent,
-        arg2: *mut FILE,
-        arg3: ::core::ffi::c_long,
-        arg4: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _fseeko_r(
-        arg1: *mut _reent,
-        arg2: *mut FILE,
-        arg3: _off_t,
-        arg4: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _ftell_r(arg1: *mut _reent, arg2: *mut FILE) -> ::core::ffi::c_long;
-}
-unsafe extern "C" {
-    pub fn _ftello_r(arg1: *mut _reent, arg2: *mut FILE) -> _off_t;
-}
-unsafe extern "C" {
-    pub fn _rewind_r(arg1: *mut _reent, arg2: *mut FILE);
-}
-unsafe extern "C" {
-    pub fn _fwrite_r(
-        arg1: *mut _reent,
-        arg2: *const ::core::ffi::c_void,
-        _size: usize,
-        _n: usize,
-        arg3: *mut FILE,
-    ) -> usize;
-}
-unsafe extern "C" {
-    pub fn _fwrite_unlocked_r(
-        arg1: *mut _reent,
-        arg2: *const ::core::ffi::c_void,
-        _size: usize,
-        _n: usize,
-        arg3: *mut FILE,
-    ) -> usize;
-}
-unsafe extern "C" {
-    pub fn _getc_r(arg1: *mut _reent, arg2: *mut FILE) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _getc_unlocked_r(arg1: *mut _reent, arg2: *mut FILE) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _getchar_r(arg1: *mut _reent) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _getchar_unlocked_r(arg1: *mut _reent) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _gets_r(arg1: *mut _reent, arg2: *mut ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
-}
-unsafe extern "C" {
-    pub fn _iprintf_r(
-        arg1: *mut _reent,
-        arg2: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _iscanf_r(
-        arg1: *mut _reent,
-        arg2: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _open_memstream_r(
-        arg1: *mut _reent,
-        arg2: *mut *mut ::core::ffi::c_char,
-        arg3: *mut usize,
-    ) -> *mut FILE;
-}
-unsafe extern "C" {
-    pub fn _perror_r(arg1: *mut _reent, arg2: *const ::core::ffi::c_char);
-}
-unsafe extern "C" {
-    pub fn _printf_r(
-        arg1: *mut _reent,
-        arg2: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _putc_r(
-        arg1: *mut _reent,
-        arg2: ::core::ffi::c_int,
-        arg3: *mut FILE,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _putc_unlocked_r(
-        arg1: *mut _reent,
-        arg2: ::core::ffi::c_int,
-        arg3: *mut FILE,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _putchar_unlocked_r(arg1: *mut _reent, arg2: ::core::ffi::c_int) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _putchar_r(arg1: *mut _reent, arg2: ::core::ffi::c_int) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _puts_r(arg1: *mut _reent, arg2: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _remove_r(arg1: *mut _reent, arg2: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _rename_r(
-        arg1: *mut _reent,
-        _old: *const ::core::ffi::c_char,
-        _new: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _scanf_r(arg1: *mut _reent, arg2: *const ::core::ffi::c_char, ...)
-        -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _siprintf_r(
-        arg1: *mut _reent,
-        arg2: *mut ::core::ffi::c_char,
-        arg3: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _siscanf_r(
-        arg1: *mut _reent,
-        arg2: *const ::core::ffi::c_char,
-        arg3: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _sniprintf_r(
-        arg1: *mut _reent,
-        arg2: *mut ::core::ffi::c_char,
-        arg3: usize,
-        arg4: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _snprintf_r(
-        arg1: *mut _reent,
-        arg2: *mut ::core::ffi::c_char,
-        arg3: usize,
-        arg4: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _sprintf_r(
-        arg1: *mut _reent,
-        arg2: *mut ::core::ffi::c_char,
-        arg3: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _sscanf_r(
-        arg1: *mut _reent,
-        arg2: *const ::core::ffi::c_char,
-        arg3: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _tempnam_r(
-        arg1: *mut _reent,
-        arg2: *const ::core::ffi::c_char,
-        arg3: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
-}
-unsafe extern "C" {
-    pub fn _tmpfile_r(arg1: *mut _reent) -> *mut FILE;
-}
-unsafe extern "C" {
-    pub fn _tmpnam_r(arg1: *mut _reent, arg2: *mut ::core::ffi::c_char)
-        -> *mut ::core::ffi::c_char;
-}
-unsafe extern "C" {
-    pub fn _ungetc_r(
-        arg1: *mut _reent,
-        arg2: ::core::ffi::c_int,
-        arg3: *mut FILE,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn fpurge(arg1: *mut FILE) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn __getdelim(
-        arg1: *mut *mut ::core::ffi::c_char,
-        arg2: *mut usize,
-        arg3: ::core::ffi::c_int,
-        arg4: *mut FILE,
-    ) -> isize;
-}
-unsafe extern "C" {
-    pub fn __getline(
-        arg1: *mut *mut ::core::ffi::c_char,
-        arg2: *mut usize,
-        arg3: *mut FILE,
-    ) -> isize;
-}
-unsafe extern "C" {
-    pub fn clearerr_unlocked(arg1: *mut FILE);
-}
-unsafe extern "C" {
-    pub fn feof_unlocked(arg1: *mut FILE) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn ferror_unlocked(arg1: *mut FILE) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn fileno_unlocked(arg1: *mut FILE) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn fflush_unlocked(arg1: *mut FILE) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn fgetc_unlocked(arg1: *mut FILE) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn fputc_unlocked(arg1: ::core::ffi::c_int, arg2: *mut FILE) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn fread_unlocked(
-        arg1: *mut ::core::ffi::c_void,
-        _size: usize,
-        _n: usize,
-        arg2: *mut FILE,
-    ) -> usize;
-}
-unsafe extern "C" {
-    pub fn fwrite_unlocked(
-        arg1: *const ::core::ffi::c_void,
-        _size: usize,
-        _n: usize,
-        arg2: *mut FILE,
-    ) -> usize;
-}
-unsafe extern "C" {
-    pub fn __srget_r(arg1: *mut _reent, arg2: *mut FILE) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn __swbuf_r(
-        arg1: *mut _reent,
-        arg2: ::core::ffi::c_int,
-        arg3: *mut FILE,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn funopen(
-        __cookie: *const ::core::ffi::c_void,
-        __readfn: ::core::option::Option<
-            unsafe extern "C" fn(
-                __cookie: *mut ::core::ffi::c_void,
-                __buf: *mut ::core::ffi::c_char,
-                __n: ::core::ffi::c_int,
-            ) -> ::core::ffi::c_int,
-        >,
-        __writefn: ::core::option::Option<
-            unsafe extern "C" fn(
-                __cookie: *mut ::core::ffi::c_void,
-                __buf: *const ::core::ffi::c_char,
-                __n: ::core::ffi::c_int,
-            ) -> ::core::ffi::c_int,
-        >,
-        __seekfn: ::core::option::Option<
-            unsafe extern "C" fn(
-                __cookie: *mut ::core::ffi::c_void,
-                __off: fpos_t,
-                __whence: ::core::ffi::c_int,
-            ) -> fpos_t,
-        >,
-        __closefn: ::core::option::Option<
-            unsafe extern "C" fn(__cookie: *mut ::core::ffi::c_void) -> ::core::ffi::c_int,
-        >,
-    ) -> *mut FILE;
-}
-unsafe extern "C" {
-    pub fn _funopen_r(
-        arg1: *mut _reent,
-        __cookie: *const ::core::ffi::c_void,
-        __readfn: ::core::option::Option<
-            unsafe extern "C" fn(
-                __cookie: *mut ::core::ffi::c_void,
-                __buf: *mut ::core::ffi::c_char,
-                __n: ::core::ffi::c_int,
-            ) -> ::core::ffi::c_int,
-        >,
-        __writefn: ::core::option::Option<
-            unsafe extern "C" fn(
-                __cookie: *mut ::core::ffi::c_void,
-                __buf: *const ::core::ffi::c_char,
-                __n: ::core::ffi::c_int,
-            ) -> ::core::ffi::c_int,
-        >,
-        __seekfn: ::core::option::Option<
-            unsafe extern "C" fn(
-                __cookie: *mut ::core::ffi::c_void,
-                __off: fpos_t,
-                __whence: ::core::ffi::c_int,
-            ) -> fpos_t,
-        >,
-        __closefn: ::core::option::Option<
-            unsafe extern "C" fn(__cookie: *mut ::core::ffi::c_void) -> ::core::ffi::c_int,
-        >,
-    ) -> *mut FILE;
-}
-#[repr(C)]
-#[derive(Default, Copy, Clone)]
-pub struct div_t {
-    pub quot: ::core::ffi::c_int,
-    pub rem: ::core::ffi::c_int,
-}
-#[repr(C)]
-#[derive(Default, Copy, Clone)]
-pub struct ldiv_t {
-    pub quot: ::core::ffi::c_long,
-    pub rem: ::core::ffi::c_long,
-}
-#[repr(C)]
-#[derive(Default, Copy, Clone)]
-pub struct lldiv_t {
-    pub quot: ::core::ffi::c_longlong,
-    pub rem: ::core::ffi::c_longlong,
-}
-pub type __compar_fn_t = ::core::option::Option<
-    unsafe extern "C" fn(
-        arg1: *const ::core::ffi::c_void,
-        arg2: *const ::core::ffi::c_void,
-    ) -> ::core::ffi::c_int,
->;
-unsafe extern "C" {
-    pub fn __locale_mb_cur_max() -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn abort() -> !;
-}
-unsafe extern "C" {
-    pub fn abs(arg1: ::core::ffi::c_int) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn arc4random() -> __uint32_t;
-}
-unsafe extern "C" {
-    pub fn arc4random_uniform(arg1: __uint32_t) -> __uint32_t;
-}
-unsafe extern "C" {
-    pub fn arc4random_buf(arg1: *mut ::core::ffi::c_void, arg2: usize);
-}
-unsafe extern "C" {
-    pub fn atexit(__func: ::core::option::Option<unsafe extern "C" fn()>) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn atof(__nptr: *const ::core::ffi::c_char) -> f64;
-}
-unsafe extern "C" {
-    pub fn atoff(__nptr: *const ::core::ffi::c_char) -> f32;
-}
-unsafe extern "C" {
-    pub fn atoi(__nptr: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _atoi_r(arg1: *mut _reent, __nptr: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn atol(__nptr: *const ::core::ffi::c_char) -> ::core::ffi::c_long;
-}
-unsafe extern "C" {
-    pub fn _atol_r(arg1: *mut _reent, __nptr: *const ::core::ffi::c_char) -> ::core::ffi::c_long;
-}
-unsafe extern "C" {
-    pub fn bsearch(
-        __key: *const ::core::ffi::c_void,
-        __base: *const ::core::ffi::c_void,
-        __nmemb: usize,
-        __size: usize,
-        _compar: __compar_fn_t,
-    ) -> *mut ::core::ffi::c_void;
-}
-unsafe extern "C" {
-    #[must_use]
-    pub fn calloc(arg1: ::core::ffi::c_uint, arg2: ::core::ffi::c_uint)
-        -> *mut ::core::ffi::c_void;
-}
-unsafe extern "C" {
-    pub fn div(__numer: ::core::ffi::c_int, __denom: ::core::ffi::c_int) -> div_t;
-}
-unsafe extern "C" {
-    pub fn exit(__status: ::core::ffi::c_int) -> !;
-}
-unsafe extern "C" {
-    pub fn free(arg1: *mut ::core::ffi::c_void);
-}
-unsafe extern "C" {
-    pub fn getenv(__string: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
-}
-unsafe extern "C" {
-    pub fn _getenv_r(
-        arg1: *mut _reent,
-        __string: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
-}
-unsafe extern "C" {
-    pub fn _findenv(
-        arg1: *const ::core::ffi::c_char,
-        arg2: *mut ::core::ffi::c_int,
-    ) -> *mut ::core::ffi::c_char;
-}
-unsafe extern "C" {
-    pub fn _findenv_r(
-        arg1: *mut _reent,
-        arg2: *const ::core::ffi::c_char,
-        arg3: *mut ::core::ffi::c_int,
-    ) -> *mut ::core::ffi::c_char;
-}
-unsafe extern "C" {
-    pub static mut suboptarg: *mut ::core::ffi::c_char;
-}
-unsafe extern "C" {
-    pub fn getsubopt(
-        arg1: *mut *mut ::core::ffi::c_char,
-        arg2: *const *mut ::core::ffi::c_char,
-        arg3: *mut *mut ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn labs(arg1: ::core::ffi::c_long) -> ::core::ffi::c_long;
-}
-unsafe extern "C" {
-    pub fn ldiv(__numer: ::core::ffi::c_long, __denom: ::core::ffi::c_long) -> ldiv_t;
-}
-unsafe extern "C" {
-    #[must_use]
-    pub fn malloc(arg1: ::core::ffi::c_uint) -> *mut ::core::ffi::c_void;
-}
-unsafe extern "C" {
-    pub fn mblen(arg1: *const ::core::ffi::c_char, arg2: usize) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _mblen_r(
-        arg1: *mut _reent,
-        arg2: *const ::core::ffi::c_char,
-        arg3: usize,
-        arg4: *mut _mbstate_t,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn mbtowc(
-        arg1: *mut wchar_t,
-        arg2: *const ::core::ffi::c_char,
-        arg3: usize,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _mbtowc_r(
-        arg1: *mut _reent,
-        arg2: *mut wchar_t,
-        arg3: *const ::core::ffi::c_char,
-        arg4: usize,
-        arg5: *mut _mbstate_t,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn wctomb(arg1: *mut ::core::ffi::c_char, arg2: wchar_t) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _wctomb_r(
-        arg1: *mut _reent,
-        arg2: *mut ::core::ffi::c_char,
-        arg3: wchar_t,
-        arg4: *mut _mbstate_t,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn mbstowcs(arg1: *mut wchar_t, arg2: *const ::core::ffi::c_char, arg3: usize) -> usize;
-}
-unsafe extern "C" {
-    pub fn _mbstowcs_r(
-        arg1: *mut _reent,
-        arg2: *mut wchar_t,
-        arg3: *const ::core::ffi::c_char,
-        arg4: usize,
-        arg5: *mut _mbstate_t,
-    ) -> usize;
-}
-unsafe extern "C" {
-    pub fn wcstombs(arg1: *mut ::core::ffi::c_char, arg2: *const wchar_t, arg3: usize) -> usize;
-}
-unsafe extern "C" {
-    pub fn _wcstombs_r(
-        arg1: *mut _reent,
-        arg2: *mut ::core::ffi::c_char,
-        arg3: *const wchar_t,
-        arg4: usize,
-        arg5: *mut _mbstate_t,
-    ) -> usize;
-}
-unsafe extern "C" {
-    pub fn mkdtemp(arg1: *mut ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
-}
-unsafe extern "C" {
-    pub fn mkstemp(arg1: *mut ::core::ffi::c_char) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn mkstemps(arg1: *mut ::core::ffi::c_char, arg2: ::core::ffi::c_int)
-        -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn mktemp(arg1: *mut ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
-}
-unsafe extern "C" {
-    pub fn _mkdtemp_r(
-        arg1: *mut _reent,
-        arg2: *mut ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
-}
-unsafe extern "C" {
-    pub fn _mkostemp_r(
-        arg1: *mut _reent,
-        arg2: *mut ::core::ffi::c_char,
-        arg3: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _mkostemps_r(
-        arg1: *mut _reent,
-        arg2: *mut ::core::ffi::c_char,
-        arg3: ::core::ffi::c_int,
-        arg4: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _mkstemp_r(arg1: *mut _reent, arg2: *mut ::core::ffi::c_char) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _mkstemps_r(
-        arg1: *mut _reent,
-        arg2: *mut ::core::ffi::c_char,
-        arg3: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _mktemp_r(arg1: *mut _reent, arg2: *mut ::core::ffi::c_char)
-        -> *mut ::core::ffi::c_char;
-}
-unsafe extern "C" {
-    pub fn qsort(
-        __base: *mut ::core::ffi::c_void,
-        __nmemb: usize,
-        __size: usize,
-        _compar: __compar_fn_t,
-    );
-}
-unsafe extern "C" {
-    pub fn rand() -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    #[must_use]
-    pub fn realloc(
-        arg1: *mut ::core::ffi::c_void,
-        arg2: ::core::ffi::c_uint,
-    ) -> *mut ::core::ffi::c_void;
-}
-unsafe extern "C" {
-    #[must_use]
-    pub fn reallocarray(
-        arg1: *mut ::core::ffi::c_void,
-        arg2: usize,
-        arg3: usize,
-    ) -> *mut ::core::ffi::c_void;
-}
-unsafe extern "C" {
-    #[must_use]
-    pub fn reallocf(arg1: *mut ::core::ffi::c_void, arg2: usize) -> *mut ::core::ffi::c_void;
-}
-unsafe extern "C" {
-    pub fn realpath(
-        path: *const ::core::ffi::c_char,
-        resolved_path: *mut ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
-}
-unsafe extern "C" {
-    pub fn rpmatch(response: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn srand(__seed: ::core::ffi::c_uint);
-}
-unsafe extern "C" {
-    pub fn strtod(__n: *const ::core::ffi::c_char, __end_PTR: *mut *mut ::core::ffi::c_char)
-        -> f64;
-}
-unsafe extern "C" {
-    pub fn _strtod_r(
-        arg1: *mut _reent,
-        __n: *const ::core::ffi::c_char,
-        __end_PTR: *mut *mut ::core::ffi::c_char,
-    ) -> f64;
-}
-unsafe extern "C" {
-    pub fn strtof(__n: *const ::core::ffi::c_char, __end_PTR: *mut *mut ::core::ffi::c_char)
-        -> f32;
-}
-unsafe extern "C" {
-    pub fn strtol(
-        __n: *const ::core::ffi::c_char,
-        __end_PTR: *mut *mut ::core::ffi::c_char,
-        __base: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_long;
-}
-unsafe extern "C" {
-    pub fn _strtol_r(
-        arg1: *mut _reent,
-        __n: *const ::core::ffi::c_char,
-        __end_PTR: *mut *mut ::core::ffi::c_char,
-        __base: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_long;
-}
-unsafe extern "C" {
-    pub fn strtoul(
-        __n: *const ::core::ffi::c_char,
-        __end_PTR: *mut *mut ::core::ffi::c_char,
-        __base: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_ulong;
-}
-unsafe extern "C" {
-    pub fn _strtoul_r(
-        arg1: *mut _reent,
-        __n: *const ::core::ffi::c_char,
-        __end_PTR: *mut *mut ::core::ffi::c_char,
-        __base: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_ulong;
-}
-unsafe extern "C" {
-    pub fn system(__string: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn a64l(__input: *const ::core::ffi::c_char) -> ::core::ffi::c_long;
-}
-unsafe extern "C" {
-    pub fn l64a(__input: ::core::ffi::c_long) -> *mut ::core::ffi::c_char;
-}
-unsafe extern "C" {
-    pub fn _l64a_r(arg1: *mut _reent, __input: ::core::ffi::c_long) -> *mut ::core::ffi::c_char;
-}
-unsafe extern "C" {
-    pub fn on_exit(
-        __func: ::core::option::Option<
-            unsafe extern "C" fn(arg1: ::core::ffi::c_int, arg2: *mut ::core::ffi::c_void),
-        >,
-        __arg: *mut ::core::ffi::c_void,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _Exit(__status: ::core::ffi::c_int) -> !;
-}
-unsafe extern "C" {
-    pub fn putenv(__string: *mut ::core::ffi::c_char) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _putenv_r(arg1: *mut _reent, __string: *mut ::core::ffi::c_char) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _reallocf_r(
-        arg1: *mut _reent,
-        arg2: *mut ::core::ffi::c_void,
-        arg3: usize,
-    ) -> *mut ::core::ffi::c_void;
-}
-unsafe extern "C" {
-    pub fn setenv(
-        __string: *const ::core::ffi::c_char,
-        __value: *const ::core::ffi::c_char,
-        __overwrite: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _setenv_r(
-        arg1: *mut _reent,
-        __string: *const ::core::ffi::c_char,
-        __value: *const ::core::ffi::c_char,
-        __overwrite: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn __itoa(
-        arg1: ::core::ffi::c_int,
-        arg2: *mut ::core::ffi::c_char,
-        arg3: ::core::ffi::c_int,
-    ) -> *mut ::core::ffi::c_char;
-}
-unsafe extern "C" {
-    pub fn __utoa(
-        arg1: ::core::ffi::c_uint,
-        arg2: *mut ::core::ffi::c_char,
-        arg3: ::core::ffi::c_int,
-    ) -> *mut ::core::ffi::c_char;
-}
-unsafe extern "C" {
-    pub fn itoa(
-        arg1: ::core::ffi::c_int,
-        arg2: *mut ::core::ffi::c_char,
-        arg3: ::core::ffi::c_int,
-    ) -> *mut ::core::ffi::c_char;
-}
-unsafe extern "C" {
-    pub fn utoa(
-        arg1: ::core::ffi::c_uint,
-        arg2: *mut ::core::ffi::c_char,
-        arg3: ::core::ffi::c_int,
-    ) -> *mut ::core::ffi::c_char;
-}
-unsafe extern "C" {
-    pub fn rand_r(__seed: *mut ::core::ffi::c_uint) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn drand48() -> f64;
-}
-unsafe extern "C" {
-    pub fn _drand48_r(arg1: *mut _reent) -> f64;
-}
-unsafe extern "C" {
-    pub fn erand48(arg1: *mut ::core::ffi::c_ushort) -> f64;
-}
-unsafe extern "C" {
-    pub fn _erand48_r(arg1: *mut _reent, arg2: *mut ::core::ffi::c_ushort) -> f64;
-}
-unsafe extern "C" {
-    pub fn jrand48(arg1: *mut ::core::ffi::c_ushort) -> ::core::ffi::c_long;
-}
-unsafe extern "C" {
-    pub fn _jrand48_r(arg1: *mut _reent, arg2: *mut ::core::ffi::c_ushort) -> ::core::ffi::c_long;
-}
-unsafe extern "C" {
-    pub fn lcong48(arg1: *mut ::core::ffi::c_ushort);
-}
-unsafe extern "C" {
-    pub fn _lcong48_r(arg1: *mut _reent, arg2: *mut ::core::ffi::c_ushort);
-}
-unsafe extern "C" {
-    pub fn lrand48() -> ::core::ffi::c_long;
-}
-unsafe extern "C" {
-    pub fn _lrand48_r(arg1: *mut _reent) -> ::core::ffi::c_long;
-}
-unsafe extern "C" {
-    pub fn mrand48() -> ::core::ffi::c_long;
-}
-unsafe extern "C" {
-    pub fn _mrand48_r(arg1: *mut _reent) -> ::core::ffi::c_long;
-}
-unsafe extern "C" {
-    pub fn nrand48(arg1: *mut ::core::ffi::c_ushort) -> ::core::ffi::c_long;
-}
-unsafe extern "C" {
-    pub fn _nrand48_r(arg1: *mut _reent, arg2: *mut ::core::ffi::c_ushort) -> ::core::ffi::c_long;
-}
-unsafe extern "C" {
-    pub fn seed48(arg1: *mut ::core::ffi::c_ushort) -> *mut ::core::ffi::c_ushort;
-}
-unsafe extern "C" {
-    pub fn _seed48_r(
-        arg1: *mut _reent,
-        arg2: *mut ::core::ffi::c_ushort,
-    ) -> *mut ::core::ffi::c_ushort;
-}
-unsafe extern "C" {
-    pub fn srand48(arg1: ::core::ffi::c_long);
-}
-unsafe extern "C" {
-    pub fn _srand48_r(arg1: *mut _reent, arg2: ::core::ffi::c_long);
-}
-unsafe extern "C" {
-    pub fn initstate(
-        arg1: ::core::ffi::c_uint,
-        arg2: *mut ::core::ffi::c_char,
-        arg3: usize,
-    ) -> *mut ::core::ffi::c_char;
-}
-unsafe extern "C" {
-    pub fn random() -> ::core::ffi::c_long;
-}
-unsafe extern "C" {
-    pub fn setstate(arg1: *mut ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
-}
-unsafe extern "C" {
-    pub fn srandom(arg1: ::core::ffi::c_uint);
-}
-unsafe extern "C" {
-    pub fn atoll(__nptr: *const ::core::ffi::c_char) -> ::core::ffi::c_longlong;
-}
-unsafe extern "C" {
-    pub fn _atoll_r(
-        arg1: *mut _reent,
-        __nptr: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_longlong;
-}
-unsafe extern "C" {
-    pub fn llabs(arg1: ::core::ffi::c_longlong) -> ::core::ffi::c_longlong;
-}
-unsafe extern "C" {
-    pub fn lldiv(__numer: ::core::ffi::c_longlong, __denom: ::core::ffi::c_longlong) -> lldiv_t;
-}
-unsafe extern "C" {
-    pub fn strtoll(
-        __n: *const ::core::ffi::c_char,
-        __end_PTR: *mut *mut ::core::ffi::c_char,
-        __base: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_longlong;
-}
-unsafe extern "C" {
-    pub fn _strtoll_r(
-        arg1: *mut _reent,
-        __n: *const ::core::ffi::c_char,
-        __end_PTR: *mut *mut ::core::ffi::c_char,
-        __base: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_longlong;
-}
-unsafe extern "C" {
-    pub fn strtoull(
-        __n: *const ::core::ffi::c_char,
-        __end_PTR: *mut *mut ::core::ffi::c_char,
-        __base: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_ulonglong;
-}
-unsafe extern "C" {
-    pub fn _strtoull_r(
-        arg1: *mut _reent,
-        __n: *const ::core::ffi::c_char,
-        __end_PTR: *mut *mut ::core::ffi::c_char,
-        __base: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_ulonglong;
-}
-unsafe extern "C" {
-    pub fn cfree(arg1: *mut ::core::ffi::c_void);
-}
-unsafe extern "C" {
-    pub fn unsetenv(__string: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _unsetenv_r(
-        arg1: *mut _reent,
-        __string: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    #[must_use]
-    pub fn posix_memalign(
-        arg1: *mut *mut ::core::ffi::c_void,
-        arg2: usize,
-        arg3: usize,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn _dtoa_r(
-        arg1: *mut _reent,
-        arg2: f64,
-        arg3: ::core::ffi::c_int,
-        arg4: ::core::ffi::c_int,
-        arg5: *mut ::core::ffi::c_int,
-        arg6: *mut ::core::ffi::c_int,
-        arg7: *mut *mut ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
-}
-unsafe extern "C" {
-    pub fn _malloc_r(arg1: *mut _reent, arg2: usize) -> *mut ::core::ffi::c_void;
-}
-unsafe extern "C" {
-    pub fn _calloc_r(arg1: *mut _reent, arg2: usize, arg3: usize) -> *mut ::core::ffi::c_void;
-}
-unsafe extern "C" {
-    pub fn _free_r(arg1: *mut _reent, arg2: *mut ::core::ffi::c_void);
-}
-unsafe extern "C" {
-    pub fn _realloc_r(
-        arg1: *mut _reent,
-        arg2: *mut ::core::ffi::c_void,
-        arg3: usize,
-    ) -> *mut ::core::ffi::c_void;
-}
-unsafe extern "C" {
-    pub fn _mstats_r(arg1: *mut _reent, arg2: *mut ::core::ffi::c_char);
-}
-unsafe extern "C" {
-    pub fn _system_r(arg1: *mut _reent, arg2: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn __eprintf(
-        arg1: *const ::core::ffi::c_char,
-        arg2: *const ::core::ffi::c_char,
-        arg3: ::core::ffi::c_uint,
-        arg4: *const ::core::ffi::c_char,
-    );
-}
-unsafe extern "C" {
-    #[link_name = "\u{1}__bsd_qsort_r"]
-    pub fn qsort_r(
-        __base: *mut ::core::ffi::c_void,
-        __nmemb: usize,
-        __size: usize,
-        __thunk: *mut ::core::ffi::c_void,
-        _compar: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *const ::core::ffi::c_void,
-                arg3: *const ::core::ffi::c_void,
-            ) -> ::core::ffi::c_int,
-        >,
-    );
-}
-unsafe extern "C" {
-    #[must_use]
-    pub fn aligned_alloc(
-        arg1: ::core::ffi::c_uint,
-        arg2: ::core::ffi::c_uint,
-    ) -> *mut ::core::ffi::c_void;
-}
-unsafe extern "C" {
-    pub fn at_quick_exit(
-        arg1: ::core::option::Option<unsafe extern "C" fn()>,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn quick_exit(arg1: ::core::ffi::c_int) -> !;
 }
 unsafe extern "C" {
     pub fn mbedtls_calloc(n: usize, size: usize) -> *mut ::core::ffi::c_void;
@@ -3111,7 +1056,6 @@ unsafe extern "C" {
 #[repr(C)]
 #[derive(Default, Copy, Clone)]
 pub struct mbedtls_platform_context {
-    ///< A placeholder member, as empty structs are not portable.
     pub private_dummy: ::core::ffi::c_char,
 }
 unsafe extern "C" {
@@ -3173,22 +1117,8 @@ pub type mbedtls_t_udbl = u64;
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_mpi {
-    /// Sign: -1 if the mpi is negative, 1 otherwise.
-    ///
-    /// The number 0 must be represented with `s = +1`. Although many library
-    /// functions treat all-limbs-zero as equivalent to a valid representation
-    /// of 0 regardless of the sign bit, there are exceptions, so bignum
-    /// functions and external callers must always set \c s to +1 for the
-    /// number zero.
-    ///
-    /// Note that this implies that calloc() or `... = {0}` does not create
-    /// a valid MPI representation. You must call mbedtls_mpi_init().
     pub private_s: ::core::ffi::c_int,
-    /// Total number of limbs in \c p.
     pub private_n: usize,
-    /// Pointer to limbs.
-    ///
-    /// This may be \c NULL if \c n is 0.
     pub private_p: *mut mbedtls_mpi_uint,
 }
 impl Default for mbedtls_mpi {
@@ -4142,11 +2072,8 @@ impl Default for mbedtls_ecp_curve_info {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_ecp_point {
-    ///< The X coordinate of the ECP point.
     pub private_X: mbedtls_mpi,
-    ///< The Y coordinate of the ECP point.
     pub private_Y: mbedtls_mpi,
-    ///< The Z coordinate of the ECP point.
     pub private_Z: mbedtls_mpi,
 }
 impl Default for mbedtls_ecp_point {
@@ -4217,31 +2144,23 @@ pub struct mbedtls_ecp_group {
     ///For Montgomery curves: the number of bits in the
     ///private keys.
     pub nbits: usize,
-    ///< \internal 1 if the constants are static.
     pub private_h: ::core::ffi::c_uint,
-    ///< The function for fast pseudo-reduction
-    ///mod \p P (see above).
     pub private_modp:
         ::core::option::Option<unsafe extern "C" fn(arg1: *mut mbedtls_mpi) -> ::core::ffi::c_int>,
-    ///< Unused.
     pub private_t_pre: ::core::option::Option<
         unsafe extern "C" fn(
             arg1: *mut mbedtls_ecp_point,
             arg2: *mut ::core::ffi::c_void,
         ) -> ::core::ffi::c_int,
     >,
-    ///< Unused.
     pub private_t_post: ::core::option::Option<
         unsafe extern "C" fn(
             arg1: *mut mbedtls_ecp_point,
             arg2: *mut ::core::ffi::c_void,
         ) -> ::core::ffi::c_int,
     >,
-    ///< Unused.
     pub private_t_data: *mut ::core::ffi::c_void,
-    ///< Pre-computed points for ecp_mul_comb().
     pub private_T: *mut mbedtls_ecp_point,
-    ///< The number of dynamic allocated pre-computed points.
     pub private_T_size: usize,
 }
 impl Default for mbedtls_ecp_group {
@@ -4263,11 +2182,8 @@ pub type mbedtls_ecp_restart_ctx = ::core::ffi::c_void;
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_ecp_keypair {
-    ///<  Elliptic curve and base point
     pub private_grp: mbedtls_ecp_group,
-    ///<  our secret value
     pub private_d: mbedtls_mpi,
-    ///<  our public value
     pub private_Q: mbedtls_ecp_point,
 }
 impl Default for mbedtls_ecp_keypair {
@@ -5187,11 +3103,8 @@ pub type mbedtls_md_engine_t = ::core::ffi::c_uint;
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_md_context_t {
-    /// Information about the associated message digest.
     pub private_md_info: *const mbedtls_md_info_t,
-    /// The digest-specific context (legacy) or the PSA operation.
     pub private_md_ctx: *mut ::core::ffi::c_void,
-    /// The HMAC part of the context.
     pub private_hmac_ctx: *mut ::core::ffi::c_void,
 }
 impl Default for mbedtls_md_context_t {
@@ -5552,47 +3465,22 @@ unsafe extern "C" {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_rsa_context {
-    ///<  Reserved for internal purposes.
-    ///    Do not set this field in application
-    ///    code. Its meaning might change without
-    ///    notice.
     pub private_ver: ::core::ffi::c_int,
-    ///<  The size of \p N in Bytes.
     pub private_len: usize,
-    ///<  The public modulus.
     pub private_N: mbedtls_mpi,
-    ///<  The public exponent.
     pub private_E: mbedtls_mpi,
-    ///<  The private exponent.
     pub private_D: mbedtls_mpi,
-    ///<  The first prime factor.
     pub private_P: mbedtls_mpi,
-    ///<  The second prime factor.
     pub private_Q: mbedtls_mpi,
-    ///<  <code>D % (P - 1)</code>.
     pub private_DP: mbedtls_mpi,
-    ///<  <code>D % (Q - 1)</code>.
     pub private_DQ: mbedtls_mpi,
-    ///<  <code>1 / (Q % P)</code>.
     pub private_QP: mbedtls_mpi,
-    ///<  cached <code>R^2 mod N</code>.
     pub private_RN: mbedtls_mpi,
-    ///<  cached <code>R^2 mod P</code>.
     pub private_RP: mbedtls_mpi,
-    ///<  cached <code>R^2 mod Q</code>.
     pub private_RQ: mbedtls_mpi,
-    ///<  The cached blinding value.
     pub private_Vi: mbedtls_mpi,
-    ///<  The cached un-blinding value.
     pub private_Vf: mbedtls_mpi,
-    ///< Selects padding mode:
-    ///#MBEDTLS_RSA_PKCS_V15 for 1.5 padding and
-    ///#MBEDTLS_RSA_PKCS_V21 for OAEP or PSS.
     pub private_padding: ::core::ffi::c_int,
-    ///< Hash identifier of mbedtls_md_type_t type,
-    ///as specified in md.h for use in the MGF
-    ///mask generating function used in the
-    ///EME-OAEP and EMSA-PSS encodings.
     pub private_hash_id: ::core::ffi::c_int,
 }
 impl Default for mbedtls_rsa_context {
@@ -7397,9 +5285,7 @@ pub struct mbedtls_pk_info_t {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_pk_context {
-    ///< Public key information
     pub private_pk_info: *const mbedtls_pk_info_t,
-    ///< Underlying public key context
     pub private_pk_ctx: *mut ::core::ffi::c_void,
 }
 impl Default for mbedtls_pk_context {
@@ -8352,28 +6238,13 @@ pub struct mbedtls_cipher_base_t {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_cipher_info_t {
-    /// Full cipher identifier. For example,
-    /// MBEDTLS_CIPHER_AES_256_CBC.
     pub private_type: mbedtls_cipher_type_t,
-    /// The cipher mode. For example, MBEDTLS_MODE_CBC.
     pub private_mode: mbedtls_cipher_mode_t,
-    /// The cipher key length, in bits. This is the
-    /// default length for variable sized ciphers.
-    /// Includes parity bits for ciphers like DES.
     pub private_key_bitlen: ::core::ffi::c_uint,
-    /// Name of the cipher.
     pub private_name: *const ::core::ffi::c_char,
-    /// IV or nonce size, in Bytes.
-    /// For ciphers that accept variable IV sizes,
-    /// this is the recommended size.
     pub private_iv_size: ::core::ffi::c_uint,
-    /// Bitflag comprised of MBEDTLS_CIPHER_VARIABLE_IV_LEN and
-    ///  MBEDTLS_CIPHER_VARIABLE_KEY_LEN indicating whether the
-    ///  cipher supports variable IV or variable key sizes, respectively.
     pub private_flags: ::core::ffi::c_int,
-    /// The block size, in Bytes.
     pub private_block_size: ::core::ffi::c_uint,
-    /// Struct for base cipher information and functions.
     pub private_base: *const mbedtls_cipher_base_t,
 }
 impl Default for mbedtls_cipher_info_t {
@@ -8389,15 +6260,9 @@ impl Default for mbedtls_cipher_info_t {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_cipher_context_t {
-    /// Information about the associated cipher.
     pub private_cipher_info: *const mbedtls_cipher_info_t,
-    /// Key length to use.
     pub private_key_bitlen: ::core::ffi::c_int,
-    /// Operation that the key of the context has been
-    /// initialized for.
     pub private_operation: mbedtls_operation_t,
-    /// Padding functions to use, if relevant for
-    /// the specific cipher mode.
     pub private_add_padding: ::core::option::Option<
         unsafe extern "C" fn(output: *mut ::core::ffi::c_uchar, olen: usize, data_len: usize),
     >,
@@ -8408,18 +6273,11 @@ pub struct mbedtls_cipher_context_t {
             data_len: *mut usize,
         ) -> ::core::ffi::c_int,
     >,
-    /// Buffer for input that has not been processed yet.
     pub private_unprocessed_data: [::core::ffi::c_uchar; 16usize],
-    /// Number of Bytes that have not been processed yet.
     pub private_unprocessed_len: usize,
-    /// Current IV or NONCE_COUNTER for CTR-mode, data unit (or sector) number
-    /// for XTS-mode.
     pub private_iv: [::core::ffi::c_uchar; 16usize],
-    /// IV size in Bytes, for ciphers with variable-length IVs.
     pub private_iv_size: usize,
-    /// The cipher-specific context.
     pub private_cipher_ctx: *mut ::core::ffi::c_void,
-    /// CMAC-specific context.
     pub private_cmac_ctx: *mut mbedtls_cmac_context_t,
 }
 impl Default for mbedtls_cipher_context_t {
@@ -13632,12 +11490,8 @@ unsafe extern "C" {
 #[repr(C)]
 #[derive(Default, Copy, Clone)]
 pub struct mbedtls_cmac_context_t {
-    /// The internal state of the CMAC algorithm.
     pub private_state: [::core::ffi::c_uchar; 16usize],
-    /// Unprocessed data - either data that was not block aligned and is still
-    ///  pending processing, or the final block.
     pub private_unprocessed_block: [::core::ffi::c_uchar; 16usize],
-    /// The length of data pending processing.
     pub private_unprocessed_len: usize,
 }
 unsafe extern "C" {
@@ -13816,25 +11670,14 @@ unsafe extern "C" {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_gcm_context {
-    ///< The cipher context used.
     pub private_cipher_ctx: mbedtls_cipher_context_t,
-    ///< Precalculated HTable low.
     pub private_HL: [u64; 16usize],
-    ///< Precalculated HTable high.
     pub private_HH: [u64; 16usize],
-    ///< The total length of the encrypted data.
     pub private_len: u64,
-    ///< The total length of the additional data.
     pub private_add_len: u64,
-    ///< The first ECTR for tag.
     pub private_base_ectr: [::core::ffi::c_uchar; 16usize],
-    ///< The Y working value.
     pub private_y: [::core::ffi::c_uchar; 16usize],
-    ///< The buf working value.
     pub private_buf: [::core::ffi::c_uchar; 16usize],
-    ///< The operation to perform:
-    ///#MBEDTLS_GCM_ENCRYPT or
-    ///#MBEDTLS_GCM_DECRYPT.
     pub private_mode: ::core::ffi::c_int,
 }
 impl Default for mbedtls_gcm_context {
@@ -14153,36 +11996,15 @@ unsafe extern "C" {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_ccm_context {
-    ///< The Y working buffer
     pub private_y: [::core::ffi::c_uchar; 16usize],
-    ///< The counter buffer
     pub private_ctr: [::core::ffi::c_uchar; 16usize],
-    ///< The cipher context used.
     pub private_cipher_ctx: mbedtls_cipher_context_t,
-    ///< Total plaintext length
     pub private_plaintext_len: usize,
-    ///< Total authentication data length
     pub private_add_len: usize,
-    ///< Total tag length
     pub private_tag_len: usize,
-    ///< Track how many bytes of input data
-    ///were processed (chunked input).
-    ///Used independently for both auth data
-    ///and plaintext/ciphertext.
-    ///This variable is set to zero after
-    ///auth data input is finished.
     pub private_processed: usize,
-    ///< The Q working value
     pub private_q: ::core::ffi::c_uchar,
-    ///< The operation to perform:
-    ///#MBEDTLS_CCM_ENCRYPT or
-    ///#MBEDTLS_CCM_DECRYPT or
-    ///#MBEDTLS_CCM_STAR_ENCRYPT or
-    ///#MBEDTLS_CCM_STAR_DECRYPT.
     pub private_mode: ::core::ffi::c_uchar,
-    ///< Working value holding context's
-    ///state. Used for chunked data
-    ///input
     pub private_state: ::core::ffi::c_int,
 }
 impl Default for mbedtls_ccm_context {
@@ -14647,13 +12469,9 @@ unsafe extern "C" {
 #[derive(Default, Copy, Clone)]
 pub struct mbedtls_poly1305_context {
     pub private_r: [u32; 4usize],
-    /// The value for 'r' (low 128 bits of the key).
     pub private_s: [u32; 4usize],
-    /// The value for 's' (high 128 bits of the key).
     pub private_acc: [u32; 5usize],
-    /// The accumulator number.
     pub private_queue: [u8; 16usize],
-    /// The current partial block of data.
     pub private_queue_len: usize,
 }
 unsafe extern "C" {
@@ -14777,9 +12595,7 @@ pub type mbedtls_chachapoly_mode_t = ::core::ffi::c_uint;
 #[derive(Copy, Clone)]
 pub struct mbedtls_chacha20_context {
     pub private_state: [u32; 16usize],
-    /// The state (before round operations).
     pub private_keystream8: [u8; 64usize],
-    /// Leftover keystream bytes.
     pub private_keystream_bytes_used: usize,
 }
 impl Default for mbedtls_chacha20_context {
@@ -14941,17 +12757,11 @@ unsafe extern "C" {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_chachapoly_context {
-    ///< The ChaCha20 context.
     pub private_chacha20_ctx: mbedtls_chacha20_context,
-    ///< The Poly1305 context.
     pub private_poly1305_ctx: mbedtls_poly1305_context,
-    ///< The length (bytes) of the Additional Authenticated Data.
     pub private_aad_len: u64,
-    ///< The length (bytes) of the ciphertext.
     pub private_ciphertext_len: u64,
-    ///< The current state of the context.
     pub private_state: ::core::ffi::c_int,
-    ///< Cipher mode (encrypt or decrypt).
     pub private_mode: mbedtls_chachapoly_mode_t,
 }
 impl Default for mbedtls_chachapoly_context {
@@ -15254,11 +13064,8 @@ pub type psa_encrypt_or_decrypt_t = ::core::ffi::c_uint;
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_md5_context {
-    ///< number of bytes processed
     pub private_total: [u32; 2usize],
-    ///< intermediate digest state
     pub private_state: [u32; 4usize],
-    ///< data block being processed
     pub private_buffer: [::core::ffi::c_uchar; 64usize],
 }
 impl Default for mbedtls_md5_context {
@@ -15395,11 +13202,8 @@ unsafe extern "C" {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_ripemd160_context {
-    ///< number of bytes processed
     pub private_total: [u32; 2usize],
-    ///< intermediate digest state
     pub private_state: [u32; 5usize],
-    ///< data block being processed
     pub private_buffer: [::core::ffi::c_uchar; 64usize],
 }
 impl Default for mbedtls_ripemd160_context {
@@ -16069,12 +13873,6 @@ impl Default for psa_driver_cipher_context_t {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct psa_hash_operation_s {
-    /// Unique ID indicating which driver got assigned to do the
-    /// operation. Since driver contexts are driver-specific, swapping
-    /// drivers halfway through the operation is not supported.
-    /// ID values are auto-generated in psa_driver_wrappers.h.
-    /// ID value zero means the context is not valid or not assigned to
-    /// any driver (i.e. the driver context is not active, in use).
     pub private_id: ::core::ffi::c_uint,
     pub private_ctx: psa_driver_hash_context_t,
 }
@@ -16090,12 +13888,6 @@ impl Default for psa_hash_operation_s {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct psa_cipher_operation_s {
-    /// Unique ID indicating which driver got assigned to do the
-    /// operation. Since driver contexts are driver-specific, swapping
-    /// drivers halfway through the operation is not supported.
-    /// ID values are auto-generated in psa_crypto_driver_wrappers.h
-    /// ID value zero means the context is not valid or not assigned to
-    /// any driver (i.e. none of the driver contexts are active).
     pub private_id: ::core::ffi::c_uint,
     pub _bitfield_align_1: [u8; 0],
     pub _bitfield_1: __BindgenBitfieldUnit<[u8; 1usize]>,
@@ -16198,11 +13990,9 @@ impl psa_cipher_operation_s {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_psa_hmac_operation_t {
-    /// The HMAC algorithm in use
     pub private_alg: psa_algorithm_t,
     /// The hash context.
     pub hash_ctx: psa_hash_operation_s,
-    /// The HMAC part of the context.
     pub private_opad: [u8; 128usize],
 }
 impl Default for mbedtls_psa_hmac_operation_t {
@@ -16355,29 +14145,17 @@ pub type mbedtls_ecjpake_role = ::core::ffi::c_uint;
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_ecjpake_context {
-    ///< Hash to use
     pub private_md_type: mbedtls_md_type_t,
-    ///< Elliptic curve
     pub private_grp: mbedtls_ecp_group,
-    ///< Are we client or server?
     pub private_role: mbedtls_ecjpake_role,
-    ///< Format for point export
     pub private_point_format: ::core::ffi::c_int,
-    ///< My public key 1   C: X1, S: X3
     pub private_Xm1: mbedtls_ecp_point,
-    ///< My public key 2   C: X2, S: X4
     pub private_Xm2: mbedtls_ecp_point,
-    ///< Peer public key 1 C: X3, S: X1
     pub private_Xp1: mbedtls_ecp_point,
-    ///< Peer public key 2 C: X4, S: X2
     pub private_Xp2: mbedtls_ecp_point,
-    ///< Peer public key   C: Xs, S: Xc
     pub private_Xp: mbedtls_ecp_point,
-    ///< My private key 1  C: x1, S: x3
     pub private_xm1: mbedtls_mpi,
-    ///< My private key 2  C: x2, S: x4
     pub private_xm2: mbedtls_mpi,
-    ///< Pre-shared secret (passphrase)
     pub private_s: mbedtls_mpi,
 }
 impl Default for mbedtls_ecjpake_context {
@@ -16746,12 +14524,6 @@ impl Default for psa_driver_pake_context_t {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct psa_mac_operation_s {
-    /// Unique ID indicating which driver got assigned to do the
-    /// operation. Since driver contexts are driver-specific, swapping
-    /// drivers halfway through the operation is not supported.
-    /// ID values are auto-generated in psa_driver_wrappers.h
-    /// ID value zero means the context is not valid or not assigned to
-    /// any driver (i.e. none of the driver contexts are active).
     pub private_id: ::core::ffi::c_uint,
     pub private_mac_size: u8,
     pub _bitfield_align_1: [u8; 0],
@@ -16816,12 +14588,6 @@ impl psa_mac_operation_s {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct psa_aead_operation_s {
-    /// Unique ID indicating which driver got assigned to do the
-    /// operation. Since driver contexts are driver-specific, swapping
-    /// drivers halfway through the operation is not supported.
-    /// ID values are auto-generated in psa_crypto_driver_wrappers.h
-    /// ID value zero means the context is not valid or not assigned to
-    /// any driver (i.e. none of the driver contexts are active).
     pub private_id: ::core::ffi::c_uint,
     pub private_alg: psa_algorithm_t,
     pub private_key_type: psa_key_type_t,
@@ -17389,12 +15155,6 @@ unsafe extern "C" {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct psa_sign_hash_interruptible_operation_s {
-    /// Unique ID indicating which driver got assigned to do the
-    /// operation. Since driver contexts are driver-specific, swapping
-    /// drivers halfway through the operation is not supported.
-    /// ID values are auto-generated in psa_crypto_driver_wrappers.h
-    /// ID value zero means the context is not valid or not assigned to
-    /// any driver (i.e. none of the driver contexts are active).
     pub private_id: ::core::ffi::c_uint,
     pub private_ctx: psa_driver_sign_hash_interruptible_context_t,
     pub _bitfield_align_1: [u8; 0],
@@ -17461,12 +15221,6 @@ impl psa_sign_hash_interruptible_operation_s {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct psa_verify_hash_interruptible_operation_s {
-    /// Unique ID indicating which driver got assigned to do the
-    /// operation. Since driver contexts are driver-specific, swapping
-    /// drivers halfway through the operation is not supported.
-    /// ID values are auto-generated in psa_crypto_driver_wrappers.h
-    /// ID value zero means the context is not valid or not assigned to
-    /// any driver (i.e. none of the driver contexts are active).
     pub private_id: ::core::ffi::c_uint,
     pub private_ctx: psa_driver_verify_hash_interruptible_context_t,
     pub _bitfield_align_1: [u8; 0],
@@ -17649,26 +15403,14 @@ unsafe extern "C" {
 #[repr(C)]
 #[derive(Default, Copy, Clone)]
 pub struct mbedtls_psa_stats_s {
-    /// Number of slots containing key material for a volatile key.
     pub private_volatile_slots: usize,
-    /// Number of slots containing key material for a key which is in
-    /// internal persistent storage.
     pub private_persistent_slots: usize,
-    /// Number of slots containing a reference to a key in a
-    /// secure element.
     pub private_external_slots: usize,
-    /// Number of slots which are occupied, but do not contain
-    /// key material yet.
     pub private_half_filled_slots: usize,
-    /// Number of slots that contain cache data.
     pub private_cache_slots: usize,
-    /// Number of slots that are not used for anything.
     pub private_empty_slots: usize,
-    /// Number of slots that are locked.
     pub private_locked_slots: usize,
-    /// Largest key id value among open keys in internal persistent storage.
     pub private_max_open_internal_key_id: psa_key_id_t,
-    /// Largest key id value among open keys in secure elements.
     pub private_max_open_external_key_id: psa_key_id_t,
 }
 /// \brief Statistics about
@@ -18622,12 +16364,6 @@ impl Default for psa_jpake_computation_stage_s {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct psa_pake_operation_s {
-    /// Unique ID indicating which driver got assigned to do the
-    /// operation. Since driver contexts are driver-specific, swapping
-    /// drivers halfway through the operation is not supported.
-    /// ID values are auto-generated in psa_crypto_driver_wrappers.h
-    /// ID value zero means the context is not valid or not assigned to
-    /// any driver (i.e. none of the driver contexts are active).
     pub private_id: ::core::ffi::c_uint,
     pub private_alg: psa_algorithm_t,
     pub private_stage: u8,
@@ -18751,10 +16487,6 @@ pub struct mbedtls_asn1_named_data {
     /// when initializing a structure, and do not modify it except via Mbed TLS
     /// library functions.
     pub next: *mut mbedtls_asn1_named_data,
-    /// Merge next item into the current one?
-    ///
-    /// This field exists for the sake of Mbed TLS's X.509 certificate parsing
-    /// code and may change in future versions of the library.
     pub private_next_merged: ::core::ffi::c_uchar,
 }
 impl Default for mbedtls_asn1_named_data {
@@ -19653,11 +17385,8 @@ pub struct mbedtls_x509_crl {
     pub crl_ext: mbedtls_x509_buf,
     pub private_sig_oid2: mbedtls_x509_buf,
     pub private_sig: mbedtls_x509_buf,
-    ///< Internal representation of the MD algorithm of the signature algorithm, e.g. MBEDTLS_MD_SHA256
     pub private_sig_md: mbedtls_md_type_t,
-    ///< Internal representation of the Public Key algorithm of the signature algorithm, e.g. MBEDTLS_PK_RSA
     pub private_sig_pk: mbedtls_pk_type_t,
-    ///< Signature options to be passed to mbedtls_pk_verify_ext(), e.g. for RSASSA-PSS
     pub private_sig_opts: *mut ::core::ffi::c_void,
     /// Next element in the linked list of CRL.
     /// \p NULL indicates the end of the list.
@@ -19750,8 +17479,6 @@ unsafe extern "C" {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_x509_crt {
-    ///< Indicates if \c raw is owned
-    ///   by the structure or not.
     pub private_own_buffer: ::core::ffi::c_int,
     ///< The raw certificate data (DER).
     pub raw: mbedtls_x509_buf,
@@ -19788,25 +17515,16 @@ pub struct mbedtls_x509_crt {
     pub subject_alt_names: mbedtls_x509_sequence,
     ///< Optional list of certificate policies (Only anyPolicy is printed and enforced, however the rest of the policies are still listed).
     pub certificate_policies: mbedtls_x509_sequence,
-    ///< Bit string containing detected and parsed extensions
     pub private_ext_types: ::core::ffi::c_int,
-    ///< Optional Basic Constraint extension value: 1 if this certificate belongs to a CA, 0 otherwise.
     pub private_ca_istrue: ::core::ffi::c_int,
-    ///< Optional Basic Constraint extension value: The maximum path length to the root certificate. Path length is 1 higher than RFC 5280 'meaning', so 1+
     pub private_max_pathlen: ::core::ffi::c_int,
-    ///< Optional key usage extension value: See the values in x509.h
     pub private_key_usage: ::core::ffi::c_uint,
     ///< Optional list of extended key usage OIDs.
     pub ext_key_usage: mbedtls_x509_sequence,
-    ///< Optional Netscape certificate type extension value: See the values in x509.h
     pub private_ns_cert_type: ::core::ffi::c_uchar,
-    ///< Signature: hash of the tbs part signed with the private key.
     pub private_sig: mbedtls_x509_buf,
-    ///< Internal representation of the MD algorithm of the signature algorithm, e.g. MBEDTLS_MD_SHA256
     pub private_sig_md: mbedtls_md_type_t,
-    ///< Internal representation of the Public Key algorithm of the signature algorithm, e.g. MBEDTLS_PK_RSA
     pub private_sig_pk: mbedtls_pk_type_t,
-    ///< Signature options to be passed to mbedtls_pk_verify_ext(), e.g. for RSASSA-PSS
     pub private_sig_opts: *mut ::core::ffi::c_void,
     /// Next certificate in the linked list that constitutes the CA chain.
     /// \p NULL indicates the end of the list.
@@ -20774,25 +18492,15 @@ pub type mbedtls_dhm_parameter = ::core::ffi::c_uint;
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_dhm_context {
-    ///<  The prime modulus.
     pub private_P: mbedtls_mpi,
-    ///<  The generator.
     pub private_G: mbedtls_mpi,
-    ///<  Our secret value.
     pub private_X: mbedtls_mpi,
-    ///<  Our public key = \c G^X mod \c P.
     pub private_GX: mbedtls_mpi,
-    ///<  The public key of the peer = \c G^Y mod \c P.
     pub private_GY: mbedtls_mpi,
-    ///<  The shared secret = \c G^(XY) mod \c P.
     pub private_K: mbedtls_mpi,
-    ///<  The cached value = \c R^2 mod \c P.
     pub private_RP: mbedtls_mpi,
-    ///<  The blinding value.
     pub private_Vi: mbedtls_mpi,
-    ///<  The unblinding value.
     pub private_Vf: mbedtls_mpi,
-    ///<  The previous \c X.
     pub private_pX: mbedtls_mpi,
 }
 impl Default for mbedtls_dhm_context {
@@ -21095,15 +18803,10 @@ pub type mbedtls_ecdh_variant = ::core::ffi::c_uint;
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_ecdh_context_mbed {
-    ///< The elliptic curve used.
     pub private_grp: mbedtls_ecp_group,
-    ///< The private key.
     pub private_d: mbedtls_mpi,
-    ///< The public key.
     pub private_Q: mbedtls_ecp_point,
-    ///< The value of the public key of the peer.
     pub private_Qp: mbedtls_ecp_point,
-    ///< The shared secret.
     pub private_z: mbedtls_mpi,
 }
 impl Default for mbedtls_ecdh_context_mbed {
@@ -21122,16 +18825,9 @@ impl Default for mbedtls_ecdh_context_mbed {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_ecdh_context {
-    ///< The format of point export in TLS messages
-    ///as defined in RFC 4492.
     pub private_point_format: u8,
-    ///< The elliptic curve used.
     pub private_grp_id: mbedtls_ecp_group_id,
-    ///< The ECDH implementation/structure used.
     pub private_var: mbedtls_ecdh_variant,
-    ///< Implementation-specific context. The
-    ///context in use is specified by the \c var
-    ///field.
     pub private_ctx: mbedtls_ecdh_context__bindgen_ty_1,
 }
 #[repr(C)]
@@ -21750,42 +19446,24 @@ pub type mbedtls_ssl_protocol_version = ::core::ffi::c_uint;
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_ssl_session {
-    ///< MaxFragmentLength negotiated by peer
     pub private_mfl_code: ::core::ffi::c_uchar,
     pub private_exported: ::core::ffi::c_uchar,
-    /// TLS version negotiated in the session. Used if and when renegotiating
-    ///  or resuming a session instead of the configured minor TLS version.
     pub private_tls_version: mbedtls_ssl_protocol_version,
-    ///< chosen ciphersuite
     pub private_ciphersuite: ::core::ffi::c_int,
-    ///< session id length
     pub private_id_len: usize,
-    ///< session identifier
     pub private_id: [::core::ffi::c_uchar; 32usize],
-    ///< the master secret
     pub private_master: [::core::ffi::c_uchar; 48usize],
-    ///< peer X.509 cert chain
     pub private_peer_cert: *mut mbedtls_x509_crt,
-    ///<  verification result
     pub private_verify_result: u32,
-    ///< RFC 5077 session ticket
     pub private_ticket: *mut ::core::ffi::c_uchar,
-    ///< session ticket length
     pub private_ticket_len: usize,
-    ///< ticket lifetime hint
     pub private_ticket_lifetime: u32,
-    ///< 0: client, 1: server
     pub private_endpoint: u8,
-    ///< Ticket flags
     pub private_ticket_flags: u8,
-    ///< Randomly generated value used to obscure the age of the ticket
     pub private_ticket_age_add: u32,
-    ///< resumption_key length
     pub private_resumption_key_len: u8,
     pub private_resumption_key: [::core::ffi::c_uchar; 48usize],
-    ///< host name binded with tickets
     pub private_hostname: *mut ::core::ffi::c_char,
-    ///< flag for EtM activation
     pub private_encrypt_then_mac: ::core::ffi::c_int,
     pub private_app_secrets: mbedtls_ssl_tls13_application_secrets,
 }
@@ -21874,49 +19552,24 @@ impl Default for mbedtls_ssl_user_data_t {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_ssl_config {
-    ///< max. TLS version used
     pub private_max_tls_version: mbedtls_ssl_protocol_version,
-    ///< min. TLS version used
     pub private_min_tls_version: mbedtls_ssl_protocol_version,
-    ///< 0: client, 1: server
     pub private_endpoint: u8,
-    ///< 0: stream (TLS), 1: datagram (DTLS)
     pub private_transport: u8,
-    ///< MBEDTLS_SSL_VERIFY_XXX
     pub private_authmode: u8,
-    ///< MBEDTLS_LEGACY_XXX
     pub private_allow_legacy_renegotiation: u8,
-    ///< desired fragment length indicator
-    ///(MBEDTLS_SSL_MAX_FRAG_LEN_XXX)
     pub private_mfl_code: u8,
-    ///< negotiate encrypt-then-mac?
     pub private_encrypt_then_mac: u8,
-    ///< negotiate extended master secret?
     pub private_extended_ms: u8,
-    ///< detect and prevent replay?
     pub private_anti_replay: u8,
-    ///< disable renegotiation?
     pub private_disable_renegotiation: u8,
-    ///< use session tickets?
     pub private_session_tickets: u8,
-    ///< number of NewSessionTicket
     pub private_new_session_tickets_count: u16,
-    ///< enable sending CA list in
-    ///Certificate Request messages?
     pub private_cert_req_ca_list: u8,
-    ///< pick the ciphersuite according to
-    ///the client's preferences rather
-    ///than ours?
     pub private_respect_cli_pref: u8,
-    ///< Should DTLS record with
-    ///   unexpected CID
-    ///   lead to failure?
     pub private_ignore_unexpected_cid: u8,
-    /// Allowed ciphersuites for (D)TLS 1.2 (0-terminated)
     pub private_ciphersuite_list: *const ::core::ffi::c_int,
-    /// Allowed TLS 1.3 key exchange modes.
     pub private_tls13_kex_modes: ::core::ffi::c_int,
-    /// Callback for printing debug output
     pub private_f_dbg: ::core::option::Option<
         unsafe extern "C" fn(
             arg1: *mut ::core::ffi::c_void,
@@ -21926,9 +19579,7 @@ pub struct mbedtls_ssl_config {
             arg5: *const ::core::ffi::c_char,
         ),
     >,
-    ///< context for the debug function
     pub private_p_dbg: *mut ::core::ffi::c_void,
-    /// Callback for getting (pseudo-)random numbers
     pub private_f_rng: ::core::option::Option<
         unsafe extern "C" fn(
             arg1: *mut ::core::ffi::c_void,
@@ -21936,15 +19587,10 @@ pub struct mbedtls_ssl_config {
             arg3: usize,
         ) -> ::core::ffi::c_int,
     >,
-    ///< context for the RNG function
     pub private_p_rng: *mut ::core::ffi::c_void,
-    /// Callback to retrieve a session from the cache
     pub private_f_get_cache: mbedtls_ssl_cache_get_t,
-    /// Callback to store a session into the cache
     pub private_f_set_cache: mbedtls_ssl_cache_set_t,
-    ///< context for cache callbacks
     pub private_p_cache: *mut ::core::ffi::c_void,
-    /// Callback for setting cert according to SNI extension
     pub private_f_sni: ::core::option::Option<
         unsafe extern "C" fn(
             arg1: *mut ::core::ffi::c_void,
@@ -21953,9 +19599,7 @@ pub struct mbedtls_ssl_config {
             arg4: usize,
         ) -> ::core::ffi::c_int,
     >,
-    ///< context for SNI callback
     pub private_p_sni: *mut ::core::ffi::c_void,
-    /// Callback to customize X.509 certificate chain verification
     pub private_f_vrfy: ::core::option::Option<
         unsafe extern "C" fn(
             arg1: *mut ::core::ffi::c_void,
@@ -21964,9 +19608,7 @@ pub struct mbedtls_ssl_config {
             arg4: *mut u32,
         ) -> ::core::ffi::c_int,
     >,
-    ///< context for X.509 verify calllback
     pub private_p_vrfy: *mut ::core::ffi::c_void,
-    /// Callback to retrieve PSK key from identity
     pub private_f_psk: ::core::option::Option<
         unsafe extern "C" fn(
             arg1: *mut ::core::ffi::c_void,
@@ -21975,9 +19617,7 @@ pub struct mbedtls_ssl_config {
             arg4: usize,
         ) -> ::core::ffi::c_int,
     >,
-    ///< context for PSK callback
     pub private_p_psk: *mut ::core::ffi::c_void,
-    /// Callback to create & write a cookie for ClientHello verification
     pub private_f_cookie_write: ::core::option::Option<
         unsafe extern "C" fn(
             arg1: *mut ::core::ffi::c_void,
@@ -21987,7 +19627,6 @@ pub struct mbedtls_ssl_config {
             arg5: usize,
         ) -> ::core::ffi::c_int,
     >,
-    /// Callback to verify validity of a ClientHello cookie
     pub private_f_cookie_check: ::core::option::Option<
         unsafe extern "C" fn(
             arg1: *mut ::core::ffi::c_void,
@@ -21997,9 +19636,7 @@ pub struct mbedtls_ssl_config {
             arg5: usize,
         ) -> ::core::ffi::c_int,
     >,
-    ///< context for the cookie callbacks
     pub private_p_cookie: *mut ::core::ffi::c_void,
-    /// Callback to create & write a session ticket
     pub private_f_ticket_write: ::core::option::Option<
         unsafe extern "C" fn(
             arg1: *mut ::core::ffi::c_void,
@@ -22010,7 +19647,6 @@ pub struct mbedtls_ssl_config {
             arg6: *mut u32,
         ) -> ::core::ffi::c_int,
     >,
-    /// Callback to parse a session ticket into a session structure
     pub private_f_ticket_parse: ::core::option::Option<
         unsafe extern "C" fn(
             arg1: *mut ::core::ffi::c_void,
@@ -22019,81 +19655,32 @@ pub struct mbedtls_ssl_config {
             arg4: usize,
         ) -> ::core::ffi::c_int,
     >,
-    ///< context for the ticket callbacks
     pub private_p_ticket: *mut ::core::ffi::c_void,
-    ///< The length of CIDs for incoming DTLS records.
     pub private_cid_len: usize,
-    ///< verification profile
     pub private_cert_profile: *const mbedtls_x509_crt_profile,
-    ///< own certificate/key pair(s)
     pub private_key_cert: *mut mbedtls_ssl_key_cert,
-    ///< trusted CAs
     pub private_ca_chain: *mut mbedtls_x509_crt,
-    ///< trusted CAs CRLs
     pub private_ca_crl: *mut mbedtls_x509_crl,
-    ///< allowed signature hashes
     pub private_sig_hashes: *const ::core::ffi::c_int,
-    ///< allowed signature algorithms
     pub private_sig_algs: *const u16,
-    ///< allowed curves
     pub private_curve_list: *const mbedtls_ecp_group_id,
-    ///< allowed IANA NamedGroups
     pub private_group_list: *const u16,
-    ///< prime modulus for DHM
     pub private_dhm_P: mbedtls_mpi,
-    ///< generator for DHM
     pub private_dhm_G: mbedtls_mpi,
-    ///< The raw pre-shared key. This field should
-    ///   only be set via mbedtls_ssl_conf_psk().
-    ///   If either no PSK or an opaque PSK
-    ///   have been configured, this has value NULL.
     pub private_psk: *mut ::core::ffi::c_uchar,
-    ///< The length of the raw pre-shared key.
-    ///   This field should only be set via
-    ///   mbedtls_ssl_conf_psk().
-    ///   Its value is non-zero if and only if
-    ///   \c psk is not \c NULL.
     pub private_psk_len: usize,
-    ///< The PSK identity for PSK negotiation.
-    ///   This field should only be set via
-    ///   mbedtls_ssl_conf_psk().
-    ///   This is set if and only if either
-    ///   \c psk or \c psk_opaque are set.
     pub private_psk_identity: *mut ::core::ffi::c_uchar,
-    ///< The length of PSK identity.
-    ///   This field should only be set via
-    ///   mbedtls_ssl_conf_psk().
-    ///   Its value is non-zero if and only if
-    ///   \c psk is not \c NULL or \c psk_opaque
-    ///   is not \c 0.
     pub private_psk_identity_len: usize,
-    ///< ordered list of protocols
     pub private_alpn_list: *mut *const ::core::ffi::c_char,
-    ///< timeout for mbedtls_ssl_read (ms)
     pub private_read_timeout: u32,
-    ///< initial value of the handshake
-    ///retransmission timeout (ms)
     pub private_hs_timeout_min: u32,
-    ///< maximum value of the handshake
-    ///retransmission timeout (ms)
     pub private_hs_timeout_max: u32,
-    ///< grace period for renegotiation
     pub private_renego_max_records: ::core::ffi::c_int,
-    ///< value of the record counters
-    ///that triggers renegotiation
     pub private_renego_period: [::core::ffi::c_uchar; 8usize],
-    ///< limit of records with a bad MAC
     pub private_badmac_limit: ::core::ffi::c_uint,
-    ///< min. bit length of the DHM prime
     pub private_dhm_min_bitlen: ::core::ffi::c_uint,
-    /// User data pointer or handle.
-    ///
-    /// The library sets this to \p 0 when creating a context and does not
-    /// access it afterwards.
     pub private_user_data: mbedtls_ssl_user_data_t,
-    ///< certificate selection callback
     pub private_f_cert_cb: mbedtls_ssl_hs_cb_t,
-    ///< acceptable client cert issuers
     pub private_dn_hints: *const mbedtls_x509_crt,
 }
 impl Default for mbedtls_ssl_config {
@@ -22108,33 +19695,12 @@ impl Default for mbedtls_ssl_config {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_ssl_context {
-    ///< configuration information
     pub private_conf: *const mbedtls_ssl_config,
-    ///< SSL handshake: current state
     pub private_state: ::core::ffi::c_int,
-    ///< Initial, in progress, pending?
     pub private_renego_status: ::core::ffi::c_int,
-    ///< Records since renego request, or with DTLS,
-    ///number of retransmissions of request if
-    ///renego_max_records is < 0
     pub private_renego_records_seen: ::core::ffi::c_int,
-    /// Server: Negotiated TLS protocol version.
-    ///  Client: Maximum TLS version to be negotiated, then negotiated TLS
-    ///          version.
-    ///
-    ///  It is initialized as the maximum TLS version to be negotiated in the
-    ///  ClientHello writing preparation stage and used throughout the
-    ///  ClientHello writing. For a fresh handshake not linked to any previous
-    ///  handshake, it is initialized to the configured maximum TLS version
-    ///  to be negotiated. When renegotiating or resuming a session, it is
-    ///  initialized to the previously negotiated TLS version.
-    ///
-    ///  Updated to the negotiated TLS version as soon as the ServerHello is
-    ///  received.
     pub private_tls_version: mbedtls_ssl_protocol_version,
-    ///< records with a bad MAC received
     pub private_badmac_seen: ::core::ffi::c_uint,
-    /// Callback to customize X.509 certificate chain verification
     pub private_f_vrfy: ::core::option::Option<
         unsafe extern "C" fn(
             arg1: *mut ::core::ffi::c_void,
@@ -22143,175 +19709,71 @@ pub struct mbedtls_ssl_context {
             arg4: *mut u32,
         ) -> ::core::ffi::c_int,
     >,
-    ///< context for X.509 verify callback
     pub private_p_vrfy: *mut ::core::ffi::c_void,
-    ///< Callback for network send
     pub private_f_send: mbedtls_ssl_send_t,
-    ///< Callback for network receive
     pub private_f_recv: mbedtls_ssl_recv_t,
     pub private_f_recv_timeout: mbedtls_ssl_recv_timeout_t,
-    ///< context for I/O operations
     pub private_p_bio: *mut ::core::ffi::c_void,
-    ///<  current session data (in)
     pub private_session_in: *mut mbedtls_ssl_session,
-    ///<  current session data (out)
     pub private_session_out: *mut mbedtls_ssl_session,
-    ///<  negotiated session data
     pub private_session: *mut mbedtls_ssl_session,
-    ///<  session data in negotiation
     pub private_session_negotiate: *mut mbedtls_ssl_session,
-    ///<  params required only during
-    ///the handshake process
     pub private_handshake: *mut mbedtls_ssl_handshake_params,
-    ///<  current transform params (in)
-    ///    This is always a reference,
-    ///    never an owning pointer.
     pub private_transform_in: *mut mbedtls_ssl_transform,
-    ///<  current transform params (out)
-    ///    This is always a reference,
-    ///    never an owning pointer.
     pub private_transform_out: *mut mbedtls_ssl_transform,
-    ///<  negotiated transform params
-    ///    This pointer owns the transform
-    ///    it references.
     pub private_transform: *mut mbedtls_ssl_transform,
-    ///<  transform params in negotiation
-    ///    This pointer owns the transform
-    ///    it references.
     pub private_transform_negotiate: *mut mbedtls_ssl_transform,
-    /// The application data transform in TLS 1.3.
-    ///  This pointer owns the transform it references.
     pub private_transform_application: *mut mbedtls_ssl_transform,
-    ///< context for the timer callbacks
     pub private_p_timer: *mut ::core::ffi::c_void,
-    ///< set timer callback
     pub private_f_set_timer: mbedtls_ssl_set_timer_t,
-    ///< get timer callback
     pub private_f_get_timer: mbedtls_ssl_get_timer_t,
-    ///< input buffer
     pub private_in_buf: *mut ::core::ffi::c_uchar,
-    ///< 64-bit incoming message counter
-    ///TLS: maintained by us
-    ///DTLS: read from peer
     pub private_in_ctr: *mut ::core::ffi::c_uchar,
-    ///< start of record header
     pub private_in_hdr: *mut ::core::ffi::c_uchar,
-    ///< The start of the CID;
-    ///   (the end is marked by in_len).
     pub private_in_cid: *mut ::core::ffi::c_uchar,
-    ///< two-bytes message length field
     pub private_in_len: *mut ::core::ffi::c_uchar,
-    ///< ivlen-byte IV
     pub private_in_iv: *mut ::core::ffi::c_uchar,
-    ///< message contents (in_iv+ivlen)
     pub private_in_msg: *mut ::core::ffi::c_uchar,
-    ///< read offset in application data
     pub private_in_offt: *mut ::core::ffi::c_uchar,
-    ///< record header: message type
     pub private_in_msgtype: ::core::ffi::c_int,
-    ///< record header: message length
     pub private_in_msglen: usize,
-    ///< amount of data read so far
     pub private_in_left: usize,
-    ///< DTLS epoch for incoming records
     pub private_in_epoch: u16,
-    ///< offset of the next record in datagram
-    ///(equal to in_left if none)
     pub private_next_record_offset: usize,
-    ///< last validated record seq_num
     pub private_in_window_top: u64,
-    ///< bitmask for replay detection
     pub private_in_window: u64,
-    ///< current handshake message length,
-    ///including the handshake header
     pub private_in_hslen: usize,
-    ///< # of 0-length encrypted messages
     pub private_nb_zero: ::core::ffi::c_int,
-    ///< drop or reuse current message
-    ///on next call to record layer?
     pub private_keep_current_message: ::core::ffi::c_int,
-    ///< Determines if a fatal alert
-    ///should be sent. Values:
-    ///- \c 0 , no alert is to be sent.
-    ///- \c 1 , alert is to be sent.
     pub private_send_alert: ::core::ffi::c_uchar,
-    ///< Type of alert if send_alert
-    ///= 0
     pub private_alert_type: ::core::ffi::c_uchar,
-    ///< The error code to be returned
-    ///to the user once the fatal alert
-    ///has been sent.
     pub private_alert_reason: ::core::ffi::c_int,
-    ///< Disable packing multiple records
-    ///   within a single datagram.
     pub private_disable_datagram_packing: u8,
-    ///< output buffer
     pub private_out_buf: *mut ::core::ffi::c_uchar,
-    ///< 64-bit outgoing message counter
     pub private_out_ctr: *mut ::core::ffi::c_uchar,
-    ///< start of record header
     pub private_out_hdr: *mut ::core::ffi::c_uchar,
-    ///< The start of the CID;
-    ///   (the end is marked by in_len).
     pub private_out_cid: *mut ::core::ffi::c_uchar,
-    ///< two-bytes message length field
     pub private_out_len: *mut ::core::ffi::c_uchar,
-    ///< ivlen-byte IV
     pub private_out_iv: *mut ::core::ffi::c_uchar,
-    ///< message contents (out_iv+ivlen)
     pub private_out_msg: *mut ::core::ffi::c_uchar,
-    ///< record header: message type
     pub private_out_msgtype: ::core::ffi::c_int,
-    ///< record header: message length
     pub private_out_msglen: usize,
-    ///< amount of data not yet written
     pub private_out_left: usize,
-    ///<  Outgoing record sequence  number.
     pub private_cur_out_ctr: [::core::ffi::c_uchar; 8usize],
-    ///< path mtu, used to fragment outgoing messages
     pub private_mtu: u16,
-    ///< expected peer CN for verification
-    ///(and SNI if available)
     pub private_hostname: *mut ::core::ffi::c_char,
-    ///<  negotiated protocol
     pub private_alpn_chosen: *const ::core::ffi::c_char,
-    ///<  transport-level ID of the client
     pub private_cli_id: *mut ::core::ffi::c_uchar,
-    ///<  length of cli_id
     pub private_cli_id_len: usize,
-    ///<  does peer support legacy or
-    ///secure renegotiation
     pub private_secure_renegotiation: ::core::ffi::c_int,
-    ///<  length of verify data stored
     pub private_verify_data_len: usize,
-    ///<  previous handshake verify data
     pub private_own_verify_data: [::core::ffi::c_char; 12usize],
-    ///<  previous handshake verify data
     pub private_peer_verify_data: [::core::ffi::c_char; 12usize],
-    /// The next incoming CID, chosen by the user and applying to
-    ///  all subsequent handshakes. This may be different from the
-    ///  CID currently used in case the user has re-configured the CID
-    ///  after an initial handshake.
     pub private_own_cid: [::core::ffi::c_uchar; 32usize],
-    ///< The length of \c own_cid.
     pub private_own_cid_len: u8,
-    ///< This indicates whether the CID extension should
-    ///   be negotiated in the next handshake or not.
-    ///   Possible values are #MBEDTLS_SSL_CID_ENABLED
-    ///   and #MBEDTLS_SSL_CID_DISABLED.
     pub private_negotiate_cid: u8,
-    /// Callback to export key block and master secret
     pub private_f_export_keys: mbedtls_ssl_export_keys_t,
-    ///< context for key export callback
     pub private_p_export_keys: *mut ::core::ffi::c_void,
-    /// User data pointer or handle.
-    ///
-    /// The library sets this to \p 0 when creating a context and does not
-    /// access it afterwards.
-    ///
-    /// \warning Serializing and restoring an SSL context with
-    ///          mbedtls_ssl_context_save() and mbedtls_ssl_context_load()
-    ///          does not currently restore the user data.
     pub private_user_data: mbedtls_ssl_user_data_t,
 }
 impl Default for mbedtls_ssl_context {
@@ -25052,15 +22514,10 @@ pub type mbedtls_entropy_f_source_ptr = ::core::option::Option<
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_entropy_source_state {
-    ///< The entropy source callback
     pub private_f_source: mbedtls_entropy_f_source_ptr,
-    ///< The callback data pointer
     pub private_p_source: *mut ::core::ffi::c_void,
-    ///< Amount received in bytes
     pub private_size: usize,
-    ///< Minimum bytes required before release
     pub private_threshold: usize,
-    ///< Is the source strong?
     pub private_strong: ::core::ffi::c_int,
 }
 impl Default for mbedtls_entropy_source_state {
@@ -25366,19 +22823,8 @@ unsafe extern "C" {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_aes_context {
-    ///< The number of rounds.
     pub private_nr: ::core::ffi::c_int,
-    ///< The offset in array elements to AES
-    ///round keys in the buffer.
     pub private_rk_offset: usize,
-    ///< Unaligned data buffer. This buffer can
-    ///hold 32 extra Bytes, which can be used for
-    ///one of the following purposes:
-    ///<ul><li>Alignment if VIA padlock is
-    ///used.</li>
-    ///<li>Simplifying key expansion in the 256-bit
-    ///case by generating an extra round key.
-    ///</li></ul>
     pub private_buf: [u32; 68usize],
 }
 impl Default for mbedtls_aes_context {
@@ -25394,11 +22840,7 @@ impl Default for mbedtls_aes_context {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_aes_xts_context {
-    ///< The AES context to use for AES block
-    ///encryption or decryption.
     pub private_crypt: mbedtls_aes_context,
-    ///< The AES context used for tweak
-    ///computation.
     pub private_tweak: mbedtls_aes_context,
 }
 impl Default for mbedtls_aes_xts_context {
@@ -25917,31 +23359,11 @@ unsafe extern "C" {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_ctr_drbg_context {
-    ///< The counter (V).
     pub private_counter: [::core::ffi::c_uchar; 16usize],
-    ///< The reseed counter.
-    /// This is the number of requests that have
-    /// been made since the last (re)seeding,
-    /// minus one.
-    /// Before the initial seeding, this field
-    /// contains the amount of entropy in bytes
-    /// to use as a nonce for the initial seeding,
-    /// or -1 if no nonce length has been explicitly
-    /// set (see mbedtls_ctr_drbg_set_nonce_len()).
     pub private_reseed_counter: ::core::ffi::c_int,
-    ///< This determines whether prediction
-    ///resistance is enabled, that is
-    ///whether to systematically reseed before
-    ///each random generation.
     pub private_prediction_resistance: ::core::ffi::c_int,
-    ///< The amount of entropy grabbed on each
-    ///seed or reseed operation, in bytes.
     pub private_entropy_len: usize,
-    ///< The reseed interval.
-    /// This is the maximum number of requests
-    /// that can be made between reseedings.
     pub private_reseed_interval: ::core::ffi::c_int,
-    ///< The AES context.
     pub private_aes_ctx: mbedtls_aes_context,
     pub private_f_entropy: ::core::option::Option<
         unsafe extern "C" fn(
@@ -25950,7 +23372,6 @@ pub struct mbedtls_ctr_drbg_context {
             arg3: usize,
         ) -> ::core::ffi::c_int,
     >,
-    ///< The context for the entropy function.
     pub private_p_entropy: *mut ::core::ffi::c_void,
 }
 impl Default for mbedtls_ctr_drbg_context {
@@ -26240,4 +23661,3 @@ unsafe extern "C" {
         prec_RR: *mut mbedtls_mpi,
     ) -> ::core::ffi::c_int;
 }
-pub type __builtin_va_list = *mut ::core::ffi::c_void;

@@ -18,6 +18,8 @@ use esp_backtrace as _;
 
 use log::info;
 
+use tinyrlibc as _;
+
 use crate::bootstrap::RECLAIMED_RAM;
 
 #[path = "../bootstrap.rs"]

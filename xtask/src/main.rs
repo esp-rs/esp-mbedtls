@@ -26,11 +26,18 @@ struct Args {
 enum Commands {
     /// Generate Rust bindings for MbedTLS and generate .a libraries
     Gen {
+        /// Use GCC instead of clang to build the C MbedTLS code
+        ///
+        /// Note that - for non-host builds - this means that the user should pre-install
+        /// the GCC cross-toolchain for the target.
+        #[arg(short = 'g', long = "gcc")]
+        use_gcc: bool,
+
         /// If the target is a riscv32 target, force the use of the Espressif RISCV GCC toolchain
         /// (`riscv32-esp-elf-gcc`) rather than the derived `riscv32-unknown-elf-gcc` toolchain which is the "official" RISC-V one
         /// (https://github.com/riscv-collab/riscv-gnu-toolchain)
-        #[arg(short = 'e', long)]
-        force_esp_riscv_toolchain: bool,
+        #[arg(short = 'e', long = "force-esp-riscv-gcc")]
+        force_esp_riscv_gcc: bool,
 
         /// Target triple for which to generate bindings and `.a` libraries
         target: String,
@@ -53,20 +60,28 @@ fn main() -> Result<()> {
 
     if let Some(Commands::Gen {
         target,
-        force_esp_riscv_toolchain,
+        use_gcc,
+        force_esp_riscv_gcc,
     }) = args.command
     {
+        let use_gcc = use_gcc || force_esp_riscv_gcc;
+
+        // For clang, use our own cross-platform sysroot
+        let sysroot = (!use_gcc).then(|| sys_crate_root_path
+            .join("gen")
+            .join("sysroot"));
+
         let builder = builder::MbedtlsBuilder::new(
             EnumSet::all(),
-            false,
+            !use_gcc,
             sys_crate_root_path.clone(),
             Some(target.clone()),
             // Fake host, but we do need to pass something to CMake
             Some("x86_64-unknown-linux-gnu".into()),
             None,
+            sysroot,
             None,
-            None,
-            force_esp_riscv_toolchain,
+            force_esp_riscv_gcc,
         );
 
         let out = TempDir::new("mbedtls-sys-libs")?;

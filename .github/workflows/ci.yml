@@ -135,7 +135,7 @@ jobs:
           source "$HOME/.cargo/env"
           "$HOME/.cargo/bin/espup" install -e -r
           source "$HOME/exports"
-          echo "$PATH" >> "$GITHUB_PATH"
+          echo "${LIBCLANG_PATH}/../bin:$PATH" >> "$GITHUB_PATH"
           echo "LIBCLANG_PATH=${LIBCLANG_PATH}" >> "$GITHUB_ENV"
           echo "CLANG_PATH=${CLANG_PATH}" >> "$GITHUB_ENV"
   
@@ -161,8 +161,8 @@ jobs:
           cargo +stable xtask gen xtensa-esp32-none-elf
           cargo +stable xtask gen xtensa-esp32s2-none-elf
           cargo +stable xtask gen xtensa-esp32s3-none-elf
-          cargo +stable xtask gen -e riscv32imc-unknown-none-elf
-          cargo +stable xtask gen -e riscv32imac-unknown-none-elf
+          cargo +stable xtask gen riscv32imc-unknown-none-elf
+          cargo +stable xtask gen riscv32imac-unknown-none-elf
 
       - name: Upload libraries artifacts for commit
         if: |

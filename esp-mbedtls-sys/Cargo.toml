@@ -13,10 +13,12 @@ harness = false
 default = []
 # Always generate the bindings during build, even if pre-built bindings for the build target are available
 force-generate-bindings = []
+# Use GCC instead of clang
+use-gcc = []
 # Force the use of the Espressif Riscv GCC toolchain, if the target is a `riscv32*-` target
 # If this feature is not enabled, the build will assume and use the "official" RiscV GCC toolchain:
 # https://github.com/riscv-collab/riscv-gnu-toolchain
-force-esp-riscv-toolchain = []
+force-esp-riscv-gcc = ["use-gcc"]
 # Disable all or some hooks; this would preclude hooking custom HW-accelerated algos
 nohook = ["nohook-sha1", "nohook-sha256", "nohook-sha512", "nohook-exp-mod"]
 nohook-sha1 = []
