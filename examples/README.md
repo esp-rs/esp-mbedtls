@@ -2,30 +2,61 @@
 
 The examples currently run on the following platforms:
 
-## STD
+## STD (and ESP-IDF)
 
 Check folder [std](std).
 
-Building:
-```
+Build:
+```sh
 cd examples/std
 cargo build
+```
+
+Build for ESP-IDF*:
+```sh
+export WIFI_SSID="your-wifi-ssid"
+export WIFI_PASS="your-wifi-password"
+export MCU="<your-mcu>"
+cd examples/std
+cargo build --target <esp-idf-target> --Zbuild-std=std,panic_abort
+```
+
+...where:
+- `<your-mcu>` - the ESP32 MCU you would like to build for
+- `<esp-idf-target>` - the ESP-IDF target corresponding to the ESP32 MCU
+
+Supported `esp32xx` MCUs (relevant HW acceleration is automatically enabled by ESP-IDF itself):
+| MCU          | Target                       |
+| ------------ | ---------------------------- |
+| esp32        | xtensa-esp32-espidf          |
+| esp32c2      | riscv32imac-esp-espidf       |
+| esp32c3      | riscv32imc-esp-iespidf       |
+| esp32c6      | riscv32imac-esp-espidf       |
+| esp32h2      | riscv32imac-esp-espidf       |
+| esp32s2      | xtensa-esp32s2-espidf        |
+| esp32s3      | xtensa-esp32s3-espidf        |
+
+(*) **NOTE: Building for xtensa targets requires the usage of the `esp` Rust toolchain, by instaling `espup`, i.e.:**
+```sh
+cargo install espup
+espup install
+rusup default esp
 ```
 
 ## Baremetal ESP32-XX with `esp-hal` and `embassy-net`
 
 Check folder [esp](esp).
 
-Building:
-```
+Build*:
+```sh
 export WIFI_SSID="your-wifi-ssid"
 export WIFI_PASS="your-wifi-password"
 cd examples/esp
 cargo build --no-default-features --features <esp32XX> --target <esp32XX-target>
 ```
 
-To build and run one example, i.e. `client`:
-```
+To build and run one example, i.e. `client`*:
+```sh
 export WIFI_SSID="your-wifi-ssid"
 export WIFI_PASS="your-wifi-password"
 cd examples/esp
@@ -34,9 +65,9 @@ cargo run --bin client --no-default-features --features <esp32XX> --target <esp3
 
 ...where:
 - `<esp32XX>` - the ESP32 MCU you would like to build for
-- `<esp32XX-target>` - the target corresponding to the ESP32MCU
+- `<esp32XX-target>` - the target corresponding to the ESP32 MCU
 
-Supported `esp32xx` MCUs,and their corresponding `<esp32XX-target>` targets:
+Supported `esp32xx` MCUs and their corresponding `<esp32XX-target>` targets:
 | MCU          | Target                       | Hardware Acceleration                            |
 | ------------ | ---------------------------- | ------------------------------------------------ |
 | esp32        | xtensa-esp32-none-elf        | RSA-ExpMod                                       |
@@ -46,6 +77,14 @@ Supported `esp32xx` MCUs,and their corresponding `<esp32XX-target>` targets:
 | esp32h2      | riscv32imac-unknown-none-elf | RSA-ExpMod, SHA1, SHA224, SHA256                 |
 | esp32s2      | xtensa-esp32s2-none-elf      | RSA-ExpMod, SHA1, SHA224, SHA256, SHA384, SHA512 |
 | esp32s3      | xtensa-esp32s3-none-elf      | RSA-ExpMod, SHA1, SHA224, SHA256, SHA384, SHA512 |
+
+(*) **NOTE: Building for xtensa targets requires the usage of the `esp` Rust toolchain, by instaling `espup`, i.e.:**
+```sh
+cargo install espup
+espup install
+rusup default esp
+. ~/export_esp.sh
+```
 
 ## Upcoming soon
 

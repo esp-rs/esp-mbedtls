@@ -1,0 +1,4 @@
+[target.'cfg(target_os = "espidf")']
+runner = "espflash flash --baud 921600 --monitor"
+linker = "ldproxy"
+rustflags = ["--cfg", "espidf_time64"]

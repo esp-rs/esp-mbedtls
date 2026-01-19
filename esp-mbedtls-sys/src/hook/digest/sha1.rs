@@ -21,9 +21,9 @@ pub unsafe fn hook_sha1(sha1: Option<&'static (dyn MbedtlsSha1 + Send + Sync)>) 
     critical_section::with(|cs| {
         #[allow(clippy::if_same_then_else)]
         if sha1.is_some() {
-            info!("SHA-1 hook: added custom/HW accelerated impl");
+            debug!("SHA-1 hook: added custom/HW accelerated impl");
         } else {
-            info!("SHA-1 hook: removed");
+            debug!("SHA-1 hook: removed");
         }
 
         alt::SHA1.borrow(cs).set(sha1);

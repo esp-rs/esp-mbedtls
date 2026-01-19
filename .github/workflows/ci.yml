@@ -212,7 +212,7 @@ jobs:
         uses: esp-rs/xtensa-toolchain@v1.6
         with:
           default: true
-          ldproxy: false
+          ldproxy: true
 
       # TODO: Double-check and uncomment
       # - uses: Swatinem/rust-cache@v2
@@ -236,6 +236,65 @@ jobs:
       - name: Build - Examples
         run: export WIFI_SSID=ssid; export WIFI_PASS=pass; cd examples/${{ matrix.mcu[0] }}; cargo build --no-default-features --features ${{ matrix.mcu[1] }} --target ${{ matrix.mcu[2] }} -Zbuild-std=core,alloc,panic_abort
 
+  build-esp-idf:
+    name: Build-ESP-IDF
+    runs-on: ubuntu-latest
+    permissions: read-all
+    needs: build-mcu
+    strategy:
+      fail-fast: false
+      matrix:
+        mcu:
+          - [std, esp32, xtensa-esp32-espidf]
+#          - [std, esp32s2, xtensa-esp32s2-espidf]
+          - [std, esp32s3, xtensa-esp32s3-espidf]
+#          - [std, esp32c2, riscv32imc-esp-espidf]
+#          - [std, esp32c3, riscv32imc-esp-espidf]
+#          - [std, esp32c6, riscv32imac-esp-espidf]
+# No Wifi support on esp32h2
+#          - [std, esp32h2, riscv32imac-esp-espidf]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          target: x86_64-unknown-linux-gnu
+          toolchain: nightly
+          components: rust-src,rustfmt,clippy
+
+      - name: Install MCU target
+        if: startsWith(matrix.mcu[2], 'riscv32')
+        run: rustup target add ${{ matrix.mcu[2] }}
+
+      - name: Install Rust for Xtensa
+        if: startsWith(matrix.mcu[2], 'xtensa-')
+        uses: esp-rs/xtensa-toolchain@v1.6
+        with:
+          default: true
+          ldproxy: true
+
+      # TODO: Double-check and uncomment
+      # - uses: Swatinem/rust-cache@v2
+      #   with:
+      #     workspaces: |
+      #       ./
+      #       xtask
+
+      - name: Clippy
+        run: cargo clippy --target ${{ matrix.mcu[2] }} -Zbuild-std=std,panic_abort -- -D warnings
+
+      - name: Build
+        run: cargo build --target ${{ matrix.mcu[2] }} -Zbuild-std=std,panic_abort
+
+      - name: Fmt Check - Examples
+        run: cd examples/${{ matrix.mcu[0] }}; cargo fmt -- --check
+
+      - name: Clippy - Examples
+        run: export WIFI_SSID=ssid; export WIFI_PASS=pass; cd examples/${{ matrix.mcu[0] }}; cargo clippy --target ${{ matrix.mcu[2] }} -Zbuild-std=std,panic_abort -- -D warnings
+
+      - name: Build - Examples
+        run: export WIFI_SSID=ssid; export WIFI_PASS=pass; cd examples/${{ matrix.mcu[0] }}; cargo build --target ${{ matrix.mcu[2] }} -Zbuild-std=std,panic_abort
+
   # If libraries are rebuilt and tests are successful, we upload them in a specific job
   # that has write access to prevent security breaches, and unwanted use of the token
   commit-libs:
@@ -243,7 +302,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    needs: build-mcu
+    needs: build-esp-idf
     # TODO: Currently GitHub doesn't allow pushing to a forked repo's branch when running an action on a PR to upstream.
     if: |
       github.event.pull_request.head.repo.full_name == github.repository &&

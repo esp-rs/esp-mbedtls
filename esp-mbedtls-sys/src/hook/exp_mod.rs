@@ -57,9 +57,9 @@ pub unsafe fn hook_exp_mod(exp_mod: Option<&'static (dyn MbedtlsMpiExpMod + Send
     critical_section::with(|cs| {
         #[allow(clippy::if_same_then_else)]
         if exp_mod.is_some() {
-            info!("RSA-EXP-MOD hook: added custom/HW accelerated impl");
+            debug!("RSA-EXP-MOD hook: added custom/HW accelerated impl");
         } else {
-            info!("RSA-EXP-MOD hook: removed");
+            debug!("RSA-EXP-MOD hook: removed");
         }
 
         alt::EXP_MOD.borrow(cs).set(exp_mod);

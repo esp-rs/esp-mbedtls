@@ -5,11 +5,10 @@ use core::task::{Context, Poll};
 
 use embedded_io::ErrorKind;
 
-use esp_mbedtls_sys::*;
-
 use io::{ErrorType, Read, Write};
 
-use crate::{merr, SessionError, TlsReference};
+use crate::sys::*;
+use crate::{SessionError, TlsReference};
 
 use super::{SessionConfig, SessionState};
 

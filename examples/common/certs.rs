@@ -23,7 +23,7 @@ pub fn client_conf<'a>(mtls: bool, server_name: Option<&'a CStr>) -> ClientSessi
 
     if mtls {
         conf.creds = Some(Credentials {
-            certificate: Certificate::new(X509::DER(CERT)).unwrap(),
+            certificate: Certificate::new_no_copy(CERT).unwrap(),
             private_key: esp_mbedtls::PrivateKey::new(X509::DER(KEY), None).unwrap(),
         });
     }
@@ -32,7 +32,7 @@ pub fn client_conf<'a>(mtls: bool, server_name: Option<&'a CStr>) -> ClientSessi
 }
 
 pub fn server_conf(mtls: bool) -> ServerSessionConfig<'static> {
-    let cert = Certificate::new(X509::DER(CERT)).unwrap();
+    let cert = Certificate::new_no_copy(CERT).unwrap();
 
     let mut conf = ServerSessionConfig {
         ca_chain: Some(cert.clone()),
@@ -44,7 +44,7 @@ pub fn server_conf(mtls: bool) -> ServerSessionConfig<'static> {
 
     if mtls {
         // The assumption is that the client would use the same CERT/KEY pair that the server itself uses
-        conf.ca_chain = Some(Certificate::new(X509::DER(CERT)).unwrap());
+        conf.ca_chain = Some(Certificate::new_no_copy(CERT).unwrap());
     }
 
     conf
