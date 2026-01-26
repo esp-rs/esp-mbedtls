@@ -2,6 +2,11 @@
 
 use core::ffi::c_int;
 
+use crate::{
+    mbedtls_mpi, mbedtls_mpi_add_mpi, mbedtls_mpi_cmp_int, mbedtls_mpi_exp_mod_soft,
+    mbedtls_mpi_free, mbedtls_mpi_grow, mbedtls_mpi_init, mbedtls_mpi_lset, mbedtls_mpi_mod_mpi,
+    mbedtls_mpi_set_bit, merr, MbedtlsError,
+};
 #[cfg(not(any(
     feature = "accel-esp32c3",
     feature = "accel-esp32c6",
@@ -11,12 +16,6 @@ use crypto_bigint::U4096;
 use crypto_bigint::{U1024, U2048, U512};
 #[cfg(not(feature = "accel-esp32"))]
 use crypto_bigint::{U256, U384};
-
-use crate::{
-    mbedtls_mpi, mbedtls_mpi_add_mpi, mbedtls_mpi_cmp_int, mbedtls_mpi_exp_mod_soft,
-    mbedtls_mpi_free, mbedtls_mpi_grow, mbedtls_mpi_init, mbedtls_mpi_lset, mbedtls_mpi_mod_mpi,
-    mbedtls_mpi_set_bit, merr, MbedtlsError,
-};
 
 use esp_hal::rsa::{operand_sizes, RsaContext};
 
@@ -332,7 +331,7 @@ fn compute_mprime(m: &mbedtls_mpi) -> u32 {
 /// Return the number of words actually used to represent an mpi number.
 #[inline(always)]
 fn mpi_words(x: &mbedtls_mpi) -> usize {
-    for index in (0..x.private_n).rev() {
+    for index in (0..usize::from(x.private_n)).rev() {
         if unsafe { x.private_p.add(index).read() } != 0 {
             return index + 1;
         }
