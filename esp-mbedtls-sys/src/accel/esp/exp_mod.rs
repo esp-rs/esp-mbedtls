@@ -333,8 +333,8 @@ fn compute_mprime(m: &mbedtls_mpi) -> u32 {
 #[inline(always)]
 fn mpi_words(x: &mbedtls_mpi) -> usize {
     for index in (0..x.private_n).rev() {
-        if unsafe { x.private_p.add(index).read() } != 0 {
-            return index + 1;
+        if unsafe { x.private_p.add(index.into()).read() } != 0 {
+            return (index + 1) as usize;
         }
     }
 
