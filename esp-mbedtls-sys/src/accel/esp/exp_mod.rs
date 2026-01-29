@@ -2,11 +2,6 @@
 
 use core::ffi::c_int;
 
-use crate::{
-    mbedtls_mpi, mbedtls_mpi_add_mpi, mbedtls_mpi_cmp_int, mbedtls_mpi_exp_mod_soft,
-    mbedtls_mpi_free, mbedtls_mpi_grow, mbedtls_mpi_init, mbedtls_mpi_lset, mbedtls_mpi_mod_mpi,
-    mbedtls_mpi_set_bit, merr, MbedtlsError,
-};
 #[cfg(not(any(
     feature = "accel-esp32c3",
     feature = "accel-esp32c6",
@@ -16,10 +11,14 @@ use crypto_bigint::U4096;
 use crypto_bigint::{U1024, U2048, U512};
 #[cfg(not(feature = "accel-esp32"))]
 use crypto_bigint::{U256, U384};
-
 use esp_hal::rsa::{operand_sizes, RsaContext};
 
 use crate::hook::exp_mod::MbedtlsMpiExpMod;
+use crate::{
+    mbedtls_mpi, mbedtls_mpi_add_mpi, mbedtls_mpi_cmp_int, mbedtls_mpi_exp_mod_soft,
+    mbedtls_mpi_free, mbedtls_mpi_grow, mbedtls_mpi_init, mbedtls_mpi_lset, mbedtls_mpi_mod_mpi,
+    mbedtls_mpi_set_bit, merr, MbedtlsError,
+};
 
 #[cfg(not(feature = "accel-esp32"))]
 const SOC_RSA_MIN_BIT_LEN: usize = 256;
