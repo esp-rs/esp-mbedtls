@@ -270,9 +270,9 @@ impl MbedtlsBuilder {
 
     fn hook_work_area_size_def(&self, hook: Hook) -> Option<usize> {
         match hook {
-            Hook::Sha1 => Some(200),
-            Hook::Sha256 => Some(200),
-            Hook::Sha512 => Some(300),
+            Hook::Sha1 => Some(208),
+            Hook::Sha256 => Some(208),
+            Hook::Sha512 => Some(304),
             _ => None,
         }
     }
