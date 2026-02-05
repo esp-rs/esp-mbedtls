@@ -63,7 +63,7 @@ mod alt {
         digest_clone, digest_finish, digest_free, digest_init, digest_starts, digest_update,
         MbedtlsDigest, RustCryptoDigest,
     };
-    use crate::hook::WorkArea;
+    use crate::hook::{WorkArea, WorkAreaMemory};
     use crate::mbedtls_sha512_context;
 
     use super::{MbedtlsSha384, MbedtlsSha512};
@@ -98,11 +98,11 @@ mod alt {
     }
 
     impl WorkArea for mbedtls_sha512_context {
-        fn area(&self) -> &[u8] {
+        fn memory(&self) -> &WorkAreaMemory {
             &self.work_area
         }
 
-        fn area_mut(&mut self) -> &mut [u8] {
+        fn memory_mut(&mut self) -> &mut WorkAreaMemory {
             &mut self.work_area
         }
     }
