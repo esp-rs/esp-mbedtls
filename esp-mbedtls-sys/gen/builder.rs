@@ -22,6 +22,7 @@ pub enum Hook {
 /// The MbedTLS builder
 pub struct MbedtlsBuilder {
     hooks: EnumSet<Hook>,
+    time_support: bool,
     crate_root_path: PathBuf,
     cmake_configurer: CMakeConfigurer,
     clang_path: Option<PathBuf>,
@@ -34,6 +35,7 @@ impl MbedtlsBuilder {
     ///
     /// Arguments:
     /// - `hooks` - Set of algorithm hooks to enable
+    /// - `time_support`: If true, enable time support in MbedTLS
     /// - `force_clang`: If true, force the use of Clang as the C/C++ compiler
     /// - `crate_root_path`: Path to the root of the crate
     /// - `cmake_rust_target`: Optional target for CMake when building MbedTLS, with Rust target-triple syntax. If not specified, the "TARGET" env variable will be used
@@ -48,6 +50,7 @@ impl MbedtlsBuilder {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         hooks: EnumSet<Hook>,
+        time_support: bool,
         force_clang: bool,
         crate_root_path: PathBuf,
         cmake_rust_target: Option<String>,
@@ -59,6 +62,7 @@ impl MbedtlsBuilder {
     ) -> Self {
         Self {
             hooks,
+            time_support,
             cmake_configurer: CMakeConfigurer::new(
                 force_clang,
                 clang_sysroot_path.clone(),
@@ -168,6 +172,10 @@ impl MbedtlsBuilder {
             }
         }
 
+        for &def in self.time_defs() {
+            builder = builder.clang_arg(format!("-D{def}"));
+        }
+
         let bindings = builder
             .generate()
             .map_err(|_| anyhow!("Failed to generate bindings"))?;
@@ -248,6 +256,10 @@ impl MbedtlsBuilder {
             }
         }
 
+        for &def in self.time_defs() {
+            config.cflag(format!("-D{def}")).cxxflag(format!("-D{def}"));
+        }
+
         config.build();
 
         Ok(lib_dir.to_path_buf())
@@ -274,6 +286,24 @@ impl MbedtlsBuilder {
             Hook::Sha256 => Some(208),
             Hook::Sha512 => Some(304),
             _ => None,
+        }
+    }
+
+    /// Get MbedTLS configuration defines for platform time support.
+    ///
+    /// These defines enable MbedTLS to use our platform-specific time implementation
+    /// provided in src/time/ instead of standard C library time functions.
+    fn time_defs(&self) -> &'static [&'static str] {
+        if self.time_support {
+            &[
+                "MBEDTLS_HAVE_TIME",
+                "MBEDTLS_HAVE_TIME_DATE",
+                "MBEDTLS_PLATFORM_GMTIME_R_ALT",
+                "MBEDTLS_PLATFORM_TIME_ALT",
+                "MBEDTLS_PLATFORM_MS_TIME_ALT",
+            ]
+        } else {
+            &[]
         }
     }
 

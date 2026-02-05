@@ -10,7 +10,6 @@
 
 pub mod digest;
 pub mod exp_mod;
-
 /// The work area memory type used by MbedTLS algorithms' hooks
 pub type WorkAreaMemory = [u8];
 

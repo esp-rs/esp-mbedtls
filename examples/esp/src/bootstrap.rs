@@ -1,6 +1,7 @@
 //! An `esp-hal` bootstrapping code shared by all network examples
 
 use embassy_executor::Spawner;
+use esp_mbedtls::sys::time::TimeGuard;
 
 use embassy_net::{Runner, Stack, StackResources};
 
@@ -51,11 +52,12 @@ esp_bootloader_esp_idf::esp_app_desc!();
 
 const WIFI_SSID: &str = env!("WIFI_SSID");
 const WIFI_PASS: &str = env!("WIFI_PASS");
+const CURRENT_TIME_MS: &str = env!("CURRENT_TIME_MS");
 
 pub async fn bootstrap_stack<const SOCKETS: usize>(
     spawner: Spawner,
     stack_resources: &'static mut StackResources<SOCKETS>,
-) -> (Tls<'static>, Stack<'static>, EspAccel<'static>) {
+) -> (Tls<'static>, Stack<'static>, EspAccel<'static>, TimeGuard) {
     esp_println::logger::init_logger(log::LevelFilter::Info);
 
     info!("Starting...");
@@ -71,6 +73,19 @@ pub async fn bootstrap_stack<const SOCKETS: usize>(
         esp_hal::interrupt::software::SoftwareInterruptControl::new(peripherals.SW_INTERRUPT)
             .software_interrupt0,
     );
+
+    let rtc: &esp_hal::rtc_cntl::Rtc = mk_static!(
+        esp_hal::rtc_cntl::Rtc,
+        esp_hal::rtc_cntl::Rtc::new(peripherals.LPWR)
+    );
+    rtc.set_current_time_us(
+        CURRENT_TIME_MS
+            .parse::<u64>()
+            .expect("Failed to parse CURRENT_TIME_MS")
+            * 1000, // Convert milliseconds to microseconds
+    );
+
+    let time = esp_mbedtls::sys::time::register(rtc);
 
     #[cfg(not(any(feature = "esp32", feature = "esp32c2")))]
     let accel = EspAccel::new(peripherals.SHA, peripherals.RSA);
@@ -100,7 +115,7 @@ pub async fn bootstrap_stack<const SOCKETS: usize>(
 
     wait_ip(stack).await;
 
-    (Tls::new(trng).unwrap(), stack, accel)
+    (Tls::new(trng).unwrap(), stack, accel, time)
 }
 
 async fn wait_ip(stack: Stack<'_>) {

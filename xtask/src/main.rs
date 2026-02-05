@@ -73,6 +73,7 @@ fn main() -> Result<()> {
 
         let builder = builder::MbedtlsBuilder::new(
             EnumSet::all(),
+            false, // no time support
             !use_gcc,
             sys_crate_root_path.clone(),
             Some(target.clone()),

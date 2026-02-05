@@ -18,6 +18,8 @@ pub mod accel;
 #[cfg(not(target_os = "espidf"))]
 pub mod hook;
 pub mod self_test;
+#[cfg(all(feature = "time", not(target_os = "espidf")))]
+pub mod time;
 
 #[allow(
     non_camel_case_types,

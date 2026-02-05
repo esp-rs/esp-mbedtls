@@ -33,6 +33,15 @@ accel-esp32c6 = ["esp-hal/esp32c6", "crypto-bigint"]
 accel-esp32h2 = ["esp-hal/esp32h2", "crypto-bigint"]
 accel-esp32s2 = ["esp-hal/esp32s2", "crypto-bigint"]
 accel-esp32s3 = ["esp-hal/esp32s3", "crypto-bigint"]
+# Enables time driver for the ESP series of MCUs via `esp-hal`
+time-esp32 = ["esp-hal/esp32", "time"]
+time-esp32c2 = ["esp-hal/esp32c2", "time"]
+time-esp32c3 = ["esp-hal/esp32c3", "time"]
+time-esp32c6 = ["esp-hal/esp32c6", "time"]
+time-esp32h2 = ["esp-hal/esp32h2", "time"]
+time-esp32s2 = ["esp-hal/esp32s2", "time"]
+time-esp32s3 = ["esp-hal/esp32s3", "time"]
+time = ["dep:time"]
 
 [dependencies]
 defmt = { version = "1", optional = true }
@@ -43,6 +52,7 @@ digest = { version = "0.10", default-features = false }
 sha1 = { version = "0.10", default-features = false }
 # For some reason, `soft` results in enormous slowdowns on xtensa and riscv32
 sha2 = { version = "0.10", default-features = false, features = ["force-soft-compact"] }
+time = { version = "0.3", default-features = false, optional = true }
 critical-section = "1"
 
 # For esp-hal accel
