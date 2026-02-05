@@ -1,4 +1,4 @@
-# `esp-mbedtls` Examples
+# `mbedtls-rs` Examples
 
 The examples currently run on the following platforms:
 
@@ -111,4 +111,4 @@ Similar to `server` but utilizing the true HTTP server from `edge-http`
 
 ### crypto_self_tests
 
-Runs the MbedTLS crypto self tests for all hookable MbedTLS algorithms in `esp-mbedtls-sys`
+Runs the MbedTLS crypto self tests for all hookable MbedTLS algorithms in `mbedtls-rs-sys`

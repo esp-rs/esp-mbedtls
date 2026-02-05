@@ -1,5 +1,5 @@
 [package]
-name = "esp-mbedtls-sys"
+name = "mbedtls-rs-sys"
 version = "0.1.0"
 edition = "2021"
 links = "mbedtls"

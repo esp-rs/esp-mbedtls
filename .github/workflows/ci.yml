@@ -1,6 +1,6 @@
-# This CI builds the `esp-mbedtls*` crates and their examples.
+# This CI builds the `mbedtls-rs*` crates and their examples.
 #
-# If a change is detected within `esp-mbedtls-sys/`, a rebuild is triggered and this CI will automatically
+# If a change is detected within `mbedtls-rs-sys/`, a rebuild is triggered and this CI will automatically
 # rebuild the libraries using the xtask. Then the tests are executed against the rebuilt libraries.
 #
 # If no rebuild occurs, the examples are built against the latest libraries present in the main branch.
@@ -110,13 +110,13 @@ jobs:
       #       ./
       #       xtask
 
-      - name: Detect esp-mbedtls-sys/ changes
+      - name: Detect mbedtls-rs-sys/ changes
         uses: dorny/paths-filter@v3
         id: detect-changes
         with:
           filters: |
             libs:
-              - 'esp-mbedtls-sys/**'
+              - 'mbedtls-rs-sys/**'
 
       - name: Detect host target triple
         run: |
@@ -157,7 +157,7 @@ jobs:
           steps.detect-changes.outputs.libs == 'true' ||
           contains(github.event.pull_request.labels.*.name, 'rebuild-libs')
         run: |
-          rm -rf esp-mbedtls-sys/libs/*
+          rm -rf mbedtls-rs-sys/libs/*
           cargo +stable xtask gen xtensa-esp32-none-elf
           cargo +stable xtask gen xtensa-esp32s2-none-elf
           cargo +stable xtask gen xtensa-esp32s3-none-elf
@@ -171,11 +171,11 @@ jobs:
           contains(github.event.pull_request.labels.*.name, 'rebuild-libs')
         uses: actions/upload-artifact@v4
         with:
-          name: esp-mbedtls-sys
+          name: mbedtls-rs-sys
           retention-days: 1
           path: |
-            esp-mbedtls-sys/libs
-            esp-mbedtls-sys/src
+            mbedtls-rs-sys/libs
+            mbedtls-rs-sys/src
 
   build-mcu:
     name: Build-MCU
@@ -321,16 +321,16 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          name: esp-mbedtls-sys
+          name: mbedtls-rs-sys
           # Required because else artifacts will be put into the base directory
-          path: esp-mbedtls-sys/
+          path: mbedtls-rs-sys/
 
       - name: Commit and push libraries to ${{ github.head_ref || github.ref_name }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add esp-mbedtls-sys/libs
-          git add esp-mbedtls-sys/src
+          git add mbedtls-rs-sys/libs
+          git add mbedtls-rs-sys/src
           # Only commit and push when there are changes
           git diff --cached --quiet || (
             git commit -m "chore: auto-push built libraries"

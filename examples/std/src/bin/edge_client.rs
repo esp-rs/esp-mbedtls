@@ -1,9 +1,9 @@
-//! Example of a client connection to a server, using the `edge-nal` support in `esp-mbedtls`.
+//! Example of a client connection to a server, using the `edge-nal` support in `mbedtls-rs`.
 //!
 //! This example connects to `https://httpbin.org/ip` and then to `https://certauth.cryptomix.com/json/` (mTLS)
 //! and performs a simple HTTPS 1.1 GET request to each.
 
-use esp_mbedtls::Tls;
+use mbedtls_rs::Tls;
 
 use log::info;
 

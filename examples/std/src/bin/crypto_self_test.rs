@@ -2,7 +2,7 @@
 
 use std::time::Instant;
 
-use esp_mbedtls::sys::self_test::MbedtlsSelfTest;
+use mbedtls_rs::sys::self_test::MbedtlsSelfTest;
 
 use log::{error, info};
 

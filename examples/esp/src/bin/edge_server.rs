@@ -1,4 +1,4 @@
-//! Example of an HTTPS server, using the `edge-nal` support in `esp-mbedtls`.
+//! Example of an HTTPS server, using the `edge-nal` support in `mbedtls-rs`.
 //!
 //! This example runs a simple HTTPS server that answers with a fixed text message to all HTTP GET / requests.
 //!

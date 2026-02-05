@@ -7,7 +7,7 @@ use std::net::{TcpStream, ToSocketAddrs};
 
 use embedded_io_adapters::std::FromStd;
 
-use esp_mbedtls::Tls;
+use mbedtls_rs::Tls;
 
 use log::info;
 

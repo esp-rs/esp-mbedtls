@@ -1,7 +1,7 @@
 //! A platform-agnostic HTTPS 1.0 server using the async API.
 
-use esp_mbedtls::io::{Read, Write};
-use esp_mbedtls::{Session, SessionConfig, SessionError, TlsReference};
+use mbedtls_rs::io::{Read, Write};
+use mbedtls_rs::{Session, SessionConfig, SessionError, TlsReference};
 
 use log::{info, warn};
 
@@ -50,7 +50,7 @@ where
             core::str::from_utf8(&buf[..headers_end]).unwrap_or("???")
         );
 
-        session.write_all(b"HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\nConnection: Close\r\n\r\nHello from esp-mbedtls!\r\n").await?;
+        session.write_all(b"HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\nConnection: Close\r\n\r\nHello from mbedtls-rs!\r\n").await?;
     } else {
         info!("No valid HTTP request received");
     }

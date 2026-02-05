@@ -2,7 +2,7 @@
 
 use core::ffi::CStr;
 
-use esp_mbedtls::{Certificate, ClientSessionConfig, Credentials, ServerSessionConfig, X509};
+use mbedtls_rs::{Certificate, ClientSessionConfig, Credentials, ServerSessionConfig, X509};
 
 const CA_BUNDLE: &CStr = match CStr::from_bytes_with_nul(
     concat!(include_str!("certs/ca-bundle-small.pem"), "\0").as_bytes(),
@@ -24,7 +24,7 @@ pub fn client_conf<'a>(mtls: bool, server_name: Option<&'a CStr>) -> ClientSessi
     if mtls {
         conf.creds = Some(Credentials {
             certificate: Certificate::new_no_copy(CERT).unwrap(),
-            private_key: esp_mbedtls::PrivateKey::new(X509::DER(KEY), None).unwrap(),
+            private_key: mbedtls_rs::PrivateKey::new(X509::DER(KEY), None).unwrap(),
         });
     }
 
@@ -38,7 +38,7 @@ pub fn server_conf(mtls: bool) -> ServerSessionConfig<'static> {
         ca_chain: Some(cert.clone()),
         ..ServerSessionConfig::new(Credentials {
             certificate: cert.clone(),
-            private_key: esp_mbedtls::PrivateKey::new(X509::DER(KEY), None).unwrap(),
+            private_key: mbedtls_rs::PrivateKey::new(X509::DER(KEY), None).unwrap(),
         })
     };
 

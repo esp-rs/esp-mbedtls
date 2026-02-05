@@ -29,7 +29,7 @@ pub mod self_test;
 )]
 mod bindings {
     #[cfg(not(target_os = "espidf"))]
-    include!(env!("ESP_MBEDTLS_SYS_BINDINGS_FILE"));
+    include!(env!("MBEDTLS_RS_SYS_BINDINGS_FILE"));
 
     #[cfg(target_os = "espidf")]
     pub use esp_idf_sys::*;

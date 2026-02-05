@@ -1,8 +1,8 @@
 [workspace]
 resolver = "2"
 members = [
-    "esp-mbedtls",
-    "esp-mbedtls-sys",
+    "mbedtls-rs",
+    "mbedtls-rs-sys",
 ]
 
 exclude = ["examples", "xtask"]

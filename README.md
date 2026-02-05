@@ -1,6 +1,6 @@
-# esp-mbedtls
+# mbedtls-rs
 
-This repository hosts the [esp-mbedtls](esp-mbedtls), [esp-mbedtls-sys](esp-mbedtls-sys) and [examples](examples) crates.
+This repository hosts the [mbedtls-rs](mbedtls-rs), [mbedtls-rs-sys](mbedtls-rs-sys) and [examples](examples) crates.
 
 For more information, consult the respective README of each crate.
 

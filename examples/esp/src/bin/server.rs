@@ -1,5 +1,5 @@
 //! Example of an HTTPS server.
-//! Demonstrates the usage of the async API of esp-mbedtls.
+//! Demonstrates the usage of the async API of mbedtls-rs.
 //!
 //! Since the server certificates are self-signed, the easiest way to test is with:
 //! ```sh
@@ -19,7 +19,7 @@ use embassy_net::{tcp::TcpSocket, IpListenEndpoint, StackResources};
 use esp_alloc::heap_allocator;
 use esp_backtrace as _;
 
-use esp_mbedtls::Tls;
+use mbedtls_rs::Tls;
 
 use log::{info, warn};
 

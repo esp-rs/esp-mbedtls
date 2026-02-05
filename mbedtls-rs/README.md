@@ -1,11 +1,9 @@
-# esp-mbedtls*
+# mbedtls-rs
 
 Rust library implementing transparent TLS encryption/decrypton for IO streams.
 `no_std` compatible (but needs `alloc`!) and thus suitable for use on baremetal MCUs.
 
-Uses MbedTLS 3.X under the hood, via `esp-mbedtls-sys`.
-
-(*) NOTE: Name to be changed soon as this crate is no longer ESP-specific.
+Uses MbedTLS 3.X under the hood, via `mbedtls-rs-sys`.
 
 Example (see all in the `examples` folder):
 ```rust
@@ -13,8 +11,8 @@ Example (see all in the `examples` folder):
 
 use core::ffi::CStr;
 
-use esp_mbedtls::io::{Read, Write};
-use esp_mbedtls::{Session, SessionConfig, SessionError, TlsReference};
+use mbedtls_rs::io::{Read, Write};
+use mbedtls_rs::{Session, SessionConfig, SessionError, TlsReference};
 
 use log::info;
 

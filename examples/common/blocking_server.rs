@@ -1,8 +1,8 @@
 //! A platform-agnostic HTTPS 1.0 server using the blocking API.
 
-use esp_mbedtls::blocking::io::{Read, Write};
-use esp_mbedtls::blocking::Session;
-use esp_mbedtls::{SessionConfig, SessionError, TlsReference};
+use mbedtls_rs::blocking::io::{Read, Write};
+use mbedtls_rs::blocking::Session;
+use mbedtls_rs::{SessionConfig, SessionError, TlsReference};
 
 use log::{info, warn};
 
@@ -51,7 +51,7 @@ where
             core::str::from_utf8(&buf[..headers_end]).unwrap_or("???")
         );
 
-        session.write_all(b"HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\nConnection: Close\r\n\r\nHello from esp-mbedtls!\r\n")?;
+        session.write_all(b"HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\nConnection: Close\r\n\r\nHello from mbedtls-rs!\r\n")?;
     } else {
         info!("No valid HTTP request received");
     }

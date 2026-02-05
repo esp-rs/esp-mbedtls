@@ -33,10 +33,10 @@ mod cert;
 mod edge_nal;
 mod session;
 
-/// Re-export of the esp-mbedtls-sys crate so that users do not have to
+/// Re-export of the mbedtls-rs-sys crate so that users do not have to
 /// explicitly depend on it if they want to use the raw MbedTLS bindings.
 pub mod sys {
-    pub use esp_mbedtls_sys::*;
+    pub use mbedtls_rs_sys::*;
 }
 
 static RNG: Mutex<RefCell<Option<&mut (dyn CryptoRng + Send)>>> = Mutex::new(RefCell::new(None));

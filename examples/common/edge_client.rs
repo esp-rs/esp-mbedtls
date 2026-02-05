@@ -1,5 +1,5 @@
 //! Example of an HTTPS client implemented with the `edge-http` crate.
-//! Demonstrates the usage of the `edge-nal` `TcpConnect` trait implementation in `esp-mbedtls`.
+//! Demonstrates the usage of the `edge-nal` `TcpConnect` trait implementation in `mbedtls-rs`.
 
 use core::ffi::CStr;
 use core::net::SocketAddr;
@@ -7,9 +7,9 @@ use core::net::SocketAddr;
 use edge_http::io::client::Connection;
 use edge_http::Method;
 
-use esp_mbedtls::io::Read;
-use esp_mbedtls::nal::{AddrType, Dns, TcpConnect};
-use esp_mbedtls::{Tls, TlsConnector};
+use mbedtls_rs::io::Read;
+use mbedtls_rs::nal::{AddrType, Dns, TcpConnect};
+use mbedtls_rs::{Tls, TlsConnector};
 
 use log::info;
 
