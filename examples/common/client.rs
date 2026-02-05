@@ -2,8 +2,8 @@
 
 use core::ffi::CStr;
 
-use esp_mbedtls::io::{Read, Write};
-use esp_mbedtls::{Session, SessionConfig, SessionError, TlsReference};
+use mbedtls_rs::io::{Read, Write};
+use mbedtls_rs::{Session, SessionConfig, SessionError, TlsReference};
 
 use log::info;
 

@@ -19,9 +19,9 @@ use esp_backtrace as _;
 use esp_hal::ram;
 use esp_hal::timer::timg::TimerGroup;
 
-use esp_mbedtls::sys::accel::esp::EspAccel;
-use esp_mbedtls::sys::self_test::MbedtlsSelfTest;
 use esp_metadata_generated::memory_range;
+use mbedtls_rs::sys::accel::esp::EspAccel;
+use mbedtls_rs::sys::self_test::MbedtlsSelfTest;
 
 use esp_radio as _;
 

@@ -82,7 +82,7 @@ fn main() -> Result<()> {
 
     if let Some((bindings, libs_dir)) = dirs {
         println!(
-            "cargo::rustc-env=ESP_MBEDTLS_SYS_BINDINGS_FILE={}",
+            "cargo::rustc-env=MBEDTLS_RS_SYS_BINDINGS_FILE={}",
             bindings.display()
         );
 

@@ -15,7 +15,7 @@ use std::net::TcpListener;
 
 use embedded_io_adapters::std::FromStd;
 
-use esp_mbedtls::Tls;
+use mbedtls_rs::Tls;
 
 use log::{info, warn};
 

@@ -1,0 +1,42 @@
+[package]
+name = "mbedtls-rs"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+rust-version = "1.84"
+
+[lib]
+harness = false
+
+[features]
+default = ["edge-nal"]
+defmt = ["dep:defmt", "mbedtls-rs-sys/defmt"]
+log = ["dep:log", "mbedtls-rs-sys/log"]
+
+# Re-expose mbedtls-rs-sys features
+use-gcc = ["mbedtls-rs-sys/use-gcc"]
+force-generate-bindings = ["mbedtls-rs-sys/force-generate-bindings"]
+force-esp-riscv-gcc = ["mbedtls-rs-sys/force-esp-riscv-gcc"]
+nohook = ["mbedtls-rs-sys/nohook"]
+nohook-sha1 = ["mbedtls-rs-sys/nohook-sha1"]
+nohook-sha256 = ["mbedtls-rs-sys/nohook-sha256"]
+nohook-sha512 = ["mbedtls-rs-sys/nohook-sha512"]
+nohook-exp-mod = ["mbedtls-rs-sys/nohook-exp-mod"]
+accel-esp32 = ["mbedtls-rs-sys/accel-esp32"]
+accel-esp32c2 = ["mbedtls-rs-sys/accel-esp32c2"]
+accel-esp32c3 = ["mbedtls-rs-sys/accel-esp32c3"]
+accel-esp32c6 = ["mbedtls-rs-sys/accel-esp32c6"]
+accel-esp32h2 = ["mbedtls-rs-sys/accel-esp32h2"]
+accel-esp32s2 = ["mbedtls-rs-sys/accel-esp32s2"]
+accel-esp32s3 = ["mbedtls-rs-sys/accel-esp32s3"]
+
+[dependencies]
+mbedtls-rs-sys = { path = "../mbedtls-rs-sys", default-features = false }
+defmt = { version = "1", optional = true }
+log = { version = "0.4", default-features = false, optional = true }
+embedded-io = { version = "0.7" }
+embedded-io-async = { version = "0.7" }
+enumset = { version = "1", default-features = false }
+rand_core = "0.9"
+critical-section = "1"
+edge-nal = { version = "0.6", optional = true }

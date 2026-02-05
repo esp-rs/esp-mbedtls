@@ -11,7 +11,7 @@ use log::LevelFilter;
 
 use tempdir::TempDir;
 
-#[path = "../../esp-mbedtls-sys/gen/builder.rs"]
+#[path = "../../mbedtls-rs-sys/gen/builder.rs"]
 mod builder;
 
 // Arguments
@@ -54,7 +54,7 @@ fn main() -> Result<()> {
     let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let workspace = workspace.parent().unwrap().canonicalize()?;
 
-    let sys_crate_root_path = workspace.join("esp-mbedtls-sys");
+    let sys_crate_root_path = workspace.join("mbedtls-rs-sys");
 
     let args = Args::parse();
 
@@ -67,9 +67,7 @@ fn main() -> Result<()> {
         let use_gcc = use_gcc || force_esp_riscv_gcc;
 
         // For clang, use our own cross-platform sysroot
-        let sysroot = (!use_gcc).then(|| sys_crate_root_path
-            .join("gen")
-            .join("sysroot"));
+        let sysroot = (!use_gcc).then(|| sys_crate_root_path.join("gen").join("sysroot"));
 
         let builder = builder::MbedtlsBuilder::new(
             EnumSet::all(),

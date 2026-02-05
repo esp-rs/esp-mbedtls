@@ -9,7 +9,7 @@ use async_io_mini::Async;
 
 use embedded_io_adapters::futures_03::FromFutures;
 
-use esp_mbedtls::Tls;
+use mbedtls_rs::Tls;
 
 use log::info;
 
