@@ -137,6 +137,36 @@ where
         }
     }
 }
+#[repr(C)]
+#[derive(Default)]
+pub struct __IncompleteArrayField<T>(::core::marker::PhantomData<T>, [T; 0]);
+impl<T> __IncompleteArrayField<T> {
+    #[inline]
+    pub const fn new() -> Self {
+        __IncompleteArrayField(::core::marker::PhantomData, [])
+    }
+    #[inline]
+    pub fn as_ptr(&self) -> *const T {
+        self as *const _ as *const T
+    }
+    #[inline]
+    pub fn as_mut_ptr(&mut self) -> *mut T {
+        self as *mut _ as *mut T
+    }
+    #[inline]
+    pub unsafe fn as_slice(&self, len: usize) -> &[T] {
+        ::core::slice::from_raw_parts(self.as_ptr(), len)
+    }
+    #[inline]
+    pub unsafe fn as_mut_slice(&mut self, len: usize) -> &mut [T] {
+        ::core::slice::from_raw_parts_mut(self.as_mut_ptr(), len)
+    }
+}
+impl<T> ::core::fmt::Debug for __IncompleteArrayField<T> {
+    fn fmt(&self, fmt: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+        fmt.write_str("__IncompleteArrayField")
+    }
+}
 pub const MBEDTLS_CONFIG_FILE: &[u8; 9] = b"config.h\0";
 pub const MBEDTLS_SSL_DTLS_CONNECTION_ID_COMPAT: u32 = 0;
 pub const MBEDTLS_SSL_MAX_EARLY_DATA_SIZE: u32 = 1024;
@@ -144,14 +174,33 @@ pub const MBEDTLS_SSL_TLS1_3_TICKET_AGE_TOLERANCE: u32 = 6000;
 pub const MBEDTLS_SSL_TLS1_3_TICKET_NONCE_LENGTH: u32 = 32;
 pub const MBEDTLS_SSL_TLS1_3_DEFAULT_NEW_SESSION_TICKETS: u32 = 1;
 pub const MBEDTLS_VERSION_MAJOR: u32 = 3;
-pub const MBEDTLS_VERSION_MINOR: u32 = 4;
-pub const MBEDTLS_VERSION_PATCH: u32 = 0;
-pub const MBEDTLS_VERSION_NUMBER: u32 = 50593792;
-pub const MBEDTLS_VERSION_STRING: &[u8; 6] = b"3.4.0\0";
-pub const MBEDTLS_VERSION_STRING_FULL: &[u8; 15] = b"mbed TLS 3.4.0\0";
+pub const MBEDTLS_VERSION_MINOR: u32 = 6;
+pub const MBEDTLS_VERSION_PATCH: u32 = 5;
+pub const MBEDTLS_VERSION_NUMBER: u32 = 50726144;
+pub const MBEDTLS_VERSION_STRING: &[u8; 6] = b"3.6.5\0";
+pub const MBEDTLS_VERSION_STRING_FULL: &[u8; 15] = b"Mbed TLS 3.6.5\0";
+pub const PSA_WANT_ALG_MD5: u32 = 1;
+pub const PSA_WANT_ALG_RIPEMD160: u32 = 1;
+pub const PSA_WANT_ALG_SHA_1: u32 = 1;
+pub const PSA_WANT_ALG_SHA_224: u32 = 1;
+pub const PSA_WANT_ALG_SHA_256: u32 = 1;
+pub const PSA_WANT_ALG_SHA_384: u32 = 1;
+pub const PSA_WANT_ALG_SHA_512: u32 = 1;
+pub const PSA_WANT_ECC_BRAINPOOL_P_R1_256: u32 = 1;
+pub const PSA_WANT_ECC_BRAINPOOL_P_R1_384: u32 = 1;
+pub const PSA_WANT_ECC_BRAINPOOL_P_R1_512: u32 = 1;
+pub const PSA_WANT_ECC_MONTGOMERY_255: u32 = 1;
+pub const PSA_WANT_ECC_MONTGOMERY_448: u32 = 1;
+pub const PSA_WANT_ECC_SECP_R1_192: u32 = 1;
+pub const PSA_WANT_ECC_SECP_R1_224: u32 = 1;
+pub const PSA_WANT_ECC_SECP_R1_256: u32 = 1;
+pub const PSA_WANT_ECC_SECP_R1_384: u32 = 1;
+pub const PSA_WANT_ECC_SECP_R1_521: u32 = 1;
+pub const PSA_WANT_ECC_SECP_K1_192: u32 = 1;
+pub const PSA_WANT_ECC_SECP_K1_256: u32 = 1;
 pub const MBEDTLS_PSA_BUILTIN_ALG_CCM: u32 = 1;
-pub const MBEDTLS_PSA_BUILTIN_ALG_CCM_STAR_NO_TAG: u32 = 1;
 pub const PSA_WANT_ALG_CCM: u32 = 1;
+pub const MBEDTLS_PSA_BUILTIN_ALG_CCM_STAR_NO_TAG: u32 = 1;
 pub const PSA_WANT_ALG_CCM_STAR_NO_TAG: u32 = 1;
 pub const MBEDTLS_PSA_BUILTIN_ALG_CMAC: u32 = 1;
 pub const PSA_WANT_ALG_CMAC: u32 = 1;
@@ -162,10 +211,40 @@ pub const PSA_WANT_ALG_ECDSA: u32 = 1;
 pub const PSA_WANT_ALG_ECDSA_ANY: u32 = 1;
 pub const MBEDTLS_PSA_BUILTIN_ALG_DETERMINISTIC_ECDSA: u32 = 1;
 pub const PSA_WANT_ALG_DETERMINISTIC_ECDSA: u32 = 1;
-pub const MBEDTLS_PSA_BUILTIN_KEY_TYPE_ECC_KEY_PAIR: u32 = 1;
-pub const PSA_WANT_KEY_TYPE_ECC_KEY_PAIR: u32 = 1;
+pub const PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_BASIC: u32 = 1;
+pub const PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT: u32 = 1;
+pub const PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT: u32 = 1;
+pub const PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE: u32 = 1;
+pub const PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_DERIVE: u32 = 1;
+pub const MBEDTLS_PSA_BUILTIN_KEY_TYPE_ECC_KEY_PAIR_BASIC: u32 = 1;
+pub const MBEDTLS_PSA_BUILTIN_KEY_TYPE_ECC_KEY_PAIR_IMPORT: u32 = 1;
+pub const MBEDTLS_PSA_BUILTIN_KEY_TYPE_ECC_KEY_PAIR_EXPORT: u32 = 1;
+pub const MBEDTLS_PSA_BUILTIN_KEY_TYPE_ECC_KEY_PAIR_GENERATE: u32 = 1;
+pub const MBEDTLS_PSA_BUILTIN_KEY_TYPE_ECC_KEY_PAIR_DERIVE: u32 = 1;
 pub const MBEDTLS_PSA_BUILTIN_KEY_TYPE_ECC_PUBLIC_KEY: u32 = 1;
 pub const PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY: u32 = 1;
+pub const PSA_WANT_KEY_TYPE_DH_KEY_PAIR_BASIC: u32 = 1;
+pub const PSA_WANT_KEY_TYPE_DH_KEY_PAIR_IMPORT: u32 = 1;
+pub const PSA_WANT_KEY_TYPE_DH_KEY_PAIR_EXPORT: u32 = 1;
+pub const PSA_WANT_KEY_TYPE_DH_KEY_PAIR_GENERATE: u32 = 1;
+pub const PSA_WANT_KEY_TYPE_DH_PUBLIC_KEY: u32 = 1;
+pub const PSA_WANT_ALG_FFDH: u32 = 1;
+pub const PSA_WANT_DH_RFC7919_2048: u32 = 1;
+pub const PSA_WANT_DH_RFC7919_3072: u32 = 1;
+pub const PSA_WANT_DH_RFC7919_4096: u32 = 1;
+pub const PSA_WANT_DH_RFC7919_6144: u32 = 1;
+pub const PSA_WANT_DH_RFC7919_8192: u32 = 1;
+pub const MBEDTLS_PSA_BUILTIN_ALG_FFDH: u32 = 1;
+pub const MBEDTLS_PSA_BUILTIN_KEY_TYPE_DH_KEY_PAIR_BASIC: u32 = 1;
+pub const MBEDTLS_PSA_BUILTIN_KEY_TYPE_DH_KEY_PAIR_IMPORT: u32 = 1;
+pub const MBEDTLS_PSA_BUILTIN_KEY_TYPE_DH_KEY_PAIR_EXPORT: u32 = 1;
+pub const MBEDTLS_PSA_BUILTIN_KEY_TYPE_DH_KEY_PAIR_GENERATE: u32 = 1;
+pub const MBEDTLS_PSA_BUILTIN_KEY_TYPE_DH_PUBLIC_KEY: u32 = 1;
+pub const MBEDTLS_PSA_BUILTIN_DH_RFC7919_2048: u32 = 1;
+pub const MBEDTLS_PSA_BUILTIN_DH_RFC7919_3072: u32 = 1;
+pub const MBEDTLS_PSA_BUILTIN_DH_RFC7919_4096: u32 = 1;
+pub const MBEDTLS_PSA_BUILTIN_DH_RFC7919_6144: u32 = 1;
+pub const MBEDTLS_PSA_BUILTIN_DH_RFC7919_8192: u32 = 1;
 pub const MBEDTLS_PSA_BUILTIN_ALG_GCM: u32 = 1;
 pub const PSA_WANT_ALG_GCM: u32 = 1;
 pub const MBEDTLS_PSA_BUILTIN_ALG_HMAC: u32 = 1;
@@ -176,17 +255,16 @@ pub const MBEDTLS_PSA_BUILTIN_ALG_HKDF_EXTRACT: u32 = 1;
 pub const PSA_WANT_ALG_HKDF_EXTRACT: u32 = 1;
 pub const MBEDTLS_PSA_BUILTIN_ALG_HKDF_EXPAND: u32 = 1;
 pub const PSA_WANT_ALG_HKDF_EXPAND: u32 = 1;
+pub const PSA_WANT_KEY_TYPE_HMAC: u32 = 1;
 pub const MBEDTLS_PSA_BUILTIN_ALG_TLS12_PRF: u32 = 1;
 pub const PSA_WANT_ALG_TLS12_PRF: u32 = 1;
 pub const MBEDTLS_PSA_BUILTIN_ALG_TLS12_PSK_TO_MS: u32 = 1;
 pub const PSA_WANT_ALG_TLS12_PSK_TO_MS: u32 = 1;
 pub const MBEDTLS_PSA_BUILTIN_ALG_MD5: u32 = 1;
-pub const PSA_WANT_ALG_MD5: u32 = 1;
 pub const MBEDTLS_PSA_BUILTIN_PAKE: u32 = 1;
 pub const MBEDTLS_PSA_BUILTIN_ALG_JPAKE: u32 = 1;
 pub const PSA_WANT_ALG_JPAKE: u32 = 1;
 pub const MBEDTLS_PSA_BUILTIN_ALG_RIPEMD160: u32 = 1;
-pub const PSA_WANT_ALG_RIPEMD160: u32 = 1;
 pub const MBEDTLS_PSA_BUILTIN_ALG_RSA_PKCS1V15_CRYPT: u32 = 1;
 pub const PSA_WANT_ALG_RSA_PKCS1V15_CRYPT: u32 = 1;
 pub const MBEDTLS_PSA_BUILTIN_ALG_RSA_PKCS1V15_SIGN: u32 = 1;
@@ -196,20 +274,19 @@ pub const MBEDTLS_PSA_BUILTIN_ALG_RSA_OAEP: u32 = 1;
 pub const PSA_WANT_ALG_RSA_OAEP: u32 = 1;
 pub const MBEDTLS_PSA_BUILTIN_ALG_RSA_PSS: u32 = 1;
 pub const PSA_WANT_ALG_RSA_PSS: u32 = 1;
-pub const MBEDTLS_PSA_BUILTIN_KEY_TYPE_RSA_KEY_PAIR: u32 = 1;
-pub const PSA_WANT_KEY_TYPE_RSA_KEY_PAIR: u32 = 1;
+pub const MBEDTLS_PSA_BUILTIN_KEY_TYPE_RSA_KEY_PAIR_BASIC: u32 = 1;
+pub const MBEDTLS_PSA_BUILTIN_KEY_TYPE_RSA_KEY_PAIR_IMPORT: u32 = 1;
+pub const MBEDTLS_PSA_BUILTIN_KEY_TYPE_RSA_KEY_PAIR_EXPORT: u32 = 1;
+pub const PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_BASIC: u32 = 1;
+pub const PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_IMPORT: u32 = 1;
+pub const PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_EXPORT: u32 = 1;
 pub const MBEDTLS_PSA_BUILTIN_KEY_TYPE_RSA_PUBLIC_KEY: u32 = 1;
 pub const PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY: u32 = 1;
 pub const MBEDTLS_PSA_BUILTIN_ALG_SHA_1: u32 = 1;
-pub const PSA_WANT_ALG_SHA_1: u32 = 1;
 pub const MBEDTLS_PSA_BUILTIN_ALG_SHA_224: u32 = 1;
-pub const PSA_WANT_ALG_SHA_224: u32 = 1;
 pub const MBEDTLS_PSA_BUILTIN_ALG_SHA_256: u32 = 1;
-pub const PSA_WANT_ALG_SHA_256: u32 = 1;
 pub const MBEDTLS_PSA_BUILTIN_ALG_SHA_384: u32 = 1;
-pub const PSA_WANT_ALG_SHA_384: u32 = 1;
 pub const MBEDTLS_PSA_BUILTIN_ALG_SHA_512: u32 = 1;
-pub const PSA_WANT_ALG_SHA_512: u32 = 1;
 pub const PSA_WANT_KEY_TYPE_AES: u32 = 1;
 pub const MBEDTLS_PSA_BUILTIN_KEY_TYPE_AES: u32 = 1;
 pub const PSA_WANT_KEY_TYPE_ARIA: u32 = 1;
@@ -221,8 +298,8 @@ pub const MBEDTLS_PSA_BUILTIN_KEY_TYPE_DES: u32 = 1;
 pub const MBEDTLS_PSA_BUILTIN_ALG_TLS12_ECJPAKE_TO_PMS: u32 = 1;
 pub const PSA_WANT_ALG_TLS12_ECJPAKE_TO_PMS: u32 = 1;
 pub const PSA_WANT_KEY_TYPE_CHACHA20: u32 = 1;
-pub const PSA_WANT_ALG_STREAM_CIPHER: u32 = 1;
 pub const MBEDTLS_PSA_BUILTIN_KEY_TYPE_CHACHA20: u32 = 1;
+pub const PSA_WANT_ALG_STREAM_CIPHER: u32 = 1;
 pub const MBEDTLS_PSA_BUILTIN_ALG_STREAM_CIPHER: u32 = 1;
 pub const PSA_WANT_ALG_CHACHA20_POLY1305: u32 = 1;
 pub const MBEDTLS_PSA_BUILTIN_ALG_CHACHA20_POLY1305: u32 = 1;
@@ -250,8 +327,7 @@ pub const MBEDTLS_PSA_BUILTIN_ECC_SECP_R1_384: u32 = 1;
 pub const MBEDTLS_PSA_BUILTIN_ECC_SECP_R1_521: u32 = 1;
 pub const MBEDTLS_PSA_BUILTIN_ECC_SECP_K1_192: u32 = 1;
 pub const MBEDTLS_PSA_BUILTIN_ECC_SECP_K1_256: u32 = 1;
-pub const PSA_HAVE_FULL_ECDSA: u32 = 1;
-pub const PSA_HAVE_FULL_JPAKE: u32 = 1;
+pub const PSA_WANT_ALG_SOME_PAKE: u32 = 1;
 pub const PSA_WANT_KEY_TYPE_DERIVE: u32 = 1;
 pub const PSA_WANT_KEY_TYPE_PASSWORD: u32 = 1;
 pub const PSA_WANT_KEY_TYPE_PASSWORD_HASH: u32 = 1;
@@ -272,7 +348,7 @@ pub const MBEDTLS_ERR_MPI_DIVISION_BY_ZERO: i32 = -12;
 pub const MBEDTLS_ERR_MPI_NOT_ACCEPTABLE: i32 = -14;
 pub const MBEDTLS_ERR_MPI_ALLOC_FAILED: i32 = -16;
 pub const MBEDTLS_MPI_MAX_LIMBS: u32 = 10000;
-pub const MBEDTLS_MPI_WINDOW_SIZE: u32 = 2;
+pub const MBEDTLS_MPI_WINDOW_SIZE: u32 = 3;
 pub const MBEDTLS_MPI_MAX_SIZE: u32 = 1024;
 pub const MBEDTLS_MPI_MAX_BITS: u32 = 8192;
 pub const MBEDTLS_MPI_MAX_BITS_SCALE100: u32 = 819200;
@@ -320,6 +396,8 @@ pub const MBEDTLS_CIPHER_VARIABLE_KEY_LEN: u32 = 2;
 pub const MBEDTLS_MAX_IV_LENGTH: u32 = 16;
 pub const MBEDTLS_MAX_BLOCK_LENGTH: u32 = 16;
 pub const MBEDTLS_MAX_KEY_LENGTH: u32 = 64;
+pub const MBEDTLS_KEY_BITLEN_SHIFT: u32 = 6;
+pub const MBEDTLS_IV_SIZE_SHIFT: u32 = 2;
 pub const MBEDTLS_CCM_DECRYPT: u32 = 0;
 pub const MBEDTLS_CCM_ENCRYPT: u32 = 1;
 pub const MBEDTLS_CCM_STAR_DECRYPT: u32 = 2;
@@ -332,7 +410,26 @@ pub const MBEDTLS_ERR_CHACHAPOLY_BAD_STATE: i32 = -84;
 pub const MBEDTLS_ERR_CHACHAPOLY_AUTH_FAILED: i32 = -86;
 pub const MBEDTLS_AES_BLOCK_SIZE: u32 = 16;
 pub const MBEDTLS_DES3_BLOCK_SIZE: u32 = 8;
+pub const MBEDTLS_CMAC_MAX_BLOCK_SIZE: u32 = 16;
 pub const MBEDTLS_CIPHER_BLKSIZE_MAX: u32 = 16;
+pub const MBEDTLS_ERR_MD_FEATURE_UNAVAILABLE: i32 = -20608;
+pub const MBEDTLS_ERR_MD_BAD_INPUT_DATA: i32 = -20736;
+pub const MBEDTLS_ERR_MD_ALLOC_FAILED: i32 = -20864;
+pub const MBEDTLS_ERR_MD_FILE_IO_ERROR: i32 = -20992;
+pub const MBEDTLS_MD_MAX_SIZE: u32 = 64;
+pub const MBEDTLS_MD_MAX_BLOCK_SIZE: u32 = 128;
+pub const MBEDTLS_ENTROPY_BLOCK_SIZE: u32 = 64;
+pub const MBEDTLS_ERR_ENTROPY_SOURCE_FAILED: i32 = -60;
+pub const MBEDTLS_ERR_ENTROPY_MAX_SOURCES: i32 = -62;
+pub const MBEDTLS_ERR_ENTROPY_NO_SOURCES_DEFINED: i32 = -64;
+pub const MBEDTLS_ERR_ENTROPY_NO_STRONG_SOURCE: i32 = -61;
+pub const MBEDTLS_ERR_ENTROPY_FILE_IO_ERROR: i32 = -63;
+pub const MBEDTLS_ENTROPY_MAX_SOURCES: u32 = 20;
+pub const MBEDTLS_ENTROPY_MAX_GATHER: u32 = 128;
+pub const MBEDTLS_ENTROPY_MAX_SEED_SIZE: u32 = 1024;
+pub const MBEDTLS_ENTROPY_SOURCE_MANUAL: u32 = 20;
+pub const MBEDTLS_ENTROPY_SOURCE_STRONG: u32 = 1;
+pub const MBEDTLS_ENTROPY_SOURCE_WEAK: u32 = 0;
 pub const MBEDTLS_ERR_CTR_DRBG_ENTROPY_SOURCE_FAILED: i32 = -52;
 pub const MBEDTLS_ERR_CTR_DRBG_REQUEST_TOO_BIG: i32 = -54;
 pub const MBEDTLS_ERR_CTR_DRBG_INPUT_TOO_BIG: i32 = -56;
@@ -367,12 +464,6 @@ pub const MBEDTLS_ECP_MAX_PT_LEN: u32 = 133;
 pub const MBEDTLS_ECP_PF_UNCOMPRESSED: u32 = 0;
 pub const MBEDTLS_ECP_PF_COMPRESSED: u32 = 1;
 pub const MBEDTLS_ECP_TLS_NAMED_CURVE: u32 = 3;
-pub const MBEDTLS_ERR_MD_FEATURE_UNAVAILABLE: i32 = -20608;
-pub const MBEDTLS_ERR_MD_BAD_INPUT_DATA: i32 = -20736;
-pub const MBEDTLS_ERR_MD_ALLOC_FAILED: i32 = -20864;
-pub const MBEDTLS_ERR_MD_FILE_IO_ERROR: i32 = -20992;
-pub const MBEDTLS_MD_MAX_SIZE: u32 = 64;
-pub const MBEDTLS_MD_MAX_BLOCK_SIZE: u32 = 128;
 pub const MBEDTLS_ERR_RSA_BAD_INPUT_DATA: i32 = -16512;
 pub const MBEDTLS_ERR_RSA_INVALID_PADDING: i32 = -16640;
 pub const MBEDTLS_ERR_RSA_KEY_GEN_FAILED: i32 = -16768;
@@ -387,6 +478,55 @@ pub const MBEDTLS_RSA_PKCS_V21: u32 = 1;
 pub const MBEDTLS_RSA_SIGN: u32 = 1;
 pub const MBEDTLS_RSA_CRYPT: u32 = 2;
 pub const MBEDTLS_RSA_SALT_LEN_ANY: i32 = -1;
+pub const MBEDTLS_RSA_GEN_KEY_MIN_BITS: u32 = 1024;
+pub const PSA_CRYPTO_API_VERSION_MAJOR: u32 = 1;
+pub const PSA_CRYPTO_API_VERSION_MINOR: u32 = 0;
+pub const PSA_MAC_TRUNCATION_OFFSET: u32 = 16;
+pub const PSA_AEAD_TAG_LENGTH_OFFSET: u32 = 16;
+pub const PSA_HMAC_MAX_HASH_BLOCK_SIZE: u32 = 128;
+pub const PSA_HASH_MAX_SIZE: u32 = 64;
+pub const PSA_MAC_MAX_SIZE: u32 = 64;
+pub const PSA_AEAD_TAG_MAX_SIZE: u32 = 16;
+pub const PSA_VENDOR_RSA_MAX_KEY_BITS: u32 = 4096;
+pub const PSA_VENDOR_RSA_GENERATE_MIN_KEY_BITS: u32 = 1024;
+pub const PSA_VENDOR_FFDH_MAX_KEY_BITS: u32 = 8192;
+pub const PSA_VENDOR_ECC_MAX_CURVE_BITS: u32 = 521;
+pub const PSA_TLS12_PSK_TO_MS_PSK_MAX_SIZE: u32 = 128;
+pub const PSA_TLS12_ECJPAKE_TO_PMS_INPUT_SIZE: u32 = 65;
+pub const PSA_TLS12_ECJPAKE_TO_PMS_DATA_SIZE: u32 = 32;
+pub const PSA_VENDOR_PBKDF2_MAX_ITERATIONS: u32 = 4294967295;
+pub const PSA_BLOCK_CIPHER_BLOCK_MAX_SIZE: u32 = 16;
+pub const PSA_AEAD_NONCE_MAX_SIZE: u32 = 13;
+pub const PSA_AEAD_FINISH_OUTPUT_MAX_SIZE: u32 = 16;
+pub const PSA_AEAD_VERIFY_OUTPUT_MAX_SIZE: u32 = 16;
+pub const PSA_SIGNATURE_MAX_SIZE: u32 = 1;
+pub const PSA_EXPORT_KEY_PAIR_MAX_SIZE: u32 = 1;
+pub const PSA_EXPORT_PUBLIC_KEY_MAX_SIZE: u32 = 1;
+pub const PSA_RAW_KEY_AGREEMENT_OUTPUT_MAX_SIZE: u32 = 1;
+pub const PSA_CIPHER_MAX_KEY_LENGTH: u32 = 32;
+pub const PSA_CIPHER_IV_MAX_SIZE: u32 = 16;
+pub const PSA_CIPHER_FINISH_OUTPUT_MAX_SIZE: u32 = 16;
+pub const MBEDTLS_ERR_SHA1_BAD_INPUT_DATA: i32 = -115;
+pub const MBEDTLS_ERR_SHA256_BAD_INPUT_DATA: i32 = -116;
+pub const MBEDTLS_ERR_SHA512_BAD_INPUT_DATA: i32 = -117;
+pub const MBEDTLS_ERR_SHA3_BAD_INPUT_DATA: i32 = -118;
+pub const MBEDTLS_PSA_BUILTIN_CIPHER: u32 = 1;
+pub const MBEDTLS_GCM_ENCRYPT: u32 = 1;
+pub const MBEDTLS_GCM_DECRYPT: u32 = 0;
+pub const MBEDTLS_ERR_GCM_AUTH_FAILED: i32 = -18;
+pub const MBEDTLS_ERR_GCM_BAD_INPUT: i32 = -20;
+pub const MBEDTLS_ERR_GCM_BUFFER_TOO_SMALL: i32 = -22;
+pub const MBEDTLS_GCM_HTABLE_SIZE: u32 = 16;
+pub const MBEDTLS_PSA_BUILTIN_AEAD: u32 = 1;
+pub const MBEDTLS_PSA_JPAKE_BUFFER_SIZE: u32 = 336;
+pub const PSA_MAX_KEY_BITS: u32 = 65528;
+pub const PSA_CRYPTO_ITS_RANDOM_SEED_UID: u32 = 4294967122;
+pub const MBEDTLS_PSA_KEY_SLOT_COUNT: u32 = 32;
+pub const PSA_PAKE_OPERATION_STAGE_SETUP: u32 = 0;
+pub const PSA_PAKE_OPERATION_STAGE_COLLECT_INPUTS: u32 = 1;
+pub const PSA_PAKE_OPERATION_STAGE_COMPUTATION: u32 = 2;
+pub const PSA_PAKE_OUTPUT_MAX_SIZE: u32 = 65;
+pub const PSA_PAKE_INPUT_MAX_SIZE: u32 = 65;
 pub const MBEDTLS_ERR_PK_ALLOC_FAILED: i32 = -16256;
 pub const MBEDTLS_ERR_PK_TYPE_MISMATCH: i32 = -16128;
 pub const MBEDTLS_ERR_PK_BAD_INPUT_DATA: i32 = -16000;
@@ -597,45 +737,6 @@ pub const MBEDTLS_TLS1_3_AES_128_CCM_8_SHA256: u32 = 4869;
 pub const MBEDTLS_CIPHERSUITE_WEAK: u32 = 1;
 pub const MBEDTLS_CIPHERSUITE_SHORT_TAG: u32 = 2;
 pub const MBEDTLS_CIPHERSUITE_NODTLS: u32 = 4;
-pub const PSA_CRYPTO_API_VERSION_MAJOR: u32 = 1;
-pub const PSA_CRYPTO_API_VERSION_MINOR: u32 = 0;
-pub const PSA_MAC_TRUNCATION_OFFSET: u32 = 16;
-pub const PSA_AEAD_TAG_LENGTH_OFFSET: u32 = 16;
-pub const PSA_HASH_MAX_SIZE: u32 = 64;
-pub const PSA_HMAC_MAX_HASH_BLOCK_SIZE: u32 = 128;
-pub const PSA_MAC_MAX_SIZE: u32 = 64;
-pub const PSA_AEAD_TAG_MAX_SIZE: u32 = 16;
-pub const PSA_VENDOR_RSA_MAX_KEY_BITS: u32 = 4096;
-pub const PSA_VENDOR_ECC_MAX_CURVE_BITS: u32 = 521;
-pub const PSA_TLS12_PSK_TO_MS_PSK_MAX_SIZE: u32 = 128;
-pub const PSA_TLS12_ECJPAKE_TO_PMS_INPUT_SIZE: u32 = 65;
-pub const PSA_TLS12_ECJPAKE_TO_PMS_DATA_SIZE: u32 = 32;
-pub const PSA_BLOCK_CIPHER_BLOCK_MAX_SIZE: u32 = 16;
-pub const PSA_AEAD_NONCE_MAX_SIZE: u32 = 13;
-pub const PSA_AEAD_FINISH_OUTPUT_MAX_SIZE: u32 = 16;
-pub const PSA_AEAD_VERIFY_OUTPUT_MAX_SIZE: u32 = 16;
-pub const PSA_CIPHER_IV_MAX_SIZE: u32 = 16;
-pub const PSA_CIPHER_FINISH_OUTPUT_MAX_SIZE: u32 = 16;
-pub const MBEDTLS_GCM_ENCRYPT: u32 = 1;
-pub const MBEDTLS_GCM_DECRYPT: u32 = 0;
-pub const MBEDTLS_ERR_GCM_AUTH_FAILED: i32 = -18;
-pub const MBEDTLS_ERR_GCM_BAD_INPUT: i32 = -20;
-pub const MBEDTLS_ERR_GCM_BUFFER_TOO_SMALL: i32 = -22;
-pub const MBEDTLS_ERR_SHA1_BAD_INPUT_DATA: i32 = -115;
-pub const MBEDTLS_ERR_SHA256_BAD_INPUT_DATA: i32 = -116;
-pub const MBEDTLS_ERR_SHA512_BAD_INPUT_DATA: i32 = -117;
-pub const MBEDTLS_PSA_BUILTIN_CIPHER: u32 = 1;
-pub const MBEDTLS_PSA_BUILTIN_AEAD: u32 = 1;
-pub const MBEDTLS_PSA_JPAKE_BUFFER_SIZE: u32 = 336;
-pub const PSA_MAX_KEY_BITS: u32 = 65528;
-pub const MBEDTLS_PSA_KA_MASK_DUAL_USE: u32 = 0;
-pub const PSA_CRYPTO_ITS_RANDOM_SEED_UID: u32 = 4294967122;
-pub const MBEDTLS_PSA_KEY_SLOT_COUNT: u32 = 32;
-pub const PSA_PAKE_OPERATION_STAGE_SETUP: u32 = 0;
-pub const PSA_PAKE_OPERATION_STAGE_COLLECT_INPUTS: u32 = 1;
-pub const PSA_PAKE_OPERATION_STAGE_COMPUTATION: u32 = 2;
-pub const PSA_PAKE_OUTPUT_MAX_SIZE: u32 = 65;
-pub const PSA_PAKE_INPUT_MAX_SIZE: u32 = 65;
 pub const MBEDTLS_X509_MAX_INTERMEDIATE_CA: u32 = 8;
 pub const MBEDTLS_ERR_X509_FEATURE_UNAVAILABLE: i32 = -8320;
 pub const MBEDTLS_ERR_X509_UNKNOWN_OID: i32 = -8448;
@@ -743,7 +844,9 @@ pub const MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY: i32 = -30848;
 pub const MBEDTLS_ERR_SSL_BAD_CERTIFICATE: i32 = -31232;
 pub const MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET: i32 = -31488;
 pub const MBEDTLS_ERR_SSL_CANNOT_READ_EARLY_DATA: i32 = -31616;
-pub const MBEDTLS_ERR_SSL_CANNOT_WRITE_EARLY_DATA: i32 = -31744;
+pub const MBEDTLS_ERR_SSL_RECEIVED_EARLY_DATA: i32 = -31744;
+pub const MBEDTLS_ERR_SSL_CANNOT_WRITE_EARLY_DATA: i32 = -31872;
+pub const MBEDTLS_ERR_SSL_CACHE_ENTRY_NOT_FOUND: i32 = -32384;
 pub const MBEDTLS_ERR_SSL_ALLOC_FAILED: i32 = -32512;
 pub const MBEDTLS_ERR_SSL_HW_ACCEL_FAILED: i32 = -32640;
 pub const MBEDTLS_ERR_SSL_HW_ACCEL_FALLTHROUGH: i32 = -28544;
@@ -770,6 +873,7 @@ pub const MBEDTLS_ERR_SSL_EARLY_MESSAGE: i32 = -25728;
 pub const MBEDTLS_ERR_SSL_UNEXPECTED_CID: i32 = -24576;
 pub const MBEDTLS_ERR_SSL_VERSION_MISMATCH: i32 = -24320;
 pub const MBEDTLS_ERR_SSL_BAD_CONFIG: i32 = -24192;
+pub const MBEDTLS_ERR_SSL_CERTIFICATE_VERIFICATION_WITHOUT_HOSTNAME: i32 = -23936;
 pub const MBEDTLS_SSL_TLS1_3_PSK_MODE_PURE: u32 = 0;
 pub const MBEDTLS_SSL_TLS1_3_PSK_MODE_ECDHE: u32 = 1;
 pub const MBEDTLS_SSL_IANA_TLS_GROUP_NONE: u32 = 0;
@@ -841,6 +945,8 @@ pub const MBEDTLS_SSL_TRUNC_HMAC_ENABLED: u32 = 1;
 pub const MBEDTLS_SSL_TRUNCATED_HMAC_LEN: u32 = 10;
 pub const MBEDTLS_SSL_SESSION_TICKETS_DISABLED: u32 = 0;
 pub const MBEDTLS_SSL_SESSION_TICKETS_ENABLED: u32 = 1;
+pub const MBEDTLS_SSL_TLS1_3_SIGNAL_NEW_SESSION_TICKETS_DISABLED: u32 = 0;
+pub const MBEDTLS_SSL_TLS1_3_SIGNAL_NEW_SESSION_TICKETS_ENABLED: u32 = 1;
 pub const MBEDTLS_SSL_PRESET_DEFAULT: u32 = 0;
 pub const MBEDTLS_SSL_PRESET_SUITEB: u32 = 2;
 pub const MBEDTLS_SSL_CERT_REQ_CA_LIST_ENABLED: u32 = 1;
@@ -854,6 +960,9 @@ pub const MBEDTLS_SSL_SRV_CIPHERSUITE_ORDER_SERVER: u32 = 0;
 pub const MBEDTLS_SSL_TLS1_3_TICKET_RESUMPTION_KEY_LEN: u32 = 48;
 pub const MBEDTLS_SSL_DTLS_TIMEOUT_DFL_MIN: u32 = 1000;
 pub const MBEDTLS_SSL_DTLS_TIMEOUT_DFL_MAX: u32 = 60000;
+pub const MBEDTLS_SSL_EARLY_DATA_NO_DISCARD: u32 = 0;
+pub const MBEDTLS_SSL_EARLY_DATA_TRY_TO_DEPROTECT_AND_DISCARD: u32 = 1;
+pub const MBEDTLS_SSL_EARLY_DATA_DISCARD: u32 = 2;
 pub const MBEDTLS_SSL_IN_CONTENT_LEN: u32 = 16384;
 pub const MBEDTLS_SSL_OUT_CONTENT_LEN: u32 = 16384;
 pub const MBEDTLS_SSL_DTLS_MAX_BUFFERING: u32 = 32768;
@@ -988,18 +1097,6 @@ pub const MBEDTLS_SSL_UNEXPECTED_CID_IGNORE: u32 = 0;
 pub const MBEDTLS_SSL_UNEXPECTED_CID_FAIL: u32 = 1;
 pub const MBEDTLS_PRINTF_SIZET: &[u8; 3] = b"zu\0";
 pub const MBEDTLS_PRINTF_LONGLONG: &[u8; 4] = b"lld\0";
-pub const MBEDTLS_ERR_ENTROPY_SOURCE_FAILED: i32 = -60;
-pub const MBEDTLS_ERR_ENTROPY_MAX_SOURCES: i32 = -62;
-pub const MBEDTLS_ERR_ENTROPY_NO_SOURCES_DEFINED: i32 = -64;
-pub const MBEDTLS_ERR_ENTROPY_NO_STRONG_SOURCE: i32 = -61;
-pub const MBEDTLS_ERR_ENTROPY_FILE_IO_ERROR: i32 = -63;
-pub const MBEDTLS_ENTROPY_MAX_SOURCES: u32 = 20;
-pub const MBEDTLS_ENTROPY_MAX_GATHER: u32 = 128;
-pub const MBEDTLS_ENTROPY_BLOCK_SIZE: u32 = 64;
-pub const MBEDTLS_ENTROPY_MAX_SEED_SIZE: u32 = 1024;
-pub const MBEDTLS_ENTROPY_SOURCE_MANUAL: u32 = 20;
-pub const MBEDTLS_ENTROPY_SOURCE_STRONG: u32 = 1;
-pub const MBEDTLS_ENTROPY_SOURCE_WEAK: u32 = 0;
 pub const MBEDTLS_ERR_HKDF_BAD_INPUT_DATA: i32 = -24448;
 pub const MBEDTLS_ERR_HMAC_DRBG_REQUEST_TOO_BIG: i32 = -3;
 pub const MBEDTLS_ERR_HMAC_DRBG_INPUT_TOO_BIG: i32 = -5;
@@ -1041,6 +1138,7 @@ pub const MBEDTLS_OID_X509_EXT_CRL_DISTRIBUTION_POINTS: u32 = 4096;
 pub const MBEDTLS_OID_X509_EXT_INIHIBIT_ANYPOLICY: u32 = 8192;
 pub const MBEDTLS_OID_X509_EXT_FRESHEST_CRL: u32 = 16384;
 pub const MBEDTLS_OID_X509_EXT_NS_CERT_TYPE: u32 = 65536;
+pub const MBEDTLS_OID_MAX_COMPONENTS: u32 = 128;
 pub const MBEDTLS_OID_ISO_MEMBER_BODIES: &[u8; 2] = b"*\0";
 pub const MBEDTLS_OID_ISO_IDENTIFIED_ORG: &[u8; 2] = b"+\0";
 pub const MBEDTLS_OID_ISO_CCITT_DS: &[u8; 2] = b"U\0";
@@ -1055,6 +1153,8 @@ pub const MBEDTLS_OID_ORG_OIW: &[u8; 2] = b"\x0E\0";
 pub const MBEDTLS_OID_OIW_SECSIG: &[u8; 3] = b"\x0E\x03\0";
 pub const MBEDTLS_OID_OIW_SECSIG_ALG: &[u8; 4] = b"\x0E\x03\x02\0";
 pub const MBEDTLS_OID_OIW_SECSIG_SHA1: &[u8; 5] = b"\x0E\x03\x02\x1A\0";
+pub const MBEDTLS_OID_ORG_THAWTE: &[u8; 2] = b"e\0";
+pub const MBEDTLS_OID_THAWTE: &[u8; 3] = b"+e\0";
 pub const MBEDTLS_OID_ORG_CERTICOM: &[u8; 3] = b"\x81\x04\0";
 pub const MBEDTLS_OID_CERTICOM: &[u8; 4] = b"+\x81\x04\0";
 pub const MBEDTLS_OID_ORG_TELETRUST: &[u8; 2] = b"$\0";
@@ -1153,14 +1253,26 @@ pub const MBEDTLS_OID_DIGEST_ALG_SHA256: &[u8; 10] = b"`\x86H\x01e\x03\x04\x02\x
 pub const MBEDTLS_OID_DIGEST_ALG_SHA384: &[u8; 10] = b"`\x86H\x01e\x03\x04\x02\x02\0";
 pub const MBEDTLS_OID_DIGEST_ALG_SHA512: &[u8; 10] = b"`\x86H\x01e\x03\x04\x02\x03\0";
 pub const MBEDTLS_OID_DIGEST_ALG_RIPEMD160: &[u8; 6] = b"+$\x03\x02\x01\0";
+pub const MBEDTLS_OID_DIGEST_ALG_SHA3_224: &[u8; 10] = b"`\x86H\x01e\x03\x04\x02\x07\0";
+pub const MBEDTLS_OID_DIGEST_ALG_SHA3_256: &[u8; 10] = b"`\x86H\x01e\x03\x04\x02\x08\0";
+pub const MBEDTLS_OID_DIGEST_ALG_SHA3_384: &[u8; 10] = b"`\x86H\x01e\x03\x04\x02\t\0";
+pub const MBEDTLS_OID_DIGEST_ALG_SHA3_512: &[u8; 10] = b"`\x86H\x01e\x03\x04\x02\n\0";
 pub const MBEDTLS_OID_HMAC_SHA1: &[u8; 9] = b"*\x86H\x86\xF7\r\x02\x07\0";
 pub const MBEDTLS_OID_HMAC_SHA224: &[u8; 9] = b"*\x86H\x86\xF7\r\x02\x08\0";
 pub const MBEDTLS_OID_HMAC_SHA256: &[u8; 9] = b"*\x86H\x86\xF7\r\x02\t\0";
 pub const MBEDTLS_OID_HMAC_SHA384: &[u8; 9] = b"*\x86H\x86\xF7\r\x02\n\0";
 pub const MBEDTLS_OID_HMAC_SHA512: &[u8; 9] = b"*\x86H\x86\xF7\r\x02\x0B\0";
+pub const MBEDTLS_OID_HMAC_SHA3_224: &[u8; 10] = b"`\x86H\x01e\x03\x04\x02\r\0";
+pub const MBEDTLS_OID_HMAC_SHA3_256: &[u8; 10] = b"`\x86H\x01e\x03\x04\x02\x0E\0";
+pub const MBEDTLS_OID_HMAC_SHA3_384: &[u8; 10] = b"`\x86H\x01e\x03\x04\x02\x0F\0";
+pub const MBEDTLS_OID_HMAC_SHA3_512: &[u8; 10] = b"`\x86H\x01e\x03\x04\x02\x10\0";
+pub const MBEDTLS_OID_HMAC_RIPEMD160: &[u8; 9] = b"+\x06\x01\x05\x05\x08\x01\x04\0";
 pub const MBEDTLS_OID_DES_CBC: &[u8; 6] = b"+\x0E\x03\x02\x07\0";
 pub const MBEDTLS_OID_DES_EDE3_CBC: &[u8; 9] = b"*\x86H\x86\xF7\r\x03\x07\0";
 pub const MBEDTLS_OID_AES: &[u8; 9] = b"`\x86H\x01e\x03\x04\x01\0";
+pub const MBEDTLS_OID_AES_128_CBC: &[u8; 10] = b"`\x86H\x01e\x03\x04\x01\x02\0";
+pub const MBEDTLS_OID_AES_192_CBC: &[u8; 10] = b"`\x86H\x01e\x03\x04\x01\x16\0";
+pub const MBEDTLS_OID_AES_256_CBC: &[u8; 10] = b"`\x86H\x01e\x03\x04\x01*\0";
 pub const MBEDTLS_OID_AES128_KW: &[u8; 10] = b"`\x86H\x01e\x03\x04\x01\x05\0";
 pub const MBEDTLS_OID_AES128_KWP: &[u8; 10] = b"`\x86H\x01e\x03\x04\x01\x08\0";
 pub const MBEDTLS_OID_AES192_KW: &[u8; 10] = b"`\x86H\x01e\x03\x04\x01\x19\0";
@@ -1213,6 +1325,10 @@ pub const MBEDTLS_OID_ECDSA_SHA224: &[u8; 9] = b"*\x86H\xCE=\x04\x03\x01\0";
 pub const MBEDTLS_OID_ECDSA_SHA256: &[u8; 9] = b"*\x86H\xCE=\x04\x03\x02\0";
 pub const MBEDTLS_OID_ECDSA_SHA384: &[u8; 9] = b"*\x86H\xCE=\x04\x03\x03\0";
 pub const MBEDTLS_OID_ECDSA_SHA512: &[u8; 9] = b"*\x86H\xCE=\x04\x03\x04\0";
+pub const MBEDTLS_OID_X25519: &[u8; 4] = b"+en\0";
+pub const MBEDTLS_OID_X448: &[u8; 4] = b"+eo\0";
+pub const MBEDTLS_OID_ED25519: &[u8; 4] = b"+ep\0";
+pub const MBEDTLS_OID_ED448: &[u8; 4] = b"+eq\0";
 pub const MBEDTLS_ERR_PEM_NO_HEADER_FOOTER_PRESENT: i32 = -4224;
 pub const MBEDTLS_ERR_PEM_INVALID_DATA: i32 = -4352;
 pub const MBEDTLS_ERR_PEM_ALLOC_FAILED: i32 = -4480;
@@ -1226,8 +1342,6 @@ pub const MBEDTLS_ERR_PKCS5_BAD_INPUT_DATA: i32 = -12160;
 pub const MBEDTLS_ERR_PKCS5_INVALID_FORMAT: i32 = -12032;
 pub const MBEDTLS_ERR_PKCS5_FEATURE_UNAVAILABLE: i32 = -11904;
 pub const MBEDTLS_ERR_PKCS5_PASSWORD_MISMATCH: i32 = -11776;
-pub const MBEDTLS_PKCS5_DECRYPT: u32 = 0;
-pub const MBEDTLS_PKCS5_ENCRYPT: u32 = 1;
 pub const MBEDTLS_ERR_PKCS7_INVALID_FORMAT: i32 = -21248;
 pub const MBEDTLS_ERR_PKCS7_FEATURE_UNAVAILABLE: i32 = -21376;
 pub const MBEDTLS_ERR_PKCS7_INVALID_VERSION: i32 = -21504;
@@ -1248,8 +1362,6 @@ pub const MBEDTLS_ERR_PKCS12_PASSWORD_MISMATCH: i32 = -7680;
 pub const MBEDTLS_PKCS12_DERIVE_KEY: u32 = 1;
 pub const MBEDTLS_PKCS12_DERIVE_IV: u32 = 2;
 pub const MBEDTLS_PKCS12_DERIVE_MAC_KEY: u32 = 3;
-pub const MBEDTLS_PKCS12_PBE_DECRYPT: u32 = 0;
-pub const MBEDTLS_PKCS12_PBE_ENCRYPT: u32 = 1;
 pub const MBEDTLS_SSL_CACHE_DEFAULT_TIMEOUT: u32 = 86400;
 pub const MBEDTLS_SSL_CACHE_DEFAULT_MAX_ENTRIES: u32 = 50;
 pub const MBEDTLS_SSL_COOKIE_TIMEOUT: u32 = 60;
@@ -1375,6 +1487,59 @@ unsafe extern "C" {
     /// \param len   Length of the buffer in bytes
     pub fn mbedtls_platform_zeroize(buf: *mut ::core::ffi::c_void, len: usize);
 }
+/// \brief              The type of custom random generator (RNG) callbacks.
+///
+///                      Many Mbed TLS functions take two parameters
+///                      `mbedtls_f_rng_t *f_rng, void *p_rng`. The
+///                      library will call \c f_rng to generate
+///                      random values.
+///
+/// \note                This is typically one of the following:
+///                      - mbedtls_ctr_drbg_random() with \c p_rng
+///                        pointing to a #mbedtls_ctr_drbg_context;
+///                      - mbedtls_hmac_drbg_random() with \c p_rng
+///                        pointing to a #mbedtls_hmac_drbg_context;
+///                      - mbedtls_psa_get_random() with
+///                        `prng = MBEDTLS_PSA_RANDOM_STATE`.
+///
+/// \note                Generally, given a call
+///                      `mbedtls_foo(f_rng, p_rng, ....)`, the RNG callback
+///                      and the context only need to remain valid until
+///                      the call to `mbedtls_foo` returns. However, there
+///                      are a few exceptions where the callback is stored
+///                      in for future use. Check the documentation of
+///                      the calling function.
+///
+/// \warning             In a multithreaded environment, calling the
+///                      function should be thread-safe. The standard
+///                      functions provided by the library are thread-safe
+///                      when #MBEDTLS_THREADING_C is enabled.
+///
+/// \warning             This function must either provide as many
+///                      bytes as requested of **cryptographic quality**
+///                      random data, or return a negative error code.
+///
+/// \param p_rng         The \c p_rng argument that was passed along \c f_rng.
+///                      The library always passes \c p_rng unchanged.
+///                      This is typically a pointer to the random generator
+///                      state, or \c NULL if the custom random generator
+///                      doesn't need a context-specific state.
+/// \param[out] output   On success, this must be filled with \p output_size
+///                      bytes of cryptographic-quality random data.
+/// \param output_size   The number of bytes to output.
+///
+/// \return              \c 0 on success, or a negative error code on failure.
+///                      Library functions will generally propagate this
+///                      error code, so \c MBEDTLS_ERR_xxx values are
+///                      recommended. #MBEDTLS_ERR_ENTROPY_SOURCE_FAILED is
+///                      typically sensible for RNG failures.
+pub type mbedtls_f_rng_t = ::core::option::Option<
+    unsafe extern "C" fn(
+        p_rng: *mut ::core::ffi::c_void,
+        output: *mut ::core::ffi::c_uchar,
+        output_size: usize,
+    ) -> ::core::ffi::c_int,
+>;
 /// \brief The AES context-type definition.
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -1933,6 +2098,10 @@ pub type mbedtls_t_udbl = u64;
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_mpi {
+    /// Pointer to limbs.
+    ///
+    /// This may be \c NULL if \c n is 0.
+    pub private_p: *mut mbedtls_mpi_uint,
     /// Sign: -1 if the mpi is negative, 1 otherwise.
     ///
     /// The number 0 must be represented with `s = +1`. Although many library
@@ -1943,13 +2112,9 @@ pub struct mbedtls_mpi {
     ///
     /// Note that this implies that calloc() or `... = {0}` does not create
     /// a valid MPI representation. You must call mbedtls_mpi_init().
-    pub private_s: ::core::ffi::c_int,
+    pub private_s: ::core::ffi::c_short,
     /// Total number of limbs in \c p.
-    pub private_n: usize,
-    /// Pointer to limbs.
-    ///
-    /// This may be \c NULL if \c n is 0.
-    pub private_p: *mut mbedtls_mpi_uint,
+    pub private_n: ::core::ffi::c_ushort,
 }
 impl Default for mbedtls_mpi {
     fn default() -> Self {
@@ -2224,7 +2389,7 @@ unsafe extern "C" {
     /// \param X        The destination MPI. This must point to an initialized MPI.
     /// \param buf      The input buffer. This must be a readable buffer of length
     ///                 \p buflen Bytes.
-    /// \param buflen   The length of the input buffer \p p in Bytes.
+    /// \param buflen   The length of the input buffer \p buf in Bytes.
     ///
     /// \return         \c 0 if successful.
     /// \return         #MBEDTLS_ERR_MPI_ALLOC_FAILED if memory allocation failed.
@@ -2241,7 +2406,7 @@ unsafe extern "C" {
     /// \param X        The destination MPI. This must point to an initialized MPI.
     /// \param buf      The input buffer. This must be a readable buffer of length
     ///                 \p buflen Bytes.
-    /// \param buflen   The length of the input buffer \p p in Bytes.
+    /// \param buflen   The length of the input buffer \p buf in Bytes.
     ///
     /// \return         \c 0 if successful.
     /// \return         #MBEDTLS_ERR_MPI_ALLOC_FAILED if memory allocation failed.
@@ -2296,6 +2461,8 @@ unsafe extern "C" {
     /// \brief          Perform a left-shift on an MPI: X <<= count
     ///
     /// \param X        The MPI to shift. This must point to an initialized MPI.
+    ///                 The MPI pointed by \p X may be resized to fit
+    ///                 the resulting number.
     /// \param count    The number of bits to shift by.
     ///
     /// \return         \c 0 if successful.
@@ -2588,7 +2755,7 @@ unsafe extern "C" {
     ) -> ::core::ffi::c_int;
 }
 unsafe extern "C" {
-    /// \brief          Perform a sliding-window exponentiation: X = A^E mod N
+    /// \brief          Perform a modular exponentiation: X = A^E mod N
     ///
     /// \param X        The destination MPI. This must point to an initialized MPI.
     ///                 This must not alias E or N.
@@ -2639,13 +2806,7 @@ unsafe extern "C" {
     pub fn mbedtls_mpi_fill_random(
         X: *mut mbedtls_mpi,
         size: usize,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
     ) -> ::core::ffi::c_int;
 }
@@ -2685,13 +2846,7 @@ unsafe extern "C" {
         X: *mut mbedtls_mpi,
         min: mbedtls_mpi_sint,
         N: *const mbedtls_mpi,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
     ) -> ::core::ffi::c_int;
 }
@@ -2699,6 +2854,7 @@ unsafe extern "C" {
     /// \brief          Compute the greatest common divisor: G = gcd(A, B)
     ///
     /// \param G        The destination MPI. This must point to an initialized MPI.
+    ///                 This will always be positive or 0.
     /// \param A        The first operand. This must point to an initialized MPI.
     /// \param B        The second operand. This must point to an initialized MPI.
     ///
@@ -2715,17 +2871,19 @@ unsafe extern "C" {
     /// \brief          Compute the modular inverse: X = A^-1 mod N
     ///
     /// \param X        The destination MPI. This must point to an initialized MPI.
+    ///                 The value returned on success will be between [1, N-1].
     /// \param A        The MPI to calculate the modular inverse of. This must point
-    ///                 to an initialized MPI.
+    ///                 to an initialized MPI. This value can be negative, in which
+    ///                 case a positive answer will still be returned in \p X.
     /// \param N        The base of the modular inversion. This must point to an
-    ///                 initialized MPI.
+    ///                 initialized MPI and be greater than one.
     ///
     /// \return         \c 0 if successful.
     /// \return         #MBEDTLS_ERR_MPI_ALLOC_FAILED if a memory allocation failed.
     /// \return         #MBEDTLS_ERR_MPI_BAD_INPUT_DATA if \p N is less than
     ///                 or equal to one.
-    /// \return         #MBEDTLS_ERR_MPI_NOT_ACCEPTABLE if \p has no modular inverse
-    ///                 with respect to \p N.
+    /// \return         #MBEDTLS_ERR_MPI_NOT_ACCEPTABLE if \p A has no modular
+    ///                 inverse with respect to \p N.
     pub fn mbedtls_mpi_inv_mod(
         X: *mut mbedtls_mpi,
         A: *const mbedtls_mpi,
@@ -2748,7 +2906,7 @@ unsafe extern "C" {
     ///                 This must point to an initialized MPI.
     /// \param rounds   The number of bases to perform the Miller-Rabin primality
     ///                 test for. The probability of returning 0 on a composite is
-    ///                 at most 2<sup>-2*\p rounds</sup>.
+    ///                 at most 2<sup>-2*\p rounds </sup>.
     /// \param f_rng    The RNG function to use. This must not be \c NULL.
     /// \param p_rng    The RNG parameter to be passed to \p f_rng.
     ///                 This may be \c NULL if \p f_rng doesn't use
@@ -2761,13 +2919,7 @@ unsafe extern "C" {
     pub fn mbedtls_mpi_is_prime_ext(
         X: *const mbedtls_mpi,
         rounds: ::core::ffi::c_int,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
     ) -> ::core::ffi::c_int;
 }
@@ -2804,13 +2956,7 @@ unsafe extern "C" {
         X: *mut mbedtls_mpi,
         nbits: usize,
         flags: ::core::ffi::c_int,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
     ) -> ::core::ffi::c_int;
 }
@@ -3187,7 +3333,7 @@ unsafe extern "C" {
     ///                       on a successful invocation.
     /// \param end            The end of the ASN.1 SEQUENCE container.
     /// \param tag_must_mask  A mask to be applied to the ASN.1 tags found within
-    ///                       the SEQUENCE before comparing to \p tag_must_value.
+    ///                       the SEQUENCE before comparing to \p tag_must_val.
     /// \param tag_must_val   The required value of each ASN.1 tag found in the
     ///                       SEQUENCE, after masking with \p tag_must_mask.
     ///                       Mismatching tags lead to an error.
@@ -3196,7 +3342,7 @@ unsafe extern "C" {
     ///                       while a value of \c 0xFF for \p tag_must_mask means
     ///                       that \p tag_must_val is the only allowed tag.
     /// \param tag_may_mask   A mask to be applied to the ASN.1 tags found within
-    ///                       the SEQUENCE before comparing to \p tag_may_value.
+    ///                       the SEQUENCE before comparing to \p tag_may_val.
     /// \param tag_may_val    The desired value of each ASN.1 tag found in the
     ///                       SEQUENCE, after masking with \p tag_may_mask.
     ///                       Mismatching tags will be silently ignored.
@@ -3487,6 +3633,30 @@ unsafe extern "C" {
         oid: *const ::core::ffi::c_char,
         oid_len: usize,
         par_len: usize,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           Write an AlgorithmIdentifier sequence in ASN.1 format.
+    ///
+    /// \note            This function works backwards in data buffer.
+    ///
+    /// \param p         The reference to the current position pointer.
+    /// \param start     The start of the buffer, for bounds-checking.
+    /// \param oid       The OID of the algorithm to write.
+    /// \param oid_len   The length of the algorithm's OID.
+    /// \param par_len   The length of the parameters, which must be already written.
+    /// \param has_par   If there are any parameters. If 0, par_len must be 0. If 1
+    ///                  and \p par_len is 0, NULL parameters are added.
+    ///
+    /// \return          The number of bytes written to \p p on success.
+    /// \return          A negative \c MBEDTLS_ERR_ASN1_XXX error code on failure.
+    pub fn mbedtls_asn1_write_algorithm_identifier_ext(
+        p: *mut *mut ::core::ffi::c_uchar,
+        start: *const ::core::ffi::c_uchar,
+        oid: *const ::core::ffi::c_char,
+        oid_len: usize,
+        par_len: usize,
+        has_par: ::core::ffi::c_int,
     ) -> ::core::ffi::c_int;
 }
 unsafe extern "C" {
@@ -3991,32 +4161,17 @@ pub struct mbedtls_cipher_base_t {
 ///              mbedtls_cipher_info_from_type(),
 ///              mbedtls_cipher_info_from_values(),
 ///              mbedtls_cipher_info_from_psa().
+///
+/// \note        Some fields store a value that has been right-shifted to save
+///              code-size, so should not be used directly. The accessor
+///              functions adjust for this and return the "natural" value.
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_cipher_info_t {
-    /// Full cipher identifier. For example,
-    /// MBEDTLS_CIPHER_AES_256_CBC.
-    pub private_type: mbedtls_cipher_type_t,
-    /// The cipher mode. For example, MBEDTLS_MODE_CBC.
-    pub private_mode: mbedtls_cipher_mode_t,
-    /// The cipher key length, in bits. This is the
-    /// default length for variable sized ciphers.
-    /// Includes parity bits for ciphers like DES.
-    pub private_key_bitlen: ::core::ffi::c_uint,
     /// Name of the cipher.
     pub private_name: *const ::core::ffi::c_char,
-    /// IV or nonce size, in Bytes.
-    /// For ciphers that accept variable IV sizes,
-    /// this is the recommended size.
-    pub private_iv_size: ::core::ffi::c_uint,
-    /// Bitflag comprised of MBEDTLS_CIPHER_VARIABLE_IV_LEN and
-    ///  MBEDTLS_CIPHER_VARIABLE_KEY_LEN indicating whether the
-    ///  cipher supports variable IV or variable key sizes, respectively.
-    pub private_flags: ::core::ffi::c_int,
-    /// The block size, in Bytes.
-    pub private_block_size: ::core::ffi::c_uint,
-    /// Struct for base cipher information and functions.
-    pub private_base: *const mbedtls_cipher_base_t,
+    pub _bitfield_align_1: [u8; 0],
+    pub _bitfield_1: __BindgenBitfieldUnit<[u8; 4usize]>,
 }
 impl Default for mbedtls_cipher_info_t {
     fn default() -> Self {
@@ -4025,6 +4180,280 @@ impl Default for mbedtls_cipher_info_t {
             ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
             s.assume_init()
         }
+    }
+}
+impl mbedtls_cipher_info_t {
+    #[inline]
+    pub fn private_block_size(&self) -> ::core::ffi::c_uint {
+        unsafe { ::core::mem::transmute(self._bitfield_1.get(0usize, 5u8) as u32) }
+    }
+    #[inline]
+    pub fn set_private_block_size(&mut self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            self._bitfield_1.set(0usize, 5u8, val as u64)
+        }
+    }
+    #[inline]
+    pub unsafe fn private_block_size_raw(this: *const Self) -> ::core::ffi::c_uint {
+        unsafe {
+            ::core::mem::transmute(<__BindgenBitfieldUnit<[u8; 4usize]>>::raw_get(
+                ::core::ptr::addr_of!((*this)._bitfield_1),
+                0usize,
+                5u8,
+            ) as u32)
+        }
+    }
+    #[inline]
+    pub unsafe fn set_private_block_size_raw(this: *mut Self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            <__BindgenBitfieldUnit<[u8; 4usize]>>::raw_set(
+                ::core::ptr::addr_of_mut!((*this)._bitfield_1),
+                0usize,
+                5u8,
+                val as u64,
+            )
+        }
+    }
+    #[inline]
+    pub fn private_iv_size(&self) -> ::core::ffi::c_uint {
+        unsafe { ::core::mem::transmute(self._bitfield_1.get(5usize, 3u8) as u32) }
+    }
+    #[inline]
+    pub fn set_private_iv_size(&mut self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            self._bitfield_1.set(5usize, 3u8, val as u64)
+        }
+    }
+    #[inline]
+    pub unsafe fn private_iv_size_raw(this: *const Self) -> ::core::ffi::c_uint {
+        unsafe {
+            ::core::mem::transmute(<__BindgenBitfieldUnit<[u8; 4usize]>>::raw_get(
+                ::core::ptr::addr_of!((*this)._bitfield_1),
+                5usize,
+                3u8,
+            ) as u32)
+        }
+    }
+    #[inline]
+    pub unsafe fn set_private_iv_size_raw(this: *mut Self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            <__BindgenBitfieldUnit<[u8; 4usize]>>::raw_set(
+                ::core::ptr::addr_of_mut!((*this)._bitfield_1),
+                5usize,
+                3u8,
+                val as u64,
+            )
+        }
+    }
+    #[inline]
+    pub fn private_key_bitlen(&self) -> ::core::ffi::c_uint {
+        unsafe { ::core::mem::transmute(self._bitfield_1.get(8usize, 4u8) as u32) }
+    }
+    #[inline]
+    pub fn set_private_key_bitlen(&mut self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            self._bitfield_1.set(8usize, 4u8, val as u64)
+        }
+    }
+    #[inline]
+    pub unsafe fn private_key_bitlen_raw(this: *const Self) -> ::core::ffi::c_uint {
+        unsafe {
+            ::core::mem::transmute(<__BindgenBitfieldUnit<[u8; 4usize]>>::raw_get(
+                ::core::ptr::addr_of!((*this)._bitfield_1),
+                8usize,
+                4u8,
+            ) as u32)
+        }
+    }
+    #[inline]
+    pub unsafe fn set_private_key_bitlen_raw(this: *mut Self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            <__BindgenBitfieldUnit<[u8; 4usize]>>::raw_set(
+                ::core::ptr::addr_of_mut!((*this)._bitfield_1),
+                8usize,
+                4u8,
+                val as u64,
+            )
+        }
+    }
+    #[inline]
+    pub fn private_mode(&self) -> ::core::ffi::c_uint {
+        unsafe { ::core::mem::transmute(self._bitfield_1.get(12usize, 4u8) as u32) }
+    }
+    #[inline]
+    pub fn set_private_mode(&mut self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            self._bitfield_1.set(12usize, 4u8, val as u64)
+        }
+    }
+    #[inline]
+    pub unsafe fn private_mode_raw(this: *const Self) -> ::core::ffi::c_uint {
+        unsafe {
+            ::core::mem::transmute(<__BindgenBitfieldUnit<[u8; 4usize]>>::raw_get(
+                ::core::ptr::addr_of!((*this)._bitfield_1),
+                12usize,
+                4u8,
+            ) as u32)
+        }
+    }
+    #[inline]
+    pub unsafe fn set_private_mode_raw(this: *mut Self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            <__BindgenBitfieldUnit<[u8; 4usize]>>::raw_set(
+                ::core::ptr::addr_of_mut!((*this)._bitfield_1),
+                12usize,
+                4u8,
+                val as u64,
+            )
+        }
+    }
+    #[inline]
+    pub fn private_type(&self) -> ::core::ffi::c_uint {
+        unsafe { ::core::mem::transmute(self._bitfield_1.get(16usize, 8u8) as u32) }
+    }
+    #[inline]
+    pub fn set_private_type(&mut self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            self._bitfield_1.set(16usize, 8u8, val as u64)
+        }
+    }
+    #[inline]
+    pub unsafe fn private_type_raw(this: *const Self) -> ::core::ffi::c_uint {
+        unsafe {
+            ::core::mem::transmute(<__BindgenBitfieldUnit<[u8; 4usize]>>::raw_get(
+                ::core::ptr::addr_of!((*this)._bitfield_1),
+                16usize,
+                8u8,
+            ) as u32)
+        }
+    }
+    #[inline]
+    pub unsafe fn set_private_type_raw(this: *mut Self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            <__BindgenBitfieldUnit<[u8; 4usize]>>::raw_set(
+                ::core::ptr::addr_of_mut!((*this)._bitfield_1),
+                16usize,
+                8u8,
+                val as u64,
+            )
+        }
+    }
+    #[inline]
+    pub fn private_flags(&self) -> ::core::ffi::c_uint {
+        unsafe { ::core::mem::transmute(self._bitfield_1.get(24usize, 2u8) as u32) }
+    }
+    #[inline]
+    pub fn set_private_flags(&mut self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            self._bitfield_1.set(24usize, 2u8, val as u64)
+        }
+    }
+    #[inline]
+    pub unsafe fn private_flags_raw(this: *const Self) -> ::core::ffi::c_uint {
+        unsafe {
+            ::core::mem::transmute(<__BindgenBitfieldUnit<[u8; 4usize]>>::raw_get(
+                ::core::ptr::addr_of!((*this)._bitfield_1),
+                24usize,
+                2u8,
+            ) as u32)
+        }
+    }
+    #[inline]
+    pub unsafe fn set_private_flags_raw(this: *mut Self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            <__BindgenBitfieldUnit<[u8; 4usize]>>::raw_set(
+                ::core::ptr::addr_of_mut!((*this)._bitfield_1),
+                24usize,
+                2u8,
+                val as u64,
+            )
+        }
+    }
+    #[inline]
+    pub fn private_base_idx(&self) -> ::core::ffi::c_uint {
+        unsafe { ::core::mem::transmute(self._bitfield_1.get(26usize, 5u8) as u32) }
+    }
+    #[inline]
+    pub fn set_private_base_idx(&mut self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            self._bitfield_1.set(26usize, 5u8, val as u64)
+        }
+    }
+    #[inline]
+    pub unsafe fn private_base_idx_raw(this: *const Self) -> ::core::ffi::c_uint {
+        unsafe {
+            ::core::mem::transmute(<__BindgenBitfieldUnit<[u8; 4usize]>>::raw_get(
+                ::core::ptr::addr_of!((*this)._bitfield_1),
+                26usize,
+                5u8,
+            ) as u32)
+        }
+    }
+    #[inline]
+    pub unsafe fn set_private_base_idx_raw(this: *mut Self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            <__BindgenBitfieldUnit<[u8; 4usize]>>::raw_set(
+                ::core::ptr::addr_of_mut!((*this)._bitfield_1),
+                26usize,
+                5u8,
+                val as u64,
+            )
+        }
+    }
+    #[inline]
+    pub fn new_bitfield_1(
+        private_block_size: ::core::ffi::c_uint,
+        private_iv_size: ::core::ffi::c_uint,
+        private_key_bitlen: ::core::ffi::c_uint,
+        private_mode: ::core::ffi::c_uint,
+        private_type: ::core::ffi::c_uint,
+        private_flags: ::core::ffi::c_uint,
+        private_base_idx: ::core::ffi::c_uint,
+    ) -> __BindgenBitfieldUnit<[u8; 4usize]> {
+        let mut __bindgen_bitfield_unit: __BindgenBitfieldUnit<[u8; 4usize]> = Default::default();
+        __bindgen_bitfield_unit.set(0usize, 5u8, {
+            let private_block_size: u32 = unsafe { ::core::mem::transmute(private_block_size) };
+            private_block_size as u64
+        });
+        __bindgen_bitfield_unit.set(5usize, 3u8, {
+            let private_iv_size: u32 = unsafe { ::core::mem::transmute(private_iv_size) };
+            private_iv_size as u64
+        });
+        __bindgen_bitfield_unit.set(8usize, 4u8, {
+            let private_key_bitlen: u32 = unsafe { ::core::mem::transmute(private_key_bitlen) };
+            private_key_bitlen as u64
+        });
+        __bindgen_bitfield_unit.set(12usize, 4u8, {
+            let private_mode: u32 = unsafe { ::core::mem::transmute(private_mode) };
+            private_mode as u64
+        });
+        __bindgen_bitfield_unit.set(16usize, 8u8, {
+            let private_type: u32 = unsafe { ::core::mem::transmute(private_type) };
+            private_type as u64
+        });
+        __bindgen_bitfield_unit.set(24usize, 2u8, {
+            let private_flags: u32 = unsafe { ::core::mem::transmute(private_flags) };
+            private_flags as u64
+        });
+        __bindgen_bitfield_unit.set(26usize, 5u8, {
+            let private_base_idx: u32 = unsafe { ::core::mem::transmute(private_base_idx) };
+            private_base_idx as u64
+        });
+        __bindgen_bitfield_unit
     }
 }
 /// Generic cipher context.
@@ -4048,6 +4477,7 @@ pub struct mbedtls_cipher_context_t {
             input: *mut ::core::ffi::c_uchar,
             ilen: usize,
             data_len: *mut usize,
+            invalid_padding: *mut usize,
         ) -> ::core::ffi::c_int,
     >,
     /// Buffer for input that has not been processed yet.
@@ -4134,7 +4564,7 @@ unsafe extern "C" {
     ) -> *const mbedtls_cipher_info_t;
 }
 unsafe extern "C" {
-    /// \brief               This function initializes a \p cipher_context as NONE.
+    /// \brief               This function initializes a \p ctx as NONE.
     ///
     /// \param ctx           The context to be initialized. This must not be \c NULL.
     pub fn mbedtls_cipher_init(ctx: *mut mbedtls_cipher_context_t);
@@ -4205,7 +4635,6 @@ unsafe extern "C" {
     /// \brief               This function sets the padding mode, for cipher modes
     ///                      that use padding.
     ///
-    ///                      The default passing mode is PKCS7 padding.
     ///
     /// \param ctx           The generic cipher context. This must be initialized and
     ///                      bound to a cipher information structure.
@@ -4255,23 +4684,24 @@ unsafe extern "C" {
     ///
     /// \note          With non-AEAD ciphers, the order of calls for each message
     ///                is as follows:
-    ///                1. mbedtls_cipher_set_iv() if the mode uses an IV/nonce.
-    ///                2. mbedtls_cipher_reset()
-    ///                3. mbedtls_cipher_update() one or more times
-    ///                4. mbedtls_cipher_finish()
+    ///                1. mbedtls_cipher_set_iv() if the mode uses an IV/nonce;
+    ///                2. mbedtls_cipher_reset();
+    ///                3. mbedtls_cipher_update() zero, one or more times;
+    ///                4. mbedtls_cipher_finish_padded() (recommended for decryption
+    ///                   if the mode uses padding) or mbedtls_cipher_finish().
     ///                .
     ///                This sequence can be repeated to encrypt or decrypt multiple
     ///                messages with the same key.
     ///
     /// \note          With AEAD ciphers, the order of calls for each message
     ///                is as follows:
-    ///                1. mbedtls_cipher_set_iv() if the mode uses an IV/nonce.
-    ///                2. mbedtls_cipher_reset()
-    ///                3. mbedtls_cipher_update_ad()
-    ///                4. mbedtls_cipher_update() one or more times
-    ///                5. mbedtls_cipher_finish()
+    ///                1. mbedtls_cipher_set_iv() if the mode uses an IV/nonce;
+    ///                2. mbedtls_cipher_reset();
+    ///                3. mbedtls_cipher_update_ad();
+    ///                4. mbedtls_cipher_update() zero, one or more times;
+    ///                5. mbedtls_cipher_finish() (or mbedtls_cipher_finish_padded());
     ///                6. mbedtls_cipher_check_tag() (for decryption) or
-    ///                mbedtls_cipher_write_tag() (for encryption).
+    ///                   mbedtls_cipher_write_tag() (for encryption).
     ///                .
     ///                This sequence can be repeated to encrypt or decrypt multiple
     ///                messages with the same key.
@@ -4306,7 +4736,8 @@ unsafe extern "C" {
     ///                      many block-sized blocks of data as possible to output.
     ///                      Any data that cannot be written immediately is either
     ///                      added to the next block, or flushed when
-    ///                      mbedtls_cipher_finish() is called.
+    ///                      mbedtls_cipher_finish() or mbedtls_cipher_finish_padded()
+    ///                      is called.
     ///                      Exception: For MBEDTLS_MODE_ECB, expects a single block
     ///                      in size. For example, 16 Bytes for AES.
     ///
@@ -4342,12 +4773,30 @@ unsafe extern "C" {
     ///                      contained in it is padded to the size of
     ///                      the last block, and written to the \p output buffer.
     ///
+    /// \warning             This function reports invalid padding through an error
+    ///                      code. Adversaries may be able to decrypt encrypted
+    ///                      data if they can submit chosen ciphertexts and
+    ///                      detect whether it has valid padding or not,
+    ///                      either through direct observation or through a side
+    ///                      channel such as timing. This is known as a
+    ///                      padding oracle attack.
+    ///                      Therefore applications that call this function for
+    ///                      decryption with a cipher that involves padding
+    ///                      should take care around error handling. Preferably,
+    ///                      such applications should use
+    ///                      mbedtls_cipher_finish_padded() instead of this function.
+    ///
     /// \param ctx           The generic cipher context. This must be initialized and
     ///                      bound to a key.
     /// \param output        The buffer to write data to. This needs to be a writable
-    ///                      buffer of at least \p block_size Bytes.
+    ///                      buffer of at least block_size Bytes.
     /// \param olen          The length of the data written to the \p output buffer.
     ///                      This may not be \c NULL.
+    ///                      Note that when decrypting in a mode with padding,
+    ///                      the actual output length is sensitive and may be
+    ///                      used to mount a padding oracle attack (see warning
+    ///                      above), although less efficiently than through
+    ///                      the invalid-padding condition.
     ///
     /// \return              \c 0 on success.
     /// \return              #MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA on
@@ -4355,7 +4804,8 @@ unsafe extern "C" {
     /// \return              #MBEDTLS_ERR_CIPHER_FULL_BLOCK_EXPECTED on decryption
     ///                      expecting a full block but not receiving one.
     /// \return              #MBEDTLS_ERR_CIPHER_INVALID_PADDING on invalid padding
-    ///                      while decrypting.
+    ///                      while decrypting. Note that invalid-padding errors
+    ///                      should be handled carefully; see the warning above.
     /// \return              A cipher-specific error code on failure.
     pub fn mbedtls_cipher_finish(
         ctx: *mut mbedtls_cipher_context_t,
@@ -4364,9 +4814,59 @@ unsafe extern "C" {
     ) -> ::core::ffi::c_int;
 }
 unsafe extern "C" {
+    /// \brief               The generic cipher finalization function. If data still
+    ///                      needs to be flushed from an incomplete block, the data
+    ///                      contained in it is padded to the size of
+    ///                      the last block, and written to the \p output buffer.
+    ///
+    /// \note                This function is similar to mbedtls_cipher_finish().
+    ///                      The only difference is that it reports invalid padding
+    ///                      decryption differently, through the \p invalid_padding
+    ///                      parameter rather than an error code.
+    ///                      For encryption, and in modes without padding (including
+    ///                      all authenticated modes), this function is identical
+    ///                      to mbedtls_cipher_finish().
+    ///
+    /// \param[in,out] ctx   The generic cipher context. This must be initialized and
+    ///                      bound to a key.
+    /// \param[out] output   The buffer to write data to. This needs to be a writable
+    ///                      buffer of at least block_size Bytes.
+    /// \param[out] olen     The length of the data written to the \p output buffer.
+    ///                      This may not be \c NULL.
+    ///                      Note that when decrypting in a mode with padding,
+    ///                      the actual output length is sensitive and may be
+    ///                      used to mount a padding oracle attack (see warning
+    ///                      on mbedtls_cipher_finish()).
+    /// \param[out] invalid_padding
+    ///                      If this function returns \c 0 on decryption,
+    ///                      \p *invalid_padding is \c 0 if the ciphertext was
+    ///                      valid, and all-bits-one if the ciphertext had invalid
+    ///                      padding.
+    ///                      On encryption, or in a mode without padding (including
+    ///                      all authenticated modes), \p *invalid_padding is \c 0
+    ///                      on success.
+    ///                      The value in \p *invalid_padding is unspecified if
+    ///                      this function returns a nonzero status.
+    ///
+    /// \return              \c 0 on success.
+    ///                      Also \c 0 for decryption with invalid padding.
+    /// \return              #MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA on
+    ///                      parameter-verification failure.
+    /// \return              #MBEDTLS_ERR_CIPHER_FULL_BLOCK_EXPECTED on decryption
+    ///                      expecting a full block but not receiving one.
+    /// \return              A cipher-specific error code on failure.
+    pub fn mbedtls_cipher_finish_padded(
+        ctx: *mut mbedtls_cipher_context_t,
+        output: *mut ::core::ffi::c_uchar,
+        olen: *mut usize,
+        invalid_padding: *mut usize,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
     /// \brief               This function writes a tag for AEAD ciphers.
     ///                      Currently supported with GCM and ChaCha20+Poly1305.
-    ///                      This must be called after mbedtls_cipher_finish().
+    ///                      This must be called after mbedtls_cipher_finish()
+    ///                      or mbedtls_cipher_finish_padded().
     ///
     /// \param ctx           The generic cipher context. This must be initialized,
     ///                      bound to a key, and have just completed a cipher
@@ -4387,7 +4887,8 @@ unsafe extern "C" {
 unsafe extern "C" {
     /// \brief               This function checks the tag for AEAD ciphers.
     ///                      Currently supported with GCM and ChaCha20+Poly1305.
-    ///                      This must be called after mbedtls_cipher_finish().
+    ///                      This must be called after mbedtls_cipher_finish()
+    ///                      or mbedtls_cipher_finish_padded().
     ///
     /// \param ctx           The generic cipher context. This must be initialized.
     /// \param tag           The buffer holding the tag. This must be a readable
@@ -4572,8 +5073,6 @@ pub struct mbedtls_ccm_context {
     pub private_y: [::core::ffi::c_uchar; 16usize],
     ///< The counter buffer
     pub private_ctr: [::core::ffi::c_uchar; 16usize],
-    ///< The cipher context used.
-    pub private_cipher_ctx: mbedtls_cipher_context_t,
     ///< Total plaintext length
     pub private_plaintext_len: usize,
     ///< Total authentication data length
@@ -4588,16 +5087,17 @@ pub struct mbedtls_ccm_context {
     ///auth data input is finished.
     pub private_processed: usize,
     ///< The Q working value
-    pub private_q: ::core::ffi::c_uchar,
+    pub private_q: ::core::ffi::c_uint,
     ///< The operation to perform:
     ///#MBEDTLS_CCM_ENCRYPT or
     ///#MBEDTLS_CCM_DECRYPT or
     ///#MBEDTLS_CCM_STAR_ENCRYPT or
     ///#MBEDTLS_CCM_STAR_DECRYPT.
-    pub private_mode: ::core::ffi::c_uchar,
+    pub private_mode: ::core::ffi::c_uint,
+    ///< The cipher context used.
+    pub private_cipher_ctx: mbedtls_cipher_context_t,
     ///< Working value holding context's
-    ///state. Used for chunked data
-    ///input
+    ///state. Used for chunked data input
     pub private_state: ::core::ffi::c_int,
 }
 impl Default for mbedtls_ccm_context {
@@ -5840,6 +6340,556 @@ unsafe extern "C" {
     /// \return         \c 1 on failure.
     pub fn mbedtls_cmac_self_test(verbose: ::core::ffi::c_int) -> ::core::ffi::c_int;
 }
+///< None.
+pub const mbedtls_md_type_t_MBEDTLS_MD_NONE: mbedtls_md_type_t = 0;
+///< The MD5 message digest.
+pub const mbedtls_md_type_t_MBEDTLS_MD_MD5: mbedtls_md_type_t = 3;
+///< The RIPEMD-160 message digest.
+pub const mbedtls_md_type_t_MBEDTLS_MD_RIPEMD160: mbedtls_md_type_t = 4;
+///< The SHA-1 message digest.
+pub const mbedtls_md_type_t_MBEDTLS_MD_SHA1: mbedtls_md_type_t = 5;
+///< The SHA-224 message digest.
+pub const mbedtls_md_type_t_MBEDTLS_MD_SHA224: mbedtls_md_type_t = 8;
+///< The SHA-256 message digest.
+pub const mbedtls_md_type_t_MBEDTLS_MD_SHA256: mbedtls_md_type_t = 9;
+///< The SHA-384 message digest.
+pub const mbedtls_md_type_t_MBEDTLS_MD_SHA384: mbedtls_md_type_t = 10;
+///< The SHA-512 message digest.
+pub const mbedtls_md_type_t_MBEDTLS_MD_SHA512: mbedtls_md_type_t = 11;
+///< The SHA3-224 message digest.
+pub const mbedtls_md_type_t_MBEDTLS_MD_SHA3_224: mbedtls_md_type_t = 16;
+///< The SHA3-256 message digest.
+pub const mbedtls_md_type_t_MBEDTLS_MD_SHA3_256: mbedtls_md_type_t = 17;
+///< The SHA3-384 message digest.
+pub const mbedtls_md_type_t_MBEDTLS_MD_SHA3_384: mbedtls_md_type_t = 18;
+///< The SHA3-512 message digest.
+pub const mbedtls_md_type_t_MBEDTLS_MD_SHA3_512: mbedtls_md_type_t = 19;
+/// \brief     Supported message digests.
+///
+/// \warning   MD5 and SHA-1 are considered weak message digests and
+///            their use constitutes a security risk. We recommend considering
+///            stronger message digests instead.
+pub type mbedtls_md_type_t = ::core::ffi::c_uint;
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct mbedtls_md_info_t {
+    _unused: [u8; 0],
+}
+pub const mbedtls_md_engine_t_MBEDTLS_MD_ENGINE_LEGACY: mbedtls_md_engine_t = 0;
+pub const mbedtls_md_engine_t_MBEDTLS_MD_ENGINE_PSA: mbedtls_md_engine_t = 1;
+/// Used internally to indicate whether a context uses legacy or PSA.
+///
+/// Internal use only.
+pub type mbedtls_md_engine_t = ::core::ffi::c_uint;
+/// The generic message-digest context.
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct mbedtls_md_context_t {
+    /// Information about the associated message digest.
+    pub private_md_info: *const mbedtls_md_info_t,
+    /// The digest-specific context (legacy) or the PSA operation.
+    pub private_md_ctx: *mut ::core::ffi::c_void,
+    /// The HMAC part of the context.
+    pub private_hmac_ctx: *mut ::core::ffi::c_void,
+}
+impl Default for mbedtls_md_context_t {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+unsafe extern "C" {
+    /// \brief           This function returns the message-digest information
+    ///                  associated with the given digest type.
+    ///
+    /// \param md_type   The type of digest to search for.
+    ///
+    /// \return          The message-digest information associated with \p md_type.
+    /// \return          NULL if the associated message-digest information is not found.
+    pub fn mbedtls_md_info_from_type(md_type: mbedtls_md_type_t) -> *const mbedtls_md_info_t;
+}
+unsafe extern "C" {
+    /// \brief           This function initializes a message-digest context without
+    ///                  binding it to a particular message-digest algorithm.
+    ///
+    ///                  This function should always be called first. It prepares the
+    ///                  context for mbedtls_md_setup() for binding it to a
+    ///                  message-digest algorithm.
+    pub fn mbedtls_md_init(ctx: *mut mbedtls_md_context_t);
+}
+unsafe extern "C" {
+    /// \brief           This function clears the internal structure of \p ctx and
+    ///                  frees any embedded internal structure, but does not free
+    ///                  \p ctx itself.
+    ///
+    ///                  If you have called mbedtls_md_setup() on \p ctx, you must
+    ///                  call mbedtls_md_free() when you are no longer using the
+    ///                  context.
+    ///                  Calling this function if you have previously
+    ///                  called mbedtls_md_init() and nothing else is optional.
+    ///                  You must not call this function if you have not called
+    ///                  mbedtls_md_init().
+    pub fn mbedtls_md_free(ctx: *mut mbedtls_md_context_t);
+}
+unsafe extern "C" {
+    /// \brief           This function selects the message digest algorithm to use,
+    ///                  and allocates internal structures.
+    ///
+    ///                  It should be called after mbedtls_md_init() or
+    ///                  mbedtls_md_free(). Makes it necessary to call
+    ///                  mbedtls_md_free() later.
+    ///
+    /// \param ctx       The context to set up.
+    /// \param md_info   The information structure of the message-digest algorithm
+    ///                  to use.
+    /// \param hmac      Defines if HMAC is used. 0: HMAC is not used (saves some memory),
+    ///                  or non-zero: HMAC is used with this context.
+    ///
+    /// \return          \c 0 on success.
+    /// \return          #MBEDTLS_ERR_MD_BAD_INPUT_DATA on parameter-verification
+    ///                  failure.
+    /// \return          #MBEDTLS_ERR_MD_ALLOC_FAILED on memory-allocation failure.
+    pub fn mbedtls_md_setup(
+        ctx: *mut mbedtls_md_context_t,
+        md_info: *const mbedtls_md_info_t,
+        hmac: ::core::ffi::c_int,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           This function clones the state of a message-digest
+    ///                  context.
+    ///
+    /// \note            You must call mbedtls_md_setup() on \c dst before calling
+    ///                  this function.
+    ///
+    /// \note            The two contexts must have the same type,
+    ///                  for example, both are SHA-256.
+    ///
+    /// \warning         This function clones the message-digest state, not the
+    ///                  HMAC state.
+    ///
+    /// \param dst       The destination context.
+    /// \param src       The context to be cloned.
+    ///
+    /// \return          \c 0 on success.
+    /// \return          #MBEDTLS_ERR_MD_BAD_INPUT_DATA on parameter-verification failure.
+    /// \return          #MBEDTLS_ERR_MD_FEATURE_UNAVAILABLE if both contexts are
+    ///                  not using the same engine. This can be avoided by moving
+    ///                  the call to psa_crypto_init() before the first call to
+    ///                  mbedtls_md_setup().
+    pub fn mbedtls_md_clone(
+        dst: *mut mbedtls_md_context_t,
+        src: *const mbedtls_md_context_t,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           This function extracts the message-digest size from the
+    ///                  message-digest information structure.
+    ///
+    /// \param md_info   The information structure of the message-digest algorithm
+    ///                  to use.
+    ///
+    /// \return          The size of the message-digest output in Bytes.
+    pub fn mbedtls_md_get_size(md_info: *const mbedtls_md_info_t) -> ::core::ffi::c_uchar;
+}
+unsafe extern "C" {
+    /// \brief           This function extracts the message-digest type from the
+    ///                  message-digest information structure.
+    ///
+    /// \param md_info   The information structure of the message-digest algorithm
+    ///                  to use.
+    ///
+    /// \return          The type of the message digest.
+    pub fn mbedtls_md_get_type(md_info: *const mbedtls_md_info_t) -> mbedtls_md_type_t;
+}
+unsafe extern "C" {
+    /// \brief           This function starts a message-digest computation.
+    ///
+    ///                  You must call this function after setting up the context
+    ///                  with mbedtls_md_setup(), and before passing data with
+    ///                  mbedtls_md_update().
+    ///
+    /// \param ctx       The generic message-digest context.
+    ///
+    /// \return          \c 0 on success.
+    /// \return          #MBEDTLS_ERR_MD_BAD_INPUT_DATA on parameter-verification
+    ///                  failure.
+    pub fn mbedtls_md_starts(ctx: *mut mbedtls_md_context_t) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           This function feeds an input buffer into an ongoing
+    ///                  message-digest computation.
+    ///
+    ///                  You must call mbedtls_md_starts() before calling this
+    ///                  function. You may call this function multiple times.
+    ///                  Afterwards, call mbedtls_md_finish().
+    ///
+    /// \param ctx       The generic message-digest context.
+    /// \param input     The buffer holding the input data.
+    /// \param ilen      The length of the input data.
+    ///
+    /// \return          \c 0 on success.
+    /// \return          #MBEDTLS_ERR_MD_BAD_INPUT_DATA on parameter-verification
+    ///                  failure.
+    pub fn mbedtls_md_update(
+        ctx: *mut mbedtls_md_context_t,
+        input: *const ::core::ffi::c_uchar,
+        ilen: usize,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           This function finishes the digest operation,
+    ///                  and writes the result to the output buffer.
+    ///
+    ///                  Call this function after a call to mbedtls_md_starts(),
+    ///                  followed by any number of calls to mbedtls_md_update().
+    ///                  Afterwards, you may either clear the context with
+    ///                  mbedtls_md_free(), or call mbedtls_md_starts() to reuse
+    ///                  the context for another digest operation with the same
+    ///                  algorithm.
+    ///
+    /// \param ctx       The generic message-digest context.
+    /// \param output    The buffer for the generic message-digest checksum result.
+    ///
+    /// \return          \c 0 on success.
+    /// \return          #MBEDTLS_ERR_MD_BAD_INPUT_DATA on parameter-verification
+    ///                  failure.
+    pub fn mbedtls_md_finish(
+        ctx: *mut mbedtls_md_context_t,
+        output: *mut ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          This function calculates the message-digest of a buffer,
+    ///                 with respect to a configurable message-digest algorithm
+    ///                 in a single call.
+    ///
+    ///                 The result is calculated as
+    ///                 Output = message_digest(input buffer).
+    ///
+    /// \param md_info  The information structure of the message-digest algorithm
+    ///                 to use.
+    /// \param input    The buffer holding the data.
+    /// \param ilen     The length of the input data.
+    /// \param output   The generic message-digest checksum result.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         #MBEDTLS_ERR_MD_BAD_INPUT_DATA on parameter-verification
+    ///                 failure.
+    pub fn mbedtls_md(
+        md_info: *const mbedtls_md_info_t,
+        input: *const ::core::ffi::c_uchar,
+        ilen: usize,
+        output: *mut ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           This function returns the list of digests supported by the
+    ///                  generic digest module.
+    ///
+    /// \note            The list starts with the strongest available hashes.
+    ///
+    /// \return          A statically allocated array of digests. Each element
+    ///                  in the returned list is an integer belonging to the
+    ///                  message-digest enumeration #mbedtls_md_type_t.
+    ///                  The last entry is 0.
+    pub fn mbedtls_md_list() -> *const ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           This function returns the message-digest information
+    ///                  associated with the given digest name.
+    ///
+    /// \param md_name   The name of the digest to search for.
+    ///
+    /// \return          The message-digest information associated with \p md_name.
+    /// \return          NULL if the associated message-digest information is not found.
+    pub fn mbedtls_md_info_from_string(
+        md_name: *const ::core::ffi::c_char,
+    ) -> *const mbedtls_md_info_t;
+}
+unsafe extern "C" {
+    /// \brief           This function returns the name of the message digest for
+    ///                  the message-digest information structure given.
+    ///
+    /// \param md_info   The information structure of the message-digest algorithm
+    ///                  to use.
+    ///
+    /// \return          The name of the message digest.
+    pub fn mbedtls_md_get_name(md_info: *const mbedtls_md_info_t) -> *const ::core::ffi::c_char;
+}
+unsafe extern "C" {
+    /// \brief           This function returns the message-digest information
+    ///                  from the given context.
+    ///
+    /// \param ctx       The context from which to extract the information.
+    ///                  This must be initialized (or \c NULL).
+    ///
+    /// \return          The message-digest information associated with \p ctx.
+    /// \return          \c NULL if \p ctx is \c NULL.
+    pub fn mbedtls_md_info_from_ctx(ctx: *const mbedtls_md_context_t) -> *const mbedtls_md_info_t;
+}
+unsafe extern "C" {
+    /// \brief           This function sets the HMAC key and prepares to
+    ///                  authenticate a new message.
+    ///
+    ///                  Call this function after mbedtls_md_setup(), to use
+    ///                  the MD context for an HMAC calculation, then call
+    ///                  mbedtls_md_hmac_update() to provide the input data, and
+    ///                  mbedtls_md_hmac_finish() to get the HMAC value.
+    ///
+    /// \param ctx       The message digest context containing an embedded HMAC
+    ///                  context.
+    /// \param key       The HMAC secret key.
+    /// \param keylen    The length of the HMAC key in Bytes.
+    ///
+    /// \return          \c 0 on success.
+    /// \return          #MBEDTLS_ERR_MD_BAD_INPUT_DATA on parameter-verification
+    ///                  failure.
+    pub fn mbedtls_md_hmac_starts(
+        ctx: *mut mbedtls_md_context_t,
+        key: *const ::core::ffi::c_uchar,
+        keylen: usize,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           This function feeds an input buffer into an ongoing HMAC
+    ///                  computation.
+    ///
+    ///                  Call mbedtls_md_hmac_starts() or mbedtls_md_hmac_reset()
+    ///                  before calling this function.
+    ///                  You may call this function multiple times to pass the
+    ///                  input piecewise.
+    ///                  Afterwards, call mbedtls_md_hmac_finish().
+    ///
+    /// \param ctx       The message digest context containing an embedded HMAC
+    ///                  context.
+    /// \param input     The buffer holding the input data.
+    /// \param ilen      The length of the input data.
+    ///
+    /// \return          \c 0 on success.
+    /// \return          #MBEDTLS_ERR_MD_BAD_INPUT_DATA on parameter-verification
+    ///                  failure.
+    pub fn mbedtls_md_hmac_update(
+        ctx: *mut mbedtls_md_context_t,
+        input: *const ::core::ffi::c_uchar,
+        ilen: usize,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           This function finishes the HMAC operation, and writes
+    ///                  the result to the output buffer.
+    ///
+    ///                  Call this function after mbedtls_md_hmac_starts() and
+    ///                  mbedtls_md_hmac_update() to get the HMAC value. Afterwards
+    ///                  you may either call mbedtls_md_free() to clear the context,
+    ///                  or call mbedtls_md_hmac_reset() to reuse the context with
+    ///                  the same HMAC key.
+    ///
+    /// \param ctx       The message digest context containing an embedded HMAC
+    ///                  context.
+    /// \param output    The generic HMAC checksum result.
+    ///
+    /// \return          \c 0 on success.
+    /// \return          #MBEDTLS_ERR_MD_BAD_INPUT_DATA on parameter-verification
+    ///                  failure.
+    pub fn mbedtls_md_hmac_finish(
+        ctx: *mut mbedtls_md_context_t,
+        output: *mut ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           This function prepares to authenticate a new message with
+    ///                  the same key as the previous HMAC operation.
+    ///
+    ///                  You may call this function after mbedtls_md_hmac_finish().
+    ///                  Afterwards call mbedtls_md_hmac_update() to pass the new
+    ///                  input.
+    ///
+    /// \param ctx       The message digest context containing an embedded HMAC
+    ///                  context.
+    ///
+    /// \return          \c 0 on success.
+    /// \return          #MBEDTLS_ERR_MD_BAD_INPUT_DATA on parameter-verification
+    ///                  failure.
+    pub fn mbedtls_md_hmac_reset(ctx: *mut mbedtls_md_context_t) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          This function calculates the full generic HMAC
+    ///                 on the input buffer with the provided key.
+    ///
+    ///                 The function allocates the context, performs the
+    ///                 calculation, and frees the context.
+    ///
+    ///                 The HMAC result is calculated as
+    ///                 output = generic HMAC(hmac key, input buffer).
+    ///
+    /// \param md_info  The information structure of the message-digest algorithm
+    ///                 to use.
+    /// \param key      The HMAC secret key.
+    /// \param keylen   The length of the HMAC secret key in Bytes.
+    /// \param input    The buffer holding the input data.
+    /// \param ilen     The length of the input data.
+    /// \param output   The generic HMAC result.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         #MBEDTLS_ERR_MD_BAD_INPUT_DATA on parameter-verification
+    ///                 failure.
+    pub fn mbedtls_md_hmac(
+        md_info: *const mbedtls_md_info_t,
+        key: *const ::core::ffi::c_uchar,
+        keylen: usize,
+        input: *const ::core::ffi::c_uchar,
+        ilen: usize,
+        output: *mut ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int;
+}
+/// \brief           Entropy poll callback pointer
+///
+/// \param data      Callback-specific data pointer
+/// \param output    Data to fill
+/// \param len       Maximum size to provide
+/// \param olen      The actual amount of bytes put into the buffer (Can be 0)
+///
+/// \return          0 if no critical failures occurred,
+///                  MBEDTLS_ERR_ENTROPY_SOURCE_FAILED otherwise
+pub type mbedtls_entropy_f_source_ptr = ::core::option::Option<
+    unsafe extern "C" fn(
+        data: *mut ::core::ffi::c_void,
+        output: *mut ::core::ffi::c_uchar,
+        len: usize,
+        olen: *mut usize,
+    ) -> ::core::ffi::c_int,
+>;
+/// \brief           Entropy source state
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct mbedtls_entropy_source_state {
+    ///< The entropy source callback
+    pub private_f_source: mbedtls_entropy_f_source_ptr,
+    ///< The callback data pointer
+    pub private_p_source: *mut ::core::ffi::c_void,
+    ///< Amount received in bytes
+    pub private_size: usize,
+    ///< Minimum bytes required before release
+    pub private_threshold: usize,
+    ///< Is the source strong?
+    pub private_strong: ::core::ffi::c_int,
+}
+impl Default for mbedtls_entropy_source_state {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+/// \brief           Entropy context structure
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct mbedtls_entropy_context {
+    pub private_accumulator: mbedtls_md_context_t,
+    pub private_accumulator_started: ::core::ffi::c_int,
+    pub private_source_count: ::core::ffi::c_int,
+    pub private_source: [mbedtls_entropy_source_state; 20usize],
+}
+impl Default for mbedtls_entropy_context {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+unsafe extern "C" {
+    /// \brief           Initialize the context
+    ///
+    /// \param ctx       Entropy context to initialize
+    pub fn mbedtls_entropy_init(ctx: *mut mbedtls_entropy_context);
+}
+unsafe extern "C" {
+    /// \brief           Free the data in the context
+    ///
+    /// \param ctx       Entropy context to free
+    pub fn mbedtls_entropy_free(ctx: *mut mbedtls_entropy_context);
+}
+unsafe extern "C" {
+    /// \brief           Adds an entropy source to poll
+    ///                  (Thread-safe if MBEDTLS_THREADING_C is enabled)
+    ///
+    /// \param ctx       Entropy context
+    /// \param f_source  Entropy function
+    /// \param p_source  Function data
+    /// \param threshold Minimum required from source before entropy is released
+    ///                  ( with mbedtls_entropy_func() ) (in bytes)
+    /// \param strong    MBEDTLS_ENTROPY_SOURCE_STRONG or
+    ///                  MBEDTLS_ENTROPY_SOURCE_WEAK.
+    ///                  At least one strong source needs to be added.
+    ///                  Weaker sources (such as the cycle counter) can be used as
+    ///                  a complement.
+    ///
+    /// \return          0 if successful or MBEDTLS_ERR_ENTROPY_MAX_SOURCES
+    pub fn mbedtls_entropy_add_source(
+        ctx: *mut mbedtls_entropy_context,
+        f_source: mbedtls_entropy_f_source_ptr,
+        p_source: *mut ::core::ffi::c_void,
+        threshold: usize,
+        strong: ::core::ffi::c_int,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           Trigger an extra gather poll for the accumulator
+    ///                  (Thread-safe if MBEDTLS_THREADING_C is enabled)
+    ///
+    /// \param ctx       Entropy context
+    ///
+    /// \return          0 if successful, or MBEDTLS_ERR_ENTROPY_SOURCE_FAILED
+    pub fn mbedtls_entropy_gather(ctx: *mut mbedtls_entropy_context) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           Retrieve entropy from the accumulator
+    ///                  (Maximum length: MBEDTLS_ENTROPY_BLOCK_SIZE)
+    ///                  (Thread-safe if MBEDTLS_THREADING_C is enabled)
+    ///
+    /// \param data      Entropy context
+    /// \param output    Buffer to fill
+    /// \param len       Number of bytes desired, must be at most MBEDTLS_ENTROPY_BLOCK_SIZE
+    ///
+    /// \return          0 if successful, or MBEDTLS_ERR_ENTROPY_SOURCE_FAILED
+    pub fn mbedtls_entropy_func(
+        data: *mut ::core::ffi::c_void,
+        output: *mut ::core::ffi::c_uchar,
+        len: usize,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           Add data to the accumulator manually
+    ///                  (Thread-safe if MBEDTLS_THREADING_C is enabled)
+    ///
+    /// \param ctx       Entropy context
+    /// \param data      Data to add
+    /// \param len       Length of data
+    ///
+    /// \return          0 if successful
+    pub fn mbedtls_entropy_update_manual(
+        ctx: *mut mbedtls_entropy_context,
+        data: *const ::core::ffi::c_uchar,
+        len: usize,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          Checkup routine
+    ///
+    ///                 This module self-test also calls the entropy self-test,
+    ///                 mbedtls_entropy_source_self_test();
+    ///
+    /// \return         0 if successful, or 1 if a test failed
+    pub fn mbedtls_entropy_self_test(verbose: ::core::ffi::c_int) -> ::core::ffi::c_int;
+}
 /// \brief          The CTR_DRBG context structure.
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -6198,10 +7248,6 @@ pub const mbedtls_ecp_curve_type_MBEDTLS_ECP_TYPE_NONE: mbedtls_ecp_curve_type =
 pub const mbedtls_ecp_curve_type_MBEDTLS_ECP_TYPE_SHORT_WEIERSTRASS: mbedtls_ecp_curve_type = 1;
 pub const mbedtls_ecp_curve_type_MBEDTLS_ECP_TYPE_MONTGOMERY: mbedtls_ecp_curve_type = 2;
 pub type mbedtls_ecp_curve_type = ::core::ffi::c_uint;
-pub const mbedtls_ecp_modulus_type_MBEDTLS_ECP_MOD_NONE: mbedtls_ecp_modulus_type = 0;
-pub const mbedtls_ecp_modulus_type_MBEDTLS_ECP_MOD_COORDINATE: mbedtls_ecp_modulus_type = 1;
-pub const mbedtls_ecp_modulus_type_MBEDTLS_ECP_MOD_SCALAR: mbedtls_ecp_modulus_type = 2;
-pub type mbedtls_ecp_modulus_type = ::core::ffi::c_uint;
 /// Curve information, for use by other modules.
 ///
 /// The fields of this structure are part of the public API and can be
@@ -6270,6 +7316,27 @@ impl Default for mbedtls_ecp_point {
 /// odd prime as mbedtls_ecp_mul() requires an odd number, and
 /// mbedtls_ecdsa_sign() requires that it is prime for blinding purposes.
 ///
+/// The default implementation only initializes \p A without setting it to the
+/// authentic value for curves with <code>A = -3</code>(SECP256R1, etc), in which
+/// case you need to load \p A by yourself when using domain parameters directly,
+/// for example:
+/// \code
+/// mbedtls_mpi_init(&A);
+/// mbedtls_ecp_group_init(&grp);
+/// CHECK_RETURN(mbedtls_ecp_group_load(&grp, grp_id));
+/// if (mbedtls_ecp_group_a_is_minus_3(&grp)) {
+///     CHECK_RETURN(mbedtls_mpi_sub_int(&A, &grp.P, 3));
+/// } else {
+///     CHECK_RETURN(mbedtls_mpi_copy(&A, &grp.A));
+/// }
+///
+/// do_something_with_a(&A);
+///
+/// cleanup:
+/// mbedtls_mpi_free(&A);
+/// mbedtls_ecp_group_free(&grp);
+/// \endcode
+///
 /// For Montgomery curves, we do not store \p A, but <code>(A + 2) / 4</code>,
 /// which is the quantity used in the formulas. Additionally, \p nbits is
 /// not the size of \p N but the required size for private keys.
@@ -6279,7 +7346,7 @@ impl Default for mbedtls_ecp_point {
 /// range of <code>0..2^(2*pbits)-1</code>, and transforms it in-place to an integer
 /// which is congruent mod \p P to the given MPI, and is close enough to \p pbits
 /// in size, so that it may be efficiently brought in the 0..P-1 range by a few
-/// additions or subtractions. Therefore, it is only an approximative modular
+/// additions or subtractions. Therefore, it is only an approximate modular
 /// reduction. It must return 0 on success and non-zero on failure.
 ///
 /// \note        Alternative implementations of the ECP module must obey the
@@ -6299,8 +7366,11 @@ pub struct mbedtls_ecp_group {
     pub id: mbedtls_ecp_group_id,
     ///< The prime modulus of the base field.
     pub P: mbedtls_mpi,
-    ///< For Short Weierstrass: \p A in the equation. For
-    ///Montgomery curves: <code>(A + 2) / 4</code>.
+    ///< For Short Weierstrass: \p A in the equation. Note that
+    ///\p A is not set to the authentic value in some cases.
+    ///Refer to detailed description of ::mbedtls_ecp_group if
+    ///using domain parameters in the structure.
+    ///For Montgomery curves: <code>(A + 2) / 4</code>.
     pub A: mbedtls_mpi,
     ///< For Short Weierstrass: \p B in the equation.
     ///For Montgomery curves: unused.
@@ -6811,13 +7881,7 @@ unsafe extern "C" {
         R: *mut mbedtls_ecp_point,
         m: *const mbedtls_mpi,
         P: *const mbedtls_ecp_point,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
     ) -> ::core::ffi::c_int;
 }
@@ -6855,13 +7919,7 @@ unsafe extern "C" {
         R: *mut mbedtls_ecp_point,
         m: *const mbedtls_mpi,
         P: *const mbedtls_ecp_point,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
         rs_ctx: *mut mbedtls_ecp_restart_ctx,
     ) -> ::core::ffi::c_int;
@@ -6964,7 +8022,7 @@ unsafe extern "C" {
     ///
     ///                  It only checks that the point is non-zero, has
     ///                  valid coordinates and lies on the curve. It does not verify
-    ///                  that it is indeed a multiple of \p G. This additional
+    ///                  that it is indeed a multiple of \c G. This additional
     ///                  check is computationally more expensive, is not required
     ///                  by standards, and should not be necessary if the group
     ///                  used has a small cofactor. In particular, it is useless for
@@ -6990,7 +8048,7 @@ unsafe extern "C" {
     ) -> ::core::ffi::c_int;
 }
 unsafe extern "C" {
-    /// \brief           This function checks that an \p mbedtls_mpi is a
+    /// \brief           This function checks that an \c mbedtls_mpi is a
     ///                  valid private key for this curve.
     ///
     /// \note            This function uses bare components rather than an
@@ -7029,13 +8087,7 @@ unsafe extern "C" {
     pub fn mbedtls_ecp_gen_privkey(
         grp: *const mbedtls_ecp_group,
         d: *mut mbedtls_mpi,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
     ) -> ::core::ffi::c_int;
 }
@@ -7070,13 +8122,7 @@ unsafe extern "C" {
         G: *const mbedtls_ecp_point,
         d: *mut mbedtls_mpi,
         Q: *mut mbedtls_ecp_point,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
     ) -> ::core::ffi::c_int;
 }
@@ -7106,13 +8152,7 @@ unsafe extern "C" {
         grp: *mut mbedtls_ecp_group,
         d: *mut mbedtls_mpi,
         Q: *mut mbedtls_ecp_point,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
     ) -> ::core::ffi::c_int;
 }
@@ -7131,18 +8171,61 @@ unsafe extern "C" {
     pub fn mbedtls_ecp_gen_key(
         grp_id: mbedtls_ecp_group_id,
         key: *mut mbedtls_ecp_keypair,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
     ) -> ::core::ffi::c_int;
 }
 unsafe extern "C" {
+    /// \brief          Set the public key in a key pair object.
+    ///
+    /// \note            This function does not check that the point actually
+    ///                  belongs to the given group. Call mbedtls_ecp_check_pubkey()
+    ///                  on \p Q before calling this function to check that.
+    ///
+    /// \note            This function does not check that the public key matches
+    ///                  the private key that is already in \p key, if any.
+    ///                  To check the consistency of the resulting key pair object,
+    ///                  call mbedtls_ecp_check_pub_priv() after setting both
+    ///                  the public key and the private key.
+    ///
+    /// \param grp_id    The ECP group identifier.
+    /// \param key       The key pair object. It must be initialized.
+    ///                  If its group has already been set, it must match \p grp_id.
+    ///                  If its group has not been set, it will be set to \p grp_id.
+    ///                  If the public key has already been set, it is overwritten.
+    /// \param Q         The public key to copy. This must be a point on the
+    ///                  curve indicated by \p grp_id.
+    ///
+    /// \return          \c 0 on success.
+    /// \return          #MBEDTLS_ERR_ECP_BAD_INPUT_DATA if \p key does not
+    ///                  match \p grp_id.
+    /// \return          #MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE if the operation for
+    ///                  the group is not implemented.
+    /// \return          #MBEDTLS_ERR_MPI_ALLOC_FAILED on memory-allocation failure.
+    /// \return          Another negative error code on other kinds of failure.
+    pub fn mbedtls_ecp_set_public_key(
+        grp_id: mbedtls_ecp_group_id,
+        key: *mut mbedtls_ecp_keypair,
+        Q: *const mbedtls_ecp_point,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
     /// \brief           This function reads an elliptic curve private key.
+    ///
+    /// \note            This function does not set the public key in the
+    ///                  key pair object. Without a public key, the key pair object
+    ///                  cannot be used with operations that require the public key.
+    ///                  Call mbedtls_ecp_keypair_calc_public() to set the public
+    ///                  key from the private key. Alternatively, you can call
+    ///                  mbedtls_ecp_set_public_key() to set the public key part,
+    ///                  and then optionally mbedtls_ecp_check_pub_priv() to check
+    ///                  that the private and public parts are consistent.
+    ///
+    /// \note            If a public key has already been set in the key pair
+    ///                  object, this function does not check that it is consistent
+    ///                  with the private key. Call mbedtls_ecp_check_pub_priv()
+    ///                  after setting both the public key and the private key
+    ///                  to make that check.
     ///
     /// \param grp_id    The ECP group identifier.
     /// \param key       The destination key.
@@ -7168,20 +8251,106 @@ unsafe extern "C" {
 unsafe extern "C" {
     /// \brief           This function exports an elliptic curve private key.
     ///
+    /// \deprecated      Note that although this function accepts an output
+    ///                  buffer that is smaller or larger than the key, most key
+    ///                  import interfaces require the output to have exactly
+    ///                  key's nominal length. It is generally simplest to
+    ///                  pass the key's nominal length as \c buflen, after
+    ///                  checking that the output buffer is large enough.
+    ///                  See the description of the \p buflen parameter for
+    ///                  how to calculate the nominal length.
+    ///                  To avoid this difficulty, use mbedtls_ecp_write_key_ext()
+    ///                  instead.
+    ///                  mbedtls_ecp_write_key() is deprecated and will be
+    ///                  removed in a future version of the library.
+    ///
+    /// \note            If the private key was not set in \p key,
+    ///                  the output is unspecified. Future versions
+    ///                  may return an error in that case.
+    ///
     /// \param key       The private key.
     /// \param buf       The output buffer for containing the binary representation
-    ///                  of the key. (Big endian integer for Weierstrass curves, byte
-    ///                  string for Montgomery curves.)
+    ///                  of the key.
+    ///                  For Weierstrass curves, this is the big-endian
+    ///                  representation, padded with null bytes at the beginning
+    ///                  to reach \p buflen bytes.
+    ///                  For Montgomery curves, this is the standard byte string
+    ///                  representation (which is little-endian), padded with
+    ///                  null bytes at the end to reach \p buflen bytes.
     /// \param buflen    The total length of the buffer in bytes.
+    ///                  The length of the output is
+    ///                  (`grp->nbits` + 7) / 8 bytes
+    ///                  where `grp->nbits` is the private key size in bits.
+    ///                  For Weierstrass keys, if the output buffer is smaller,
+    ///                  leading zeros are trimmed to fit if possible. For
+    ///                  Montgomery keys, the output buffer must always be large
+    ///                  enough for the nominal length.
     ///
     /// \return          \c 0 on success.
-    /// \return          #MBEDTLS_ERR_ECP_BUFFER_TOO_SMALL if the \p key
-    ///representation is larger than the available space in \p buf.
-    /// \return          #MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE if the operation for
-    ///                  the group is not implemented.
+    /// \return          #MBEDTLS_ERR_ECP_BUFFER_TOO_SMALL or
+    ///                  #MBEDTLS_ERR_MPI_BUFFER_TOO_SMALL if the \p key
+    ///                  representation is larger than the available space in \p buf.
     /// \return          Another negative error code on different kinds of failure.
     pub fn mbedtls_ecp_write_key(
         key: *mut mbedtls_ecp_keypair,
+        buf: *mut ::core::ffi::c_uchar,
+        buflen: usize,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           This function exports an elliptic curve private key.
+    ///
+    /// \param key       The private key.
+    /// \param olen      On success, the length of the private key.
+    ///                  This is always (`grp->nbits` + 7) / 8 bytes
+    ///                  where `grp->nbits` is the private key size in bits.
+    /// \param buf       The output buffer for containing the binary representation
+    ///                  of the key.
+    /// \param buflen    The total length of the buffer in bytes.
+    ///                  #MBEDTLS_ECP_MAX_BYTES is always sufficient.
+    ///
+    /// \return          \c 0 on success.
+    /// \return          #MBEDTLS_ERR_ECP_BUFFER_TOO_SMALL if the \p key
+    ///                  representation is larger than the available space in \p buf.
+    /// \return          #MBEDTLS_ERR_ECP_BAD_INPUT_DATA if no private key is
+    ///                  set in \p key.
+    /// \return          Another negative error code on different kinds of failure.
+    pub fn mbedtls_ecp_write_key_ext(
+        key: *const mbedtls_ecp_keypair,
+        olen: *mut usize,
+        buf: *mut ::core::ffi::c_uchar,
+        buflen: usize,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           This function exports an elliptic curve public key.
+    ///
+    /// \note            If the public key was not set in \p key,
+    ///                  the output is unspecified. Future versions
+    ///                  may return an error in that case.
+    ///
+    /// \param key       The public key.
+    /// \param format    The point format. This must be either
+    ///                  #MBEDTLS_ECP_PF_COMPRESSED or #MBEDTLS_ECP_PF_UNCOMPRESSED.
+    ///                  (For groups without these formats, this parameter is
+    ///                  ignored. But it still has to be either of the above
+    ///                  values.)
+    /// \param olen      The address at which to store the length of
+    ///                  the output in Bytes. This must not be \c NULL.
+    /// \param buf       The output buffer. This must be a writable buffer
+    ///                  of length \p buflen Bytes.
+    /// \param buflen    The length of the output buffer \p buf in Bytes.
+    ///
+    /// \return          \c 0 on success.
+    /// \return          #MBEDTLS_ERR_ECP_BUFFER_TOO_SMALL if the output buffer
+    ///                  is too small to hold the point.
+    /// \return          #MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE if the point format
+    ///                  or the export for the given group is not implemented.
+    /// \return          Another negative error code on other kinds of failure.
+    pub fn mbedtls_ecp_write_public_key(
+        key: *const mbedtls_ecp_keypair,
+        format: ::core::ffi::c_int,
+        olen: *mut usize,
         buf: *mut ::core::ffi::c_uchar,
         buflen: usize,
     ) -> ::core::ffi::c_int;
@@ -7208,26 +8377,59 @@ unsafe extern "C" {
     pub fn mbedtls_ecp_check_pub_priv(
         pub_: *const mbedtls_ecp_keypair,
         prv: *const mbedtls_ecp_keypair,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
     ) -> ::core::ffi::c_int;
 }
 unsafe extern "C" {
+    /// \brief          Calculate the public key from a private key in a key pair.
+    ///
+    /// \param key       A keypair structure. It must have a private key set.
+    ///                  If the public key is set, it will be overwritten.
+    /// \param f_rng     The RNG function. This must not be \c NULL.
+    /// \param p_rng     The RNG context to be passed to \p f_rng. This may be \c
+    ///                  NULL if \p f_rng doesn't need a context.
+    ///
+    /// \return          \c 0 on success. The key pair object can be used for
+    ///                  operations that require the public key.
+    /// \return          An \c MBEDTLS_ERR_ECP_XXX or an \c MBEDTLS_ERR_MPI_XXX
+    ///                  error code on calculation failure.
+    pub fn mbedtls_ecp_keypair_calc_public(
+        key: *mut mbedtls_ecp_keypair,
+        f_rng: mbedtls_f_rng_t,
+        p_rng: *mut ::core::ffi::c_void,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          Query the group that a key pair belongs to.
+    ///
+    /// \param key       The key pair to query.
+    ///
+    /// \return          The group ID for the group registered in the key pair
+    ///                  object.
+    ///                  This is \c MBEDTLS_ECP_DP_NONE if no group has been set
+    ///                  in the key pair object.
+    pub fn mbedtls_ecp_keypair_get_group_id(
+        key: *const mbedtls_ecp_keypair,
+    ) -> mbedtls_ecp_group_id;
+}
+unsafe extern "C" {
     /// \brief           This function exports generic key-pair parameters.
+    ///
+    ///                  Each of the output parameters can be a null pointer
+    ///                  if you do not need that parameter.
+    ///
+    /// \note            If the private key or the public key was not set in \p key,
+    ///                  the corresponding output is unspecified. Future versions
+    ///                  may return an error in that case.
     ///
     /// \param key       The key pair to export from.
     /// \param grp       Slot for exported ECP group.
-    ///                  It must point to an initialized ECP group.
+    ///                  It must either be null or point to an initialized ECP group.
     /// \param d         Slot for the exported secret value.
-    ///                  It must point to an initialized mpi.
+    ///                  It must either be null or point to an initialized mpi.
     /// \param Q         Slot for the exported public value.
-    ///                  It must point to an initialized ECP point.
+    ///                  It must either be null or point to an initialized ECP point.
     ///
     /// \return          \c 0 on success,
     /// \return          #MBEDTLS_ERR_MPI_ALLOC_FAILED on memory-allocation failure.
@@ -7247,404 +8449,6 @@ unsafe extern "C" {
     /// \return         \c 0 on success.
     /// \return         \c 1 on failure.
     pub fn mbedtls_ecp_self_test(verbose: ::core::ffi::c_int) -> ::core::ffi::c_int;
-}
-///< None.
-pub const mbedtls_md_type_t_MBEDTLS_MD_NONE: mbedtls_md_type_t = 0;
-///< The MD5 message digest.
-pub const mbedtls_md_type_t_MBEDTLS_MD_MD5: mbedtls_md_type_t = 1;
-///< The SHA-1 message digest.
-pub const mbedtls_md_type_t_MBEDTLS_MD_SHA1: mbedtls_md_type_t = 2;
-///< The SHA-224 message digest.
-pub const mbedtls_md_type_t_MBEDTLS_MD_SHA224: mbedtls_md_type_t = 3;
-///< The SHA-256 message digest.
-pub const mbedtls_md_type_t_MBEDTLS_MD_SHA256: mbedtls_md_type_t = 4;
-///< The SHA-384 message digest.
-pub const mbedtls_md_type_t_MBEDTLS_MD_SHA384: mbedtls_md_type_t = 5;
-///< The SHA-512 message digest.
-pub const mbedtls_md_type_t_MBEDTLS_MD_SHA512: mbedtls_md_type_t = 6;
-///< The RIPEMD-160 message digest.
-pub const mbedtls_md_type_t_MBEDTLS_MD_RIPEMD160: mbedtls_md_type_t = 7;
-/// \brief     Supported message digests.
-///
-/// \warning   MD5 and SHA-1 are considered weak message digests and
-///            their use constitutes a security risk. We recommend considering
-///            stronger message digests instead.
-pub type mbedtls_md_type_t = ::core::ffi::c_uint;
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct mbedtls_md_info_t {
-    _unused: [u8; 0],
-}
-pub const mbedtls_md_engine_t_MBEDTLS_MD_ENGINE_LEGACY: mbedtls_md_engine_t = 0;
-pub const mbedtls_md_engine_t_MBEDTLS_MD_ENGINE_PSA: mbedtls_md_engine_t = 1;
-/// Used internally to indicate whether a context uses legacy or PSA.
-///
-/// Internal use only.
-pub type mbedtls_md_engine_t = ::core::ffi::c_uint;
-/// The generic message-digest context.
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct mbedtls_md_context_t {
-    /// Information about the associated message digest.
-    pub private_md_info: *const mbedtls_md_info_t,
-    /// The digest-specific context (legacy) or the PSA operation.
-    pub private_md_ctx: *mut ::core::ffi::c_void,
-    /// The HMAC part of the context.
-    pub private_hmac_ctx: *mut ::core::ffi::c_void,
-}
-impl Default for mbedtls_md_context_t {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-unsafe extern "C" {
-    /// \brief           This function returns the message-digest information
-    ///                  associated with the given digest type.
-    ///
-    /// \param md_type   The type of digest to search for.
-    ///
-    /// \return          The message-digest information associated with \p md_type.
-    /// \return          NULL if the associated message-digest information is not found.
-    pub fn mbedtls_md_info_from_type(md_type: mbedtls_md_type_t) -> *const mbedtls_md_info_t;
-}
-unsafe extern "C" {
-    /// \brief           This function initializes a message-digest context without
-    ///                  binding it to a particular message-digest algorithm.
-    ///
-    ///                  This function should always be called first. It prepares the
-    ///                  context for mbedtls_md_setup() for binding it to a
-    ///                  message-digest algorithm.
-    pub fn mbedtls_md_init(ctx: *mut mbedtls_md_context_t);
-}
-unsafe extern "C" {
-    /// \brief           This function clears the internal structure of \p ctx and
-    ///                  frees any embedded internal structure, but does not free
-    ///                  \p ctx itself.
-    ///
-    ///                  If you have called mbedtls_md_setup() on \p ctx, you must
-    ///                  call mbedtls_md_free() when you are no longer using the
-    ///                  context.
-    ///                  Calling this function if you have previously
-    ///                  called mbedtls_md_init() and nothing else is optional.
-    ///                  You must not call this function if you have not called
-    ///                  mbedtls_md_init().
-    pub fn mbedtls_md_free(ctx: *mut mbedtls_md_context_t);
-}
-unsafe extern "C" {
-    /// \brief           This function selects the message digest algorithm to use,
-    ///                  and allocates internal structures.
-    ///
-    ///                  It should be called after mbedtls_md_init() or
-    ///                  mbedtls_md_free(). Makes it necessary to call
-    ///                  mbedtls_md_free() later.
-    ///
-    /// \param ctx       The context to set up.
-    /// \param md_info   The information structure of the message-digest algorithm
-    ///                  to use.
-    /// \param hmac      Defines if HMAC is used. 0: HMAC is not used (saves some memory),
-    ///                  or non-zero: HMAC is used with this context.
-    ///
-    /// \return          \c 0 on success.
-    /// \return          #MBEDTLS_ERR_MD_BAD_INPUT_DATA on parameter-verification
-    ///                  failure.
-    /// \return          #MBEDTLS_ERR_MD_ALLOC_FAILED on memory-allocation failure.
-    pub fn mbedtls_md_setup(
-        ctx: *mut mbedtls_md_context_t,
-        md_info: *const mbedtls_md_info_t,
-        hmac: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           This function clones the state of a message-digest
-    ///                  context.
-    ///
-    /// \note            You must call mbedtls_md_setup() on \c dst before calling
-    ///                  this function.
-    ///
-    /// \note            The two contexts must have the same type,
-    ///                  for example, both are SHA-256.
-    ///
-    /// \warning         This function clones the message-digest state, not the
-    ///                  HMAC state.
-    ///
-    /// \param dst       The destination context.
-    /// \param src       The context to be cloned.
-    ///
-    /// \return          \c 0 on success.
-    /// \return          #MBEDTLS_ERR_MD_BAD_INPUT_DATA on parameter-verification failure.
-    /// \return          #MBEDTLS_ERR_MD_FEATURE_UNAVAILABLE if both contexts are
-    ///                  not using the same engine. This can be avoided by moving
-    ///                  the call to psa_crypto_init() before the first call to
-    ///                  mbedtls_md_setup().
-    pub fn mbedtls_md_clone(
-        dst: *mut mbedtls_md_context_t,
-        src: *const mbedtls_md_context_t,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           This function extracts the message-digest size from the
-    ///                  message-digest information structure.
-    ///
-    /// \param md_info   The information structure of the message-digest algorithm
-    ///                  to use.
-    ///
-    /// \return          The size of the message-digest output in Bytes.
-    pub fn mbedtls_md_get_size(md_info: *const mbedtls_md_info_t) -> ::core::ffi::c_uchar;
-}
-unsafe extern "C" {
-    /// \brief           This function extracts the message-digest type from the
-    ///                  message-digest information structure.
-    ///
-    /// \param md_info   The information structure of the message-digest algorithm
-    ///                  to use.
-    ///
-    /// \return          The type of the message digest.
-    pub fn mbedtls_md_get_type(md_info: *const mbedtls_md_info_t) -> mbedtls_md_type_t;
-}
-unsafe extern "C" {
-    /// \brief           This function starts a message-digest computation.
-    ///
-    ///                  You must call this function after setting up the context
-    ///                  with mbedtls_md_setup(), and before passing data with
-    ///                  mbedtls_md_update().
-    ///
-    /// \param ctx       The generic message-digest context.
-    ///
-    /// \return          \c 0 on success.
-    /// \return          #MBEDTLS_ERR_MD_BAD_INPUT_DATA on parameter-verification
-    ///                  failure.
-    pub fn mbedtls_md_starts(ctx: *mut mbedtls_md_context_t) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           This function feeds an input buffer into an ongoing
-    ///                  message-digest computation.
-    ///
-    ///                  You must call mbedtls_md_starts() before calling this
-    ///                  function. You may call this function multiple times.
-    ///                  Afterwards, call mbedtls_md_finish().
-    ///
-    /// \param ctx       The generic message-digest context.
-    /// \param input     The buffer holding the input data.
-    /// \param ilen      The length of the input data.
-    ///
-    /// \return          \c 0 on success.
-    /// \return          #MBEDTLS_ERR_MD_BAD_INPUT_DATA on parameter-verification
-    ///                  failure.
-    pub fn mbedtls_md_update(
-        ctx: *mut mbedtls_md_context_t,
-        input: *const ::core::ffi::c_uchar,
-        ilen: usize,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           This function finishes the digest operation,
-    ///                  and writes the result to the output buffer.
-    ///
-    ///                  Call this function after a call to mbedtls_md_starts(),
-    ///                  followed by any number of calls to mbedtls_md_update().
-    ///                  Afterwards, you may either clear the context with
-    ///                  mbedtls_md_free(), or call mbedtls_md_starts() to reuse
-    ///                  the context for another digest operation with the same
-    ///                  algorithm.
-    ///
-    /// \param ctx       The generic message-digest context.
-    /// \param output    The buffer for the generic message-digest checksum result.
-    ///
-    /// \return          \c 0 on success.
-    /// \return          #MBEDTLS_ERR_MD_BAD_INPUT_DATA on parameter-verification
-    ///                  failure.
-    pub fn mbedtls_md_finish(
-        ctx: *mut mbedtls_md_context_t,
-        output: *mut ::core::ffi::c_uchar,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief          This function calculates the message-digest of a buffer,
-    ///                 with respect to a configurable message-digest algorithm
-    ///                 in a single call.
-    ///
-    ///                 The result is calculated as
-    ///                 Output = message_digest(input buffer).
-    ///
-    /// \param md_info  The information structure of the message-digest algorithm
-    ///                 to use.
-    /// \param input    The buffer holding the data.
-    /// \param ilen     The length of the input data.
-    /// \param output   The generic message-digest checksum result.
-    ///
-    /// \return         \c 0 on success.
-    /// \return         #MBEDTLS_ERR_MD_BAD_INPUT_DATA on parameter-verification
-    ///                 failure.
-    pub fn mbedtls_md(
-        md_info: *const mbedtls_md_info_t,
-        input: *const ::core::ffi::c_uchar,
-        ilen: usize,
-        output: *mut ::core::ffi::c_uchar,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           This function returns the list of digests supported by the
-    ///                  generic digest module.
-    ///
-    /// \note            The list starts with the strongest available hashes.
-    ///
-    /// \return          A statically allocated array of digests. Each element
-    ///                  in the returned list is an integer belonging to the
-    ///                  message-digest enumeration #mbedtls_md_type_t.
-    ///                  The last entry is 0.
-    pub fn mbedtls_md_list() -> *const ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           This function returns the message-digest information
-    ///                  associated with the given digest name.
-    ///
-    /// \param md_name   The name of the digest to search for.
-    ///
-    /// \return          The message-digest information associated with \p md_name.
-    /// \return          NULL if the associated message-digest information is not found.
-    pub fn mbedtls_md_info_from_string(
-        md_name: *const ::core::ffi::c_char,
-    ) -> *const mbedtls_md_info_t;
-}
-unsafe extern "C" {
-    /// \brief           This function extracts the message-digest name from the
-    ///                  message-digest information structure.
-    ///
-    /// \param md_info   The information structure of the message-digest algorithm
-    ///                  to use.
-    ///
-    /// \return          The name of the message digest.
-    pub fn mbedtls_md_get_name(md_info: *const mbedtls_md_info_t) -> *const ::core::ffi::c_char;
-}
-unsafe extern "C" {
-    /// \brief           This function returns the message-digest information
-    ///                  from the given context.
-    ///
-    /// \param ctx       The context from which to extract the information.
-    ///                  This must be initialized (or \c NULL).
-    ///
-    /// \return          The message-digest information associated with \p ctx.
-    /// \return          \c NULL if \p ctx is \c NULL.
-    pub fn mbedtls_md_info_from_ctx(ctx: *const mbedtls_md_context_t) -> *const mbedtls_md_info_t;
-}
-unsafe extern "C" {
-    /// \brief           This function sets the HMAC key and prepares to
-    ///                  authenticate a new message.
-    ///
-    ///                  Call this function after mbedtls_md_setup(), to use
-    ///                  the MD context for an HMAC calculation, then call
-    ///                  mbedtls_md_hmac_update() to provide the input data, and
-    ///                  mbedtls_md_hmac_finish() to get the HMAC value.
-    ///
-    /// \param ctx       The message digest context containing an embedded HMAC
-    ///                  context.
-    /// \param key       The HMAC secret key.
-    /// \param keylen    The length of the HMAC key in Bytes.
-    ///
-    /// \return          \c 0 on success.
-    /// \return          #MBEDTLS_ERR_MD_BAD_INPUT_DATA on parameter-verification
-    ///                  failure.
-    pub fn mbedtls_md_hmac_starts(
-        ctx: *mut mbedtls_md_context_t,
-        key: *const ::core::ffi::c_uchar,
-        keylen: usize,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           This function feeds an input buffer into an ongoing HMAC
-    ///                  computation.
-    ///
-    ///                  Call mbedtls_md_hmac_starts() or mbedtls_md_hmac_reset()
-    ///                  before calling this function.
-    ///                  You may call this function multiple times to pass the
-    ///                  input piecewise.
-    ///                  Afterwards, call mbedtls_md_hmac_finish().
-    ///
-    /// \param ctx       The message digest context containing an embedded HMAC
-    ///                  context.
-    /// \param input     The buffer holding the input data.
-    /// \param ilen      The length of the input data.
-    ///
-    /// \return          \c 0 on success.
-    /// \return          #MBEDTLS_ERR_MD_BAD_INPUT_DATA on parameter-verification
-    ///                  failure.
-    pub fn mbedtls_md_hmac_update(
-        ctx: *mut mbedtls_md_context_t,
-        input: *const ::core::ffi::c_uchar,
-        ilen: usize,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           This function finishes the HMAC operation, and writes
-    ///                  the result to the output buffer.
-    ///
-    ///                  Call this function after mbedtls_md_hmac_starts() and
-    ///                  mbedtls_md_hmac_update() to get the HMAC value. Afterwards
-    ///                  you may either call mbedtls_md_free() to clear the context,
-    ///                  or call mbedtls_md_hmac_reset() to reuse the context with
-    ///                  the same HMAC key.
-    ///
-    /// \param ctx       The message digest context containing an embedded HMAC
-    ///                  context.
-    /// \param output    The generic HMAC checksum result.
-    ///
-    /// \return          \c 0 on success.
-    /// \return          #MBEDTLS_ERR_MD_BAD_INPUT_DATA on parameter-verification
-    ///                  failure.
-    pub fn mbedtls_md_hmac_finish(
-        ctx: *mut mbedtls_md_context_t,
-        output: *mut ::core::ffi::c_uchar,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           This function prepares to authenticate a new message with
-    ///                  the same key as the previous HMAC operation.
-    ///
-    ///                  You may call this function after mbedtls_md_hmac_finish().
-    ///                  Afterwards call mbedtls_md_hmac_update() to pass the new
-    ///                  input.
-    ///
-    /// \param ctx       The message digest context containing an embedded HMAC
-    ///                  context.
-    ///
-    /// \return          \c 0 on success.
-    /// \return          #MBEDTLS_ERR_MD_BAD_INPUT_DATA on parameter-verification
-    ///                  failure.
-    pub fn mbedtls_md_hmac_reset(ctx: *mut mbedtls_md_context_t) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief          This function calculates the full generic HMAC
-    ///                 on the input buffer with the provided key.
-    ///
-    ///                 The function allocates the context, performs the
-    ///                 calculation, and frees the context.
-    ///
-    ///                 The HMAC result is calculated as
-    ///                 output = generic HMAC(hmac key, input buffer).
-    ///
-    /// \param md_info  The information structure of the message-digest algorithm
-    ///                 to use.
-    /// \param key      The HMAC secret key.
-    /// \param keylen   The length of the HMAC secret key in Bytes.
-    /// \param input    The buffer holding the input data.
-    /// \param ilen     The length of the input data.
-    /// \param output   The generic HMAC result.
-    ///
-    /// \return         \c 0 on success.
-    /// \return         #MBEDTLS_ERR_MD_BAD_INPUT_DATA on parameter-verification
-    ///                 failure.
-    pub fn mbedtls_md_hmac(
-        md_info: *const mbedtls_md_info_t,
-        key: *const ::core::ffi::c_uchar,
-        keylen: usize,
-        input: *const ::core::ffi::c_uchar,
-        ilen: usize,
-        output: *mut ::core::ffi::c_uchar,
-    ) -> ::core::ffi::c_int;
 }
 /// \brief   The RSA context structure.
 #[repr(C)]
@@ -7858,15 +8662,15 @@ unsafe extern "C" {
     /// \brief          This function completes an RSA context from
     ///                 a set of imported core parameters.
     ///
-    ///                 To setup an RSA public key, precisely \p N and \p E
+    ///                 To setup an RSA public key, precisely \c N and \c E
     ///                 must have been imported.
     ///
     ///                 To setup an RSA private key, sufficient information must
     ///                 be present for the other parameters to be derivable.
     ///
     ///                 The default implementation supports the following:
-    ///                 <ul><li>Derive \p P, \p Q from \p N, \p D, \p E.</li>
-    ///                 <li>Derive \p N, \p D from \p P, \p Q, \p E.</li></ul>
+    ///                 <ul><li>Derive \c P, \c Q from \c N, \c D, \c E.</li>
+    ///                 <li>Derive \c N, \c D from \c P, \c Q, \c E.</li></ul>
     ///                 Alternative implementations need not support these.
     ///
     ///                 If this function runs successfully, it guarantees that
@@ -8018,6 +8822,14 @@ unsafe extern "C" {
     ) -> ::core::ffi::c_int;
 }
 unsafe extern "C" {
+    /// \brief          This function retrieves the length of the RSA modulus in bits.
+    ///
+    /// \param ctx      The initialized RSA context.
+    ///
+    /// \return         The length of the RSA modulus in bits.
+    pub fn mbedtls_rsa_get_bitlen(ctx: *const mbedtls_rsa_context) -> usize;
+}
+unsafe extern "C" {
     /// \brief          This function retrieves the length of RSA modulus in Bytes.
     ///
     /// \param ctx      The initialized RSA context.
@@ -8044,13 +8856,7 @@ unsafe extern "C" {
     /// \return         An \c MBEDTLS_ERR_RSA_XXX error code on failure.
     pub fn mbedtls_rsa_gen_key(
         ctx: *mut mbedtls_rsa_context,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
         nbits: ::core::ffi::c_uint,
         exponent: ::core::ffi::c_int,
@@ -8136,7 +8942,7 @@ unsafe extern "C" {
     /// \note           This function does not handle message padding.
     ///
     /// \note           Make sure to set \p input[0] = 0 or ensure that
-    ///                 input is smaller than \p N.
+    ///                 input is smaller than \c N.
     ///
     /// \return         \c 0 on success.
     /// \return         An \c MBEDTLS_ERR_RSA_XXX error code on failure.
@@ -8175,13 +8981,7 @@ unsafe extern "C" {
     /// \return         An \c MBEDTLS_ERR_RSA_XXX error code on failure.
     pub fn mbedtls_rsa_private(
         ctx: *mut mbedtls_rsa_context,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
         input: *const ::core::ffi::c_uchar,
         output: *mut ::core::ffi::c_uchar,
@@ -8211,13 +9011,7 @@ unsafe extern "C" {
     /// \return         An \c MBEDTLS_ERR_RSA_XXX error code on failure.
     pub fn mbedtls_rsa_pkcs1_encrypt(
         ctx: *mut mbedtls_rsa_context,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
         ilen: usize,
         input: *const ::core::ffi::c_uchar,
@@ -8245,13 +9039,7 @@ unsafe extern "C" {
     /// \return         An \c MBEDTLS_ERR_RSA_XXX error code on failure.
     pub fn mbedtls_rsa_rsaes_pkcs1_v15_encrypt(
         ctx: *mut mbedtls_rsa_context,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
         ilen: usize,
         input: *const ::core::ffi::c_uchar,
@@ -8286,13 +9074,7 @@ unsafe extern "C" {
     /// \return           An \c MBEDTLS_ERR_RSA_XXX error code on failure.
     pub fn mbedtls_rsa_rsaes_oaep_encrypt(
         ctx: *mut mbedtls_rsa_context,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
         label: *const ::core::ffi::c_uchar,
         label_len: usize,
@@ -8307,6 +9089,10 @@ unsafe extern "C" {
     ///
     ///                 It is the generic wrapper for performing a PKCS#1 decryption
     ///                 operation.
+    ///
+    /// \warning        When \p ctx->padding is set to #MBEDTLS_RSA_PKCS_V15,
+    ///                 mbedtls_rsa_rsaes_pkcs1_v15_decrypt() is called, which is an
+    ///                 inherently dangerous function (CWE-242).
     ///
     /// \note           The output buffer length \c output_max_len should be
     ///                 as large as the size \p ctx->len of \p ctx->N (for example,
@@ -8333,13 +9119,7 @@ unsafe extern "C" {
     /// \return         An \c MBEDTLS_ERR_RSA_XXX error code on failure.
     pub fn mbedtls_rsa_pkcs1_decrypt(
         ctx: *mut mbedtls_rsa_context,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
         olen: *mut usize,
         input: *const ::core::ffi::c_uchar,
@@ -8350,6 +9130,11 @@ unsafe extern "C" {
 unsafe extern "C" {
     /// \brief          This function performs a PKCS#1 v1.5 decryption
     ///                 operation (RSAES-PKCS1-v1_5-DECRYPT).
+    ///
+    /// \warning        This is an inherently dangerous function (CWE-242). Unless
+    ///                 it is used in a side channel free and safe way (eg.
+    ///                 implementing the TLS protocol as per 7.4.7.1 of RFC 5246),
+    ///                 the calling code is vulnerable.
     ///
     /// \note           The output buffer length \c output_max_len should be
     ///                 as large as the size \p ctx->len of \p ctx->N, for example,
@@ -8376,13 +9161,7 @@ unsafe extern "C" {
     /// \return         An \c MBEDTLS_ERR_RSA_XXX error code on failure.
     pub fn mbedtls_rsa_rsaes_pkcs1_v15_decrypt(
         ctx: *mut mbedtls_rsa_context,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
         olen: *mut usize,
         input: *const ::core::ffi::c_uchar,
@@ -8424,13 +9203,7 @@ unsafe extern "C" {
     /// \return         An \c MBEDTLS_ERR_RSA_XXX error code on failure.
     pub fn mbedtls_rsa_rsaes_oaep_decrypt(
         ctx: *mut mbedtls_rsa_context,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
         label: *const ::core::ffi::c_uchar,
         label_len: usize,
@@ -8475,13 +9248,7 @@ unsafe extern "C" {
     /// \return         An \c MBEDTLS_ERR_RSA_XXX error code on failure.
     pub fn mbedtls_rsa_pkcs1_sign(
         ctx: *mut mbedtls_rsa_context,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
         md_alg: mbedtls_md_type_t,
         hashlen: ::core::ffi::c_uint,
@@ -8514,13 +9281,7 @@ unsafe extern "C" {
     /// \return         An \c MBEDTLS_ERR_RSA_XXX error code on failure.
     pub fn mbedtls_rsa_rsassa_pkcs1_v15_sign(
         ctx: *mut mbedtls_rsa_context,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
         md_alg: mbedtls_md_type_t,
         hashlen: ::core::ffi::c_uint,
@@ -8572,13 +9333,7 @@ unsafe extern "C" {
     /// \return         An \c MBEDTLS_ERR_RSA_XXX error code on failure.
     pub fn mbedtls_rsa_rsassa_pss_sign_ext(
         ctx: *mut mbedtls_rsa_context,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
         md_alg: mbedtls_md_type_t,
         hashlen: ::core::ffi::c_uint,
@@ -8629,13 +9384,7 @@ unsafe extern "C" {
     /// \return         An \c MBEDTLS_ERR_RSA_XXX error code on failure.
     pub fn mbedtls_rsa_rsassa_pss_sign(
         ctx: *mut mbedtls_rsa_context,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
         md_alg: mbedtls_md_type_t,
         hashlen: ::core::ffi::c_uint,
@@ -8651,8 +9400,8 @@ unsafe extern "C" {
     ///                 verification.
     ///
     /// \note           For PKCS#1 v2.1 encoding, see comments on
-    ///                 mbedtls_rsa_rsassa_pss_verify() about \p md_alg and
-    ///                 \p hash_id.
+    ///                 mbedtls_rsa_rsassa_pss_verify() about \c md_alg and
+    ///                 \c hash_id.
     ///
     /// \param ctx      The initialized RSA public key context to use.
     /// \param md_alg   The message-digest algorithm used to hash the original data.
@@ -8858,7 +9607,8 @@ unsafe extern "C" {
     ///                  buffer of length \p blen Bytes. It may be \c NULL if
     ///                  \p blen is zero.
     /// \param blen      The length of \p buf in Bytes.
-    /// \param f_rng     The RNG function. This must not be \c NULL.
+    /// \param f_rng     The RNG function, used both to generate the ECDSA nonce
+    ///                  and for blinding. This must not be \c NULL.
     /// \param p_rng     The RNG context to be passed to \p f_rng. This may be
     ///                  \c NULL if \p f_rng doesn't need a context parameter.
     ///
@@ -8872,13 +9622,7 @@ unsafe extern "C" {
         d: *const mbedtls_mpi,
         buf: *const ::core::ffi::c_uchar,
         blen: usize,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
     ) -> ::core::ffi::c_int;
 }
@@ -8914,8 +9658,9 @@ unsafe extern "C" {
     /// \param md_alg        The hash algorithm used to hash the original data.
     /// \param f_rng_blind   The RNG function used for blinding. This must not be
     ///                      \c NULL.
-    /// \param p_rng_blind   The RNG context to be passed to \p f_rng. This may be
-    ///                      \c NULL if \p f_rng doesn't need a context parameter.
+    /// \param p_rng_blind   The RNG context to be passed to \p f_rng_blind. This
+    ///                      may be \c NULL if \p f_rng_blind doesn't need a context
+    ///                      parameter.
     ///
     /// \return          \c 0 on success.
     /// \return          An \c MBEDTLS_ERR_ECP_XXX or \c MBEDTLS_MPI_XXX
@@ -8928,13 +9673,7 @@ unsafe extern "C" {
         buf: *const ::core::ffi::c_uchar,
         blen: usize,
         md_alg: mbedtls_md_type_t,
-        f_rng_blind: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng_blind: mbedtls_f_rng_t,
         p_rng_blind: *mut ::core::ffi::c_void,
     ) -> ::core::ffi::c_int;
 }
@@ -8973,7 +9712,8 @@ unsafe extern "C" {
     ///                      buffer of length \p blen Bytes. It may be \c NULL if
     ///                      \p blen is zero.
     /// \param blen          The length of \p buf in Bytes.
-    /// \param f_rng         The RNG function. This must not be \c NULL.
+    /// \param f_rng         The RNG function used to generate the ECDSA nonce.
+    ///                      This must not be \c NULL.
     /// \param p_rng         The RNG context to be passed to \p f_rng. This may be
     ///                      \c NULL if \p f_rng doesn't need a context parameter.
     /// \param f_rng_blind   The RNG function used for blinding. This must not be
@@ -8998,21 +9738,9 @@ unsafe extern "C" {
         d: *const mbedtls_mpi,
         buf: *const ::core::ffi::c_uchar,
         blen: usize,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
-        f_rng_blind: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng_blind: mbedtls_f_rng_t,
         p_rng_blind: *mut ::core::ffi::c_void,
         rs_ctx: *mut mbedtls_ecdsa_restart_ctx,
     ) -> ::core::ffi::c_int;
@@ -9051,8 +9779,8 @@ unsafe extern "C" {
     /// \param md_alg        The hash algorithm used to hash the original data.
     /// \param f_rng_blind   The RNG function used for blinding. This must not be
     ///                      \c NULL.
-    /// \param p_rng_blind   The RNG context to be passed to \p f_rng. This may be
-    ///                      \c NULL if \p f_rng doesn't need a context parameter.
+    /// \param p_rng_blind   The RNG context to be passed to \p f_rng_blind. This may be
+    ///                      \c NULL if \p f_rng_blind doesn't need a context parameter.
     /// \param rs_ctx        The restart context to use. This may be \c NULL
     ///                      to disable restarting. If it is not \c NULL, it
     ///                      must point to an initialized restart context.
@@ -9072,13 +9800,7 @@ unsafe extern "C" {
         buf: *const ::core::ffi::c_uchar,
         blen: usize,
         md_alg: mbedtls_md_type_t,
-        f_rng_blind: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng_blind: mbedtls_f_rng_t,
         p_rng_blind: *mut ::core::ffi::c_void,
         rs_ctx: *mut mbedtls_ecdsa_restart_ctx,
     ) -> ::core::ffi::c_int;
@@ -9193,7 +9915,7 @@ unsafe extern "C" {
     ///                  via mbedtls_ecdsa_genkey() or mbedtls_ecdsa_from_keypair().
     /// \param md_alg    The message digest that was used to hash the message.
     /// \param hash      The message hash to be signed. This must be a readable
-    ///                  buffer of length \p blen Bytes.
+    ///                  buffer of length \p hlen Bytes.
     /// \param hlen      The length of the hash \p hash in Bytes.
     /// \param sig       The buffer to which to write the signature. This must be a
     ///                  writable buffer of length at least twice as large as the
@@ -9203,10 +9925,10 @@ unsafe extern "C" {
     /// \param sig_size  The size of the \p sig buffer in bytes.
     /// \param slen      The address at which to store the actual length of
     ///                  the signature written. Must not be \c NULL.
-    /// \param f_rng     The RNG function. This must not be \c NULL if
-    ///                  #MBEDTLS_ECDSA_DETERMINISTIC is unset. Otherwise,
-    ///                  it is used only for blinding and may be set to \c NULL, but
-    ///                  doing so is DEPRECATED.
+    /// \param f_rng     The RNG function. This is used for blinding.
+    ///                  If #MBEDTLS_ECDSA_DETERMINISTIC is unset, this is also
+    ///                  used to generate the ECDSA nonce.
+    ///                  This must not be \c NULL.
     /// \param p_rng     The RNG context to be passed to \p f_rng. This may be
     ///                  \c NULL if \p f_rng is \c NULL or doesn't use a context.
     ///
@@ -9221,13 +9943,7 @@ unsafe extern "C" {
         sig: *mut ::core::ffi::c_uchar,
         sig_size: usize,
         slen: *mut usize,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
     ) -> ::core::ffi::c_int;
 }
@@ -9246,7 +9962,7 @@ unsafe extern "C" {
     ///                  via mbedtls_ecdsa_genkey() or mbedtls_ecdsa_from_keypair().
     /// \param md_alg    The message digest that was used to hash the message.
     /// \param hash      The message hash to be signed. This must be a readable
-    ///                  buffer of length \p blen Bytes.
+    ///                  buffer of length \p hlen Bytes.
     /// \param hlen      The length of the hash \p hash in Bytes.
     /// \param sig       The buffer to which to write the signature. This must be a
     ///                  writable buffer of length at least twice as large as the
@@ -9256,9 +9972,10 @@ unsafe extern "C" {
     /// \param sig_size  The size of the \p sig buffer in bytes.
     /// \param slen      The address at which to store the actual length of
     ///                  the signature written. Must not be \c NULL.
-    /// \param f_rng     The RNG function. This must not be \c NULL if
-    ///                  #MBEDTLS_ECDSA_DETERMINISTIC is unset. Otherwise,
-    ///                  it is unused and may be set to \c NULL.
+    /// \param f_rng     The RNG function. This is used for blinding.
+    ///                  If #MBEDTLS_ECDSA_DETERMINISTIC is unset, this is also
+    ///                  used to generate the ECDSA nonce.
+    ///                  This must not be \c NULL.
     /// \param p_rng     The RNG context to be passed to \p f_rng. This may be
     ///                  \c NULL if \p f_rng is \c NULL or doesn't use a context.
     /// \param rs_ctx    The restart context to use. This may be \c NULL to disable
@@ -9278,13 +9995,7 @@ unsafe extern "C" {
         sig: *mut ::core::ffi::c_uchar,
         sig_size: usize,
         slen: *mut usize,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
         rs_ctx: *mut mbedtls_ecdsa_restart_ctx,
     ) -> ::core::ffi::c_int;
@@ -9303,7 +10014,7 @@ unsafe extern "C" {
     /// \param ctx       The ECDSA context to use. This must be initialized
     ///                  and have a group and public key bound to it.
     /// \param hash      The message hash that was signed. This must be a readable
-    ///                  buffer of length \p size Bytes.
+    ///                  buffer of length \p hlen Bytes.
     /// \param hlen      The size of the hash \p hash.
     /// \param sig       The signature to read and verify. This must be a readable
     ///                  buffer of length \p slen Bytes.
@@ -9336,7 +10047,7 @@ unsafe extern "C" {
     /// \param ctx       The ECDSA context to use. This must be initialized
     ///                  and have a group and public key bound to it.
     /// \param hash      The message hash that was signed. This must be a readable
-    ///                  buffer of length \p size Bytes.
+    ///                  buffer of length \p hlen Bytes.
     /// \param hlen      The size of the hash \p hash.
     /// \param sig       The signature to read and verify. This must be a readable
     ///                  buffer of length \p slen Bytes.
@@ -9380,13 +10091,7 @@ unsafe extern "C" {
     pub fn mbedtls_ecdsa_genkey(
         ctx: *mut mbedtls_ecdsa_context,
         gid: mbedtls_ecp_group_id,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
     ) -> ::core::ffi::c_int;
 }
@@ -9423,843 +10128,6 @@ unsafe extern "C" {
     ///                  in which case this function does nothing. If it
     ///                  is not \c NULL, it must be initialized.
     pub fn mbedtls_ecdsa_free(ctx: *mut mbedtls_ecdsa_context);
-}
-pub const mbedtls_pk_type_t_MBEDTLS_PK_NONE: mbedtls_pk_type_t = 0;
-pub const mbedtls_pk_type_t_MBEDTLS_PK_RSA: mbedtls_pk_type_t = 1;
-pub const mbedtls_pk_type_t_MBEDTLS_PK_ECKEY: mbedtls_pk_type_t = 2;
-pub const mbedtls_pk_type_t_MBEDTLS_PK_ECKEY_DH: mbedtls_pk_type_t = 3;
-pub const mbedtls_pk_type_t_MBEDTLS_PK_ECDSA: mbedtls_pk_type_t = 4;
-pub const mbedtls_pk_type_t_MBEDTLS_PK_RSA_ALT: mbedtls_pk_type_t = 5;
-pub const mbedtls_pk_type_t_MBEDTLS_PK_RSASSA_PSS: mbedtls_pk_type_t = 6;
-pub const mbedtls_pk_type_t_MBEDTLS_PK_OPAQUE: mbedtls_pk_type_t = 7;
-/// \brief          Public key types
-pub type mbedtls_pk_type_t = ::core::ffi::c_uint;
-/// \brief           Options for RSASSA-PSS signature verification.
-///                  See \c mbedtls_rsa_rsassa_pss_verify_ext()
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct mbedtls_pk_rsassa_pss_options {
-    /// The digest to use for MGF1 in PSS.
-    ///
-    /// \note When #MBEDTLS_USE_PSA_CRYPTO is enabled and #MBEDTLS_RSA_C is
-    ///       disabled, this must be equal to the \c md_alg argument passed
-    ///       to mbedtls_pk_verify_ext(). In a future version of the library,
-    ///       this constraint may apply whenever #MBEDTLS_USE_PSA_CRYPTO is
-    ///       enabled regardless of the status of #MBEDTLS_RSA_C.
-    pub mgf1_hash_id: mbedtls_md_type_t,
-    /// The expected length of the salt, in bytes. This may be
-    /// #MBEDTLS_RSA_SALT_LEN_ANY to accept any salt length.
-    ///
-    /// \note When #MBEDTLS_USE_PSA_CRYPTO is enabled, only
-    ///       #MBEDTLS_RSA_SALT_LEN_ANY is valid. Any other value may be
-    ///       ignored (allowing any salt length).
-    pub expected_salt_len: ::core::ffi::c_int,
-}
-impl Default for mbedtls_pk_rsassa_pss_options {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-pub const mbedtls_pk_debug_type_MBEDTLS_PK_DEBUG_NONE: mbedtls_pk_debug_type = 0;
-pub const mbedtls_pk_debug_type_MBEDTLS_PK_DEBUG_MPI: mbedtls_pk_debug_type = 1;
-pub const mbedtls_pk_debug_type_MBEDTLS_PK_DEBUG_ECP: mbedtls_pk_debug_type = 2;
-/// \brief           Types for interfacing with the debug module
-pub type mbedtls_pk_debug_type = ::core::ffi::c_uint;
-/// \brief           Item to send to the debug module
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct mbedtls_pk_debug_item {
-    pub private_type: mbedtls_pk_debug_type,
-    pub private_name: *const ::core::ffi::c_char,
-    pub private_value: *mut ::core::ffi::c_void,
-}
-impl Default for mbedtls_pk_debug_item {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct mbedtls_pk_info_t {
-    _unused: [u8; 0],
-}
-/// \brief           Public key container
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct mbedtls_pk_context {
-    ///< Public key information
-    pub private_pk_info: *const mbedtls_pk_info_t,
-    ///< Underlying public key context
-    pub private_pk_ctx: *mut ::core::ffi::c_void,
-}
-impl Default for mbedtls_pk_context {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-pub type mbedtls_pk_restart_ctx = ::core::ffi::c_void;
-/// \brief           Types for RSA-alt abstraction
-pub type mbedtls_pk_rsa_alt_decrypt_func = ::core::option::Option<
-    unsafe extern "C" fn(
-        ctx: *mut ::core::ffi::c_void,
-        olen: *mut usize,
-        input: *const ::core::ffi::c_uchar,
-        output: *mut ::core::ffi::c_uchar,
-        output_max_len: usize,
-    ) -> ::core::ffi::c_int,
->;
-pub type mbedtls_pk_rsa_alt_sign_func = ::core::option::Option<
-    unsafe extern "C" fn(
-        ctx: *mut ::core::ffi::c_void,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
-        p_rng: *mut ::core::ffi::c_void,
-        md_alg: mbedtls_md_type_t,
-        hashlen: ::core::ffi::c_uint,
-        hash: *const ::core::ffi::c_uchar,
-        sig: *mut ::core::ffi::c_uchar,
-    ) -> ::core::ffi::c_int,
->;
-pub type mbedtls_pk_rsa_alt_key_len_func =
-    ::core::option::Option<unsafe extern "C" fn(ctx: *mut ::core::ffi::c_void) -> usize>;
-unsafe extern "C" {
-    /// \brief           Return information associated with the given PK type
-    ///
-    /// \param pk_type   PK type to search for.
-    ///
-    /// \return          The PK info associated with the type or NULL if not found.
-    pub fn mbedtls_pk_info_from_type(pk_type: mbedtls_pk_type_t) -> *const mbedtls_pk_info_t;
-}
-unsafe extern "C" {
-    /// \brief           Initialize a #mbedtls_pk_context (as NONE).
-    ///
-    /// \param ctx       The context to initialize.
-    ///                  This must not be \c NULL.
-    pub fn mbedtls_pk_init(ctx: *mut mbedtls_pk_context);
-}
-unsafe extern "C" {
-    /// \brief           Free the components of a #mbedtls_pk_context.
-    ///
-    /// \param ctx       The context to clear. It must have been initialized.
-    ///                  If this is \c NULL, this function does nothing.
-    ///
-    /// \note            For contexts that have been set up with
-    ///                  mbedtls_pk_setup_opaque(), this does not free the underlying
-    ///                  PSA key and you still need to call psa_destroy_key()
-    ///                  independently if you want to destroy that key.
-    pub fn mbedtls_pk_free(ctx: *mut mbedtls_pk_context);
-}
-unsafe extern "C" {
-    /// \brief           Initialize a PK context with the information given
-    ///                  and allocates the type-specific PK subcontext.
-    ///
-    /// \param ctx       Context to initialize. It must not have been set
-    ///                  up yet (type #MBEDTLS_PK_NONE).
-    /// \param info      Information to use
-    ///
-    /// \return          0 on success,
-    ///                  MBEDTLS_ERR_PK_BAD_INPUT_DATA on invalid input,
-    ///                  MBEDTLS_ERR_PK_ALLOC_FAILED on allocation failure.
-    ///
-    /// \note            For contexts holding an RSA-alt key, use
-    ///                  \c mbedtls_pk_setup_rsa_alt() instead.
-    pub fn mbedtls_pk_setup(
-        ctx: *mut mbedtls_pk_context,
-        info: *const mbedtls_pk_info_t,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           Initialize an RSA-alt context
-    ///
-    /// \param ctx       Context to initialize. It must not have been set
-    ///                  up yet (type #MBEDTLS_PK_NONE).
-    /// \param key       RSA key pointer
-    /// \param decrypt_func  Decryption function
-    /// \param sign_func     Signing function
-    /// \param key_len_func  Function returning key length in bytes
-    ///
-    /// \return          0 on success, or MBEDTLS_ERR_PK_BAD_INPUT_DATA if the
-    ///                  context wasn't already initialized as RSA_ALT.
-    ///
-    /// \note            This function replaces \c mbedtls_pk_setup() for RSA-alt.
-    pub fn mbedtls_pk_setup_rsa_alt(
-        ctx: *mut mbedtls_pk_context,
-        key: *mut ::core::ffi::c_void,
-        decrypt_func: mbedtls_pk_rsa_alt_decrypt_func,
-        sign_func: mbedtls_pk_rsa_alt_sign_func,
-        key_len_func: mbedtls_pk_rsa_alt_key_len_func,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           Get the size in bits of the underlying key
-    ///
-    /// \param ctx       The context to query. It must have been initialized.
-    ///
-    /// \return          Key size in bits, or 0 on error
-    pub fn mbedtls_pk_get_bitlen(ctx: *const mbedtls_pk_context) -> usize;
-}
-unsafe extern "C" {
-    /// \brief           Tell if a context can do the operation given by type
-    ///
-    /// \param ctx       The context to query. It must have been initialized.
-    /// \param type      The desired type.
-    ///
-    /// \return          1 if the context can do operations on the given type.
-    /// \return          0 if the context cannot do the operations on the given
-    ///                  type. This is always the case for a context that has
-    ///                  been initialized but not set up, or that has been
-    ///                  cleared with mbedtls_pk_free().
-    pub fn mbedtls_pk_can_do(
-        ctx: *const mbedtls_pk_context,
-        type_: mbedtls_pk_type_t,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           Verify signature (including padding if relevant).
-    ///
-    /// \param ctx       The PK context to use. It must have been set up.
-    /// \param md_alg    Hash algorithm used.
-    ///                  This can be #MBEDTLS_MD_NONE if the signature algorithm
-    ///                  does not rely on a hash algorithm (non-deterministic
-    ///                  ECDSA, RSA PKCS#1 v1.5).
-    ///                  For PKCS#1 v1.5, if \p md_alg is #MBEDTLS_MD_NONE, then
-    ///                  \p hash is the DigestInfo structure used by RFC 8017
-    ///                  &sect;9.2 steps 3&ndash;6. If \p md_alg is a valid hash
-    ///                  algorithm then \p hash is the digest itself, and this
-    ///                  function calculates the DigestInfo encoding internally.
-    /// \param hash      Hash of the message to sign
-    /// \param hash_len  Hash length
-    /// \param sig       Signature to verify
-    /// \param sig_len   Signature length
-    ///
-    /// \return          0 on success (signature is valid),
-    ///                  #MBEDTLS_ERR_PK_SIG_LEN_MISMATCH if there is a valid
-    ///                  signature in sig but its length is less than \p siglen,
-    ///                  or a specific error code.
-    ///
-    /// \note            For RSA keys, the default padding type is PKCS#1 v1.5.
-    ///                  Use \c mbedtls_pk_verify_ext( MBEDTLS_PK_RSASSA_PSS, ... )
-    ///                  to verify RSASSA_PSS signatures.
-    pub fn mbedtls_pk_verify(
-        ctx: *mut mbedtls_pk_context,
-        md_alg: mbedtls_md_type_t,
-        hash: *const ::core::ffi::c_uchar,
-        hash_len: usize,
-        sig: *const ::core::ffi::c_uchar,
-        sig_len: usize,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           Restartable version of \c mbedtls_pk_verify()
-    ///
-    /// \note            Performs the same job as \c mbedtls_pk_verify(), but can
-    ///                  return early and restart according to the limit set with
-    ///                  \c mbedtls_ecp_set_max_ops() to reduce blocking for ECC
-    ///                  operations. For RSA, same as \c mbedtls_pk_verify().
-    ///
-    /// \param ctx       The PK context to use. It must have been set up.
-    /// \param md_alg    Hash algorithm used (see notes)
-    /// \param hash      Hash of the message to sign
-    /// \param hash_len  Hash length or 0 (see notes)
-    /// \param sig       Signature to verify
-    /// \param sig_len   Signature length
-    /// \param rs_ctx    Restart context (NULL to disable restart)
-    ///
-    /// \return          See \c mbedtls_pk_verify(), or
-    /// \return          #MBEDTLS_ERR_ECP_IN_PROGRESS if maximum number of
-    ///                  operations was reached: see \c mbedtls_ecp_set_max_ops().
-    pub fn mbedtls_pk_verify_restartable(
-        ctx: *mut mbedtls_pk_context,
-        md_alg: mbedtls_md_type_t,
-        hash: *const ::core::ffi::c_uchar,
-        hash_len: usize,
-        sig: *const ::core::ffi::c_uchar,
-        sig_len: usize,
-        rs_ctx: *mut mbedtls_pk_restart_ctx,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           Verify signature, with options.
-    ///                  (Includes verification of the padding depending on type.)
-    ///
-    /// \param type      Signature type (inc. possible padding type) to verify
-    /// \param options   Pointer to type-specific options, or NULL
-    /// \param ctx       The PK context to use. It must have been set up.
-    /// \param md_alg    Hash algorithm used (see notes)
-    /// \param hash      Hash of the message to sign
-    /// \param hash_len  Hash length or 0 (see notes)
-    /// \param sig       Signature to verify
-    /// \param sig_len   Signature length
-    ///
-    /// \return          0 on success (signature is valid),
-    ///                  #MBEDTLS_ERR_PK_TYPE_MISMATCH if the PK context can't be
-    ///                  used for this type of signatures,
-    ///                  #MBEDTLS_ERR_PK_SIG_LEN_MISMATCH if there is a valid
-    ///                  signature in sig but its length is less than \p siglen,
-    ///                  or a specific error code.
-    ///
-    /// \note            If hash_len is 0, then the length associated with md_alg
-    ///                  is used instead, or an error returned if it is invalid.
-    ///
-    /// \note            md_alg may be MBEDTLS_MD_NONE, only if hash_len != 0
-    ///
-    /// \note            If type is MBEDTLS_PK_RSASSA_PSS, then options must point
-    ///                  to a mbedtls_pk_rsassa_pss_options structure,
-    ///                  otherwise it must be NULL. Note that if
-    ///                  #MBEDTLS_USE_PSA_CRYPTO is defined, the salt length is not
-    ///                  verified as PSA_ALG_RSA_PSS_ANY_SALT is used.
-    pub fn mbedtls_pk_verify_ext(
-        type_: mbedtls_pk_type_t,
-        options: *const ::core::ffi::c_void,
-        ctx: *mut mbedtls_pk_context,
-        md_alg: mbedtls_md_type_t,
-        hash: *const ::core::ffi::c_uchar,
-        hash_len: usize,
-        sig: *const ::core::ffi::c_uchar,
-        sig_len: usize,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           Make signature, including padding if relevant.
-    ///
-    /// \param ctx       The PK context to use. It must have been set up
-    ///                  with a private key.
-    /// \param md_alg    Hash algorithm used (see notes)
-    /// \param hash      Hash of the message to sign
-    /// \param hash_len  Hash length
-    /// \param sig       Place to write the signature.
-    ///                  It must have enough room for the signature.
-    ///                  #MBEDTLS_PK_SIGNATURE_MAX_SIZE is always enough.
-    ///                  You may use a smaller buffer if it is large enough
-    ///                  given the key type.
-    /// \param sig_size  The size of the \p sig buffer in bytes.
-    /// \param sig_len   On successful return,
-    ///                  the number of bytes written to \p sig.
-    /// \param f_rng     RNG function, must not be \c NULL.
-    /// \param p_rng     RNG parameter
-    ///
-    /// \return          0 on success, or a specific error code.
-    ///
-    /// \note            For RSA keys, the default padding type is PKCS#1 v1.5.
-    ///                  There is no interface in the PK module to make RSASSA-PSS
-    ///                  signatures yet.
-    ///
-    /// \note            For RSA, md_alg may be MBEDTLS_MD_NONE if hash_len != 0.
-    ///                  For ECDSA, md_alg may never be MBEDTLS_MD_NONE.
-    pub fn mbedtls_pk_sign(
-        ctx: *mut mbedtls_pk_context,
-        md_alg: mbedtls_md_type_t,
-        hash: *const ::core::ffi::c_uchar,
-        hash_len: usize,
-        sig: *mut ::core::ffi::c_uchar,
-        sig_size: usize,
-        sig_len: *mut usize,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
-        p_rng: *mut ::core::ffi::c_void,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           Make signature given a signature type.
-    ///
-    /// \param pk_type   Signature type.
-    /// \param ctx       The PK context to use. It must have been set up
-    ///                  with a private key.
-    /// \param md_alg    Hash algorithm used (see notes)
-    /// \param hash      Hash of the message to sign
-    /// \param hash_len  Hash length
-    /// \param sig       Place to write the signature.
-    ///                  It must have enough room for the signature.
-    ///                  #MBEDTLS_PK_SIGNATURE_MAX_SIZE is always enough.
-    ///                  You may use a smaller buffer if it is large enough
-    ///                  given the key type.
-    /// \param sig_size  The size of the \p sig buffer in bytes.
-    /// \param sig_len   On successful return,
-    ///                  the number of bytes written to \p sig.
-    /// \param f_rng     RNG function, must not be \c NULL.
-    /// \param p_rng     RNG parameter
-    ///
-    /// \return          0 on success, or a specific error code.
-    ///
-    /// \note            When \p pk_type is #MBEDTLS_PK_RSASSA_PSS,
-    ///                  see #PSA_ALG_RSA_PSS for a description of PSS options used.
-    ///
-    /// \note            For RSA, md_alg may be MBEDTLS_MD_NONE if hash_len != 0.
-    ///                  For ECDSA, md_alg may never be MBEDTLS_MD_NONE.
-    pub fn mbedtls_pk_sign_ext(
-        pk_type: mbedtls_pk_type_t,
-        ctx: *mut mbedtls_pk_context,
-        md_alg: mbedtls_md_type_t,
-        hash: *const ::core::ffi::c_uchar,
-        hash_len: usize,
-        sig: *mut ::core::ffi::c_uchar,
-        sig_size: usize,
-        sig_len: *mut usize,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
-        p_rng: *mut ::core::ffi::c_void,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           Restartable version of \c mbedtls_pk_sign()
-    ///
-    /// \note            Performs the same job as \c mbedtls_pk_sign(), but can
-    ///                  return early and restart according to the limit set with
-    ///                  \c mbedtls_ecp_set_max_ops() to reduce blocking for ECC
-    ///                  operations. For RSA, same as \c mbedtls_pk_sign().
-    ///
-    /// \param ctx       The PK context to use. It must have been set up
-    ///                  with a private key.
-    /// \param md_alg    Hash algorithm used (see notes for mbedtls_pk_sign())
-    /// \param hash      Hash of the message to sign
-    /// \param hash_len  Hash length
-    /// \param sig       Place to write the signature.
-    ///                  It must have enough room for the signature.
-    ///                  #MBEDTLS_PK_SIGNATURE_MAX_SIZE is always enough.
-    ///                  You may use a smaller buffer if it is large enough
-    ///                  given the key type.
-    /// \param sig_size  The size of the \p sig buffer in bytes.
-    /// \param sig_len   On successful return,
-    ///                  the number of bytes written to \p sig.
-    /// \param f_rng     RNG function, must not be \c NULL.
-    /// \param p_rng     RNG parameter
-    /// \param rs_ctx    Restart context (NULL to disable restart)
-    ///
-    /// \return          See \c mbedtls_pk_sign().
-    /// \return          #MBEDTLS_ERR_ECP_IN_PROGRESS if maximum number of
-    ///                  operations was reached: see \c mbedtls_ecp_set_max_ops().
-    pub fn mbedtls_pk_sign_restartable(
-        ctx: *mut mbedtls_pk_context,
-        md_alg: mbedtls_md_type_t,
-        hash: *const ::core::ffi::c_uchar,
-        hash_len: usize,
-        sig: *mut ::core::ffi::c_uchar,
-        sig_size: usize,
-        sig_len: *mut usize,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
-        p_rng: *mut ::core::ffi::c_void,
-        rs_ctx: *mut mbedtls_pk_restart_ctx,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           Decrypt message (including padding if relevant).
-    ///
-    /// \param ctx       The PK context to use. It must have been set up
-    ///                  with a private key.
-    /// \param input     Input to decrypt
-    /// \param ilen      Input size
-    /// \param output    Decrypted output
-    /// \param olen      Decrypted message length
-    /// \param osize     Size of the output buffer
-    /// \param f_rng     RNG function, must not be \c NULL.
-    /// \param p_rng     RNG parameter
-    ///
-    /// \note            For RSA keys, the default padding type is PKCS#1 v1.5.
-    ///
-    /// \return          0 on success, or a specific error code.
-    pub fn mbedtls_pk_decrypt(
-        ctx: *mut mbedtls_pk_context,
-        input: *const ::core::ffi::c_uchar,
-        ilen: usize,
-        output: *mut ::core::ffi::c_uchar,
-        olen: *mut usize,
-        osize: usize,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
-        p_rng: *mut ::core::ffi::c_void,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           Encrypt message (including padding if relevant).
-    ///
-    /// \param ctx       The PK context to use. It must have been set up.
-    /// \param input     Message to encrypt
-    /// \param ilen      Message size
-    /// \param output    Encrypted output
-    /// \param olen      Encrypted output length
-    /// \param osize     Size of the output buffer
-    /// \param f_rng     RNG function, must not be \c NULL.
-    /// \param p_rng     RNG parameter
-    ///
-    /// \note            \p f_rng is used for padding generation.
-    ///
-    /// \note            For RSA keys, the default padding type is PKCS#1 v1.5.
-    ///
-    /// \return          0 on success, or a specific error code.
-    pub fn mbedtls_pk_encrypt(
-        ctx: *mut mbedtls_pk_context,
-        input: *const ::core::ffi::c_uchar,
-        ilen: usize,
-        output: *mut ::core::ffi::c_uchar,
-        olen: *mut usize,
-        osize: usize,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
-        p_rng: *mut ::core::ffi::c_void,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           Check if a public-private pair of keys matches.
-    ///
-    /// \param pub       Context holding a public key.
-    /// \param prv       Context holding a private (and public) key.
-    /// \param f_rng     RNG function, must not be \c NULL.
-    /// \param p_rng     RNG parameter
-    ///
-    /// \return          \c 0 on success (keys were checked and match each other).
-    /// \return          #MBEDTLS_ERR_PK_FEATURE_UNAVAILABLE if the keys could not
-    ///                  be checked - in that case they may or may not match.
-    /// \return          #MBEDTLS_ERR_PK_BAD_INPUT_DATA if a context is invalid.
-    /// \return          Another non-zero value if the keys do not match.
-    pub fn mbedtls_pk_check_pair(
-        pub_: *const mbedtls_pk_context,
-        prv: *const mbedtls_pk_context,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
-        p_rng: *mut ::core::ffi::c_void,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           Export debug information
-    ///
-    /// \param ctx       The PK context to use. It must have been initialized.
-    /// \param items     Place to write debug items
-    ///
-    /// \return          0 on success or MBEDTLS_ERR_PK_BAD_INPUT_DATA
-    pub fn mbedtls_pk_debug(
-        ctx: *const mbedtls_pk_context,
-        items: *mut mbedtls_pk_debug_item,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           Access the type name
-    ///
-    /// \param ctx       The PK context to use. It must have been initialized.
-    ///
-    /// \return          Type name on success, or "invalid PK"
-    pub fn mbedtls_pk_get_name(ctx: *const mbedtls_pk_context) -> *const ::core::ffi::c_char;
-}
-unsafe extern "C" {
-    /// \brief           Get the key type
-    ///
-    /// \param ctx       The PK context to use. It must have been initialized.
-    ///
-    /// \return          Type on success.
-    /// \return          #MBEDTLS_PK_NONE for a context that has not been set up.
-    pub fn mbedtls_pk_get_type(ctx: *const mbedtls_pk_context) -> mbedtls_pk_type_t;
-}
-unsafe extern "C" {
-    /// \ingroup pk_module */
-    ////**
-    /// \brief           Parse a private key in PEM or DER format
-    ///
-    /// \note            If #MBEDTLS_USE_PSA_CRYPTO is enabled, the PSA crypto
-    ///                  subsystem must have been initialized by calling
-    ///                  psa_crypto_init() before calling this function.
-    ///
-    /// \param ctx       The PK context to fill. It must have been initialized
-    ///                  but not set up.
-    /// \param key       Input buffer to parse.
-    ///                  The buffer must contain the input exactly, with no
-    ///                  extra trailing material. For PEM, the buffer must
-    ///                  contain a null-terminated string.
-    /// \param keylen    Size of \b key in bytes.
-    ///                  For PEM data, this includes the terminating null byte,
-    ///                  so \p keylen must be equal to `strlen(key) + 1`.
-    /// \param pwd       Optional password for decryption.
-    ///                  Pass \c NULL if expecting a non-encrypted key.
-    ///                  Pass a string of \p pwdlen bytes if expecting an encrypted
-    ///                  key; a non-encrypted key will also be accepted.
-    ///                  The empty password is not supported.
-    /// \param pwdlen    Size of the password in bytes.
-    ///                  Ignored if \p pwd is \c NULL.
-    /// \param f_rng     RNG function, must not be \c NULL. Used for blinding.
-    /// \param p_rng     RNG parameter
-    ///
-    /// \note            On entry, ctx must be empty, either freshly initialised
-    ///                  with mbedtls_pk_init() or reset with mbedtls_pk_free(). If you need a
-    ///                  specific key type, check the result with mbedtls_pk_can_do().
-    ///
-    /// \note            The key is also checked for correctness.
-    ///
-    /// \return          0 if successful, or a specific PK or PEM error code
-    pub fn mbedtls_pk_parse_key(
-        ctx: *mut mbedtls_pk_context,
-        key: *const ::core::ffi::c_uchar,
-        keylen: usize,
-        pwd: *const ::core::ffi::c_uchar,
-        pwdlen: usize,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
-        p_rng: *mut ::core::ffi::c_void,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \ingroup pk_module */
-    ////**
-    /// \brief           Parse a public key in PEM or DER format
-    ///
-    /// \note            If #MBEDTLS_USE_PSA_CRYPTO is enabled, the PSA crypto
-    ///                  subsystem must have been initialized by calling
-    ///                  psa_crypto_init() before calling this function.
-    ///
-    /// \param ctx       The PK context to fill. It must have been initialized
-    ///                  but not set up.
-    /// \param key       Input buffer to parse.
-    ///                  The buffer must contain the input exactly, with no
-    ///                  extra trailing material. For PEM, the buffer must
-    ///                  contain a null-terminated string.
-    /// \param keylen    Size of \b key in bytes.
-    ///                  For PEM data, this includes the terminating null byte,
-    ///                  so \p keylen must be equal to `strlen(key) + 1`.
-    ///
-    /// \note            On entry, ctx must be empty, either freshly initialised
-    ///                  with mbedtls_pk_init() or reset with mbedtls_pk_free(). If you need a
-    ///                  specific key type, check the result with mbedtls_pk_can_do().
-    ///
-    /// \note            For compressed points, see #MBEDTLS_ECP_PF_COMPRESSED for
-    ///                  limitations.
-    ///
-    /// \note            The key is also checked for correctness.
-    ///
-    /// \return          0 if successful, or a specific PK or PEM error code
-    pub fn mbedtls_pk_parse_public_key(
-        ctx: *mut mbedtls_pk_context,
-        key: *const ::core::ffi::c_uchar,
-        keylen: usize,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           Write a private key to a PKCS#1 or SEC1 DER structure
-    ///                  Note: data is written at the end of the buffer! Use the
-    ///                        return value to determine where you should start
-    ///                        using the buffer
-    ///
-    /// \param ctx       PK context which must contain a valid private key.
-    /// \param buf       buffer to write to
-    /// \param size      size of the buffer
-    ///
-    /// \return          length of data written if successful, or a specific
-    ///                  error code
-    pub fn mbedtls_pk_write_key_der(
-        ctx: *const mbedtls_pk_context,
-        buf: *mut ::core::ffi::c_uchar,
-        size: usize,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           Write a public key to a SubjectPublicKeyInfo DER structure
-    ///                  Note: data is written at the end of the buffer! Use the
-    ///                        return value to determine where you should start
-    ///                        using the buffer
-    ///
-    /// \param ctx       PK context which must contain a valid public or private key.
-    /// \param buf       buffer to write to
-    /// \param size      size of the buffer
-    ///
-    /// \return          length of data written if successful, or a specific
-    ///                  error code
-    pub fn mbedtls_pk_write_pubkey_der(
-        ctx: *const mbedtls_pk_context,
-        buf: *mut ::core::ffi::c_uchar,
-        size: usize,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           Write a public key to a PEM string
-    ///
-    /// \param ctx       PK context which must contain a valid public or private key.
-    /// \param buf       Buffer to write to. The output includes a
-    ///                  terminating null byte.
-    /// \param size      Size of the buffer in bytes.
-    ///
-    /// \return          0 if successful, or a specific error code
-    pub fn mbedtls_pk_write_pubkey_pem(
-        ctx: *const mbedtls_pk_context,
-        buf: *mut ::core::ffi::c_uchar,
-        size: usize,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           Write a private key to a PKCS#1 or SEC1 PEM string
-    ///
-    /// \param ctx       PK context which must contain a valid private key.
-    /// \param buf       Buffer to write to. The output includes a
-    ///                  terminating null byte.
-    /// \param size      Size of the buffer in bytes.
-    ///
-    /// \return          0 if successful, or a specific error code
-    pub fn mbedtls_pk_write_key_pem(
-        ctx: *const mbedtls_pk_context,
-        buf: *mut ::core::ffi::c_uchar,
-        size: usize,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           Parse a SubjectPublicKeyInfo DER structure
-    ///
-    /// \param p         the position in the ASN.1 data
-    /// \param end       end of the buffer
-    /// \param pk        The PK context to fill. It must have been initialized
-    ///                  but not set up.
-    ///
-    /// \return          0 if successful, or a specific PK error code
-    pub fn mbedtls_pk_parse_subpubkey(
-        p: *mut *mut ::core::ffi::c_uchar,
-        end: *const ::core::ffi::c_uchar,
-        pk: *mut mbedtls_pk_context,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           Write a subjectPublicKey to ASN.1 data
-    ///                  Note: function works backwards in data buffer
-    ///
-    /// \param p         reference to current position pointer
-    /// \param start     start of the buffer (for bounds-checking)
-    /// \param key       PK context which must contain a valid public or private key.
-    ///
-    /// \return          the length written or a negative error code
-    pub fn mbedtls_pk_write_pubkey(
-        p: *mut *mut ::core::ffi::c_uchar,
-        start: *mut ::core::ffi::c_uchar,
-        key: *const mbedtls_pk_context,
-    ) -> ::core::ffi::c_int;
-}
-pub const mbedtls_key_exchange_type_t_MBEDTLS_KEY_EXCHANGE_NONE: mbedtls_key_exchange_type_t = 0;
-pub const mbedtls_key_exchange_type_t_MBEDTLS_KEY_EXCHANGE_RSA: mbedtls_key_exchange_type_t = 1;
-pub const mbedtls_key_exchange_type_t_MBEDTLS_KEY_EXCHANGE_DHE_RSA: mbedtls_key_exchange_type_t = 2;
-pub const mbedtls_key_exchange_type_t_MBEDTLS_KEY_EXCHANGE_ECDHE_RSA: mbedtls_key_exchange_type_t =
-    3;
-pub const mbedtls_key_exchange_type_t_MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA:
-    mbedtls_key_exchange_type_t = 4;
-pub const mbedtls_key_exchange_type_t_MBEDTLS_KEY_EXCHANGE_PSK: mbedtls_key_exchange_type_t = 5;
-pub const mbedtls_key_exchange_type_t_MBEDTLS_KEY_EXCHANGE_DHE_PSK: mbedtls_key_exchange_type_t = 6;
-pub const mbedtls_key_exchange_type_t_MBEDTLS_KEY_EXCHANGE_RSA_PSK: mbedtls_key_exchange_type_t = 7;
-pub const mbedtls_key_exchange_type_t_MBEDTLS_KEY_EXCHANGE_ECDHE_PSK: mbedtls_key_exchange_type_t =
-    8;
-pub const mbedtls_key_exchange_type_t_MBEDTLS_KEY_EXCHANGE_ECDH_RSA: mbedtls_key_exchange_type_t =
-    9;
-pub const mbedtls_key_exchange_type_t_MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA: mbedtls_key_exchange_type_t =
-    10;
-pub const mbedtls_key_exchange_type_t_MBEDTLS_KEY_EXCHANGE_ECJPAKE: mbedtls_key_exchange_type_t =
-    11;
-pub type mbedtls_key_exchange_type_t = ::core::ffi::c_uint;
-/// \brief   This structure is used for storing ciphersuite information
-///
-/// \note    members are defined using integral types instead of enums
-///          in order to pack structure and reduce memory usage by internal
-///          \c ciphersuite_definitions[]
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct mbedtls_ssl_ciphersuite_t {
-    pub private_id: ::core::ffi::c_int,
-    pub private_name: *const ::core::ffi::c_char,
-    pub private_cipher: u8,
-    pub private_mac: u8,
-    pub private_key_exchange: u8,
-    pub private_flags: u8,
-    pub private_min_tls_version: u16,
-    pub private_max_tls_version: u16,
-}
-impl Default for mbedtls_ssl_ciphersuite_t {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-unsafe extern "C" {
-    pub fn mbedtls_ssl_list_ciphersuites() -> *const ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn mbedtls_ssl_ciphersuite_from_string(
-        ciphersuite_name: *const ::core::ffi::c_char,
-    ) -> *const mbedtls_ssl_ciphersuite_t;
-}
-unsafe extern "C" {
-    pub fn mbedtls_ssl_ciphersuite_from_id(
-        ciphersuite_id: ::core::ffi::c_int,
-    ) -> *const mbedtls_ssl_ciphersuite_t;
-}
-unsafe extern "C" {
-    pub fn mbedtls_ssl_get_ciphersuite_sig_pk_alg(
-        info: *const mbedtls_ssl_ciphersuite_t,
-    ) -> mbedtls_pk_type_t;
-}
-unsafe extern "C" {
-    pub fn mbedtls_ssl_get_ciphersuite_sig_alg(
-        info: *const mbedtls_ssl_ciphersuite_t,
-    ) -> mbedtls_pk_type_t;
-}
-unsafe extern "C" {
-    pub fn mbedtls_ssl_ciphersuite_uses_ec(
-        info: *const mbedtls_ssl_ciphersuite_t,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn mbedtls_ssl_ciphersuite_uses_psk(
-        info: *const mbedtls_ssl_ciphersuite_t,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn mbedtls_ssl_ciphersuite_get_cipher_key_bitlen(
-        info: *const mbedtls_ssl_ciphersuite_t,
-    ) -> usize;
 }
 /// The type of the context passed to mbedtls_psa_external_get_random().
 ///
@@ -10579,6 +10447,2726 @@ pub type psa_key_attributes_t = psa_key_attributes_s;
 /// Values of this type are generally constructed by macros called
 /// `PSA_KEY_DERIVATION_INPUT_xxx`.
 pub type psa_key_derivation_step_t = u16;
+/// \brief Custom parameters for key generation or key derivation.
+///
+/// This is a structure type with at least the following field:
+///
+/// - \c flags: an unsigned integer type. 0 for the default production parameters.
+///
+/// Functions that take such a structure as input also take an associated
+/// input buffer \c custom_data of length \c custom_data_length.
+///
+/// The interpretation of this structure and the associated \c custom_data
+/// parameter depend on the type of the created key.
+///
+/// - #PSA_KEY_TYPE_RSA_KEY_PAIR:
+///     - \c flags: must be 0.
+///     - \c custom_data: the public exponent, in little-endian order.
+///       This must be an odd integer and must not be 1.
+///       Implementations must support 65537, should support 3 and may
+///       support other values.
+///       When not using a driver, Mbed TLS supports values up to \c INT_MAX.
+///       If this is empty, the default value 65537 is used.
+/// - Other key types: reserved for future use. \c flags must be 0.
+pub type psa_custom_key_parameters_t = psa_custom_key_parameters_s;
+/// \brief Custom parameters for key generation or key derivation.
+///
+/// This is a structure type with at least the following fields:
+///
+/// - \c flags: an unsigned integer type. 0 for the default production parameters.
+/// - \c data: a flexible array of bytes.
+///
+/// The interpretation of this structure depend on the type of the
+/// created key.
+///
+/// - #PSA_KEY_TYPE_RSA_KEY_PAIR:
+///     - \c flags: must be 0.
+///     - \c data: the public exponent, in little-endian order.
+///       This must be an odd integer and must not be 1.
+///       Implementations must support 65537, should support 3 and may
+///       support other values.
+///       When not using a driver, Mbed TLS supports values up to \c INT_MAX.
+///       If this is empty or if the custom production parameters are omitted
+///       altogether, the default value 65537 is used.
+/// - Other key types: reserved for future use. \c flags must be 0.
+pub type psa_key_production_parameters_t = psa_key_production_parameters_s;
+pub const psa_encrypt_or_decrypt_t_PSA_CRYPTO_DRIVER_DECRYPT: psa_encrypt_or_decrypt_t = 0;
+pub const psa_encrypt_or_decrypt_t_PSA_CRYPTO_DRIVER_ENCRYPT: psa_encrypt_or_decrypt_t = 1;
+/// For encrypt-decrypt functions, whether the operation is an encryption
+/// or a decryption.
+pub type psa_encrypt_or_decrypt_t = ::core::ffi::c_uint;
+/// \brief          MD5 context structure
+///
+/// \warning        MD5 is considered a weak message digest and its use
+///                 constitutes a security risk. We recommend considering
+///                 stronger message digests instead.
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct mbedtls_md5_context {
+    ///< number of bytes processed
+    pub private_total: [u32; 2usize],
+    ///< intermediate digest state
+    pub private_state: [u32; 4usize],
+    ///< data block being processed
+    pub private_buffer: [::core::ffi::c_uchar; 64usize],
+}
+impl Default for mbedtls_md5_context {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+unsafe extern "C" {
+    /// \brief          Initialize MD5 context
+    ///
+    /// \param ctx      MD5 context to be initialized
+    ///
+    /// \warning        MD5 is considered a weak message digest and its use
+    ///                 constitutes a security risk. We recommend considering
+    ///                 stronger message digests instead.
+    pub fn mbedtls_md5_init(ctx: *mut mbedtls_md5_context);
+}
+unsafe extern "C" {
+    /// \brief          Clear MD5 context
+    ///
+    /// \param ctx      MD5 context to be cleared
+    ///
+    /// \warning        MD5 is considered a weak message digest and its use
+    ///                 constitutes a security risk. We recommend considering
+    ///                 stronger message digests instead.
+    pub fn mbedtls_md5_free(ctx: *mut mbedtls_md5_context);
+}
+unsafe extern "C" {
+    /// \brief          Clone (the state of) an MD5 context
+    ///
+    /// \param dst      The destination context
+    /// \param src      The context to be cloned
+    ///
+    /// \warning        MD5 is considered a weak message digest and its use
+    ///                 constitutes a security risk. We recommend considering
+    ///                 stronger message digests instead.
+    pub fn mbedtls_md5_clone(dst: *mut mbedtls_md5_context, src: *const mbedtls_md5_context);
+}
+unsafe extern "C" {
+    /// \brief          MD5 context setup
+    ///
+    /// \param ctx      context to be initialized
+    ///
+    /// \return         0 if successful
+    ///
+    /// \warning        MD5 is considered a weak message digest and its use
+    ///                 constitutes a security risk. We recommend considering
+    ///                 stronger message digests instead.
+    pub fn mbedtls_md5_starts(ctx: *mut mbedtls_md5_context) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          MD5 process buffer
+    ///
+    /// \param ctx      MD5 context
+    /// \param input    buffer holding the data
+    /// \param ilen     length of the input data
+    ///
+    /// \return         0 if successful
+    ///
+    /// \warning        MD5 is considered a weak message digest and its use
+    ///                 constitutes a security risk. We recommend considering
+    ///                 stronger message digests instead.
+    pub fn mbedtls_md5_update(
+        ctx: *mut mbedtls_md5_context,
+        input: *const ::core::ffi::c_uchar,
+        ilen: usize,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          MD5 final digest
+    ///
+    /// \param ctx      MD5 context
+    /// \param output   MD5 checksum result
+    ///
+    /// \return         0 if successful
+    ///
+    /// \warning        MD5 is considered a weak message digest and its use
+    ///                 constitutes a security risk. We recommend considering
+    ///                 stronger message digests instead.
+    pub fn mbedtls_md5_finish(
+        ctx: *mut mbedtls_md5_context,
+        output: *mut ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          MD5 process data block (internal use only)
+    ///
+    /// \param ctx      MD5 context
+    /// \param data     buffer holding one block of data
+    ///
+    /// \return         0 if successful
+    ///
+    /// \warning        MD5 is considered a weak message digest and its use
+    ///                 constitutes a security risk. We recommend considering
+    ///                 stronger message digests instead.
+    pub fn mbedtls_internal_md5_process(
+        ctx: *mut mbedtls_md5_context,
+        data: *const ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          Output = MD5( input buffer )
+    ///
+    /// \param input    buffer holding the data
+    /// \param ilen     length of the input data
+    /// \param output   MD5 checksum result
+    ///
+    /// \return         0 if successful
+    ///
+    /// \warning        MD5 is considered a weak message digest and its use
+    ///                 constitutes a security risk. We recommend considering
+    ///                 stronger message digests instead.
+    pub fn mbedtls_md5(
+        input: *const ::core::ffi::c_uchar,
+        ilen: usize,
+        output: *mut ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          Checkup routine
+    ///
+    /// \return         0 if successful, or 1 if the test failed
+    ///
+    /// \warning        MD5 is considered a weak message digest and its use
+    ///                 constitutes a security risk. We recommend considering
+    ///                 stronger message digests instead.
+    pub fn mbedtls_md5_self_test(verbose: ::core::ffi::c_int) -> ::core::ffi::c_int;
+}
+/// \brief          RIPEMD-160 context structure
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct mbedtls_ripemd160_context {
+    ///< number of bytes processed
+    pub private_total: [u32; 2usize],
+    ///< intermediate digest state
+    pub private_state: [u32; 5usize],
+    ///< data block being processed
+    pub private_buffer: [::core::ffi::c_uchar; 64usize],
+}
+impl Default for mbedtls_ripemd160_context {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+unsafe extern "C" {
+    /// \brief          Initialize RIPEMD-160 context
+    ///
+    /// \param ctx      RIPEMD-160 context to be initialized
+    pub fn mbedtls_ripemd160_init(ctx: *mut mbedtls_ripemd160_context);
+}
+unsafe extern "C" {
+    /// \brief          Clear RIPEMD-160 context
+    ///
+    /// \param ctx      RIPEMD-160 context to be cleared
+    pub fn mbedtls_ripemd160_free(ctx: *mut mbedtls_ripemd160_context);
+}
+unsafe extern "C" {
+    /// \brief          Clone (the state of) a RIPEMD-160 context
+    ///
+    /// \param dst      The destination context
+    /// \param src      The context to be cloned
+    pub fn mbedtls_ripemd160_clone(
+        dst: *mut mbedtls_ripemd160_context,
+        src: *const mbedtls_ripemd160_context,
+    );
+}
+unsafe extern "C" {
+    /// \brief          RIPEMD-160 context setup
+    ///
+    /// \param ctx      context to be initialized
+    ///
+    /// \return         0 if successful
+    pub fn mbedtls_ripemd160_starts(ctx: *mut mbedtls_ripemd160_context) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          RIPEMD-160 process buffer
+    ///
+    /// \param ctx      RIPEMD-160 context
+    /// \param input    buffer holding the data
+    /// \param ilen     length of the input data
+    ///
+    /// \return         0 if successful
+    pub fn mbedtls_ripemd160_update(
+        ctx: *mut mbedtls_ripemd160_context,
+        input: *const ::core::ffi::c_uchar,
+        ilen: usize,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          RIPEMD-160 final digest
+    ///
+    /// \param ctx      RIPEMD-160 context
+    /// \param output   RIPEMD-160 checksum result
+    ///
+    /// \return         0 if successful
+    pub fn mbedtls_ripemd160_finish(
+        ctx: *mut mbedtls_ripemd160_context,
+        output: *mut ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          RIPEMD-160 process data block (internal use only)
+    ///
+    /// \param ctx      RIPEMD-160 context
+    /// \param data     buffer holding one block of data
+    ///
+    /// \return         0 if successful
+    pub fn mbedtls_internal_ripemd160_process(
+        ctx: *mut mbedtls_ripemd160_context,
+        data: *const ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          Output = RIPEMD-160( input buffer )
+    ///
+    /// \param input    buffer holding the data
+    /// \param ilen     length of the input data
+    /// \param output   RIPEMD-160 checksum result
+    ///
+    /// \return         0 if successful
+    pub fn mbedtls_ripemd160(
+        input: *const ::core::ffi::c_uchar,
+        ilen: usize,
+        output: *mut ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          Checkup routine
+    ///
+    /// \return         0 if successful, or 1 if the test failed
+    pub fn mbedtls_ripemd160_self_test(verbose: ::core::ffi::c_int) -> ::core::ffi::c_int;
+}
+#[repr(C)]
+#[repr(align(16))]
+#[derive(Copy, Clone)]
+pub struct mbedtls_sha1_context {
+    pub work_area: [::core::ffi::c_uchar; 208usize],
+}
+impl Default for mbedtls_sha1_context {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+unsafe extern "C" {
+    /// \brief          This function initializes a SHA-1 context.
+    ///
+    /// \warning        SHA-1 is considered a weak message digest and its use
+    ///                 constitutes a security risk. We recommend considering
+    ///                 stronger message digests instead.
+    ///
+    /// \param ctx      The SHA-1 context to initialize.
+    ///                 This must not be \c NULL.
+    pub fn mbedtls_sha1_init(ctx: *mut mbedtls_sha1_context);
+}
+unsafe extern "C" {
+    /// \brief          This function clears a SHA-1 context.
+    ///
+    /// \warning        SHA-1 is considered a weak message digest and its use
+    ///                 constitutes a security risk. We recommend considering
+    ///                 stronger message digests instead.
+    ///
+    /// \param ctx      The SHA-1 context to clear. This may be \c NULL,
+    ///                 in which case this function does nothing. If it is
+    ///                 not \c NULL, it must point to an initialized
+    ///                 SHA-1 context.
+    pub fn mbedtls_sha1_free(ctx: *mut mbedtls_sha1_context);
+}
+unsafe extern "C" {
+    /// \brief          This function clones the state of a SHA-1 context.
+    ///
+    /// \warning        SHA-1 is considered a weak message digest and its use
+    ///                 constitutes a security risk. We recommend considering
+    ///                 stronger message digests instead.
+    ///
+    /// \param dst      The SHA-1 context to clone to. This must be initialized.
+    /// \param src      The SHA-1 context to clone from. This must be initialized.
+    pub fn mbedtls_sha1_clone(dst: *mut mbedtls_sha1_context, src: *const mbedtls_sha1_context);
+}
+unsafe extern "C" {
+    /// \brief          This function starts a SHA-1 checksum calculation.
+    ///
+    /// \warning        SHA-1 is considered a weak message digest and its use
+    ///                 constitutes a security risk. We recommend considering
+    ///                 stronger message digests instead.
+    ///
+    /// \param ctx      The SHA-1 context to initialize. This must be initialized.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         A negative error code on failure.
+    pub fn mbedtls_sha1_starts(ctx: *mut mbedtls_sha1_context) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          This function feeds an input buffer into an ongoing SHA-1
+    ///                 checksum calculation.
+    ///
+    /// \warning        SHA-1 is considered a weak message digest and its use
+    ///                 constitutes a security risk. We recommend considering
+    ///                 stronger message digests instead.
+    ///
+    /// \param ctx      The SHA-1 context. This must be initialized
+    ///                 and have a hash operation started.
+    /// \param input    The buffer holding the input data.
+    ///                 This must be a readable buffer of length \p ilen Bytes.
+    /// \param ilen     The length of the input data \p input in Bytes.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         A negative error code on failure.
+    pub fn mbedtls_sha1_update(
+        ctx: *mut mbedtls_sha1_context,
+        input: *const ::core::ffi::c_uchar,
+        ilen: usize,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          This function finishes the SHA-1 operation, and writes
+    ///                 the result to the output buffer.
+    ///
+    /// \warning        SHA-1 is considered a weak message digest and its use
+    ///                 constitutes a security risk. We recommend considering
+    ///                 stronger message digests instead.
+    ///
+    /// \param ctx      The SHA-1 context to use. This must be initialized and
+    ///                 have a hash operation started.
+    /// \param output   The SHA-1 checksum result. This must be a writable
+    ///                 buffer of length \c 20 Bytes.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         A negative error code on failure.
+    pub fn mbedtls_sha1_finish(
+        ctx: *mut mbedtls_sha1_context,
+        output: *mut ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          SHA-1 process data block (internal use only).
+    ///
+    /// \warning        SHA-1 is considered a weak message digest and its use
+    ///                 constitutes a security risk. We recommend considering
+    ///                 stronger message digests instead.
+    ///
+    /// \param ctx      The SHA-1 context to use. This must be initialized.
+    /// \param data     The data block being processed. This must be a
+    ///                 readable buffer of length \c 64 Bytes.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         A negative error code on failure.
+    pub fn mbedtls_internal_sha1_process(
+        ctx: *mut mbedtls_sha1_context,
+        data: *const ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          This function calculates the SHA-1 checksum of a buffer.
+    ///
+    ///                 The function allocates the context, performs the
+    ///                 calculation, and frees the context.
+    ///
+    ///                 The SHA-1 result is calculated as
+    ///                 output = SHA-1(input buffer).
+    ///
+    /// \warning        SHA-1 is considered a weak message digest and its use
+    ///                 constitutes a security risk. We recommend considering
+    ///                 stronger message digests instead.
+    ///
+    /// \param input    The buffer holding the input data.
+    ///                 This must be a readable buffer of length \p ilen Bytes.
+    /// \param ilen     The length of the input data \p input in Bytes.
+    /// \param output   The SHA-1 checksum result.
+    ///                 This must be a writable buffer of length \c 20 Bytes.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         A negative error code on failure.
+    pub fn mbedtls_sha1(
+        input: *const ::core::ffi::c_uchar,
+        ilen: usize,
+        output: *mut ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          The SHA-1 checkup routine.
+    ///
+    /// \warning        SHA-1 is considered a weak message digest and its use
+    ///                 constitutes a security risk. We recommend considering
+    ///                 stronger message digests instead.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         \c 1 on failure.
+    pub fn mbedtls_sha1_self_test(verbose: ::core::ffi::c_int) -> ::core::ffi::c_int;
+}
+#[repr(C)]
+#[repr(align(16))]
+#[derive(Copy, Clone)]
+pub struct mbedtls_sha256_context {
+    pub work_area: [::core::ffi::c_uchar; 208usize],
+    pub is224: ::core::ffi::c_uchar,
+}
+impl Default for mbedtls_sha256_context {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+unsafe extern "C" {
+    /// \brief          This function initializes a SHA-256 context.
+    ///
+    /// \param ctx      The SHA-256 context to initialize. This must not be \c NULL.
+    pub fn mbedtls_sha256_init(ctx: *mut mbedtls_sha256_context);
+}
+unsafe extern "C" {
+    /// \brief          This function clears a SHA-256 context.
+    ///
+    /// \param ctx      The SHA-256 context to clear. This may be \c NULL, in which
+    ///                 case this function returns immediately. If it is not \c NULL,
+    ///                 it must point to an initialized SHA-256 context.
+    pub fn mbedtls_sha256_free(ctx: *mut mbedtls_sha256_context);
+}
+unsafe extern "C" {
+    /// \brief          This function clones the state of a SHA-256 context.
+    ///
+    /// \param dst      The destination context. This must be initialized.
+    /// \param src      The context to clone. This must be initialized.
+    pub fn mbedtls_sha256_clone(
+        dst: *mut mbedtls_sha256_context,
+        src: *const mbedtls_sha256_context,
+    );
+}
+unsafe extern "C" {
+    /// \brief          This function starts a SHA-224 or SHA-256 checksum
+    ///                 calculation.
+    ///
+    /// \param ctx      The context to use. This must be initialized.
+    /// \param is224    This determines which function to use. This must be
+    ///                 either \c 0 for SHA-256, or \c 1 for SHA-224.
+    ///
+    /// \note           is224 must be defined accordingly to the enabled
+    ///                 MBEDTLS_SHA224_C/MBEDTLS_SHA256_C symbols otherwise the
+    ///                 function will return #MBEDTLS_ERR_SHA512_BAD_INPUT_DATA.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         A negative error code on failure.
+    pub fn mbedtls_sha256_starts(
+        ctx: *mut mbedtls_sha256_context,
+        is224: ::core::ffi::c_int,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          This function feeds an input buffer into an ongoing
+    ///                 SHA-256 checksum calculation.
+    ///
+    /// \param ctx      The SHA-256 context. This must be initialized
+    ///                 and have a hash operation started.
+    /// \param input    The buffer holding the data. This must be a readable
+    ///                 buffer of length \p ilen Bytes.
+    /// \param ilen     The length of the input data in Bytes.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         A negative error code on failure.
+    pub fn mbedtls_sha256_update(
+        ctx: *mut mbedtls_sha256_context,
+        input: *const ::core::ffi::c_uchar,
+        ilen: usize,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          This function finishes the SHA-256 operation, and writes
+    ///                 the result to the output buffer.
+    ///
+    /// \param ctx      The SHA-256 context. This must be initialized
+    ///                 and have a hash operation started.
+    /// \param output   The SHA-224 or SHA-256 checksum result.
+    ///                 This must be a writable buffer of length \c 32 bytes
+    ///                 for SHA-256, \c 28 bytes for SHA-224.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         A negative error code on failure.
+    pub fn mbedtls_sha256_finish(
+        ctx: *mut mbedtls_sha256_context,
+        output: *mut ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          This function processes a single data block within
+    ///                 the ongoing SHA-256 computation. This function is for
+    ///                 internal use only.
+    ///
+    /// \param ctx      The SHA-256 context. This must be initialized.
+    /// \param data     The buffer holding one block of data. This must
+    ///                 be a readable buffer of length \c 64 Bytes.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         A negative error code on failure.
+    pub fn mbedtls_internal_sha256_process(
+        ctx: *mut mbedtls_sha256_context,
+        data: *const ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          This function calculates the SHA-224 or SHA-256
+    ///                 checksum of a buffer.
+    ///
+    ///                 The function allocates the context, performs the
+    ///                 calculation, and frees the context.
+    ///
+    ///                 The SHA-256 result is calculated as
+    ///                 output = SHA-256(input buffer).
+    ///
+    /// \param input    The buffer holding the data. This must be a readable
+    ///                 buffer of length \p ilen Bytes.
+    /// \param ilen     The length of the input data in Bytes.
+    /// \param output   The SHA-224 or SHA-256 checksum result.
+    ///                 This must be a writable buffer of length \c 32 bytes
+    ///                 for SHA-256, \c 28 bytes for SHA-224.
+    /// \param is224    Determines which function to use. This must be
+    ///                 either \c 0 for SHA-256, or \c 1 for SHA-224.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         A negative error code on failure.
+    pub fn mbedtls_sha256(
+        input: *const ::core::ffi::c_uchar,
+        ilen: usize,
+        output: *mut ::core::ffi::c_uchar,
+        is224: ::core::ffi::c_int,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          The SHA-224 checkup routine.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         \c 1 on failure.
+    pub fn mbedtls_sha224_self_test(verbose: ::core::ffi::c_int) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          The SHA-256 checkup routine.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         \c 1 on failure.
+    pub fn mbedtls_sha256_self_test(verbose: ::core::ffi::c_int) -> ::core::ffi::c_int;
+}
+#[repr(C)]
+#[repr(align(16))]
+#[derive(Copy, Clone)]
+pub struct mbedtls_sha512_context {
+    pub work_area: [::core::ffi::c_uchar; 304usize],
+    pub is384: ::core::ffi::c_uchar,
+}
+impl Default for mbedtls_sha512_context {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+unsafe extern "C" {
+    /// \brief          This function initializes a SHA-512 context.
+    ///
+    /// \param ctx      The SHA-512 context to initialize. This must
+    ///                 not be \c NULL.
+    pub fn mbedtls_sha512_init(ctx: *mut mbedtls_sha512_context);
+}
+unsafe extern "C" {
+    /// \brief          This function clears a SHA-512 context.
+    ///
+    /// \param ctx      The SHA-512 context to clear. This may be \c NULL,
+    ///                 in which case this function does nothing. If it
+    ///                 is not \c NULL, it must point to an initialized
+    ///                 SHA-512 context.
+    pub fn mbedtls_sha512_free(ctx: *mut mbedtls_sha512_context);
+}
+unsafe extern "C" {
+    /// \brief          This function clones the state of a SHA-512 context.
+    ///
+    /// \param dst      The destination context. This must be initialized.
+    /// \param src      The context to clone. This must be initialized.
+    pub fn mbedtls_sha512_clone(
+        dst: *mut mbedtls_sha512_context,
+        src: *const mbedtls_sha512_context,
+    );
+}
+unsafe extern "C" {
+    /// \brief          This function starts a SHA-384 or SHA-512 checksum
+    ///                 calculation.
+    ///
+    /// \param ctx      The SHA-512 context to use. This must be initialized.
+    /// \param is384    Determines which function to use. This must be
+    ///                 either \c 0 for SHA-512, or \c 1 for SHA-384.
+    ///
+    /// \note           is384 must be defined accordingly to the enabled
+    ///                 MBEDTLS_SHA384_C/MBEDTLS_SHA512_C symbols otherwise the
+    ///                 function will return #MBEDTLS_ERR_SHA512_BAD_INPUT_DATA.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         A negative error code on failure.
+    pub fn mbedtls_sha512_starts(
+        ctx: *mut mbedtls_sha512_context,
+        is384: ::core::ffi::c_int,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          This function feeds an input buffer into an ongoing
+    ///                 SHA-512 checksum calculation.
+    ///
+    /// \param ctx      The SHA-512 context. This must be initialized
+    ///                 and have a hash operation started.
+    /// \param input    The buffer holding the input data. This must
+    ///                 be a readable buffer of length \p ilen Bytes.
+    /// \param ilen     The length of the input data in Bytes.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         A negative error code on failure.
+    pub fn mbedtls_sha512_update(
+        ctx: *mut mbedtls_sha512_context,
+        input: *const ::core::ffi::c_uchar,
+        ilen: usize,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          This function finishes the SHA-512 operation, and writes
+    ///                 the result to the output buffer.
+    ///
+    /// \param ctx      The SHA-512 context. This must be initialized
+    ///                 and have a hash operation started.
+    /// \param output   The SHA-384 or SHA-512 checksum result.
+    ///                 This must be a writable buffer of length \c 64 bytes
+    ///                 for SHA-512, \c 48 bytes for SHA-384.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         A negative error code on failure.
+    pub fn mbedtls_sha512_finish(
+        ctx: *mut mbedtls_sha512_context,
+        output: *mut ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          This function processes a single data block within
+    ///                 the ongoing SHA-512 computation.
+    ///                 This function is for internal use only.
+    ///
+    /// \param ctx      The SHA-512 context. This must be initialized.
+    /// \param data     The buffer holding one block of data. This
+    ///                 must be a readable buffer of length \c 128 Bytes.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         A negative error code on failure.
+    pub fn mbedtls_internal_sha512_process(
+        ctx: *mut mbedtls_sha512_context,
+        data: *const ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          This function calculates the SHA-512 or SHA-384
+    ///                 checksum of a buffer.
+    ///
+    ///                 The function allocates the context, performs the
+    ///                 calculation, and frees the context.
+    ///
+    ///                 The SHA-512 result is calculated as
+    ///                 output = SHA-512(input buffer).
+    ///
+    /// \param input    The buffer holding the input data. This must be
+    ///                 a readable buffer of length \p ilen Bytes.
+    /// \param ilen     The length of the input data in Bytes.
+    /// \param output   The SHA-384 or SHA-512 checksum result.
+    ///                 This must be a writable buffer of length \c 64 bytes
+    ///                 for SHA-512, \c 48 bytes for SHA-384.
+    /// \param is384    Determines which function to use. This must be either
+    ///                 \c 0 for SHA-512, or \c 1 for SHA-384.
+    ///
+    /// \note           is384 must be defined accordingly with the supported
+    ///                 symbols in the config file. If:
+    ///                 - is384 is 0, but \c MBEDTLS_SHA384_C is not defined, or
+    ///                 - is384 is 1, but \c MBEDTLS_SHA512_C is not defined
+    ///                 then the function will return
+    ///                 #MBEDTLS_ERR_SHA512_BAD_INPUT_DATA.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         A negative error code on failure.
+    pub fn mbedtls_sha512(
+        input: *const ::core::ffi::c_uchar,
+        ilen: usize,
+        output: *mut ::core::ffi::c_uchar,
+        is384: ::core::ffi::c_int,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          The SHA-384 checkup routine.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         \c 1 on failure.
+    pub fn mbedtls_sha384_self_test(verbose: ::core::ffi::c_int) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          The SHA-512 checkup routine.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         \c 1 on failure.
+    pub fn mbedtls_sha512_self_test(verbose: ::core::ffi::c_int) -> ::core::ffi::c_int;
+}
+///< Operation not defined.
+pub const mbedtls_sha3_id_MBEDTLS_SHA3_NONE: mbedtls_sha3_id = 0;
+///< SHA3-224
+pub const mbedtls_sha3_id_MBEDTLS_SHA3_224: mbedtls_sha3_id = 1;
+///< SHA3-256
+pub const mbedtls_sha3_id_MBEDTLS_SHA3_256: mbedtls_sha3_id = 2;
+///< SHA3-384
+pub const mbedtls_sha3_id_MBEDTLS_SHA3_384: mbedtls_sha3_id = 3;
+///< SHA3-512
+pub const mbedtls_sha3_id_MBEDTLS_SHA3_512: mbedtls_sha3_id = 4;
+/// SHA-3 family id.
+///
+/// It identifies the family (SHA3-256, SHA3-512, etc.)
+pub type mbedtls_sha3_id = ::core::ffi::c_uint;
+/// \brief          The SHA-3 context structure.
+///
+///                 The structure is used SHA-3 checksum calculations.
+#[repr(C)]
+#[derive(Default, Copy, Clone)]
+pub struct mbedtls_sha3_context {
+    pub private_state: [u64; 25usize],
+    pub private_index: u32,
+    pub private_olen: u16,
+    pub private_max_block_size: u16,
+}
+unsafe extern "C" {
+    /// \brief          This function initializes a SHA-3 context.
+    ///
+    /// \param ctx      The SHA-3 context to initialize. This must not be \c NULL.
+    pub fn mbedtls_sha3_init(ctx: *mut mbedtls_sha3_context);
+}
+unsafe extern "C" {
+    /// \brief          This function clears a SHA-3 context.
+    ///
+    /// \param ctx      The SHA-3 context to clear. This may be \c NULL, in which
+    ///                 case this function returns immediately. If it is not \c NULL,
+    ///                 it must point to an initialized SHA-3 context.
+    pub fn mbedtls_sha3_free(ctx: *mut mbedtls_sha3_context);
+}
+unsafe extern "C" {
+    /// \brief          This function clones the state of a SHA-3 context.
+    ///
+    /// \param dst      The destination context. This must be initialized.
+    /// \param src      The context to clone. This must be initialized.
+    pub fn mbedtls_sha3_clone(dst: *mut mbedtls_sha3_context, src: *const mbedtls_sha3_context);
+}
+unsafe extern "C" {
+    /// \brief          This function starts a SHA-3 checksum
+    ///                 calculation.
+    ///
+    /// \param ctx      The context to use. This must be initialized.
+    /// \param id       The id of the SHA-3 family.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         A negative error code on failure.
+    pub fn mbedtls_sha3_starts(
+        ctx: *mut mbedtls_sha3_context,
+        id: mbedtls_sha3_id,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          This function feeds an input buffer into an ongoing
+    ///                 SHA-3 checksum calculation.
+    ///
+    /// \param ctx      The SHA-3 context. This must be initialized
+    ///                 and have a hash operation started.
+    /// \param input    The buffer holding the data. This must be a readable
+    ///                 buffer of length \p ilen Bytes.
+    /// \param ilen     The length of the input data in Bytes.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         A negative error code on failure.
+    pub fn mbedtls_sha3_update(
+        ctx: *mut mbedtls_sha3_context,
+        input: *const u8,
+        ilen: usize,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          This function finishes the SHA-3 operation, and writes
+    ///                 the result to the output buffer.
+    ///
+    /// \param ctx      The SHA-3 context. This must be initialized
+    ///                 and have a hash operation started.
+    /// \param output   The SHA-3 checksum result.
+    ///                 This must be a writable buffer of length \c olen bytes.
+    /// \param olen     Defines the length of output buffer (in bytes). For SHA-3 224, SHA-3 256,
+    ///                 SHA-3 384 and SHA-3 512 \c olen must equal to 28, 32, 48 and 64,
+    ///                 respectively.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         A negative error code on failure.
+    pub fn mbedtls_sha3_finish(
+        ctx: *mut mbedtls_sha3_context,
+        output: *mut u8,
+        olen: usize,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          This function calculates the SHA-3
+    ///                 checksum of a buffer.
+    ///
+    ///                 The function allocates the context, performs the
+    ///                 calculation, and frees the context.
+    ///
+    ///                 The SHA-3 result is calculated as
+    ///                 output = SHA-3(id, input buffer, d).
+    ///
+    /// \param id       The id of the SHA-3 family.
+    /// \param input    The buffer holding the data. This must be a readable
+    ///                 buffer of length \p ilen Bytes.
+    /// \param ilen     The length of the input data in Bytes.
+    /// \param output   The SHA-3 checksum result.
+    ///                 This must be a writable buffer of length \c olen bytes.
+    /// \param olen     Defines the length of output buffer (in bytes). For SHA-3 224, SHA-3 256,
+    ///                 SHA-3 384 and SHA-3 512 \c olen must equal to 28, 32, 48 and 64,
+    ///                 respectively.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         A negative error code on failure.
+    pub fn mbedtls_sha3(
+        id: mbedtls_sha3_id,
+        input: *const u8,
+        ilen: usize,
+        output: *mut u8,
+        olen: usize,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          Checkup routine for the algorithms implemented
+    ///                 by this module: SHA3-224, SHA3-256, SHA3-384, SHA3-512.
+    ///
+    /// \return         0 if successful, or 1 if the test failed.
+    pub fn mbedtls_sha3_self_test(verbose: ::core::ffi::c_int) -> ::core::ffi::c_int;
+}
+#[repr(C)]
+#[repr(align(16))]
+#[derive(Copy, Clone)]
+pub struct mbedtls_psa_hash_operation_t {
+    pub private_alg: psa_algorithm_t,
+    pub __bindgen_padding_0: u64,
+    pub private_ctx: mbedtls_psa_hash_operation_t__bindgen_ty_1,
+}
+#[repr(C)]
+#[repr(align(16))]
+#[derive(Copy, Clone)]
+pub union mbedtls_psa_hash_operation_t__bindgen_ty_1 {
+    pub dummy: ::core::ffi::c_uint,
+    pub md5: mbedtls_md5_context,
+    pub ripemd160: mbedtls_ripemd160_context,
+    pub sha1: mbedtls_sha1_context,
+    pub sha256: mbedtls_sha256_context,
+    pub sha512: mbedtls_sha512_context,
+}
+impl Default for mbedtls_psa_hash_operation_t__bindgen_ty_1 {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+impl Default for mbedtls_psa_hash_operation_t {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct mbedtls_psa_cipher_operation_t {
+    pub private_alg: psa_algorithm_t,
+    pub private_iv_length: u8,
+    pub private_block_length: u8,
+    pub private_ctx: mbedtls_psa_cipher_operation_t__bindgen_ty_1,
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub union mbedtls_psa_cipher_operation_t__bindgen_ty_1 {
+    pub private_dummy: ::core::ffi::c_uint,
+    pub private_cipher: mbedtls_cipher_context_t,
+}
+impl Default for mbedtls_psa_cipher_operation_t__bindgen_ty_1 {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+impl Default for mbedtls_psa_cipher_operation_t {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[repr(align(16))]
+#[derive(Copy, Clone)]
+pub union psa_driver_hash_context_t {
+    pub dummy: ::core::ffi::c_uint,
+    pub mbedtls_ctx: mbedtls_psa_hash_operation_t,
+}
+impl Default for psa_driver_hash_context_t {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub union psa_driver_cipher_context_t {
+    pub dummy: ::core::ffi::c_uint,
+    pub mbedtls_ctx: mbedtls_psa_cipher_operation_t,
+}
+impl Default for psa_driver_cipher_context_t {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[repr(align(16))]
+#[derive(Copy, Clone)]
+pub struct psa_hash_operation_s {
+    /// Unique ID indicating which driver got assigned to do the
+    /// operation. Since driver contexts are driver-specific, swapping
+    /// drivers halfway through the operation is not supported.
+    /// ID values are auto-generated in psa_driver_wrappers.h.
+    /// ID value zero means the context is not valid or not assigned to
+    /// any driver (i.e. the driver context is not active, in use).
+    pub private_id: ::core::ffi::c_uint,
+    pub __bindgen_padding_0: u64,
+    pub private_ctx: psa_driver_hash_context_t,
+}
+impl Default for psa_hash_operation_s {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct psa_cipher_operation_s {
+    /// Unique ID indicating which driver got assigned to do the
+    /// operation. Since driver contexts are driver-specific, swapping
+    /// drivers halfway through the operation is not supported.
+    /// ID values are auto-generated in psa_crypto_driver_wrappers.h
+    /// ID value zero means the context is not valid or not assigned to
+    /// any driver (i.e. none of the driver contexts are active).
+    pub private_id: ::core::ffi::c_uint,
+    pub _bitfield_align_1: [u8; 0],
+    pub _bitfield_1: __BindgenBitfieldUnit<[u8; 1usize]>,
+    pub private_default_iv_length: u8,
+    pub private_ctx: psa_driver_cipher_context_t,
+}
+impl Default for psa_cipher_operation_s {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+impl psa_cipher_operation_s {
+    #[inline]
+    pub fn private_iv_required(&self) -> ::core::ffi::c_uint {
+        unsafe { ::core::mem::transmute(self._bitfield_1.get(0usize, 1u8) as u32) }
+    }
+    #[inline]
+    pub fn set_private_iv_required(&mut self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            self._bitfield_1.set(0usize, 1u8, val as u64)
+        }
+    }
+    #[inline]
+    pub unsafe fn private_iv_required_raw(this: *const Self) -> ::core::ffi::c_uint {
+        unsafe {
+            ::core::mem::transmute(<__BindgenBitfieldUnit<[u8; 1usize]>>::raw_get(
+                ::core::ptr::addr_of!((*this)._bitfield_1),
+                0usize,
+                1u8,
+            ) as u32)
+        }
+    }
+    #[inline]
+    pub unsafe fn set_private_iv_required_raw(this: *mut Self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            <__BindgenBitfieldUnit<[u8; 1usize]>>::raw_set(
+                ::core::ptr::addr_of_mut!((*this)._bitfield_1),
+                0usize,
+                1u8,
+                val as u64,
+            )
+        }
+    }
+    #[inline]
+    pub fn private_iv_set(&self) -> ::core::ffi::c_uint {
+        unsafe { ::core::mem::transmute(self._bitfield_1.get(1usize, 1u8) as u32) }
+    }
+    #[inline]
+    pub fn set_private_iv_set(&mut self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            self._bitfield_1.set(1usize, 1u8, val as u64)
+        }
+    }
+    #[inline]
+    pub unsafe fn private_iv_set_raw(this: *const Self) -> ::core::ffi::c_uint {
+        unsafe {
+            ::core::mem::transmute(<__BindgenBitfieldUnit<[u8; 1usize]>>::raw_get(
+                ::core::ptr::addr_of!((*this)._bitfield_1),
+                1usize,
+                1u8,
+            ) as u32)
+        }
+    }
+    #[inline]
+    pub unsafe fn set_private_iv_set_raw(this: *mut Self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            <__BindgenBitfieldUnit<[u8; 1usize]>>::raw_set(
+                ::core::ptr::addr_of_mut!((*this)._bitfield_1),
+                1usize,
+                1u8,
+                val as u64,
+            )
+        }
+    }
+    #[inline]
+    pub fn new_bitfield_1(
+        private_iv_required: ::core::ffi::c_uint,
+        private_iv_set: ::core::ffi::c_uint,
+    ) -> __BindgenBitfieldUnit<[u8; 1usize]> {
+        let mut __bindgen_bitfield_unit: __BindgenBitfieldUnit<[u8; 1usize]> = Default::default();
+        __bindgen_bitfield_unit.set(0usize, 1u8, {
+            let private_iv_required: u32 = unsafe { ::core::mem::transmute(private_iv_required) };
+            private_iv_required as u64
+        });
+        __bindgen_bitfield_unit.set(1usize, 1u8, {
+            let private_iv_set: u32 = unsafe { ::core::mem::transmute(private_iv_set) };
+            private_iv_set as u64
+        });
+        __bindgen_bitfield_unit
+    }
+}
+/// \brief          The GCM context structure.
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct mbedtls_gcm_context {
+    ///< The cipher context used.
+    pub private_cipher_ctx: mbedtls_cipher_context_t,
+    ///< Precalculated HTable.
+    pub private_H: [[u64; 2usize]; 16usize],
+    ///< The total length of the encrypted data.
+    pub private_len: u64,
+    ///< The total length of the additional data.
+    pub private_add_len: u64,
+    ///< The first ECTR for tag.
+    pub private_base_ectr: [::core::ffi::c_uchar; 16usize],
+    ///< The Y working value.
+    pub private_y: [::core::ffi::c_uchar; 16usize],
+    ///< The buf working value.
+    pub private_buf: [::core::ffi::c_uchar; 16usize],
+    ///< The operation to perform:
+    ///#MBEDTLS_GCM_ENCRYPT or
+    ///#MBEDTLS_GCM_DECRYPT.
+    pub private_mode: ::core::ffi::c_uchar,
+    ///< The acceleration to use.
+    pub private_acceleration: ::core::ffi::c_uchar,
+}
+impl Default for mbedtls_gcm_context {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+unsafe extern "C" {
+    /// \brief           This function initializes the specified GCM context,
+    ///                  to make references valid, and prepares the context
+    ///                  for mbedtls_gcm_setkey() or mbedtls_gcm_free().
+    ///
+    ///                  The function does not bind the GCM context to a particular
+    ///                  cipher, nor set the key. For this purpose, use
+    ///                  mbedtls_gcm_setkey().
+    ///
+    /// \param ctx       The GCM context to initialize. This must not be \c NULL.
+    pub fn mbedtls_gcm_init(ctx: *mut mbedtls_gcm_context);
+}
+unsafe extern "C" {
+    /// \brief           This function associates a GCM context with a
+    ///                  cipher algorithm and a key.
+    ///
+    /// \param ctx       The GCM context. This must be initialized.
+    /// \param cipher    The 128-bit block cipher to use.
+    /// \param key       The encryption key. This must be a readable buffer of at
+    ///                  least \p keybits bits.
+    /// \param keybits   The key size in bits. Valid options are:
+    ///                  <ul><li>128 bits</li>
+    ///                  <li>192 bits</li>
+    ///                  <li>256 bits</li></ul>
+    ///
+    /// \return          \c 0 on success.
+    /// \return          A cipher-specific error code on failure.
+    pub fn mbedtls_gcm_setkey(
+        ctx: *mut mbedtls_gcm_context,
+        cipher: mbedtls_cipher_id_t,
+        key: *const ::core::ffi::c_uchar,
+        keybits: ::core::ffi::c_uint,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           This function performs GCM encryption or decryption of a buffer.
+    ///
+    /// \note            The output buffer \p output can be the same as the input
+    ///                  buffer \p input. If \p output is greater than \p input, they
+    ///                  cannot overlap.
+    ///
+    /// \warning         When this function performs a decryption, it outputs the
+    ///                  authentication tag and does not verify that the data is
+    ///                  authentic. You should use this function to perform encryption
+    ///                  only. For decryption, use mbedtls_gcm_auth_decrypt() instead.
+    ///
+    /// \param ctx       The GCM context to use for encryption or decryption. This
+    ///                  must be initialized.
+    /// \param mode      The operation to perform:
+    ///                  - #MBEDTLS_GCM_ENCRYPT to perform authenticated encryption.
+    ///                    The ciphertext is written to \p output and the
+    ///                    authentication tag is written to \p tag.
+    ///                  - #MBEDTLS_GCM_DECRYPT to perform decryption.
+    ///                    The plaintext is written to \p output and the
+    ///                    authentication tag is written to \p tag.
+    ///                    Note that this mode is not recommended, because it does
+    ///                    not verify the authenticity of the data. For this reason,
+    ///                    you should use mbedtls_gcm_auth_decrypt() instead of
+    ///                    calling this function in decryption mode.
+    /// \param length    The length of the input data, which is equal to the length
+    ///                  of the output data.
+    /// \param iv        The initialization vector. This must be a readable buffer of
+    ///                  at least \p iv_len Bytes.
+    /// \param iv_len    The length of the IV.
+    /// \param add       The buffer holding the additional data. This must be of at
+    ///                  least that size in Bytes.
+    /// \param add_len   The length of the additional data.
+    /// \param input     The buffer holding the input data. If \p length is greater
+    ///                  than zero, this must be a readable buffer of at least that
+    ///                  size in Bytes.
+    /// \param output    The buffer for holding the output data. If \p length is greater
+    ///                  than zero, this must be a writable buffer of at least that
+    ///                  size in Bytes.
+    /// \param tag_len   The length of the tag to generate.
+    /// \param tag       The buffer for holding the tag. This must be a writable
+    ///                  buffer of at least \p tag_len Bytes.
+    ///
+    /// \return          \c 0 if the encryption or decryption was performed
+    ///                  successfully. Note that in #MBEDTLS_GCM_DECRYPT mode,
+    ///                  this does not indicate that the data is authentic.
+    /// \return          #MBEDTLS_ERR_GCM_BAD_INPUT if the lengths or pointers are
+    ///                  not valid or a cipher-specific error code if the encryption
+    ///                  or decryption failed.
+    pub fn mbedtls_gcm_crypt_and_tag(
+        ctx: *mut mbedtls_gcm_context,
+        mode: ::core::ffi::c_int,
+        length: usize,
+        iv: *const ::core::ffi::c_uchar,
+        iv_len: usize,
+        add: *const ::core::ffi::c_uchar,
+        add_len: usize,
+        input: *const ::core::ffi::c_uchar,
+        output: *mut ::core::ffi::c_uchar,
+        tag_len: usize,
+        tag: *mut ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           This function performs a GCM authenticated decryption of a
+    ///                  buffer.
+    ///
+    /// \note            The output buffer \p output can be the same as the input
+    ///                  buffer \p input. If \p output is greater than \p input, they
+    ///                  cannot overlap. Implementations which require
+    ///                  MBEDTLS_GCM_ALT to be enabled may not provide support for
+    ///                  overlapping buffers.
+    ///
+    /// \param ctx       The GCM context. This must be initialized.
+    /// \param length    The length of the ciphertext to decrypt, which is also
+    ///                  the length of the decrypted plaintext.
+    /// \param iv        The initialization vector. This must be a readable buffer
+    ///                  of at least \p iv_len Bytes.
+    /// \param iv_len    The length of the IV.
+    /// \param add       The buffer holding the additional data. This must be of at
+    ///                  least that size in Bytes.
+    /// \param add_len   The length of the additional data.
+    /// \param tag       The buffer holding the tag to verify. This must be a
+    ///                  readable buffer of at least \p tag_len Bytes.
+    /// \param tag_len   The length of the tag to verify.
+    /// \param input     The buffer holding the ciphertext. If \p length is greater
+    ///                  than zero, this must be a readable buffer of at least that
+    ///                  size.
+    /// \param output    The buffer for holding the decrypted plaintext. If \p length
+    ///                  is greater than zero, this must be a writable buffer of at
+    ///                  least that size.
+    ///
+    /// \return          \c 0 if successful and authenticated.
+    /// \return          #MBEDTLS_ERR_GCM_AUTH_FAILED if the tag does not match.
+    /// \return          #MBEDTLS_ERR_GCM_BAD_INPUT if the lengths or pointers are
+    ///                  not valid or a cipher-specific error code if the decryption
+    ///                  failed.
+    pub fn mbedtls_gcm_auth_decrypt(
+        ctx: *mut mbedtls_gcm_context,
+        length: usize,
+        iv: *const ::core::ffi::c_uchar,
+        iv_len: usize,
+        add: *const ::core::ffi::c_uchar,
+        add_len: usize,
+        tag: *const ::core::ffi::c_uchar,
+        tag_len: usize,
+        input: *const ::core::ffi::c_uchar,
+        output: *mut ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           This function starts a GCM encryption or decryption
+    ///                  operation.
+    ///
+    /// \param ctx       The GCM context. This must be initialized.
+    /// \param mode      The operation to perform: #MBEDTLS_GCM_ENCRYPT or
+    ///                  #MBEDTLS_GCM_DECRYPT.
+    /// \param iv        The initialization vector. This must be a readable buffer of
+    ///                  at least \p iv_len Bytes.
+    /// \param iv_len    The length of the IV.
+    ///
+    /// \return          \c 0 on success.
+    pub fn mbedtls_gcm_starts(
+        ctx: *mut mbedtls_gcm_context,
+        mode: ::core::ffi::c_int,
+        iv: *const ::core::ffi::c_uchar,
+        iv_len: usize,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           This function feeds an input buffer as associated data
+    ///                  (authenticated but not encrypted data) in a GCM
+    ///                  encryption or decryption operation.
+    ///
+    ///                  Call this function after mbedtls_gcm_starts() to pass
+    ///                  the associated data. If the associated data is empty,
+    ///                  you do not need to call this function. You may not
+    ///                  call this function after calling mbedtls_cipher_update().
+    ///
+    /// \param ctx       The GCM context. This must have been started with
+    ///                  mbedtls_gcm_starts() and must not have yet received
+    ///                  any input with mbedtls_gcm_update().
+    /// \param add       The buffer holding the additional data, or \c NULL
+    ///                  if \p add_len is \c 0.
+    /// \param add_len   The length of the additional data. If \c 0,
+    ///                  \p add may be \c NULL.
+    ///
+    /// \return          \c 0 on success.
+    pub fn mbedtls_gcm_update_ad(
+        ctx: *mut mbedtls_gcm_context,
+        add: *const ::core::ffi::c_uchar,
+        add_len: usize,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           This function feeds an input buffer into an ongoing GCM
+    ///                  encryption or decryption operation.
+    ///
+    ///                  You may call this function zero, one or more times
+    ///                  to pass successive parts of the input: the plaintext to
+    ///                  encrypt, or the ciphertext (not including the tag) to
+    ///                  decrypt. After the last part of the input, call
+    ///                  mbedtls_gcm_finish().
+    ///
+    ///                  This function may produce output in one of the following
+    ///                  ways:
+    ///                  - Immediate output: the output length is always equal
+    ///                    to the input length.
+    ///                  - Buffered output: the output consists of a whole number
+    ///                    of 16-byte blocks. If the total input length so far
+    ///                    (not including associated data) is 16 \* *B* + *A*
+    ///                    with *A* < 16 then the total output length is 16 \* *B*.
+    ///
+    ///                  In particular:
+    ///                  - It is always correct to call this function with
+    ///                    \p output_size >= \p input_length + 15.
+    ///                  - If \p input_length is a multiple of 16 for all the calls
+    ///                    to this function during an operation, then it is
+    ///                    correct to use \p output_size = \p input_length.
+    ///
+    /// \note            The output buffer \p output can be the same as the input
+    ///                  buffer \p input. If \p output is greater than \p input, they
+    ///                  cannot overlap. Implementations which require
+    ///                  MBEDTLS_GCM_ALT to be enabled may not provide support for
+    ///                  overlapping buffers.
+    ///
+    /// \param ctx           The GCM context. This must be initialized.
+    /// \param input         The buffer holding the input data. If \p input_length
+    ///                      is greater than zero, this must be a readable buffer
+    ///                      of at least \p input_length bytes.
+    /// \param input_length  The length of the input data in bytes.
+    /// \param output        The buffer for the output data. If \p output_size
+    ///                      is greater than zero, this must be a writable buffer of
+    ///                      of at least \p output_size bytes.
+    /// \param output_size   The size of the output buffer in bytes.
+    ///                      See the function description regarding the output size.
+    /// \param output_length On success, \p *output_length contains the actual
+    ///                      length of the output written in \p output.
+    ///                      On failure, the content of \p *output_length is
+    ///                      unspecified.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         #MBEDTLS_ERR_GCM_BAD_INPUT on failure:
+    ///                 total input length too long,
+    ///                 unsupported input/output buffer overlap detected,
+    ///                 or \p output_size too small.
+    pub fn mbedtls_gcm_update(
+        ctx: *mut mbedtls_gcm_context,
+        input: *const ::core::ffi::c_uchar,
+        input_length: usize,
+        output: *mut ::core::ffi::c_uchar,
+        output_size: usize,
+        output_length: *mut usize,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           This function finishes the GCM operation and generates
+    ///                  the authentication tag.
+    ///
+    ///                  It wraps up the GCM stream, and generates the
+    ///                  tag. The tag can have a maximum length of 16 Bytes.
+    ///
+    /// \param ctx       The GCM context. This must be initialized.
+    /// \param tag       The buffer for holding the tag. This must be a writable
+    ///                  buffer of at least \p tag_len Bytes.
+    /// \param tag_len   The length of the tag to generate. This must be at least
+    ///                  four.
+    /// \param output    The buffer for the final output.
+    ///                  If \p output_size is nonzero, this must be a writable
+    ///                  buffer of at least \p output_size bytes.
+    /// \param output_size  The size of the \p output buffer in bytes.
+    ///                  This must be large enough for the output that
+    ///                  mbedtls_gcm_update() has not produced. In particular:
+    ///                  - If mbedtls_gcm_update() produces immediate output,
+    ///                    or if the total input size is a multiple of \c 16,
+    ///                    then mbedtls_gcm_finish() never produces any output,
+    ///                    so \p output_size can be \c 0.
+    ///                  - \p output_size never needs to be more than \c 15.
+    /// \param output_length On success, \p *output_length contains the actual
+    ///                      length of the output written in \p output.
+    ///                      On failure, the content of \p *output_length is
+    ///                      unspecified.
+    ///
+    /// \return          \c 0 on success.
+    /// \return          #MBEDTLS_ERR_GCM_BAD_INPUT on failure:
+    ///                  invalid value of \p tag_len,
+    ///                  or \p output_size too small.
+    pub fn mbedtls_gcm_finish(
+        ctx: *mut mbedtls_gcm_context,
+        output: *mut ::core::ffi::c_uchar,
+        output_size: usize,
+        output_length: *mut usize,
+        tag: *mut ::core::ffi::c_uchar,
+        tag_len: usize,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           This function clears a GCM context and the underlying
+    ///                  cipher sub-context.
+    ///
+    /// \param ctx       The GCM context to clear. If this is \c NULL, the call has
+    ///                  no effect. Otherwise, this must be initialized.
+    pub fn mbedtls_gcm_free(ctx: *mut mbedtls_gcm_context);
+}
+unsafe extern "C" {
+    /// \brief          The GCM checkup routine.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         \c 1 on failure.
+    pub fn mbedtls_gcm_self_test(verbose: ::core::ffi::c_int) -> ::core::ffi::c_int;
+}
+#[repr(C)]
+#[repr(align(16))]
+#[derive(Copy, Clone)]
+pub struct mbedtls_psa_hmac_operation_t {
+    /// The HMAC algorithm in use
+    pub private_alg: psa_algorithm_t,
+    pub __bindgen_padding_0: u64,
+    /// The hash context.
+    pub hash_ctx: psa_hash_operation_s,
+    /// The HMAC part of the context.
+    pub private_opad: [u8; 128usize],
+}
+impl Default for mbedtls_psa_hmac_operation_t {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[repr(align(16))]
+#[derive(Copy, Clone)]
+pub struct mbedtls_psa_mac_operation_t {
+    pub private_alg: psa_algorithm_t,
+    pub __bindgen_padding_0: u64,
+    pub private_ctx: mbedtls_psa_mac_operation_t__bindgen_ty_1,
+}
+#[repr(C)]
+#[repr(align(16))]
+#[derive(Copy, Clone)]
+pub union mbedtls_psa_mac_operation_t__bindgen_ty_1 {
+    pub private_dummy: ::core::ffi::c_uint,
+    pub private_hmac: mbedtls_psa_hmac_operation_t,
+    pub private_cmac: mbedtls_cipher_context_t,
+}
+impl Default for mbedtls_psa_mac_operation_t__bindgen_ty_1 {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+impl Default for mbedtls_psa_mac_operation_t {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct mbedtls_psa_aead_operation_t {
+    pub private_alg: psa_algorithm_t,
+    pub private_key_type: psa_key_type_t,
+    pub _bitfield_align_1: [u8; 0],
+    pub _bitfield_1: __BindgenBitfieldUnit<[u8; 1usize]>,
+    pub private_tag_length: u8,
+    pub ctx: mbedtls_psa_aead_operation_t__bindgen_ty_1,
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub union mbedtls_psa_aead_operation_t__bindgen_ty_1 {
+    pub dummy: ::core::ffi::c_uint,
+    pub private_ccm: mbedtls_ccm_context,
+    pub private_gcm: mbedtls_gcm_context,
+    pub private_chachapoly: mbedtls_chachapoly_context,
+}
+impl Default for mbedtls_psa_aead_operation_t__bindgen_ty_1 {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+impl Default for mbedtls_psa_aead_operation_t {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+impl mbedtls_psa_aead_operation_t {
+    #[inline]
+    pub fn private_is_encrypt(&self) -> ::core::ffi::c_uint {
+        unsafe { ::core::mem::transmute(self._bitfield_1.get(0usize, 1u8) as u32) }
+    }
+    #[inline]
+    pub fn set_private_is_encrypt(&mut self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            self._bitfield_1.set(0usize, 1u8, val as u64)
+        }
+    }
+    #[inline]
+    pub unsafe fn private_is_encrypt_raw(this: *const Self) -> ::core::ffi::c_uint {
+        unsafe {
+            ::core::mem::transmute(<__BindgenBitfieldUnit<[u8; 1usize]>>::raw_get(
+                ::core::ptr::addr_of!((*this)._bitfield_1),
+                0usize,
+                1u8,
+            ) as u32)
+        }
+    }
+    #[inline]
+    pub unsafe fn set_private_is_encrypt_raw(this: *mut Self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            <__BindgenBitfieldUnit<[u8; 1usize]>>::raw_set(
+                ::core::ptr::addr_of_mut!((*this)._bitfield_1),
+                0usize,
+                1u8,
+                val as u64,
+            )
+        }
+    }
+    #[inline]
+    pub fn new_bitfield_1(
+        private_is_encrypt: ::core::ffi::c_uint,
+    ) -> __BindgenBitfieldUnit<[u8; 1usize]> {
+        let mut __bindgen_bitfield_unit: __BindgenBitfieldUnit<[u8; 1usize]> = Default::default();
+        __bindgen_bitfield_unit.set(0usize, 1u8, {
+            let private_is_encrypt: u32 = unsafe { ::core::mem::transmute(private_is_encrypt) };
+            private_is_encrypt as u64
+        });
+        __bindgen_bitfield_unit
+    }
+}
+#[repr(C)]
+#[derive(Default, Copy, Clone)]
+pub struct mbedtls_psa_sign_hash_interruptible_operation_t {
+    pub private_dummy: ::core::ffi::c_uint,
+}
+#[repr(C)]
+#[derive(Default, Copy, Clone)]
+pub struct mbedtls_psa_verify_hash_interruptible_operation_t {
+    pub private_dummy: ::core::ffi::c_uint,
+}
+///< Client
+pub const mbedtls_ecjpake_role_MBEDTLS_ECJPAKE_CLIENT: mbedtls_ecjpake_role = 0;
+///< Server
+pub const mbedtls_ecjpake_role_MBEDTLS_ECJPAKE_SERVER: mbedtls_ecjpake_role = 1;
+///< Undefined
+pub const mbedtls_ecjpake_role_MBEDTLS_ECJPAKE_NONE: mbedtls_ecjpake_role = 2;
+/// Roles in the EC J-PAKE exchange
+pub type mbedtls_ecjpake_role = ::core::ffi::c_uint;
+/// EC J-PAKE context structure.
+///
+/// J-PAKE is a symmetric protocol, except for the identifiers used in
+/// Zero-Knowledge Proofs, and the serialization of the second message
+/// (KeyExchange) as defined by the Thread spec.
+///
+/// In order to benefit from this symmetry, we choose a different naming
+/// convention from the Thread v1.0 spec. Correspondence is indicated in the
+/// description as a pair C: client name, S: server name
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct mbedtls_ecjpake_context {
+    ///< Hash to use
+    pub private_md_type: mbedtls_md_type_t,
+    ///< Elliptic curve
+    pub private_grp: mbedtls_ecp_group,
+    ///< Are we client or server?
+    pub private_role: mbedtls_ecjpake_role,
+    ///< Format for point export
+    pub private_point_format: ::core::ffi::c_int,
+    ///< My public key 1   C: X1, S: X3
+    pub private_Xm1: mbedtls_ecp_point,
+    ///< My public key 2   C: X2, S: X4
+    pub private_Xm2: mbedtls_ecp_point,
+    ///< Peer public key 1 C: X3, S: X1
+    pub private_Xp1: mbedtls_ecp_point,
+    ///< Peer public key 2 C: X4, S: X2
+    pub private_Xp2: mbedtls_ecp_point,
+    ///< Peer public key   C: Xs, S: Xc
+    pub private_Xp: mbedtls_ecp_point,
+    ///< My private key 1  C: x1, S: x3
+    pub private_xm1: mbedtls_mpi,
+    ///< My private key 2  C: x2, S: x4
+    pub private_xm2: mbedtls_mpi,
+    ///< Pre-shared secret (passphrase)
+    pub private_s: mbedtls_mpi,
+}
+impl Default for mbedtls_ecjpake_context {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+unsafe extern "C" {
+    /// \brief           Initialize an ECJPAKE context.
+    ///
+    /// \param ctx       The ECJPAKE context to initialize.
+    ///                  This must not be \c NULL.
+    pub fn mbedtls_ecjpake_init(ctx: *mut mbedtls_ecjpake_context);
+}
+unsafe extern "C" {
+    /// \brief           Set up an ECJPAKE context for use.
+    ///
+    /// \note            Currently the only values for hash/curve allowed by the
+    ///                  standard are #MBEDTLS_MD_SHA256/#MBEDTLS_ECP_DP_SECP256R1.
+    ///
+    /// \param ctx       The ECJPAKE context to set up. This must be initialized.
+    /// \param role      The role of the caller. This must be either
+    ///                  #MBEDTLS_ECJPAKE_CLIENT or #MBEDTLS_ECJPAKE_SERVER.
+    /// \param hash      The identifier of the hash function to use,
+    ///                  for example #MBEDTLS_MD_SHA256.
+    /// \param curve     The identifier of the elliptic curve to use,
+    ///                  for example #MBEDTLS_ECP_DP_SECP256R1.
+    /// \param secret    The pre-shared secret (passphrase). This must be
+    ///                  a readable not empty buffer of length \p len Bytes. It need
+    ///                  only be valid for the duration of this call.
+    /// \param len       The length of the pre-shared secret \p secret.
+    ///
+    /// \return          \c 0 if successful.
+    /// \return          A negative error code on failure.
+    pub fn mbedtls_ecjpake_setup(
+        ctx: *mut mbedtls_ecjpake_context,
+        role: mbedtls_ecjpake_role,
+        hash: mbedtls_md_type_t,
+        curve: mbedtls_ecp_group_id,
+        secret: *const ::core::ffi::c_uchar,
+        len: usize,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief               Set the point format for future reads and writes.
+    ///
+    /// \param ctx           The ECJPAKE context to configure.
+    /// \param point_format  The point format to use:
+    ///                      #MBEDTLS_ECP_PF_UNCOMPRESSED (default)
+    ///                      or #MBEDTLS_ECP_PF_COMPRESSED.
+    ///
+    /// \return              \c 0 if successful.
+    /// \return              #MBEDTLS_ERR_ECP_BAD_INPUT_DATA if \p point_format
+    ///                      is invalid.
+    pub fn mbedtls_ecjpake_set_point_format(
+        ctx: *mut mbedtls_ecjpake_context,
+        point_format: ::core::ffi::c_int,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           Check if an ECJPAKE context is ready for use.
+    ///
+    /// \param ctx       The ECJPAKE context to check. This must be
+    ///                  initialized.
+    ///
+    /// \return          \c 0 if the context is ready for use.
+    /// \return          #MBEDTLS_ERR_ECP_BAD_INPUT_DATA otherwise.
+    pub fn mbedtls_ecjpake_check(ctx: *const mbedtls_ecjpake_context) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           Generate and write the first round message
+    ///                  (TLS: contents of the Client/ServerHello extension,
+    ///                  excluding extension type and length bytes).
+    ///
+    /// \param ctx       The ECJPAKE context to use. This must be
+    ///                  initialized and set up.
+    /// \param buf       The buffer to write the contents to. This must be a
+    ///                  writable buffer of length \p len Bytes.
+    /// \param len       The length of \p buf in Bytes.
+    /// \param olen      The address at which to store the total number
+    ///                  of Bytes written to \p buf. This must not be \c NULL.
+    /// \param f_rng     The RNG function to use. This must not be \c NULL.
+    /// \param p_rng     The RNG parameter to be passed to \p f_rng. This
+    ///                  may be \c NULL if \p f_rng doesn't use a context.
+    ///
+    /// \return          \c 0 if successful.
+    /// \return          A negative error code on failure.
+    pub fn mbedtls_ecjpake_write_round_one(
+        ctx: *mut mbedtls_ecjpake_context,
+        buf: *mut ::core::ffi::c_uchar,
+        len: usize,
+        olen: *mut usize,
+        f_rng: mbedtls_f_rng_t,
+        p_rng: *mut ::core::ffi::c_void,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           Read and process the first round message
+    ///                  (TLS: contents of the Client/ServerHello extension,
+    ///                  excluding extension type and length bytes).
+    ///
+    /// \param ctx       The ECJPAKE context to use. This must be initialized
+    ///                  and set up.
+    /// \param buf       The buffer holding the first round message. This must
+    ///                  be a readable buffer of length \p len Bytes.
+    /// \param len       The length in Bytes of \p buf.
+    ///
+    /// \return          \c 0 if successful.
+    /// \return          A negative error code on failure.
+    pub fn mbedtls_ecjpake_read_round_one(
+        ctx: *mut mbedtls_ecjpake_context,
+        buf: *const ::core::ffi::c_uchar,
+        len: usize,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           Generate and write the second round message
+    ///                  (TLS: contents of the Client/ServerKeyExchange).
+    ///
+    /// \param ctx       The ECJPAKE context to use. This must be initialized,
+    ///                  set up, and already have performed round one.
+    /// \param buf       The buffer to write the round two contents to.
+    ///                  This must be a writable buffer of length \p len Bytes.
+    /// \param len       The size of \p buf in Bytes.
+    /// \param olen      The address at which to store the total number of Bytes
+    ///                  written to \p buf. This must not be \c NULL.
+    /// \param f_rng     The RNG function to use. This must not be \c NULL.
+    /// \param p_rng     The RNG parameter to be passed to \p f_rng. This
+    ///                  may be \c NULL if \p f_rng doesn't use a context.
+    ///
+    /// \return          \c 0 if successful.
+    /// \return          A negative error code on failure.
+    pub fn mbedtls_ecjpake_write_round_two(
+        ctx: *mut mbedtls_ecjpake_context,
+        buf: *mut ::core::ffi::c_uchar,
+        len: usize,
+        olen: *mut usize,
+        f_rng: mbedtls_f_rng_t,
+        p_rng: *mut ::core::ffi::c_void,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           Read and process the second round message
+    ///                  (TLS: contents of the Client/ServerKeyExchange).
+    ///
+    /// \param ctx       The ECJPAKE context to use. This must be initialized
+    ///                  and set up and already have performed round one.
+    /// \param buf       The buffer holding the second round message. This must
+    ///                  be a readable buffer of length \p len Bytes.
+    /// \param len       The length in Bytes of \p buf.
+    ///
+    /// \return          \c 0 if successful.
+    /// \return          A negative error code on failure.
+    pub fn mbedtls_ecjpake_read_round_two(
+        ctx: *mut mbedtls_ecjpake_context,
+        buf: *const ::core::ffi::c_uchar,
+        len: usize,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           Derive the shared secret
+    ///                  (TLS: Pre-Master Secret).
+    ///
+    /// \param ctx       The ECJPAKE context to use. This must be initialized,
+    ///                  set up and have performed both round one and two.
+    /// \param buf       The buffer to write the derived secret to. This must
+    ///                  be a writable buffer of length \p len Bytes.
+    /// \param len       The length of \p buf in Bytes.
+    /// \param olen      The address at which to store the total number of Bytes
+    ///                  written to \p buf. This must not be \c NULL.
+    /// \param f_rng     The RNG function to use. This must not be \c NULL.
+    /// \param p_rng     The RNG parameter to be passed to \p f_rng. This
+    ///                  may be \c NULL if \p f_rng doesn't use a context.
+    ///
+    /// \return          \c 0 if successful.
+    /// \return          A negative error code on failure.
+    pub fn mbedtls_ecjpake_derive_secret(
+        ctx: *mut mbedtls_ecjpake_context,
+        buf: *mut ::core::ffi::c_uchar,
+        len: usize,
+        olen: *mut usize,
+        f_rng: mbedtls_f_rng_t,
+        p_rng: *mut ::core::ffi::c_void,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           Write the shared key material to be passed to a Key
+    ///                  Derivation Function as described in RFC8236.
+    ///
+    /// \param ctx       The ECJPAKE context to use. This must be initialized,
+    ///                  set up and have performed both round one and two.
+    /// \param buf       The buffer to write the derived secret to. This must
+    ///                  be a writable buffer of length \p len Bytes.
+    /// \param len       The length of \p buf in Bytes.
+    /// \param olen      The address at which to store the total number of bytes
+    ///                  written to \p buf. This must not be \c NULL.
+    /// \param f_rng     The RNG function to use. This must not be \c NULL.
+    /// \param p_rng     The RNG parameter to be passed to \p f_rng. This
+    ///                  may be \c NULL if \p f_rng doesn't use a context.
+    ///
+    /// \return          \c 0 if successful.
+    /// \return          A negative error code on failure.
+    pub fn mbedtls_ecjpake_write_shared_key(
+        ctx: *mut mbedtls_ecjpake_context,
+        buf: *mut ::core::ffi::c_uchar,
+        len: usize,
+        olen: *mut usize,
+        f_rng: mbedtls_f_rng_t,
+        p_rng: *mut ::core::ffi::c_void,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           This clears an ECJPAKE context and frees any
+    ///                  embedded data structure.
+    ///
+    /// \param ctx       The ECJPAKE context to free. This may be \c NULL,
+    ///                  in which case this function does nothing. If it is not
+    ///                  \c NULL, it must point to an initialized ECJPAKE context.
+    pub fn mbedtls_ecjpake_free(ctx: *mut mbedtls_ecjpake_context);
+}
+unsafe extern "C" {
+    /// \brief          Checkup routine
+    ///
+    /// \return         0 if successful, or 1 if a test failed
+    pub fn mbedtls_ecjpake_self_test(verbose: ::core::ffi::c_int) -> ::core::ffi::c_int;
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct mbedtls_psa_pake_operation_t {
+    pub private_alg: psa_algorithm_t,
+    pub private_password: *mut u8,
+    pub private_password_len: usize,
+    pub private_role: mbedtls_ecjpake_role,
+    pub private_buffer: [u8; 336usize],
+    pub private_buffer_length: usize,
+    pub private_buffer_offset: usize,
+    pub private_ctx: mbedtls_psa_pake_operation_t__bindgen_ty_1,
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub union mbedtls_psa_pake_operation_t__bindgen_ty_1 {
+    pub private_dummy: ::core::ffi::c_uint,
+    pub private_jpake: mbedtls_ecjpake_context,
+}
+impl Default for mbedtls_psa_pake_operation_t__bindgen_ty_1 {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+impl Default for mbedtls_psa_pake_operation_t {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[repr(align(16))]
+#[derive(Copy, Clone)]
+pub union psa_driver_mac_context_t {
+    pub dummy: ::core::ffi::c_uint,
+    pub mbedtls_ctx: mbedtls_psa_mac_operation_t,
+}
+impl Default for psa_driver_mac_context_t {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub union psa_driver_aead_context_t {
+    pub dummy: ::core::ffi::c_uint,
+    pub mbedtls_ctx: mbedtls_psa_aead_operation_t,
+}
+impl Default for psa_driver_aead_context_t {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub union psa_driver_sign_hash_interruptible_context_t {
+    pub dummy: ::core::ffi::c_uint,
+    pub mbedtls_ctx: mbedtls_psa_sign_hash_interruptible_operation_t,
+}
+impl Default for psa_driver_sign_hash_interruptible_context_t {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub union psa_driver_verify_hash_interruptible_context_t {
+    pub dummy: ::core::ffi::c_uint,
+    pub mbedtls_ctx: mbedtls_psa_verify_hash_interruptible_operation_t,
+}
+impl Default for psa_driver_verify_hash_interruptible_context_t {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub union psa_driver_pake_context_t {
+    pub dummy: ::core::ffi::c_uint,
+    pub mbedtls_ctx: mbedtls_psa_pake_operation_t,
+}
+impl Default for psa_driver_pake_context_t {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[repr(align(16))]
+#[derive(Copy, Clone)]
+pub struct psa_mac_operation_s {
+    /// Unique ID indicating which driver got assigned to do the
+    /// operation. Since driver contexts are driver-specific, swapping
+    /// drivers halfway through the operation is not supported.
+    /// ID values are auto-generated in psa_driver_wrappers.h
+    /// ID value zero means the context is not valid or not assigned to
+    /// any driver (i.e. none of the driver contexts are active).
+    pub private_id: ::core::ffi::c_uint,
+    pub private_mac_size: u8,
+    pub _bitfield_align_1: [u8; 0],
+    pub _bitfield_1: __BindgenBitfieldUnit<[u8; 1usize]>,
+    pub __bindgen_padding_0: u64,
+    pub private_ctx: psa_driver_mac_context_t,
+}
+impl Default for psa_mac_operation_s {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+impl psa_mac_operation_s {
+    #[inline]
+    pub fn private_is_sign(&self) -> ::core::ffi::c_uint {
+        unsafe { ::core::mem::transmute(self._bitfield_1.get(0usize, 1u8) as u32) }
+    }
+    #[inline]
+    pub fn set_private_is_sign(&mut self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            self._bitfield_1.set(0usize, 1u8, val as u64)
+        }
+    }
+    #[inline]
+    pub unsafe fn private_is_sign_raw(this: *const Self) -> ::core::ffi::c_uint {
+        unsafe {
+            ::core::mem::transmute(<__BindgenBitfieldUnit<[u8; 1usize]>>::raw_get(
+                ::core::ptr::addr_of!((*this)._bitfield_1),
+                0usize,
+                1u8,
+            ) as u32)
+        }
+    }
+    #[inline]
+    pub unsafe fn set_private_is_sign_raw(this: *mut Self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            <__BindgenBitfieldUnit<[u8; 1usize]>>::raw_set(
+                ::core::ptr::addr_of_mut!((*this)._bitfield_1),
+                0usize,
+                1u8,
+                val as u64,
+            )
+        }
+    }
+    #[inline]
+    pub fn new_bitfield_1(
+        private_is_sign: ::core::ffi::c_uint,
+    ) -> __BindgenBitfieldUnit<[u8; 1usize]> {
+        let mut __bindgen_bitfield_unit: __BindgenBitfieldUnit<[u8; 1usize]> = Default::default();
+        __bindgen_bitfield_unit.set(0usize, 1u8, {
+            let private_is_sign: u32 = unsafe { ::core::mem::transmute(private_is_sign) };
+            private_is_sign as u64
+        });
+        __bindgen_bitfield_unit
+    }
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct psa_aead_operation_s {
+    /// Unique ID indicating which driver got assigned to do the
+    /// operation. Since driver contexts are driver-specific, swapping
+    /// drivers halfway through the operation is not supported.
+    /// ID values are auto-generated in psa_crypto_driver_wrappers.h
+    /// ID value zero means the context is not valid or not assigned to
+    /// any driver (i.e. none of the driver contexts are active).
+    pub private_id: ::core::ffi::c_uint,
+    pub private_alg: psa_algorithm_t,
+    pub private_key_type: psa_key_type_t,
+    pub private_ad_remaining: usize,
+    pub private_body_remaining: usize,
+    pub _bitfield_align_1: [u8; 0],
+    pub _bitfield_1: __BindgenBitfieldUnit<[u8; 1usize]>,
+    pub private_ctx: psa_driver_aead_context_t,
+}
+impl Default for psa_aead_operation_s {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+impl psa_aead_operation_s {
+    #[inline]
+    pub fn private_nonce_set(&self) -> ::core::ffi::c_uint {
+        unsafe { ::core::mem::transmute(self._bitfield_1.get(0usize, 1u8) as u32) }
+    }
+    #[inline]
+    pub fn set_private_nonce_set(&mut self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            self._bitfield_1.set(0usize, 1u8, val as u64)
+        }
+    }
+    #[inline]
+    pub unsafe fn private_nonce_set_raw(this: *const Self) -> ::core::ffi::c_uint {
+        unsafe {
+            ::core::mem::transmute(<__BindgenBitfieldUnit<[u8; 1usize]>>::raw_get(
+                ::core::ptr::addr_of!((*this)._bitfield_1),
+                0usize,
+                1u8,
+            ) as u32)
+        }
+    }
+    #[inline]
+    pub unsafe fn set_private_nonce_set_raw(this: *mut Self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            <__BindgenBitfieldUnit<[u8; 1usize]>>::raw_set(
+                ::core::ptr::addr_of_mut!((*this)._bitfield_1),
+                0usize,
+                1u8,
+                val as u64,
+            )
+        }
+    }
+    #[inline]
+    pub fn private_lengths_set(&self) -> ::core::ffi::c_uint {
+        unsafe { ::core::mem::transmute(self._bitfield_1.get(1usize, 1u8) as u32) }
+    }
+    #[inline]
+    pub fn set_private_lengths_set(&mut self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            self._bitfield_1.set(1usize, 1u8, val as u64)
+        }
+    }
+    #[inline]
+    pub unsafe fn private_lengths_set_raw(this: *const Self) -> ::core::ffi::c_uint {
+        unsafe {
+            ::core::mem::transmute(<__BindgenBitfieldUnit<[u8; 1usize]>>::raw_get(
+                ::core::ptr::addr_of!((*this)._bitfield_1),
+                1usize,
+                1u8,
+            ) as u32)
+        }
+    }
+    #[inline]
+    pub unsafe fn set_private_lengths_set_raw(this: *mut Self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            <__BindgenBitfieldUnit<[u8; 1usize]>>::raw_set(
+                ::core::ptr::addr_of_mut!((*this)._bitfield_1),
+                1usize,
+                1u8,
+                val as u64,
+            )
+        }
+    }
+    #[inline]
+    pub fn private_ad_started(&self) -> ::core::ffi::c_uint {
+        unsafe { ::core::mem::transmute(self._bitfield_1.get(2usize, 1u8) as u32) }
+    }
+    #[inline]
+    pub fn set_private_ad_started(&mut self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            self._bitfield_1.set(2usize, 1u8, val as u64)
+        }
+    }
+    #[inline]
+    pub unsafe fn private_ad_started_raw(this: *const Self) -> ::core::ffi::c_uint {
+        unsafe {
+            ::core::mem::transmute(<__BindgenBitfieldUnit<[u8; 1usize]>>::raw_get(
+                ::core::ptr::addr_of!((*this)._bitfield_1),
+                2usize,
+                1u8,
+            ) as u32)
+        }
+    }
+    #[inline]
+    pub unsafe fn set_private_ad_started_raw(this: *mut Self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            <__BindgenBitfieldUnit<[u8; 1usize]>>::raw_set(
+                ::core::ptr::addr_of_mut!((*this)._bitfield_1),
+                2usize,
+                1u8,
+                val as u64,
+            )
+        }
+    }
+    #[inline]
+    pub fn private_body_started(&self) -> ::core::ffi::c_uint {
+        unsafe { ::core::mem::transmute(self._bitfield_1.get(3usize, 1u8) as u32) }
+    }
+    #[inline]
+    pub fn set_private_body_started(&mut self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            self._bitfield_1.set(3usize, 1u8, val as u64)
+        }
+    }
+    #[inline]
+    pub unsafe fn private_body_started_raw(this: *const Self) -> ::core::ffi::c_uint {
+        unsafe {
+            ::core::mem::transmute(<__BindgenBitfieldUnit<[u8; 1usize]>>::raw_get(
+                ::core::ptr::addr_of!((*this)._bitfield_1),
+                3usize,
+                1u8,
+            ) as u32)
+        }
+    }
+    #[inline]
+    pub unsafe fn set_private_body_started_raw(this: *mut Self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            <__BindgenBitfieldUnit<[u8; 1usize]>>::raw_set(
+                ::core::ptr::addr_of_mut!((*this)._bitfield_1),
+                3usize,
+                1u8,
+                val as u64,
+            )
+        }
+    }
+    #[inline]
+    pub fn private_is_encrypt(&self) -> ::core::ffi::c_uint {
+        unsafe { ::core::mem::transmute(self._bitfield_1.get(4usize, 1u8) as u32) }
+    }
+    #[inline]
+    pub fn set_private_is_encrypt(&mut self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            self._bitfield_1.set(4usize, 1u8, val as u64)
+        }
+    }
+    #[inline]
+    pub unsafe fn private_is_encrypt_raw(this: *const Self) -> ::core::ffi::c_uint {
+        unsafe {
+            ::core::mem::transmute(<__BindgenBitfieldUnit<[u8; 1usize]>>::raw_get(
+                ::core::ptr::addr_of!((*this)._bitfield_1),
+                4usize,
+                1u8,
+            ) as u32)
+        }
+    }
+    #[inline]
+    pub unsafe fn set_private_is_encrypt_raw(this: *mut Self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            <__BindgenBitfieldUnit<[u8; 1usize]>>::raw_set(
+                ::core::ptr::addr_of_mut!((*this)._bitfield_1),
+                4usize,
+                1u8,
+                val as u64,
+            )
+        }
+    }
+    #[inline]
+    pub fn new_bitfield_1(
+        private_nonce_set: ::core::ffi::c_uint,
+        private_lengths_set: ::core::ffi::c_uint,
+        private_ad_started: ::core::ffi::c_uint,
+        private_body_started: ::core::ffi::c_uint,
+        private_is_encrypt: ::core::ffi::c_uint,
+    ) -> __BindgenBitfieldUnit<[u8; 1usize]> {
+        let mut __bindgen_bitfield_unit: __BindgenBitfieldUnit<[u8; 1usize]> = Default::default();
+        __bindgen_bitfield_unit.set(0usize, 1u8, {
+            let private_nonce_set: u32 = unsafe { ::core::mem::transmute(private_nonce_set) };
+            private_nonce_set as u64
+        });
+        __bindgen_bitfield_unit.set(1usize, 1u8, {
+            let private_lengths_set: u32 = unsafe { ::core::mem::transmute(private_lengths_set) };
+            private_lengths_set as u64
+        });
+        __bindgen_bitfield_unit.set(2usize, 1u8, {
+            let private_ad_started: u32 = unsafe { ::core::mem::transmute(private_ad_started) };
+            private_ad_started as u64
+        });
+        __bindgen_bitfield_unit.set(3usize, 1u8, {
+            let private_body_started: u32 = unsafe { ::core::mem::transmute(private_body_started) };
+            private_body_started as u64
+        });
+        __bindgen_bitfield_unit.set(4usize, 1u8, {
+            let private_is_encrypt: u32 = unsafe { ::core::mem::transmute(private_is_encrypt) };
+            private_is_encrypt as u64
+        });
+        __bindgen_bitfield_unit
+    }
+}
+#[repr(C)]
+#[repr(align(16))]
+#[derive(Copy, Clone)]
+pub struct psa_hkdf_key_derivation_t {
+    pub private_info: *mut u8,
+    pub private_info_length: usize,
+    pub private_offset_in_block: u8,
+    pub private_block_number: u8,
+    pub _bitfield_align_1: [u8; 0],
+    pub _bitfield_1: __BindgenBitfieldUnit<[u8; 1usize]>,
+    pub private_output_block: [u8; 64usize],
+    pub private_prk: [u8; 64usize],
+    pub __bindgen_padding_0: [u64; 0usize],
+    pub private_hmac: psa_mac_operation_s,
+}
+impl Default for psa_hkdf_key_derivation_t {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+impl psa_hkdf_key_derivation_t {
+    #[inline]
+    pub fn private_state(&self) -> ::core::ffi::c_uint {
+        unsafe { ::core::mem::transmute(self._bitfield_1.get(0usize, 2u8) as u32) }
+    }
+    #[inline]
+    pub fn set_private_state(&mut self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            self._bitfield_1.set(0usize, 2u8, val as u64)
+        }
+    }
+    #[inline]
+    pub unsafe fn private_state_raw(this: *const Self) -> ::core::ffi::c_uint {
+        unsafe {
+            ::core::mem::transmute(<__BindgenBitfieldUnit<[u8; 1usize]>>::raw_get(
+                ::core::ptr::addr_of!((*this)._bitfield_1),
+                0usize,
+                2u8,
+            ) as u32)
+        }
+    }
+    #[inline]
+    pub unsafe fn set_private_state_raw(this: *mut Self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            <__BindgenBitfieldUnit<[u8; 1usize]>>::raw_set(
+                ::core::ptr::addr_of_mut!((*this)._bitfield_1),
+                0usize,
+                2u8,
+                val as u64,
+            )
+        }
+    }
+    #[inline]
+    pub fn private_info_set(&self) -> ::core::ffi::c_uint {
+        unsafe { ::core::mem::transmute(self._bitfield_1.get(2usize, 1u8) as u32) }
+    }
+    #[inline]
+    pub fn set_private_info_set(&mut self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            self._bitfield_1.set(2usize, 1u8, val as u64)
+        }
+    }
+    #[inline]
+    pub unsafe fn private_info_set_raw(this: *const Self) -> ::core::ffi::c_uint {
+        unsafe {
+            ::core::mem::transmute(<__BindgenBitfieldUnit<[u8; 1usize]>>::raw_get(
+                ::core::ptr::addr_of!((*this)._bitfield_1),
+                2usize,
+                1u8,
+            ) as u32)
+        }
+    }
+    #[inline]
+    pub unsafe fn set_private_info_set_raw(this: *mut Self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            <__BindgenBitfieldUnit<[u8; 1usize]>>::raw_set(
+                ::core::ptr::addr_of_mut!((*this)._bitfield_1),
+                2usize,
+                1u8,
+                val as u64,
+            )
+        }
+    }
+    #[inline]
+    pub fn new_bitfield_1(
+        private_state: ::core::ffi::c_uint,
+        private_info_set: ::core::ffi::c_uint,
+    ) -> __BindgenBitfieldUnit<[u8; 1usize]> {
+        let mut __bindgen_bitfield_unit: __BindgenBitfieldUnit<[u8; 1usize]> = Default::default();
+        __bindgen_bitfield_unit.set(0usize, 2u8, {
+            let private_state: u32 = unsafe { ::core::mem::transmute(private_state) };
+            private_state as u64
+        });
+        __bindgen_bitfield_unit.set(2usize, 1u8, {
+            let private_info_set: u32 = unsafe { ::core::mem::transmute(private_info_set) };
+            private_info_set as u64
+        });
+        __bindgen_bitfield_unit
+    }
+}
+#[repr(C)]
+#[derive(Default, Copy, Clone)]
+pub struct psa_tls12_ecjpake_to_pms_t {
+    pub private_data: [u8; 32usize],
+}
+pub const psa_tls12_prf_key_derivation_state_t_PSA_TLS12_PRF_STATE_INIT:
+    psa_tls12_prf_key_derivation_state_t = 0;
+pub const psa_tls12_prf_key_derivation_state_t_PSA_TLS12_PRF_STATE_SEED_SET:
+    psa_tls12_prf_key_derivation_state_t = 1;
+pub const psa_tls12_prf_key_derivation_state_t_PSA_TLS12_PRF_STATE_OTHER_KEY_SET:
+    psa_tls12_prf_key_derivation_state_t = 2;
+pub const psa_tls12_prf_key_derivation_state_t_PSA_TLS12_PRF_STATE_KEY_SET:
+    psa_tls12_prf_key_derivation_state_t = 3;
+pub const psa_tls12_prf_key_derivation_state_t_PSA_TLS12_PRF_STATE_LABEL_SET:
+    psa_tls12_prf_key_derivation_state_t = 4;
+pub const psa_tls12_prf_key_derivation_state_t_PSA_TLS12_PRF_STATE_OUTPUT:
+    psa_tls12_prf_key_derivation_state_t = 5;
+pub type psa_tls12_prf_key_derivation_state_t = ::core::ffi::c_uint;
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct psa_tls12_prf_key_derivation_s {
+    pub private_left_in_block: u8,
+    pub private_block_number: u8,
+    pub private_state: psa_tls12_prf_key_derivation_state_t,
+    pub private_secret: *mut u8,
+    pub private_secret_length: usize,
+    pub private_seed: *mut u8,
+    pub private_seed_length: usize,
+    pub private_label: *mut u8,
+    pub private_label_length: usize,
+    pub private_other_secret: *mut u8,
+    pub private_other_secret_length: usize,
+    pub private_Ai: [u8; 64usize],
+    pub private_output_block: [u8; 64usize],
+}
+impl Default for psa_tls12_prf_key_derivation_s {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub type psa_tls12_prf_key_derivation_t = psa_tls12_prf_key_derivation_s;
+#[repr(C)]
+#[repr(align(16))]
+#[derive(Copy, Clone)]
+pub union psa_driver_key_derivation_context_t {
+    pub dummy: ::core::ffi::c_uint,
+    pub private_hkdf: psa_hkdf_key_derivation_t,
+    pub private_tls12_prf: psa_tls12_prf_key_derivation_t,
+    pub private_tls12_ecjpake_to_pms: psa_tls12_ecjpake_to_pms_t,
+}
+impl Default for psa_driver_key_derivation_context_t {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[repr(align(16))]
+#[derive(Copy, Clone)]
+pub struct psa_key_derivation_s {
+    pub private_alg: psa_algorithm_t,
+    pub _bitfield_align_1: [u8; 0],
+    pub _bitfield_1: __BindgenBitfieldUnit<[u8; 1usize]>,
+    pub private_capacity: usize,
+    pub __bindgen_padding_0: [u64; 0usize],
+    pub private_ctx: psa_driver_key_derivation_context_t,
+}
+impl Default for psa_key_derivation_s {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+impl psa_key_derivation_s {
+    #[inline]
+    pub fn private_can_output_key(&self) -> ::core::ffi::c_uint {
+        unsafe { ::core::mem::transmute(self._bitfield_1.get(0usize, 1u8) as u32) }
+    }
+    #[inline]
+    pub fn set_private_can_output_key(&mut self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            self._bitfield_1.set(0usize, 1u8, val as u64)
+        }
+    }
+    #[inline]
+    pub unsafe fn private_can_output_key_raw(this: *const Self) -> ::core::ffi::c_uint {
+        unsafe {
+            ::core::mem::transmute(<__BindgenBitfieldUnit<[u8; 1usize]>>::raw_get(
+                ::core::ptr::addr_of!((*this)._bitfield_1),
+                0usize,
+                1u8,
+            ) as u32)
+        }
+    }
+    #[inline]
+    pub unsafe fn set_private_can_output_key_raw(this: *mut Self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            <__BindgenBitfieldUnit<[u8; 1usize]>>::raw_set(
+                ::core::ptr::addr_of_mut!((*this)._bitfield_1),
+                0usize,
+                1u8,
+                val as u64,
+            )
+        }
+    }
+    #[inline]
+    pub fn new_bitfield_1(
+        private_can_output_key: ::core::ffi::c_uint,
+    ) -> __BindgenBitfieldUnit<[u8; 1usize]> {
+        let mut __bindgen_bitfield_unit: __BindgenBitfieldUnit<[u8; 1usize]> = Default::default();
+        __bindgen_bitfield_unit.set(0usize, 1u8, {
+            let private_can_output_key: u32 =
+                unsafe { ::core::mem::transmute(private_can_output_key) };
+            private_can_output_key as u64
+        });
+        __bindgen_bitfield_unit
+    }
+}
+#[repr(C)]
+#[derive(Default, Copy, Clone)]
+pub struct psa_custom_key_parameters_s {
+    pub flags: u32,
+}
+#[repr(C)]
+#[derive(Default)]
+pub struct psa_key_production_parameters_s {
+    pub flags: u32,
+    pub data: __IncompleteArrayField<u8>,
+}
+#[repr(C)]
+#[derive(Default, Copy, Clone)]
+pub struct psa_key_policy_s {
+    pub private_usage: psa_key_usage_t,
+    pub private_alg: psa_algorithm_t,
+    pub private_alg2: psa_algorithm_t,
+}
+pub type psa_key_policy_t = psa_key_policy_s;
+pub type psa_key_bits_t = u16;
+#[repr(C)]
+#[derive(Default, Copy, Clone)]
+pub struct psa_key_attributes_s {
+    pub private_type: psa_key_type_t,
+    pub private_bits: psa_key_bits_t,
+    pub private_lifetime: psa_key_lifetime_t,
+    pub private_policy: psa_key_policy_t,
+    pub private_id: mbedtls_svc_key_id_t,
+}
+/// \brief The context for PSA interruptible hash signing.
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct psa_sign_hash_interruptible_operation_s {
+    /// Unique ID indicating which driver got assigned to do the
+    /// operation. Since driver contexts are driver-specific, swapping
+    /// drivers halfway through the operation is not supported.
+    /// ID values are auto-generated in psa_crypto_driver_wrappers.h
+    /// ID value zero means the context is not valid or not assigned to
+    /// any driver (i.e. none of the driver contexts are active).
+    pub private_id: ::core::ffi::c_uint,
+    pub private_ctx: psa_driver_sign_hash_interruptible_context_t,
+    pub _bitfield_align_1: [u8; 0],
+    pub _bitfield_1: __BindgenBitfieldUnit<[u8; 1usize]>,
+    pub private_num_ops: u32,
+}
+impl Default for psa_sign_hash_interruptible_operation_s {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+impl psa_sign_hash_interruptible_operation_s {
+    #[inline]
+    pub fn private_error_occurred(&self) -> ::core::ffi::c_uint {
+        unsafe { ::core::mem::transmute(self._bitfield_1.get(0usize, 1u8) as u32) }
+    }
+    #[inline]
+    pub fn set_private_error_occurred(&mut self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            self._bitfield_1.set(0usize, 1u8, val as u64)
+        }
+    }
+    #[inline]
+    pub unsafe fn private_error_occurred_raw(this: *const Self) -> ::core::ffi::c_uint {
+        unsafe {
+            ::core::mem::transmute(<__BindgenBitfieldUnit<[u8; 1usize]>>::raw_get(
+                ::core::ptr::addr_of!((*this)._bitfield_1),
+                0usize,
+                1u8,
+            ) as u32)
+        }
+    }
+    #[inline]
+    pub unsafe fn set_private_error_occurred_raw(this: *mut Self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            <__BindgenBitfieldUnit<[u8; 1usize]>>::raw_set(
+                ::core::ptr::addr_of_mut!((*this)._bitfield_1),
+                0usize,
+                1u8,
+                val as u64,
+            )
+        }
+    }
+    #[inline]
+    pub fn new_bitfield_1(
+        private_error_occurred: ::core::ffi::c_uint,
+    ) -> __BindgenBitfieldUnit<[u8; 1usize]> {
+        let mut __bindgen_bitfield_unit: __BindgenBitfieldUnit<[u8; 1usize]> = Default::default();
+        __bindgen_bitfield_unit.set(0usize, 1u8, {
+            let private_error_occurred: u32 =
+                unsafe { ::core::mem::transmute(private_error_occurred) };
+            private_error_occurred as u64
+        });
+        __bindgen_bitfield_unit
+    }
+}
+/// \brief The context for PSA interruptible hash verification.
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct psa_verify_hash_interruptible_operation_s {
+    /// Unique ID indicating which driver got assigned to do the
+    /// operation. Since driver contexts are driver-specific, swapping
+    /// drivers halfway through the operation is not supported.
+    /// ID values are auto-generated in psa_crypto_driver_wrappers.h
+    /// ID value zero means the context is not valid or not assigned to
+    /// any driver (i.e. none of the driver contexts are active).
+    pub private_id: ::core::ffi::c_uint,
+    pub private_ctx: psa_driver_verify_hash_interruptible_context_t,
+    pub _bitfield_align_1: [u8; 0],
+    pub _bitfield_1: __BindgenBitfieldUnit<[u8; 1usize]>,
+    pub private_num_ops: u32,
+}
+impl Default for psa_verify_hash_interruptible_operation_s {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+impl psa_verify_hash_interruptible_operation_s {
+    #[inline]
+    pub fn private_error_occurred(&self) -> ::core::ffi::c_uint {
+        unsafe { ::core::mem::transmute(self._bitfield_1.get(0usize, 1u8) as u32) }
+    }
+    #[inline]
+    pub fn set_private_error_occurred(&mut self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            self._bitfield_1.set(0usize, 1u8, val as u64)
+        }
+    }
+    #[inline]
+    pub unsafe fn private_error_occurred_raw(this: *const Self) -> ::core::ffi::c_uint {
+        unsafe {
+            ::core::mem::transmute(<__BindgenBitfieldUnit<[u8; 1usize]>>::raw_get(
+                ::core::ptr::addr_of!((*this)._bitfield_1),
+                0usize,
+                1u8,
+            ) as u32)
+        }
+    }
+    #[inline]
+    pub unsafe fn set_private_error_occurred_raw(this: *mut Self, val: ::core::ffi::c_uint) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            <__BindgenBitfieldUnit<[u8; 1usize]>>::raw_set(
+                ::core::ptr::addr_of_mut!((*this)._bitfield_1),
+                0usize,
+                1u8,
+                val as u64,
+            )
+        }
+    }
+    #[inline]
+    pub fn new_bitfield_1(
+        private_error_occurred: ::core::ffi::c_uint,
+    ) -> __BindgenBitfieldUnit<[u8; 1usize]> {
+        let mut __bindgen_bitfield_unit: __BindgenBitfieldUnit<[u8; 1usize]> = Default::default();
+        __bindgen_bitfield_unit.set(0usize, 1u8, {
+            let private_error_occurred: u32 =
+                unsafe { ::core::mem::transmute(private_error_occurred) };
+            private_error_occurred as u64
+        });
+        __bindgen_bitfield_unit
+    }
+}
 unsafe extern "C" {
     /// \brief Library initialization.
     ///
@@ -10784,6 +13372,11 @@ unsafe extern "C" {
     ///
     /// If a key is currently in use in a multipart operation, then destroying the
     /// key will cause the multipart operation to fail.
+    ///
+    /// \warning    We can only guarantee that the the key material will
+    ///             eventually be wiped from memory. With threading enabled
+    ///             and during concurrent execution, copies of the key material may
+    ///             still exist until all threads have finished using the key.
     ///
     /// \param key  Identifier of the key to erase. If this is \c 0, do nothing and
     ///             return #PSA_SUCCESS.
@@ -11113,7 +13706,7 @@ unsafe extern "C" {
     ///                          such that #PSA_ALG_IS_HASH(\p alg) is true).
     /// \param[in] input         Buffer containing the message to hash.
     /// \param input_length      Size of the \p input buffer in bytes.
-    /// \param[out] hash         Buffer containing the expected hash value.
+    /// \param[in] hash          Buffer containing the expected hash value.
     /// \param hash_length       Size of the \p hash buffer in bytes.
     ///
     /// \retval #PSA_SUCCESS
@@ -11463,7 +14056,7 @@ unsafe extern "C" {
     ///                          such that #PSA_ALG_IS_MAC(\p alg) is true).
     /// \param[in] input         Buffer containing the input message.
     /// \param input_length      Size of the \p input buffer in bytes.
-    /// \param[out] mac          Buffer containing the expected MAC value.
+    /// \param[in] mac           Buffer containing the expected MAC value.
     /// \param mac_length        Size of the \p mac buffer in bytes.
     ///
     /// \retval #PSA_SUCCESS
@@ -13149,7 +15742,7 @@ unsafe extern "C" {
     ///                              \p key.
     /// \param[in]  input            The message whose signature is to be verified.
     /// \param[in]  input_length     Size of the \p input buffer in bytes.
-    /// \param[out] signature        Buffer containing the signature to verify.
+    /// \param[in] signature         Buffer containing the signature to verify.
     /// \param[in]  signature_length Size of the \p signature buffer in bytes.
     ///
     /// \retval #PSA_SUCCESS \emptydescription
@@ -13460,7 +16053,8 @@ unsafe extern "C" {
     ///    psa_key_derivation_set_capacity(). You may do this before, in the middle
     ///    of or after providing inputs. For some algorithms, this step is mandatory
     ///    because the output depends on the maximum capacity.
-    /// -# To derive a key, call psa_key_derivation_output_key().
+    /// -# To derive a key, call psa_key_derivation_output_key() or
+    ///    psa_key_derivation_output_key_custom().
     ///    To derive a byte string for a different purpose, call
     ///    psa_key_derivation_output_bytes().
     ///    Successive calls to these functions use successive output bytes
@@ -13679,7 +16273,8 @@ unsafe extern "C" {
     /// \note Once all inputs steps are completed, the operations will allow:
     /// - psa_key_derivation_output_bytes() if each input was either a direct input
     ///   or  a key with #PSA_KEY_USAGE_DERIVE set;
-    /// - psa_key_derivation_output_key() if the input for step
+    /// - psa_key_derivation_output_key() or psa_key_derivation_output_key_custom()
+    ///   if the input for step
     ///   #PSA_KEY_DERIVATION_INPUT_SECRET or #PSA_KEY_DERIVATION_INPUT_PASSWORD
     ///   was from a key slot with #PSA_KEY_USAGE_DERIVE and each other input was
     ///   either a direct input or a key with #PSA_KEY_USAGE_DERIVE set;
@@ -13930,6 +16525,11 @@ unsafe extern "C" {
     /// Future versions of this specification may include additional restrictions
     /// on the derived key based on the attributes and strength of the secret key.
     ///
+    /// \note This function is equivalent to calling
+    ///       psa_key_derivation_output_key_custom()
+    ///       with the custom production parameters #PSA_CUSTOM_KEY_PARAMETERS_INIT
+    ///       and `custom_data_length == 0` (i.e. `custom_data` is empty).
+    ///
     /// \param[in] attributes    The attributes for the new key.
     ///                          If the key type to be created is
     ///                          #PSA_KEY_TYPE_PASSWORD_HASH then the algorithm in
@@ -13984,6 +16584,158 @@ unsafe extern "C" {
     ) -> psa_status_t;
 }
 unsafe extern "C" {
+    /// Derive a key from an ongoing key derivation operation with custom
+    ///  production parameters.
+    ///
+    /// See the description of psa_key_derivation_out_key() for the operation of
+    /// this function with the default production parameters.
+    /// Mbed TLS currently does not currently support any non-default production
+    /// parameters.
+    ///
+    /// \note This function is experimental and may change in future minor
+    ///       versions of Mbed TLS.
+    ///
+    /// \param[in] attributes    The attributes for the new key.
+    ///                          If the key type to be created is
+    ///                          #PSA_KEY_TYPE_PASSWORD_HASH then the algorithm in
+    ///                          the policy must be the same as in the current
+    ///                          operation.
+    /// \param[in,out] operation The key derivation operation object to read from.
+    /// \param[in] custom        Customization parameters for the key generation.
+    ///                          When this is #PSA_CUSTOM_KEY_PARAMETERS_INIT
+    ///                          with \p custom_data_length = 0,
+    ///                          this function is equivalent to
+    ///                          psa_key_derivation_output_key().
+    /// \param[in] custom_data   Variable-length data associated with \c custom.
+    /// \param custom_data_length
+    ///                          Length of `custom_data` in bytes.
+    /// \param[out] key          On success, an identifier for the newly created
+    ///                          key. For persistent keys, this is the key
+    ///                          identifier defined in \p attributes.
+    ///                          \c 0 on failure.
+    ///
+    /// \retval #PSA_SUCCESS
+    ///         Success.
+    ///         If the key is persistent, the key material and the key's metadata
+    ///         have been saved to persistent storage.
+    /// \retval #PSA_ERROR_ALREADY_EXISTS
+    ///         This is an attempt to create a persistent key, and there is
+    ///         already a persistent key with the given identifier.
+    /// \retval #PSA_ERROR_INSUFFICIENT_DATA
+    ///         There was not enough data to create the desired key.
+    ///         Note that in this case, no output is written to the output buffer.
+    ///         The operation's capacity is set to 0, thus subsequent calls to
+    ///         this function will not succeed, even with a smaller output buffer.
+    /// \retval #PSA_ERROR_NOT_SUPPORTED
+    ///         The key type or key size is not supported, either by the
+    ///         implementation in general or in this particular location.
+    /// \retval #PSA_ERROR_INVALID_ARGUMENT
+    ///         The provided key attributes are not valid for the operation.
+    /// \retval #PSA_ERROR_NOT_PERMITTED
+    ///         The #PSA_KEY_DERIVATION_INPUT_SECRET or
+    ///         #PSA_KEY_DERIVATION_INPUT_PASSWORD input was not provided through a
+    ///         key; or one of the inputs was a key whose policy didn't allow
+    ///         #PSA_KEY_USAGE_DERIVE.
+    /// \retval #PSA_ERROR_INSUFFICIENT_MEMORY \emptydescription
+    /// \retval #PSA_ERROR_INSUFFICIENT_STORAGE \emptydescription
+    /// \retval #PSA_ERROR_COMMUNICATION_FAILURE \emptydescription
+    /// \retval #PSA_ERROR_HARDWARE_FAILURE \emptydescription
+    /// \retval #PSA_ERROR_CORRUPTION_DETECTED \emptydescription
+    /// \retval #PSA_ERROR_DATA_INVALID \emptydescription
+    /// \retval #PSA_ERROR_DATA_CORRUPT \emptydescription
+    /// \retval #PSA_ERROR_STORAGE_FAILURE \emptydescription
+    /// \retval #PSA_ERROR_BAD_STATE
+    ///         The operation state is not valid (it must be active and completed
+    ///         all required input steps), or the library has not been previously
+    ///         initialized by psa_crypto_init().
+    ///         It is implementation-dependent whether a failure to initialize
+    ///         results in this error code.
+    pub fn psa_key_derivation_output_key_custom(
+        attributes: *const psa_key_attributes_t,
+        operation: *mut psa_key_derivation_operation_t,
+        custom: *const psa_custom_key_parameters_t,
+        custom_data: *const u8,
+        custom_data_length: usize,
+        key: *mut mbedtls_svc_key_id_t,
+    ) -> psa_status_t;
+}
+unsafe extern "C" {
+    /// Derive a key from an ongoing key derivation operation with custom
+    ///  production parameters.
+    ///
+    /// \note
+    /// This is a deprecated variant of psa_key_derivation_output_key_custom().
+    /// It is equivalent except that the associated variable-length data
+    /// is passed in `params->data` instead of a separate parameter.
+    /// This function will be removed in a future version of Mbed TLS.
+    ///
+    /// \param[in] attributes    The attributes for the new key.
+    ///                          If the key type to be created is
+    ///                          #PSA_KEY_TYPE_PASSWORD_HASH then the algorithm in
+    ///                          the policy must be the same as in the current
+    ///                          operation.
+    /// \param[in,out] operation The key derivation operation object to read from.
+    /// \param[in] params        Customization parameters for the key derivation.
+    ///                          When this is #PSA_KEY_PRODUCTION_PARAMETERS_INIT
+    ///                          with \p params_data_length = 0,
+    ///                          this function is equivalent to
+    ///                          psa_key_derivation_output_key().
+    ///                          Mbed TLS currently only supports the default
+    ///                          production parameters, i.e.
+    ///                          #PSA_KEY_PRODUCTION_PARAMETERS_INIT,
+    ///                          for all key types.
+    /// \param params_data_length
+    ///                          Length of `params->data` in bytes.
+    /// \param[out] key          On success, an identifier for the newly created
+    ///                          key. For persistent keys, this is the key
+    ///                          identifier defined in \p attributes.
+    ///                          \c 0 on failure.
+    ///
+    /// \retval #PSA_SUCCESS
+    ///         Success.
+    ///         If the key is persistent, the key material and the key's metadata
+    ///         have been saved to persistent storage.
+    /// \retval #PSA_ERROR_ALREADY_EXISTS
+    ///         This is an attempt to create a persistent key, and there is
+    ///         already a persistent key with the given identifier.
+    /// \retval #PSA_ERROR_INSUFFICIENT_DATA
+    ///         There was not enough data to create the desired key.
+    ///         Note that in this case, no output is written to the output buffer.
+    ///         The operation's capacity is set to 0, thus subsequent calls to
+    ///         this function will not succeed, even with a smaller output buffer.
+    /// \retval #PSA_ERROR_NOT_SUPPORTED
+    ///         The key type or key size is not supported, either by the
+    ///         implementation in general or in this particular location.
+    /// \retval #PSA_ERROR_INVALID_ARGUMENT
+    ///         The provided key attributes are not valid for the operation.
+    /// \retval #PSA_ERROR_NOT_PERMITTED
+    ///         The #PSA_KEY_DERIVATION_INPUT_SECRET or
+    ///         #PSA_KEY_DERIVATION_INPUT_PASSWORD input was not provided through a
+    ///         key; or one of the inputs was a key whose policy didn't allow
+    ///         #PSA_KEY_USAGE_DERIVE.
+    /// \retval #PSA_ERROR_INSUFFICIENT_MEMORY \emptydescription
+    /// \retval #PSA_ERROR_INSUFFICIENT_STORAGE \emptydescription
+    /// \retval #PSA_ERROR_COMMUNICATION_FAILURE \emptydescription
+    /// \retval #PSA_ERROR_HARDWARE_FAILURE \emptydescription
+    /// \retval #PSA_ERROR_CORRUPTION_DETECTED \emptydescription
+    /// \retval #PSA_ERROR_DATA_INVALID \emptydescription
+    /// \retval #PSA_ERROR_DATA_CORRUPT \emptydescription
+    /// \retval #PSA_ERROR_STORAGE_FAILURE \emptydescription
+    /// \retval #PSA_ERROR_BAD_STATE
+    ///         The operation state is not valid (it must be active and completed
+    ///         all required input steps), or the library has not been previously
+    ///         initialized by psa_crypto_init().
+    ///         It is implementation-dependent whether a failure to initialize
+    ///         results in this error code.
+    pub fn psa_key_derivation_output_key_ext(
+        attributes: *const psa_key_attributes_t,
+        operation: *mut psa_key_derivation_operation_t,
+        params: *const psa_key_production_parameters_t,
+        params_data_length: usize,
+        key: *mut mbedtls_svc_key_id_t,
+    ) -> psa_status_t;
+}
+unsafe extern "C" {
     /// Compare output data from a key derivation operation to an expected value.
     ///
     /// This function calculates output bytes from a key derivation algorithm and
@@ -14008,8 +16760,8 @@ unsafe extern "C" {
     /// psa_key_derivation_abort().
     ///
     /// \param[in,out] operation The key derivation operation object to read from.
-    /// \param[in] expected_output Buffer containing the expected derivation output.
-    /// \param output_length     Length of the expected output; this is also the
+    /// \param[in] expected      Buffer containing the expected derivation output.
+    /// \param expected_length   Length of the expected output; this is also the
     ///                          number of bytes that will be read.
     ///
     /// \retval #PSA_SUCCESS \emptydescription
@@ -14038,8 +16790,8 @@ unsafe extern "C" {
     ///         results in this error code.
     pub fn psa_key_derivation_verify_bytes(
         operation: *mut psa_key_derivation_operation_t,
-        expected_output: *const u8,
-        output_length: usize,
+        expected: *const u8,
+        expected_length: usize,
     ) -> psa_status_t;
 }
 unsafe extern "C" {
@@ -14070,7 +16822,8 @@ unsafe extern "C" {
     ///                          and the permitted algorithm must match the
     ///                          operation. The value of this key was likely
     ///                          computed by a previous call to
-    ///                          psa_key_derivation_output_key().
+    ///                          psa_key_derivation_output_key() or
+    ///                          psa_key_derivation_output_key_custom().
     ///
     /// \retval #PSA_SUCCESS \emptydescription
     /// \retval #PSA_ERROR_INVALID_SIGNATURE
@@ -14232,6 +16985,10 @@ unsafe extern "C" {
     ///   between 2^{n-1} and 2^n where n is the bit size specified in the
     ///   attributes.
     ///
+    /// \note This function is equivalent to calling psa_generate_key_custom()
+    ///       with the custom production parameters #PSA_CUSTOM_KEY_PARAMETERS_INIT
+    ///       and `custom_data_length == 0` (i.e. `custom_data` is empty).
+    ///
     /// \param[in] attributes    The attributes for the new key.
     /// \param[out] key          On success, an identifier for the newly created
     ///                          key. For persistent keys, this is the key
@@ -14262,6 +17019,114 @@ unsafe extern "C" {
     ///         results in this error code.
     pub fn psa_generate_key(
         attributes: *const psa_key_attributes_t,
+        key: *mut mbedtls_svc_key_id_t,
+    ) -> psa_status_t;
+}
+unsafe extern "C" {
+    /// \brief Generate a key or key pair using custom production parameters.
+    ///
+    /// See the description of psa_generate_key() for the operation of this
+    /// function with the default production parameters. In addition, this function
+    /// supports the following production customizations, described in more detail
+    /// in the documentation of ::psa_custom_key_parameters_t:
+    ///
+    /// - RSA keys: generation with a custom public exponent.
+    ///
+    /// \note This function is experimental and may change in future minor
+    ///       versions of Mbed TLS.
+    ///
+    /// \param[in] attributes    The attributes for the new key.
+    /// \param[in] custom        Customization parameters for the key generation.
+    ///                          When this is #PSA_CUSTOM_KEY_PARAMETERS_INIT
+    ///                          with \p custom_data_length = 0,
+    ///                          this function is equivalent to
+    ///                          psa_generate_key().
+    /// \param[in] custom_data   Variable-length data associated with \c custom.
+    /// \param custom_data_length
+    ///                          Length of `custom_data` in bytes.
+    /// \param[out] key          On success, an identifier for the newly created
+    ///                          key. For persistent keys, this is the key
+    ///                          identifier defined in \p attributes.
+    ///                          \c 0 on failure.
+    ///
+    /// \retval #PSA_SUCCESS
+    ///         Success.
+    ///         If the key is persistent, the key material and the key's metadata
+    ///         have been saved to persistent storage.
+    /// \retval #PSA_ERROR_ALREADY_EXISTS
+    ///         This is an attempt to create a persistent key, and there is
+    ///         already a persistent key with the given identifier.
+    /// \retval #PSA_ERROR_NOT_SUPPORTED \emptydescription
+    /// \retval #PSA_ERROR_INVALID_ARGUMENT \emptydescription
+    /// \retval #PSA_ERROR_INSUFFICIENT_MEMORY \emptydescription
+    /// \retval #PSA_ERROR_INSUFFICIENT_ENTROPY \emptydescription
+    /// \retval #PSA_ERROR_COMMUNICATION_FAILURE \emptydescription
+    /// \retval #PSA_ERROR_HARDWARE_FAILURE \emptydescription
+    /// \retval #PSA_ERROR_CORRUPTION_DETECTED \emptydescription
+    /// \retval #PSA_ERROR_INSUFFICIENT_STORAGE \emptydescription
+    /// \retval #PSA_ERROR_DATA_INVALID \emptydescription
+    /// \retval #PSA_ERROR_DATA_CORRUPT \emptydescription
+    /// \retval #PSA_ERROR_STORAGE_FAILURE \emptydescription
+    /// \retval #PSA_ERROR_BAD_STATE
+    ///         The library has not been previously initialized by psa_crypto_init().
+    ///         It is implementation-dependent whether a failure to initialize
+    ///         results in this error code.
+    pub fn psa_generate_key_custom(
+        attributes: *const psa_key_attributes_t,
+        custom: *const psa_custom_key_parameters_t,
+        custom_data: *const u8,
+        custom_data_length: usize,
+        key: *mut mbedtls_svc_key_id_t,
+    ) -> psa_status_t;
+}
+unsafe extern "C" {
+    /// \brief Generate a key or key pair using custom production parameters.
+    ///
+    /// \note
+    /// This is a deprecated variant of psa_key_derivation_output_key_custom().
+    /// It is equivalent except that the associated variable-length data
+    /// is passed in `params->data` instead of a separate parameter.
+    /// This function will be removed in a future version of Mbed TLS.
+    ///
+    /// \param[in] attributes    The attributes for the new key.
+    /// \param[in] params        Customization parameters for the key generation.
+    ///                          When this is #PSA_KEY_PRODUCTION_PARAMETERS_INIT
+    ///                          with \p params_data_length = 0,
+    ///                          this function is equivalent to
+    ///                          psa_generate_key().
+    /// \param params_data_length
+    ///                          Length of `params->data` in bytes.
+    /// \param[out] key          On success, an identifier for the newly created
+    ///                          key. For persistent keys, this is the key
+    ///                          identifier defined in \p attributes.
+    ///                          \c 0 on failure.
+    ///
+    /// \retval #PSA_SUCCESS
+    ///         Success.
+    ///         If the key is persistent, the key material and the key's metadata
+    ///         have been saved to persistent storage.
+    /// \retval #PSA_ERROR_ALREADY_EXISTS
+    ///         This is an attempt to create a persistent key, and there is
+    ///         already a persistent key with the given identifier.
+    /// \retval #PSA_ERROR_NOT_SUPPORTED \emptydescription
+    /// \retval #PSA_ERROR_INVALID_ARGUMENT \emptydescription
+    /// \retval #PSA_ERROR_INSUFFICIENT_MEMORY \emptydescription
+    /// \retval #PSA_ERROR_INSUFFICIENT_ENTROPY \emptydescription
+    /// \retval #PSA_ERROR_COMMUNICATION_FAILURE \emptydescription
+    /// \retval #PSA_ERROR_HARDWARE_FAILURE \emptydescription
+    /// \retval #PSA_ERROR_CORRUPTION_DETECTED \emptydescription
+    /// \retval #PSA_ERROR_INSUFFICIENT_STORAGE \emptydescription
+    /// \retval #PSA_ERROR_DATA_INVALID \emptydescription
+    /// \retval #PSA_ERROR_DATA_CORRUPT \emptydescription
+    /// \retval #PSA_ERROR_STORAGE_FAILURE \emptydescription
+    /// \retval #PSA_ERROR_BAD_STATE
+    ///         The library has not been previously initialized by psa_crypto_init().
+    ///         It is implementation-dependent whether a failure to initialize
+    ///         results in this error code.
+    pub fn psa_generate_key_ext(
+        attributes: *const psa_key_attributes_t,
+        params: *const psa_key_production_parameters_t,
+        params_data_length: usize,
         key: *mut mbedtls_svc_key_id_t,
     ) -> psa_status_t;
 }
@@ -14617,9 +17482,9 @@ unsafe extern "C" {
     /// \retval #PSA_ERROR_BUFFER_TOO_SMALL
     ///         The size of the \p signature buffer is too small. You can
     ///         determine a sufficient buffer size by calling
-    ///         #PSA_SIGN_OUTPUT_SIZE(\c key_type, \c key_bits, \p alg)
+    ///         #PSA_SIGN_OUTPUT_SIZE(\c key_type, \c key_bits, \c alg)
     ///         where \c key_type and \c key_bits are the type and bit-size
-    ///         respectively of \p key.
+    ///         respectively of \c key.
     ///
     /// \retval #PSA_ERROR_BAD_STATE
     ///         An operation was not previously started on this context via
@@ -14885,2652 +17750,6 @@ unsafe extern "C" {
         operation: *mut psa_verify_hash_interruptible_operation_t,
     ) -> psa_status_t;
 }
-/// \brief          The GCM context structure.
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct mbedtls_gcm_context {
-    ///< The cipher context used.
-    pub private_cipher_ctx: mbedtls_cipher_context_t,
-    ///< Precalculated HTable low.
-    pub private_HL: [u64; 16usize],
-    ///< Precalculated HTable high.
-    pub private_HH: [u64; 16usize],
-    ///< The total length of the encrypted data.
-    pub private_len: u64,
-    ///< The total length of the additional data.
-    pub private_add_len: u64,
-    ///< The first ECTR for tag.
-    pub private_base_ectr: [::core::ffi::c_uchar; 16usize],
-    ///< The Y working value.
-    pub private_y: [::core::ffi::c_uchar; 16usize],
-    ///< The buf working value.
-    pub private_buf: [::core::ffi::c_uchar; 16usize],
-    ///< The operation to perform:
-    ///#MBEDTLS_GCM_ENCRYPT or
-    ///#MBEDTLS_GCM_DECRYPT.
-    pub private_mode: ::core::ffi::c_int,
-}
-impl Default for mbedtls_gcm_context {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-unsafe extern "C" {
-    /// \brief           This function initializes the specified GCM context,
-    ///                  to make references valid, and prepares the context
-    ///                  for mbedtls_gcm_setkey() or mbedtls_gcm_free().
-    ///
-    ///                  The function does not bind the GCM context to a particular
-    ///                  cipher, nor set the key. For this purpose, use
-    ///                  mbedtls_gcm_setkey().
-    ///
-    /// \param ctx       The GCM context to initialize. This must not be \c NULL.
-    pub fn mbedtls_gcm_init(ctx: *mut mbedtls_gcm_context);
-}
-unsafe extern "C" {
-    /// \brief           This function associates a GCM context with a
-    ///                  cipher algorithm and a key.
-    ///
-    /// \param ctx       The GCM context. This must be initialized.
-    /// \param cipher    The 128-bit block cipher to use.
-    /// \param key       The encryption key. This must be a readable buffer of at
-    ///                  least \p keybits bits.
-    /// \param keybits   The key size in bits. Valid options are:
-    ///                  <ul><li>128 bits</li>
-    ///                  <li>192 bits</li>
-    ///                  <li>256 bits</li></ul>
-    ///
-    /// \return          \c 0 on success.
-    /// \return          A cipher-specific error code on failure.
-    pub fn mbedtls_gcm_setkey(
-        ctx: *mut mbedtls_gcm_context,
-        cipher: mbedtls_cipher_id_t,
-        key: *const ::core::ffi::c_uchar,
-        keybits: ::core::ffi::c_uint,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           This function performs GCM encryption or decryption of a buffer.
-    ///
-    /// \note            For encryption, the output buffer can be the same as the
-    ///                  input buffer. For decryption, the output buffer cannot be
-    ///                  the same as input buffer. If the buffers overlap, the output
-    ///                  buffer must trail at least 8 Bytes behind the input buffer.
-    ///
-    /// \warning         When this function performs a decryption, it outputs the
-    ///                  authentication tag and does not verify that the data is
-    ///                  authentic. You should use this function to perform encryption
-    ///                  only. For decryption, use mbedtls_gcm_auth_decrypt() instead.
-    ///
-    /// \param ctx       The GCM context to use for encryption or decryption. This
-    ///                  must be initialized.
-    /// \param mode      The operation to perform:
-    ///                  - #MBEDTLS_GCM_ENCRYPT to perform authenticated encryption.
-    ///                    The ciphertext is written to \p output and the
-    ///                    authentication tag is written to \p tag.
-    ///                  - #MBEDTLS_GCM_DECRYPT to perform decryption.
-    ///                    The plaintext is written to \p output and the
-    ///                    authentication tag is written to \p tag.
-    ///                    Note that this mode is not recommended, because it does
-    ///                    not verify the authenticity of the data. For this reason,
-    ///                    you should use mbedtls_gcm_auth_decrypt() instead of
-    ///                    calling this function in decryption mode.
-    /// \param length    The length of the input data, which is equal to the length
-    ///                  of the output data.
-    /// \param iv        The initialization vector. This must be a readable buffer of
-    ///                  at least \p iv_len Bytes.
-    /// \param iv_len    The length of the IV.
-    /// \param add       The buffer holding the additional data. This must be of at
-    ///                  least that size in Bytes.
-    /// \param add_len   The length of the additional data.
-    /// \param input     The buffer holding the input data. If \p length is greater
-    ///                  than zero, this must be a readable buffer of at least that
-    ///                  size in Bytes.
-    /// \param output    The buffer for holding the output data. If \p length is greater
-    ///                  than zero, this must be a writable buffer of at least that
-    ///                  size in Bytes.
-    /// \param tag_len   The length of the tag to generate.
-    /// \param tag       The buffer for holding the tag. This must be a writable
-    ///                  buffer of at least \p tag_len Bytes.
-    ///
-    /// \return          \c 0 if the encryption or decryption was performed
-    ///                  successfully. Note that in #MBEDTLS_GCM_DECRYPT mode,
-    ///                  this does not indicate that the data is authentic.
-    /// \return          #MBEDTLS_ERR_GCM_BAD_INPUT if the lengths or pointers are
-    ///                  not valid or a cipher-specific error code if the encryption
-    ///                  or decryption failed.
-    pub fn mbedtls_gcm_crypt_and_tag(
-        ctx: *mut mbedtls_gcm_context,
-        mode: ::core::ffi::c_int,
-        length: usize,
-        iv: *const ::core::ffi::c_uchar,
-        iv_len: usize,
-        add: *const ::core::ffi::c_uchar,
-        add_len: usize,
-        input: *const ::core::ffi::c_uchar,
-        output: *mut ::core::ffi::c_uchar,
-        tag_len: usize,
-        tag: *mut ::core::ffi::c_uchar,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           This function performs a GCM authenticated decryption of a
-    ///                  buffer.
-    ///
-    /// \note            For decryption, the output buffer cannot be the same as
-    ///                  input buffer. If the buffers overlap, the output buffer
-    ///                  must trail at least 8 Bytes behind the input buffer.
-    ///
-    /// \param ctx       The GCM context. This must be initialized.
-    /// \param length    The length of the ciphertext to decrypt, which is also
-    ///                  the length of the decrypted plaintext.
-    /// \param iv        The initialization vector. This must be a readable buffer
-    ///                  of at least \p iv_len Bytes.
-    /// \param iv_len    The length of the IV.
-    /// \param add       The buffer holding the additional data. This must be of at
-    ///                  least that size in Bytes.
-    /// \param add_len   The length of the additional data.
-    /// \param tag       The buffer holding the tag to verify. This must be a
-    ///                  readable buffer of at least \p tag_len Bytes.
-    /// \param tag_len   The length of the tag to verify.
-    /// \param input     The buffer holding the ciphertext. If \p length is greater
-    ///                  than zero, this must be a readable buffer of at least that
-    ///                  size.
-    /// \param output    The buffer for holding the decrypted plaintext. If \p length
-    ///                  is greater than zero, this must be a writable buffer of at
-    ///                  least that size.
-    ///
-    /// \return          \c 0 if successful and authenticated.
-    /// \return          #MBEDTLS_ERR_GCM_AUTH_FAILED if the tag does not match.
-    /// \return          #MBEDTLS_ERR_GCM_BAD_INPUT if the lengths or pointers are
-    ///                  not valid or a cipher-specific error code if the decryption
-    ///                  failed.
-    pub fn mbedtls_gcm_auth_decrypt(
-        ctx: *mut mbedtls_gcm_context,
-        length: usize,
-        iv: *const ::core::ffi::c_uchar,
-        iv_len: usize,
-        add: *const ::core::ffi::c_uchar,
-        add_len: usize,
-        tag: *const ::core::ffi::c_uchar,
-        tag_len: usize,
-        input: *const ::core::ffi::c_uchar,
-        output: *mut ::core::ffi::c_uchar,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           This function starts a GCM encryption or decryption
-    ///                  operation.
-    ///
-    /// \param ctx       The GCM context. This must be initialized.
-    /// \param mode      The operation to perform: #MBEDTLS_GCM_ENCRYPT or
-    ///                  #MBEDTLS_GCM_DECRYPT.
-    /// \param iv        The initialization vector. This must be a readable buffer of
-    ///                  at least \p iv_len Bytes.
-    /// \param iv_len    The length of the IV.
-    ///
-    /// \return          \c 0 on success.
-    pub fn mbedtls_gcm_starts(
-        ctx: *mut mbedtls_gcm_context,
-        mode: ::core::ffi::c_int,
-        iv: *const ::core::ffi::c_uchar,
-        iv_len: usize,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           This function feeds an input buffer as associated data
-    ///                  (authenticated but not encrypted data) in a GCM
-    ///                  encryption or decryption operation.
-    ///
-    ///                  Call this function after mbedtls_gcm_starts() to pass
-    ///                  the associated data. If the associated data is empty,
-    ///                  you do not need to call this function. You may not
-    ///                  call this function after calling mbedtls_cipher_update().
-    ///
-    /// \param ctx       The GCM context. This must have been started with
-    ///                  mbedtls_gcm_starts() and must not have yet received
-    ///                  any input with mbedtls_gcm_update().
-    /// \param add       The buffer holding the additional data, or \c NULL
-    ///                  if \p add_len is \c 0.
-    /// \param add_len   The length of the additional data. If \c 0,
-    ///                  \p add may be \c NULL.
-    ///
-    /// \return          \c 0 on success.
-    pub fn mbedtls_gcm_update_ad(
-        ctx: *mut mbedtls_gcm_context,
-        add: *const ::core::ffi::c_uchar,
-        add_len: usize,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           This function feeds an input buffer into an ongoing GCM
-    ///                  encryption or decryption operation.
-    ///
-    ///                  You may call this function zero, one or more times
-    ///                  to pass successive parts of the input: the plaintext to
-    ///                  encrypt, or the ciphertext (not including the tag) to
-    ///                  decrypt. After the last part of the input, call
-    ///                  mbedtls_gcm_finish().
-    ///
-    ///                  This function may produce output in one of the following
-    ///                  ways:
-    ///                  - Immediate output: the output length is always equal
-    ///                    to the input length.
-    ///                  - Buffered output: the output consists of a whole number
-    ///                    of 16-byte blocks. If the total input length so far
-    ///                    (not including associated data) is 16 \* *B* + *A*
-    ///                    with *A* < 16 then the total output length is 16 \* *B*.
-    ///
-    ///                  In particular:
-    ///                  - It is always correct to call this function with
-    ///                    \p output_size >= \p input_length + 15.
-    ///                  - If \p input_length is a multiple of 16 for all the calls
-    ///                    to this function during an operation, then it is
-    ///                    correct to use \p output_size = \p input_length.
-    ///
-    /// \note            For decryption, the output buffer cannot be the same as
-    ///                  input buffer. If the buffers overlap, the output buffer
-    ///                  must trail at least 8 Bytes behind the input buffer.
-    ///
-    /// \param ctx           The GCM context. This must be initialized.
-    /// \param input         The buffer holding the input data. If \p input_length
-    ///                      is greater than zero, this must be a readable buffer
-    ///                      of at least \p input_length bytes.
-    /// \param input_length  The length of the input data in bytes.
-    /// \param output        The buffer for the output data. If \p output_size
-    ///                      is greater than zero, this must be a writable buffer of
-    ///                      of at least \p output_size bytes.
-    /// \param output_size   The size of the output buffer in bytes.
-    ///                      See the function description regarding the output size.
-    /// \param output_length On success, \p *output_length contains the actual
-    ///                      length of the output written in \p output.
-    ///                      On failure, the content of \p *output_length is
-    ///                      unspecified.
-    ///
-    /// \return         \c 0 on success.
-    /// \return         #MBEDTLS_ERR_GCM_BAD_INPUT on failure:
-    ///                 total input length too long,
-    ///                 unsupported input/output buffer overlap detected,
-    ///                 or \p output_size too small.
-    pub fn mbedtls_gcm_update(
-        ctx: *mut mbedtls_gcm_context,
-        input: *const ::core::ffi::c_uchar,
-        input_length: usize,
-        output: *mut ::core::ffi::c_uchar,
-        output_size: usize,
-        output_length: *mut usize,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           This function finishes the GCM operation and generates
-    ///                  the authentication tag.
-    ///
-    ///                  It wraps up the GCM stream, and generates the
-    ///                  tag. The tag can have a maximum length of 16 Bytes.
-    ///
-    /// \param ctx       The GCM context. This must be initialized.
-    /// \param tag       The buffer for holding the tag. This must be a writable
-    ///                  buffer of at least \p tag_len Bytes.
-    /// \param tag_len   The length of the tag to generate. This must be at least
-    ///                  four.
-    /// \param output    The buffer for the final output.
-    ///                  If \p output_size is nonzero, this must be a writable
-    ///                  buffer of at least \p output_size bytes.
-    /// \param output_size  The size of the \p output buffer in bytes.
-    ///                  This must be large enough for the output that
-    ///                  mbedtls_gcm_update() has not produced. In particular:
-    ///                  - If mbedtls_gcm_update() produces immediate output,
-    ///                    or if the total input size is a multiple of \c 16,
-    ///                    then mbedtls_gcm_finish() never produces any output,
-    ///                    so \p output_size can be \c 0.
-    ///                  - \p output_size never needs to be more than \c 15.
-    /// \param output_length On success, \p *output_length contains the actual
-    ///                      length of the output written in \p output.
-    ///                      On failure, the content of \p *output_length is
-    ///                      unspecified.
-    ///
-    /// \return          \c 0 on success.
-    /// \return          #MBEDTLS_ERR_GCM_BAD_INPUT on failure:
-    ///                  invalid value of \p tag_len,
-    ///                  or \p output_size too small.
-    pub fn mbedtls_gcm_finish(
-        ctx: *mut mbedtls_gcm_context,
-        output: *mut ::core::ffi::c_uchar,
-        output_size: usize,
-        output_length: *mut usize,
-        tag: *mut ::core::ffi::c_uchar,
-        tag_len: usize,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           This function clears a GCM context and the underlying
-    ///                  cipher sub-context.
-    ///
-    /// \param ctx       The GCM context to clear. If this is \c NULL, the call has
-    ///                  no effect. Otherwise, this must be initialized.
-    pub fn mbedtls_gcm_free(ctx: *mut mbedtls_gcm_context);
-}
-unsafe extern "C" {
-    /// \brief          The GCM checkup routine.
-    ///
-    /// \return         \c 0 on success.
-    /// \return         \c 1 on failure.
-    pub fn mbedtls_gcm_self_test(verbose: ::core::ffi::c_int) -> ::core::ffi::c_int;
-}
-pub const psa_encrypt_or_decrypt_t_PSA_CRYPTO_DRIVER_DECRYPT: psa_encrypt_or_decrypt_t = 0;
-pub const psa_encrypt_or_decrypt_t_PSA_CRYPTO_DRIVER_ENCRYPT: psa_encrypt_or_decrypt_t = 1;
-/// For encrypt-decrypt functions, whether the operation is an encryption
-/// or a decryption.
-pub type psa_encrypt_or_decrypt_t = ::core::ffi::c_uint;
-/// \brief          MD5 context structure
-///
-/// \warning        MD5 is considered a weak message digest and its use
-///                 constitutes a security risk. We recommend considering
-///                 stronger message digests instead.
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct mbedtls_md5_context {
-    ///< number of bytes processed
-    pub private_total: [u32; 2usize],
-    ///< intermediate digest state
-    pub private_state: [u32; 4usize],
-    ///< data block being processed
-    pub private_buffer: [::core::ffi::c_uchar; 64usize],
-}
-impl Default for mbedtls_md5_context {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-unsafe extern "C" {
-    /// \brief          Initialize MD5 context
-    ///
-    /// \param ctx      MD5 context to be initialized
-    ///
-    /// \warning        MD5 is considered a weak message digest and its use
-    ///                 constitutes a security risk. We recommend considering
-    ///                 stronger message digests instead.
-    pub fn mbedtls_md5_init(ctx: *mut mbedtls_md5_context);
-}
-unsafe extern "C" {
-    /// \brief          Clear MD5 context
-    ///
-    /// \param ctx      MD5 context to be cleared
-    ///
-    /// \warning        MD5 is considered a weak message digest and its use
-    ///                 constitutes a security risk. We recommend considering
-    ///                 stronger message digests instead.
-    pub fn mbedtls_md5_free(ctx: *mut mbedtls_md5_context);
-}
-unsafe extern "C" {
-    /// \brief          Clone (the state of) an MD5 context
-    ///
-    /// \param dst      The destination context
-    /// \param src      The context to be cloned
-    ///
-    /// \warning        MD5 is considered a weak message digest and its use
-    ///                 constitutes a security risk. We recommend considering
-    ///                 stronger message digests instead.
-    pub fn mbedtls_md5_clone(dst: *mut mbedtls_md5_context, src: *const mbedtls_md5_context);
-}
-unsafe extern "C" {
-    /// \brief          MD5 context setup
-    ///
-    /// \param ctx      context to be initialized
-    ///
-    /// \return         0 if successful
-    ///
-    /// \warning        MD5 is considered a weak message digest and its use
-    ///                 constitutes a security risk. We recommend considering
-    ///                 stronger message digests instead.
-    pub fn mbedtls_md5_starts(ctx: *mut mbedtls_md5_context) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief          MD5 process buffer
-    ///
-    /// \param ctx      MD5 context
-    /// \param input    buffer holding the data
-    /// \param ilen     length of the input data
-    ///
-    /// \return         0 if successful
-    ///
-    /// \warning        MD5 is considered a weak message digest and its use
-    ///                 constitutes a security risk. We recommend considering
-    ///                 stronger message digests instead.
-    pub fn mbedtls_md5_update(
-        ctx: *mut mbedtls_md5_context,
-        input: *const ::core::ffi::c_uchar,
-        ilen: usize,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief          MD5 final digest
-    ///
-    /// \param ctx      MD5 context
-    /// \param output   MD5 checksum result
-    ///
-    /// \return         0 if successful
-    ///
-    /// \warning        MD5 is considered a weak message digest and its use
-    ///                 constitutes a security risk. We recommend considering
-    ///                 stronger message digests instead.
-    pub fn mbedtls_md5_finish(
-        ctx: *mut mbedtls_md5_context,
-        output: *mut ::core::ffi::c_uchar,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief          MD5 process data block (internal use only)
-    ///
-    /// \param ctx      MD5 context
-    /// \param data     buffer holding one block of data
-    ///
-    /// \return         0 if successful
-    ///
-    /// \warning        MD5 is considered a weak message digest and its use
-    ///                 constitutes a security risk. We recommend considering
-    ///                 stronger message digests instead.
-    pub fn mbedtls_internal_md5_process(
-        ctx: *mut mbedtls_md5_context,
-        data: *const ::core::ffi::c_uchar,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief          Output = MD5( input buffer )
-    ///
-    /// \param input    buffer holding the data
-    /// \param ilen     length of the input data
-    /// \param output   MD5 checksum result
-    ///
-    /// \return         0 if successful
-    ///
-    /// \warning        MD5 is considered a weak message digest and its use
-    ///                 constitutes a security risk. We recommend considering
-    ///                 stronger message digests instead.
-    pub fn mbedtls_md5(
-        input: *const ::core::ffi::c_uchar,
-        ilen: usize,
-        output: *mut ::core::ffi::c_uchar,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief          Checkup routine
-    ///
-    /// \return         0 if successful, or 1 if the test failed
-    ///
-    /// \warning        MD5 is considered a weak message digest and its use
-    ///                 constitutes a security risk. We recommend considering
-    ///                 stronger message digests instead.
-    pub fn mbedtls_md5_self_test(verbose: ::core::ffi::c_int) -> ::core::ffi::c_int;
-}
-/// \brief          RIPEMD-160 context structure
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct mbedtls_ripemd160_context {
-    ///< number of bytes processed
-    pub private_total: [u32; 2usize],
-    ///< intermediate digest state
-    pub private_state: [u32; 5usize],
-    ///< data block being processed
-    pub private_buffer: [::core::ffi::c_uchar; 64usize],
-}
-impl Default for mbedtls_ripemd160_context {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-unsafe extern "C" {
-    /// \brief          Initialize RIPEMD-160 context
-    ///
-    /// \param ctx      RIPEMD-160 context to be initialized
-    pub fn mbedtls_ripemd160_init(ctx: *mut mbedtls_ripemd160_context);
-}
-unsafe extern "C" {
-    /// \brief          Clear RIPEMD-160 context
-    ///
-    /// \param ctx      RIPEMD-160 context to be cleared
-    pub fn mbedtls_ripemd160_free(ctx: *mut mbedtls_ripemd160_context);
-}
-unsafe extern "C" {
-    /// \brief          Clone (the state of) a RIPEMD-160 context
-    ///
-    /// \param dst      The destination context
-    /// \param src      The context to be cloned
-    pub fn mbedtls_ripemd160_clone(
-        dst: *mut mbedtls_ripemd160_context,
-        src: *const mbedtls_ripemd160_context,
-    );
-}
-unsafe extern "C" {
-    /// \brief          RIPEMD-160 context setup
-    ///
-    /// \param ctx      context to be initialized
-    ///
-    /// \return         0 if successful
-    pub fn mbedtls_ripemd160_starts(ctx: *mut mbedtls_ripemd160_context) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief          RIPEMD-160 process buffer
-    ///
-    /// \param ctx      RIPEMD-160 context
-    /// \param input    buffer holding the data
-    /// \param ilen     length of the input data
-    ///
-    /// \return         0 if successful
-    pub fn mbedtls_ripemd160_update(
-        ctx: *mut mbedtls_ripemd160_context,
-        input: *const ::core::ffi::c_uchar,
-        ilen: usize,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief          RIPEMD-160 final digest
-    ///
-    /// \param ctx      RIPEMD-160 context
-    /// \param output   RIPEMD-160 checksum result
-    ///
-    /// \return         0 if successful
-    pub fn mbedtls_ripemd160_finish(
-        ctx: *mut mbedtls_ripemd160_context,
-        output: *mut ::core::ffi::c_uchar,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief          RIPEMD-160 process data block (internal use only)
-    ///
-    /// \param ctx      RIPEMD-160 context
-    /// \param data     buffer holding one block of data
-    ///
-    /// \return         0 if successful
-    pub fn mbedtls_internal_ripemd160_process(
-        ctx: *mut mbedtls_ripemd160_context,
-        data: *const ::core::ffi::c_uchar,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief          Output = RIPEMD-160( input buffer )
-    ///
-    /// \param input    buffer holding the data
-    /// \param ilen     length of the input data
-    /// \param output   RIPEMD-160 checksum result
-    ///
-    /// \return         0 if successful
-    pub fn mbedtls_ripemd160(
-        input: *const ::core::ffi::c_uchar,
-        ilen: usize,
-        output: *mut ::core::ffi::c_uchar,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief          Checkup routine
-    ///
-    /// \return         0 if successful, or 1 if the test failed
-    pub fn mbedtls_ripemd160_self_test(verbose: ::core::ffi::c_int) -> ::core::ffi::c_int;
-}
-#[repr(C)]
-#[repr(align(16))]
-#[derive(Copy, Clone)]
-pub struct mbedtls_sha1_context {
-    pub work_area: [::core::ffi::c_uchar; 208usize],
-}
-impl Default for mbedtls_sha1_context {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-unsafe extern "C" {
-    /// \brief          This function initializes a SHA-1 context.
-    ///
-    /// \warning        SHA-1 is considered a weak message digest and its use
-    ///                 constitutes a security risk. We recommend considering
-    ///                 stronger message digests instead.
-    ///
-    /// \param ctx      The SHA-1 context to initialize.
-    ///                 This must not be \c NULL.
-    pub fn mbedtls_sha1_init(ctx: *mut mbedtls_sha1_context);
-}
-unsafe extern "C" {
-    /// \brief          This function clears a SHA-1 context.
-    ///
-    /// \warning        SHA-1 is considered a weak message digest and its use
-    ///                 constitutes a security risk. We recommend considering
-    ///                 stronger message digests instead.
-    ///
-    /// \param ctx      The SHA-1 context to clear. This may be \c NULL,
-    ///                 in which case this function does nothing. If it is
-    ///                 not \c NULL, it must point to an initialized
-    ///                 SHA-1 context.
-    pub fn mbedtls_sha1_free(ctx: *mut mbedtls_sha1_context);
-}
-unsafe extern "C" {
-    /// \brief          This function clones the state of a SHA-1 context.
-    ///
-    /// \warning        SHA-1 is considered a weak message digest and its use
-    ///                 constitutes a security risk. We recommend considering
-    ///                 stronger message digests instead.
-    ///
-    /// \param dst      The SHA-1 context to clone to. This must be initialized.
-    /// \param src      The SHA-1 context to clone from. This must be initialized.
-    pub fn mbedtls_sha1_clone(dst: *mut mbedtls_sha1_context, src: *const mbedtls_sha1_context);
-}
-unsafe extern "C" {
-    /// \brief          This function starts a SHA-1 checksum calculation.
-    ///
-    /// \warning        SHA-1 is considered a weak message digest and its use
-    ///                 constitutes a security risk. We recommend considering
-    ///                 stronger message digests instead.
-    ///
-    /// \param ctx      The SHA-1 context to initialize. This must be initialized.
-    ///
-    /// \return         \c 0 on success.
-    /// \return         A negative error code on failure.
-    pub fn mbedtls_sha1_starts(ctx: *mut mbedtls_sha1_context) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief          This function feeds an input buffer into an ongoing SHA-1
-    ///                 checksum calculation.
-    ///
-    /// \warning        SHA-1 is considered a weak message digest and its use
-    ///                 constitutes a security risk. We recommend considering
-    ///                 stronger message digests instead.
-    ///
-    /// \param ctx      The SHA-1 context. This must be initialized
-    ///                 and have a hash operation started.
-    /// \param input    The buffer holding the input data.
-    ///                 This must be a readable buffer of length \p ilen Bytes.
-    /// \param ilen     The length of the input data \p input in Bytes.
-    ///
-    /// \return         \c 0 on success.
-    /// \return         A negative error code on failure.
-    pub fn mbedtls_sha1_update(
-        ctx: *mut mbedtls_sha1_context,
-        input: *const ::core::ffi::c_uchar,
-        ilen: usize,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief          This function finishes the SHA-1 operation, and writes
-    ///                 the result to the output buffer.
-    ///
-    /// \warning        SHA-1 is considered a weak message digest and its use
-    ///                 constitutes a security risk. We recommend considering
-    ///                 stronger message digests instead.
-    ///
-    /// \param ctx      The SHA-1 context to use. This must be initialized and
-    ///                 have a hash operation started.
-    /// \param output   The SHA-1 checksum result. This must be a writable
-    ///                 buffer of length \c 20 Bytes.
-    ///
-    /// \return         \c 0 on success.
-    /// \return         A negative error code on failure.
-    pub fn mbedtls_sha1_finish(
-        ctx: *mut mbedtls_sha1_context,
-        output: *mut ::core::ffi::c_uchar,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief          SHA-1 process data block (internal use only).
-    ///
-    /// \warning        SHA-1 is considered a weak message digest and its use
-    ///                 constitutes a security risk. We recommend considering
-    ///                 stronger message digests instead.
-    ///
-    /// \param ctx      The SHA-1 context to use. This must be initialized.
-    /// \param data     The data block being processed. This must be a
-    ///                 readable buffer of length \c 64 Bytes.
-    ///
-    /// \return         \c 0 on success.
-    /// \return         A negative error code on failure.
-    pub fn mbedtls_internal_sha1_process(
-        ctx: *mut mbedtls_sha1_context,
-        data: *const ::core::ffi::c_uchar,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief          This function calculates the SHA-1 checksum of a buffer.
-    ///
-    ///                 The function allocates the context, performs the
-    ///                 calculation, and frees the context.
-    ///
-    ///                 The SHA-1 result is calculated as
-    ///                 output = SHA-1(input buffer).
-    ///
-    /// \warning        SHA-1 is considered a weak message digest and its use
-    ///                 constitutes a security risk. We recommend considering
-    ///                 stronger message digests instead.
-    ///
-    /// \param input    The buffer holding the input data.
-    ///                 This must be a readable buffer of length \p ilen Bytes.
-    /// \param ilen     The length of the input data \p input in Bytes.
-    /// \param output   The SHA-1 checksum result.
-    ///                 This must be a writable buffer of length \c 20 Bytes.
-    ///
-    /// \return         \c 0 on success.
-    /// \return         A negative error code on failure.
-    pub fn mbedtls_sha1(
-        input: *const ::core::ffi::c_uchar,
-        ilen: usize,
-        output: *mut ::core::ffi::c_uchar,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief          The SHA-1 checkup routine.
-    ///
-    /// \warning        SHA-1 is considered a weak message digest and its use
-    ///                 constitutes a security risk. We recommend considering
-    ///                 stronger message digests instead.
-    ///
-    /// \return         \c 0 on success.
-    /// \return         \c 1 on failure.
-    pub fn mbedtls_sha1_self_test(verbose: ::core::ffi::c_int) -> ::core::ffi::c_int;
-}
-#[repr(C)]
-#[repr(align(16))]
-#[derive(Copy, Clone)]
-pub struct mbedtls_sha256_context {
-    pub work_area: [::core::ffi::c_uchar; 208usize],
-    pub is224: ::core::ffi::c_uchar,
-}
-impl Default for mbedtls_sha256_context {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-unsafe extern "C" {
-    /// \brief          This function initializes a SHA-256 context.
-    ///
-    /// \param ctx      The SHA-256 context to initialize. This must not be \c NULL.
-    pub fn mbedtls_sha256_init(ctx: *mut mbedtls_sha256_context);
-}
-unsafe extern "C" {
-    /// \brief          This function clears a SHA-256 context.
-    ///
-    /// \param ctx      The SHA-256 context to clear. This may be \c NULL, in which
-    ///                 case this function returns immediately. If it is not \c NULL,
-    ///                 it must point to an initialized SHA-256 context.
-    pub fn mbedtls_sha256_free(ctx: *mut mbedtls_sha256_context);
-}
-unsafe extern "C" {
-    /// \brief          This function clones the state of a SHA-256 context.
-    ///
-    /// \param dst      The destination context. This must be initialized.
-    /// \param src      The context to clone. This must be initialized.
-    pub fn mbedtls_sha256_clone(
-        dst: *mut mbedtls_sha256_context,
-        src: *const mbedtls_sha256_context,
-    );
-}
-unsafe extern "C" {
-    /// \brief          This function starts a SHA-224 or SHA-256 checksum
-    ///                 calculation.
-    ///
-    /// \param ctx      The context to use. This must be initialized.
-    /// \param is224    This determines which function to use. This must be
-    ///                 either \c 0 for SHA-256, or \c 1 for SHA-224.
-    ///
-    /// \note           is224 must be defined accordingly to the enabled
-    ///                 MBEDTLS_SHA224_C/MBEDTLS_SHA256_C symbols otherwise the
-    ///                 function will return #MBEDTLS_ERR_SHA512_BAD_INPUT_DATA.
-    ///
-    /// \return         \c 0 on success.
-    /// \return         A negative error code on failure.
-    pub fn mbedtls_sha256_starts(
-        ctx: *mut mbedtls_sha256_context,
-        is224: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief          This function feeds an input buffer into an ongoing
-    ///                 SHA-256 checksum calculation.
-    ///
-    /// \param ctx      The SHA-256 context. This must be initialized
-    ///                 and have a hash operation started.
-    /// \param input    The buffer holding the data. This must be a readable
-    ///                 buffer of length \p ilen Bytes.
-    /// \param ilen     The length of the input data in Bytes.
-    ///
-    /// \return         \c 0 on success.
-    /// \return         A negative error code on failure.
-    pub fn mbedtls_sha256_update(
-        ctx: *mut mbedtls_sha256_context,
-        input: *const ::core::ffi::c_uchar,
-        ilen: usize,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief          This function finishes the SHA-256 operation, and writes
-    ///                 the result to the output buffer.
-    ///
-    /// \param ctx      The SHA-256 context. This must be initialized
-    ///                 and have a hash operation started.
-    /// \param output   The SHA-224 or SHA-256 checksum result.
-    ///                 This must be a writable buffer of length \c 32 bytes
-    ///                 for SHA-256, \c 28 bytes for SHA-224.
-    ///
-    /// \return         \c 0 on success.
-    /// \return         A negative error code on failure.
-    pub fn mbedtls_sha256_finish(
-        ctx: *mut mbedtls_sha256_context,
-        output: *mut ::core::ffi::c_uchar,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief          This function processes a single data block within
-    ///                 the ongoing SHA-256 computation. This function is for
-    ///                 internal use only.
-    ///
-    /// \param ctx      The SHA-256 context. This must be initialized.
-    /// \param data     The buffer holding one block of data. This must
-    ///                 be a readable buffer of length \c 64 Bytes.
-    ///
-    /// \return         \c 0 on success.
-    /// \return         A negative error code on failure.
-    pub fn mbedtls_internal_sha256_process(
-        ctx: *mut mbedtls_sha256_context,
-        data: *const ::core::ffi::c_uchar,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief          This function calculates the SHA-224 or SHA-256
-    ///                 checksum of a buffer.
-    ///
-    ///                 The function allocates the context, performs the
-    ///                 calculation, and frees the context.
-    ///
-    ///                 The SHA-256 result is calculated as
-    ///                 output = SHA-256(input buffer).
-    ///
-    /// \param input    The buffer holding the data. This must be a readable
-    ///                 buffer of length \p ilen Bytes.
-    /// \param ilen     The length of the input data in Bytes.
-    /// \param output   The SHA-224 or SHA-256 checksum result.
-    ///                 This must be a writable buffer of length \c 32 bytes
-    ///                 for SHA-256, \c 28 bytes for SHA-224.
-    /// \param is224    Determines which function to use. This must be
-    ///                 either \c 0 for SHA-256, or \c 1 for SHA-224.
-    ///
-    /// \return         \c 0 on success.
-    /// \return         A negative error code on failure.
-    pub fn mbedtls_sha256(
-        input: *const ::core::ffi::c_uchar,
-        ilen: usize,
-        output: *mut ::core::ffi::c_uchar,
-        is224: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief          The SHA-224 checkup routine.
-    ///
-    /// \return         \c 0 on success.
-    /// \return         \c 1 on failure.
-    pub fn mbedtls_sha224_self_test(verbose: ::core::ffi::c_int) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief          The SHA-256 checkup routine.
-    ///
-    /// \return         \c 0 on success.
-    /// \return         \c 1 on failure.
-    pub fn mbedtls_sha256_self_test(verbose: ::core::ffi::c_int) -> ::core::ffi::c_int;
-}
-#[repr(C)]
-#[repr(align(16))]
-#[derive(Copy, Clone)]
-pub struct mbedtls_sha512_context {
-    pub work_area: [::core::ffi::c_uchar; 304usize],
-    pub is384: ::core::ffi::c_uchar,
-}
-impl Default for mbedtls_sha512_context {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-unsafe extern "C" {
-    /// \brief          This function initializes a SHA-512 context.
-    ///
-    /// \param ctx      The SHA-512 context to initialize. This must
-    ///                 not be \c NULL.
-    pub fn mbedtls_sha512_init(ctx: *mut mbedtls_sha512_context);
-}
-unsafe extern "C" {
-    /// \brief          This function clears a SHA-512 context.
-    ///
-    /// \param ctx      The SHA-512 context to clear. This may be \c NULL,
-    ///                 in which case this function does nothing. If it
-    ///                 is not \c NULL, it must point to an initialized
-    ///                 SHA-512 context.
-    pub fn mbedtls_sha512_free(ctx: *mut mbedtls_sha512_context);
-}
-unsafe extern "C" {
-    /// \brief          This function clones the state of a SHA-512 context.
-    ///
-    /// \param dst      The destination context. This must be initialized.
-    /// \param src      The context to clone. This must be initialized.
-    pub fn mbedtls_sha512_clone(
-        dst: *mut mbedtls_sha512_context,
-        src: *const mbedtls_sha512_context,
-    );
-}
-unsafe extern "C" {
-    /// \brief          This function starts a SHA-384 or SHA-512 checksum
-    ///                 calculation.
-    ///
-    /// \param ctx      The SHA-512 context to use. This must be initialized.
-    /// \param is384    Determines which function to use. This must be
-    ///                 either \c 0 for SHA-512, or \c 1 for SHA-384.
-    ///
-    /// \note           is384 must be defined accordingly to the enabled
-    ///                 MBEDTLS_SHA384_C/MBEDTLS_SHA512_C symbols otherwise the
-    ///                 function will return #MBEDTLS_ERR_SHA512_BAD_INPUT_DATA.
-    ///
-    /// \return         \c 0 on success.
-    /// \return         A negative error code on failure.
-    pub fn mbedtls_sha512_starts(
-        ctx: *mut mbedtls_sha512_context,
-        is384: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief          This function feeds an input buffer into an ongoing
-    ///                 SHA-512 checksum calculation.
-    ///
-    /// \param ctx      The SHA-512 context. This must be initialized
-    ///                 and have a hash operation started.
-    /// \param input    The buffer holding the input data. This must
-    ///                 be a readable buffer of length \p ilen Bytes.
-    /// \param ilen     The length of the input data in Bytes.
-    ///
-    /// \return         \c 0 on success.
-    /// \return         A negative error code on failure.
-    pub fn mbedtls_sha512_update(
-        ctx: *mut mbedtls_sha512_context,
-        input: *const ::core::ffi::c_uchar,
-        ilen: usize,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief          This function finishes the SHA-512 operation, and writes
-    ///                 the result to the output buffer.
-    ///
-    /// \param ctx      The SHA-512 context. This must be initialized
-    ///                 and have a hash operation started.
-    /// \param output   The SHA-384 or SHA-512 checksum result.
-    ///                 This must be a writable buffer of length \c 64 bytes
-    ///                 for SHA-512, \c 48 bytes for SHA-384.
-    ///
-    /// \return         \c 0 on success.
-    /// \return         A negative error code on failure.
-    pub fn mbedtls_sha512_finish(
-        ctx: *mut mbedtls_sha512_context,
-        output: *mut ::core::ffi::c_uchar,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief          This function processes a single data block within
-    ///                 the ongoing SHA-512 computation.
-    ///                 This function is for internal use only.
-    ///
-    /// \param ctx      The SHA-512 context. This must be initialized.
-    /// \param data     The buffer holding one block of data. This
-    ///                 must be a readable buffer of length \c 128 Bytes.
-    ///
-    /// \return         \c 0 on success.
-    /// \return         A negative error code on failure.
-    pub fn mbedtls_internal_sha512_process(
-        ctx: *mut mbedtls_sha512_context,
-        data: *const ::core::ffi::c_uchar,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief          This function calculates the SHA-512 or SHA-384
-    ///                 checksum of a buffer.
-    ///
-    ///                 The function allocates the context, performs the
-    ///                 calculation, and frees the context.
-    ///
-    ///                 The SHA-512 result is calculated as
-    ///                 output = SHA-512(input buffer).
-    ///
-    /// \param input    The buffer holding the input data. This must be
-    ///                 a readable buffer of length \p ilen Bytes.
-    /// \param ilen     The length of the input data in Bytes.
-    /// \param output   The SHA-384 or SHA-512 checksum result.
-    ///                 This must be a writable buffer of length \c 64 bytes
-    ///                 for SHA-512, \c 48 bytes for SHA-384.
-    /// \param is384    Determines which function to use. This must be either
-    ///                 \c 0 for SHA-512, or \c 1 for SHA-384.
-    ///
-    /// \note           is384 must be defined accordingly with the supported
-    ///                 symbols in the config file. If:
-    ///                 - is384 is 0, but \c MBEDTLS_SHA384_C is not defined, or
-    ///                 - is384 is 1, but \c MBEDTLS_SHA512_C is not defined
-    ///                 then the function will return
-    ///                 #MBEDTLS_ERR_SHA512_BAD_INPUT_DATA.
-    ///
-    /// \return         \c 0 on success.
-    /// \return         A negative error code on failure.
-    pub fn mbedtls_sha512(
-        input: *const ::core::ffi::c_uchar,
-        ilen: usize,
-        output: *mut ::core::ffi::c_uchar,
-        is384: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief          The SHA-384 checkup routine.
-    ///
-    /// \return         \c 0 on success.
-    /// \return         \c 1 on failure.
-    pub fn mbedtls_sha384_self_test(verbose: ::core::ffi::c_int) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief          The SHA-512 checkup routine.
-    ///
-    /// \return         \c 0 on success.
-    /// \return         \c 1 on failure.
-    pub fn mbedtls_sha512_self_test(verbose: ::core::ffi::c_int) -> ::core::ffi::c_int;
-}
-#[repr(C)]
-#[repr(align(16))]
-#[derive(Copy, Clone)]
-pub struct mbedtls_psa_hash_operation_t {
-    pub private_alg: psa_algorithm_t,
-    pub __bindgen_padding_0: u64,
-    pub private_ctx: mbedtls_psa_hash_operation_t__bindgen_ty_1,
-}
-#[repr(C)]
-#[repr(align(16))]
-#[derive(Copy, Clone)]
-pub union mbedtls_psa_hash_operation_t__bindgen_ty_1 {
-    pub dummy: ::core::ffi::c_uint,
-    pub md5: mbedtls_md5_context,
-    pub ripemd160: mbedtls_ripemd160_context,
-    pub sha1: mbedtls_sha1_context,
-    pub sha256: mbedtls_sha256_context,
-    pub sha512: mbedtls_sha512_context,
-}
-impl Default for mbedtls_psa_hash_operation_t__bindgen_ty_1 {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-impl Default for mbedtls_psa_hash_operation_t {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct mbedtls_psa_cipher_operation_t {
-    pub private_alg: psa_algorithm_t,
-    pub private_iv_length: u8,
-    pub private_block_length: u8,
-    pub private_ctx: mbedtls_psa_cipher_operation_t__bindgen_ty_1,
-}
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub union mbedtls_psa_cipher_operation_t__bindgen_ty_1 {
-    pub private_dummy: ::core::ffi::c_uint,
-    pub private_cipher: mbedtls_cipher_context_t,
-}
-impl Default for mbedtls_psa_cipher_operation_t__bindgen_ty_1 {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-impl Default for mbedtls_psa_cipher_operation_t {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[repr(align(16))]
-#[derive(Copy, Clone)]
-pub union psa_driver_hash_context_t {
-    pub dummy: ::core::ffi::c_uint,
-    pub mbedtls_ctx: mbedtls_psa_hash_operation_t,
-}
-impl Default for psa_driver_hash_context_t {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub union psa_driver_cipher_context_t {
-    pub dummy: ::core::ffi::c_uint,
-    pub mbedtls_ctx: mbedtls_psa_cipher_operation_t,
-}
-impl Default for psa_driver_cipher_context_t {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[repr(align(16))]
-#[derive(Copy, Clone)]
-pub struct psa_hash_operation_s {
-    /// Unique ID indicating which driver got assigned to do the
-    /// operation. Since driver contexts are driver-specific, swapping
-    /// drivers halfway through the operation is not supported.
-    /// ID values are auto-generated in psa_driver_wrappers.h.
-    /// ID value zero means the context is not valid or not assigned to
-    /// any driver (i.e. the driver context is not active, in use).
-    pub private_id: ::core::ffi::c_uint,
-    pub __bindgen_padding_0: u64,
-    pub private_ctx: psa_driver_hash_context_t,
-}
-impl Default for psa_hash_operation_s {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct psa_cipher_operation_s {
-    /// Unique ID indicating which driver got assigned to do the
-    /// operation. Since driver contexts are driver-specific, swapping
-    /// drivers halfway through the operation is not supported.
-    /// ID values are auto-generated in psa_crypto_driver_wrappers.h
-    /// ID value zero means the context is not valid or not assigned to
-    /// any driver (i.e. none of the driver contexts are active).
-    pub private_id: ::core::ffi::c_uint,
-    pub _bitfield_align_1: [u8; 0],
-    pub _bitfield_1: __BindgenBitfieldUnit<[u8; 1usize]>,
-    pub private_default_iv_length: u8,
-    pub private_ctx: psa_driver_cipher_context_t,
-}
-impl Default for psa_cipher_operation_s {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-impl psa_cipher_operation_s {
-    #[inline]
-    pub fn private_iv_required(&self) -> ::core::ffi::c_uint {
-        unsafe { ::core::mem::transmute(self._bitfield_1.get(0usize, 1u8) as u32) }
-    }
-    #[inline]
-    pub fn set_private_iv_required(&mut self, val: ::core::ffi::c_uint) {
-        unsafe {
-            let val: u32 = ::core::mem::transmute(val);
-            self._bitfield_1.set(0usize, 1u8, val as u64)
-        }
-    }
-    #[inline]
-    pub unsafe fn private_iv_required_raw(this: *const Self) -> ::core::ffi::c_uint {
-        unsafe {
-            ::core::mem::transmute(<__BindgenBitfieldUnit<[u8; 1usize]>>::raw_get(
-                ::core::ptr::addr_of!((*this)._bitfield_1),
-                0usize,
-                1u8,
-            ) as u32)
-        }
-    }
-    #[inline]
-    pub unsafe fn set_private_iv_required_raw(this: *mut Self, val: ::core::ffi::c_uint) {
-        unsafe {
-            let val: u32 = ::core::mem::transmute(val);
-            <__BindgenBitfieldUnit<[u8; 1usize]>>::raw_set(
-                ::core::ptr::addr_of_mut!((*this)._bitfield_1),
-                0usize,
-                1u8,
-                val as u64,
-            )
-        }
-    }
-    #[inline]
-    pub fn private_iv_set(&self) -> ::core::ffi::c_uint {
-        unsafe { ::core::mem::transmute(self._bitfield_1.get(1usize, 1u8) as u32) }
-    }
-    #[inline]
-    pub fn set_private_iv_set(&mut self, val: ::core::ffi::c_uint) {
-        unsafe {
-            let val: u32 = ::core::mem::transmute(val);
-            self._bitfield_1.set(1usize, 1u8, val as u64)
-        }
-    }
-    #[inline]
-    pub unsafe fn private_iv_set_raw(this: *const Self) -> ::core::ffi::c_uint {
-        unsafe {
-            ::core::mem::transmute(<__BindgenBitfieldUnit<[u8; 1usize]>>::raw_get(
-                ::core::ptr::addr_of!((*this)._bitfield_1),
-                1usize,
-                1u8,
-            ) as u32)
-        }
-    }
-    #[inline]
-    pub unsafe fn set_private_iv_set_raw(this: *mut Self, val: ::core::ffi::c_uint) {
-        unsafe {
-            let val: u32 = ::core::mem::transmute(val);
-            <__BindgenBitfieldUnit<[u8; 1usize]>>::raw_set(
-                ::core::ptr::addr_of_mut!((*this)._bitfield_1),
-                1usize,
-                1u8,
-                val as u64,
-            )
-        }
-    }
-    #[inline]
-    pub fn new_bitfield_1(
-        private_iv_required: ::core::ffi::c_uint,
-        private_iv_set: ::core::ffi::c_uint,
-    ) -> __BindgenBitfieldUnit<[u8; 1usize]> {
-        let mut __bindgen_bitfield_unit: __BindgenBitfieldUnit<[u8; 1usize]> = Default::default();
-        __bindgen_bitfield_unit.set(0usize, 1u8, {
-            let private_iv_required: u32 = unsafe { ::core::mem::transmute(private_iv_required) };
-            private_iv_required as u64
-        });
-        __bindgen_bitfield_unit.set(1usize, 1u8, {
-            let private_iv_set: u32 = unsafe { ::core::mem::transmute(private_iv_set) };
-            private_iv_set as u64
-        });
-        __bindgen_bitfield_unit
-    }
-}
-#[repr(C)]
-#[repr(align(16))]
-#[derive(Copy, Clone)]
-pub struct mbedtls_psa_hmac_operation_t {
-    /// The HMAC algorithm in use
-    pub private_alg: psa_algorithm_t,
-    pub __bindgen_padding_0: u64,
-    /// The hash context.
-    pub hash_ctx: psa_hash_operation_s,
-    /// The HMAC part of the context.
-    pub private_opad: [u8; 128usize],
-}
-impl Default for mbedtls_psa_hmac_operation_t {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[repr(align(16))]
-#[derive(Copy, Clone)]
-pub struct mbedtls_psa_mac_operation_t {
-    pub private_alg: psa_algorithm_t,
-    pub __bindgen_padding_0: u64,
-    pub private_ctx: mbedtls_psa_mac_operation_t__bindgen_ty_1,
-}
-#[repr(C)]
-#[repr(align(16))]
-#[derive(Copy, Clone)]
-pub union mbedtls_psa_mac_operation_t__bindgen_ty_1 {
-    pub private_dummy: ::core::ffi::c_uint,
-    pub private_hmac: mbedtls_psa_hmac_operation_t,
-    pub private_cmac: mbedtls_cipher_context_t,
-}
-impl Default for mbedtls_psa_mac_operation_t__bindgen_ty_1 {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-impl Default for mbedtls_psa_mac_operation_t {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct mbedtls_psa_aead_operation_t {
-    pub private_alg: psa_algorithm_t,
-    pub private_key_type: psa_key_type_t,
-    pub _bitfield_align_1: [u8; 0],
-    pub _bitfield_1: __BindgenBitfieldUnit<[u8; 1usize]>,
-    pub private_tag_length: u8,
-    pub ctx: mbedtls_psa_aead_operation_t__bindgen_ty_1,
-}
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub union mbedtls_psa_aead_operation_t__bindgen_ty_1 {
-    pub dummy: ::core::ffi::c_uint,
-    pub private_ccm: mbedtls_ccm_context,
-    pub private_gcm: mbedtls_gcm_context,
-    pub private_chachapoly: mbedtls_chachapoly_context,
-}
-impl Default for mbedtls_psa_aead_operation_t__bindgen_ty_1 {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-impl Default for mbedtls_psa_aead_operation_t {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-impl mbedtls_psa_aead_operation_t {
-    #[inline]
-    pub fn private_is_encrypt(&self) -> ::core::ffi::c_uint {
-        unsafe { ::core::mem::transmute(self._bitfield_1.get(0usize, 1u8) as u32) }
-    }
-    #[inline]
-    pub fn set_private_is_encrypt(&mut self, val: ::core::ffi::c_uint) {
-        unsafe {
-            let val: u32 = ::core::mem::transmute(val);
-            self._bitfield_1.set(0usize, 1u8, val as u64)
-        }
-    }
-    #[inline]
-    pub unsafe fn private_is_encrypt_raw(this: *const Self) -> ::core::ffi::c_uint {
-        unsafe {
-            ::core::mem::transmute(<__BindgenBitfieldUnit<[u8; 1usize]>>::raw_get(
-                ::core::ptr::addr_of!((*this)._bitfield_1),
-                0usize,
-                1u8,
-            ) as u32)
-        }
-    }
-    #[inline]
-    pub unsafe fn set_private_is_encrypt_raw(this: *mut Self, val: ::core::ffi::c_uint) {
-        unsafe {
-            let val: u32 = ::core::mem::transmute(val);
-            <__BindgenBitfieldUnit<[u8; 1usize]>>::raw_set(
-                ::core::ptr::addr_of_mut!((*this)._bitfield_1),
-                0usize,
-                1u8,
-                val as u64,
-            )
-        }
-    }
-    #[inline]
-    pub fn new_bitfield_1(
-        private_is_encrypt: ::core::ffi::c_uint,
-    ) -> __BindgenBitfieldUnit<[u8; 1usize]> {
-        let mut __bindgen_bitfield_unit: __BindgenBitfieldUnit<[u8; 1usize]> = Default::default();
-        __bindgen_bitfield_unit.set(0usize, 1u8, {
-            let private_is_encrypt: u32 = unsafe { ::core::mem::transmute(private_is_encrypt) };
-            private_is_encrypt as u64
-        });
-        __bindgen_bitfield_unit
-    }
-}
-#[repr(C)]
-#[derive(Default, Copy, Clone)]
-pub struct mbedtls_psa_sign_hash_interruptible_operation_t {
-    pub private_dummy: ::core::ffi::c_uint,
-}
-#[repr(C)]
-#[derive(Default, Copy, Clone)]
-pub struct mbedtls_psa_verify_hash_interruptible_operation_t {
-    pub private_dummy: ::core::ffi::c_uint,
-}
-///< Client
-pub const mbedtls_ecjpake_role_MBEDTLS_ECJPAKE_CLIENT: mbedtls_ecjpake_role = 0;
-///< Server
-pub const mbedtls_ecjpake_role_MBEDTLS_ECJPAKE_SERVER: mbedtls_ecjpake_role = 1;
-/// Roles in the EC J-PAKE exchange
-pub type mbedtls_ecjpake_role = ::core::ffi::c_uint;
-/// EC J-PAKE context structure.
-///
-/// J-PAKE is a symmetric protocol, except for the identifiers used in
-/// Zero-Knowledge Proofs, and the serialization of the second message
-/// (KeyExchange) as defined by the Thread spec.
-///
-/// In order to benefit from this symmetry, we choose a different naming
-/// convention from the Thread v1.0 spec. Correspondence is indicated in the
-/// description as a pair C: client name, S: server name
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct mbedtls_ecjpake_context {
-    ///< Hash to use
-    pub private_md_type: mbedtls_md_type_t,
-    ///< Elliptic curve
-    pub private_grp: mbedtls_ecp_group,
-    ///< Are we client or server?
-    pub private_role: mbedtls_ecjpake_role,
-    ///< Format for point export
-    pub private_point_format: ::core::ffi::c_int,
-    ///< My public key 1   C: X1, S: X3
-    pub private_Xm1: mbedtls_ecp_point,
-    ///< My public key 2   C: X2, S: X4
-    pub private_Xm2: mbedtls_ecp_point,
-    ///< Peer public key 1 C: X3, S: X1
-    pub private_Xp1: mbedtls_ecp_point,
-    ///< Peer public key 2 C: X4, S: X2
-    pub private_Xp2: mbedtls_ecp_point,
-    ///< Peer public key   C: Xs, S: Xc
-    pub private_Xp: mbedtls_ecp_point,
-    ///< My private key 1  C: x1, S: x3
-    pub private_xm1: mbedtls_mpi,
-    ///< My private key 2  C: x2, S: x4
-    pub private_xm2: mbedtls_mpi,
-    ///< Pre-shared secret (passphrase)
-    pub private_s: mbedtls_mpi,
-}
-impl Default for mbedtls_ecjpake_context {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-unsafe extern "C" {
-    /// \brief           Initialize an ECJPAKE context.
-    ///
-    /// \param ctx       The ECJPAKE context to initialize.
-    ///                  This must not be \c NULL.
-    pub fn mbedtls_ecjpake_init(ctx: *mut mbedtls_ecjpake_context);
-}
-unsafe extern "C" {
-    /// \brief           Set up an ECJPAKE context for use.
-    ///
-    /// \note            Currently the only values for hash/curve allowed by the
-    ///                  standard are #MBEDTLS_MD_SHA256/#MBEDTLS_ECP_DP_SECP256R1.
-    ///
-    /// \param ctx       The ECJPAKE context to set up. This must be initialized.
-    /// \param role      The role of the caller. This must be either
-    ///                  #MBEDTLS_ECJPAKE_CLIENT or #MBEDTLS_ECJPAKE_SERVER.
-    /// \param hash      The identifier of the hash function to use,
-    ///                  for example #MBEDTLS_MD_SHA256.
-    /// \param curve     The identifier of the elliptic curve to use,
-    ///                  for example #MBEDTLS_ECP_DP_SECP256R1.
-    /// \param secret    The pre-shared secret (passphrase). This must be
-    ///                  a readable not empty buffer of length \p len Bytes. It need
-    ///                  only be valid for the duration of this call.
-    /// \param len       The length of the pre-shared secret \p secret.
-    ///
-    /// \return          \c 0 if successful.
-    /// \return          A negative error code on failure.
-    pub fn mbedtls_ecjpake_setup(
-        ctx: *mut mbedtls_ecjpake_context,
-        role: mbedtls_ecjpake_role,
-        hash: mbedtls_md_type_t,
-        curve: mbedtls_ecp_group_id,
-        secret: *const ::core::ffi::c_uchar,
-        len: usize,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief               Set the point format for future reads and writes.
-    ///
-    /// \param ctx           The ECJPAKE context to configure.
-    /// \param point_format  The point format to use:
-    ///                      #MBEDTLS_ECP_PF_UNCOMPRESSED (default)
-    ///                      or #MBEDTLS_ECP_PF_COMPRESSED.
-    ///
-    /// \return              \c 0 if successful.
-    /// \return              #MBEDTLS_ERR_ECP_BAD_INPUT_DATA if \p point_format
-    ///                      is invalid.
-    pub fn mbedtls_ecjpake_set_point_format(
-        ctx: *mut mbedtls_ecjpake_context,
-        point_format: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           Check if an ECJPAKE context is ready for use.
-    ///
-    /// \param ctx       The ECJPAKE context to check. This must be
-    ///                  initialized.
-    ///
-    /// \return          \c 0 if the context is ready for use.
-    /// \return          #MBEDTLS_ERR_ECP_BAD_INPUT_DATA otherwise.
-    pub fn mbedtls_ecjpake_check(ctx: *const mbedtls_ecjpake_context) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           Generate and write the first round message
-    ///                  (TLS: contents of the Client/ServerHello extension,
-    ///                  excluding extension type and length bytes).
-    ///
-    /// \param ctx       The ECJPAKE context to use. This must be
-    ///                  initialized and set up.
-    /// \param buf       The buffer to write the contents to. This must be a
-    ///                  writable buffer of length \p len Bytes.
-    /// \param len       The length of \p buf in Bytes.
-    /// \param olen      The address at which to store the total number
-    ///                  of Bytes written to \p buf. This must not be \c NULL.
-    /// \param f_rng     The RNG function to use. This must not be \c NULL.
-    /// \param p_rng     The RNG parameter to be passed to \p f_rng. This
-    ///                  may be \c NULL if \p f_rng doesn't use a context.
-    ///
-    /// \return          \c 0 if successful.
-    /// \return          A negative error code on failure.
-    pub fn mbedtls_ecjpake_write_round_one(
-        ctx: *mut mbedtls_ecjpake_context,
-        buf: *mut ::core::ffi::c_uchar,
-        len: usize,
-        olen: *mut usize,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
-        p_rng: *mut ::core::ffi::c_void,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           Read and process the first round message
-    ///                  (TLS: contents of the Client/ServerHello extension,
-    ///                  excluding extension type and length bytes).
-    ///
-    /// \param ctx       The ECJPAKE context to use. This must be initialized
-    ///                  and set up.
-    /// \param buf       The buffer holding the first round message. This must
-    ///                  be a readable buffer of length \p len Bytes.
-    /// \param len       The length in Bytes of \p buf.
-    ///
-    /// \return          \c 0 if successful.
-    /// \return          A negative error code on failure.
-    pub fn mbedtls_ecjpake_read_round_one(
-        ctx: *mut mbedtls_ecjpake_context,
-        buf: *const ::core::ffi::c_uchar,
-        len: usize,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           Generate and write the second round message
-    ///                  (TLS: contents of the Client/ServerKeyExchange).
-    ///
-    /// \param ctx       The ECJPAKE context to use. This must be initialized,
-    ///                  set up, and already have performed round one.
-    /// \param buf       The buffer to write the round two contents to.
-    ///                  This must be a writable buffer of length \p len Bytes.
-    /// \param len       The size of \p buf in Bytes.
-    /// \param olen      The address at which to store the total number of Bytes
-    ///                  written to \p buf. This must not be \c NULL.
-    /// \param f_rng     The RNG function to use. This must not be \c NULL.
-    /// \param p_rng     The RNG parameter to be passed to \p f_rng. This
-    ///                  may be \c NULL if \p f_rng doesn't use a context.
-    ///
-    /// \return          \c 0 if successful.
-    /// \return          A negative error code on failure.
-    pub fn mbedtls_ecjpake_write_round_two(
-        ctx: *mut mbedtls_ecjpake_context,
-        buf: *mut ::core::ffi::c_uchar,
-        len: usize,
-        olen: *mut usize,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
-        p_rng: *mut ::core::ffi::c_void,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           Read and process the second round message
-    ///                  (TLS: contents of the Client/ServerKeyExchange).
-    ///
-    /// \param ctx       The ECJPAKE context to use. This must be initialized
-    ///                  and set up and already have performed round one.
-    /// \param buf       The buffer holding the second round message. This must
-    ///                  be a readable buffer of length \p len Bytes.
-    /// \param len       The length in Bytes of \p buf.
-    ///
-    /// \return          \c 0 if successful.
-    /// \return          A negative error code on failure.
-    pub fn mbedtls_ecjpake_read_round_two(
-        ctx: *mut mbedtls_ecjpake_context,
-        buf: *const ::core::ffi::c_uchar,
-        len: usize,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           Derive the shared secret
-    ///                  (TLS: Pre-Master Secret).
-    ///
-    /// \param ctx       The ECJPAKE context to use. This must be initialized,
-    ///                  set up and have performed both round one and two.
-    /// \param buf       The buffer to write the derived secret to. This must
-    ///                  be a writable buffer of length \p len Bytes.
-    /// \param len       The length of \p buf in Bytes.
-    /// \param olen      The address at which to store the total number of Bytes
-    ///                  written to \p buf. This must not be \c NULL.
-    /// \param f_rng     The RNG function to use. This must not be \c NULL.
-    /// \param p_rng     The RNG parameter to be passed to \p f_rng. This
-    ///                  may be \c NULL if \p f_rng doesn't use a context.
-    ///
-    /// \return          \c 0 if successful.
-    /// \return          A negative error code on failure.
-    pub fn mbedtls_ecjpake_derive_secret(
-        ctx: *mut mbedtls_ecjpake_context,
-        buf: *mut ::core::ffi::c_uchar,
-        len: usize,
-        olen: *mut usize,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
-        p_rng: *mut ::core::ffi::c_void,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           Write the shared key material to be passed to a Key
-    ///                  Derivation Function as described in RFC8236.
-    ///
-    /// \param ctx       The ECJPAKE context to use. This must be initialized,
-    ///                  set up and have performed both round one and two.
-    /// \param buf       The buffer to write the derived secret to. This must
-    ///                  be a writable buffer of length \p len Bytes.
-    /// \param len       The length of \p buf in Bytes.
-    /// \param olen      The address at which to store the total number of bytes
-    ///                  written to \p buf. This must not be \c NULL.
-    /// \param f_rng     The RNG function to use. This must not be \c NULL.
-    /// \param p_rng     The RNG parameter to be passed to \p f_rng. This
-    ///                  may be \c NULL if \p f_rng doesn't use a context.
-    ///
-    /// \return          \c 0 if successful.
-    /// \return          A negative error code on failure.
-    pub fn mbedtls_ecjpake_write_shared_key(
-        ctx: *mut mbedtls_ecjpake_context,
-        buf: *mut ::core::ffi::c_uchar,
-        len: usize,
-        olen: *mut usize,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
-        p_rng: *mut ::core::ffi::c_void,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           This clears an ECJPAKE context and frees any
-    ///                  embedded data structure.
-    ///
-    /// \param ctx       The ECJPAKE context to free. This may be \c NULL,
-    ///                  in which case this function does nothing. If it is not
-    ///                  \c NULL, it must point to an initialized ECJPAKE context.
-    pub fn mbedtls_ecjpake_free(ctx: *mut mbedtls_ecjpake_context);
-}
-unsafe extern "C" {
-    /// \brief          Checkup routine
-    ///
-    /// \return         0 if successful, or 1 if a test failed
-    pub fn mbedtls_ecjpake_self_test(verbose: ::core::ffi::c_int) -> ::core::ffi::c_int;
-}
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct mbedtls_psa_pake_operation_t {
-    pub private_alg: psa_algorithm_t,
-    pub private_password: *mut u8,
-    pub private_password_len: usize,
-    pub private_role: u8,
-    pub private_buffer: [u8; 336usize],
-    pub private_buffer_length: usize,
-    pub private_buffer_offset: usize,
-    pub private_ctx: mbedtls_psa_pake_operation_t__bindgen_ty_1,
-}
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub union mbedtls_psa_pake_operation_t__bindgen_ty_1 {
-    pub private_dummy: ::core::ffi::c_uint,
-    pub private_jpake: mbedtls_ecjpake_context,
-}
-impl Default for mbedtls_psa_pake_operation_t__bindgen_ty_1 {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-impl Default for mbedtls_psa_pake_operation_t {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[repr(align(16))]
-#[derive(Copy, Clone)]
-pub union psa_driver_mac_context_t {
-    pub dummy: ::core::ffi::c_uint,
-    pub mbedtls_ctx: mbedtls_psa_mac_operation_t,
-}
-impl Default for psa_driver_mac_context_t {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub union psa_driver_aead_context_t {
-    pub dummy: ::core::ffi::c_uint,
-    pub mbedtls_ctx: mbedtls_psa_aead_operation_t,
-}
-impl Default for psa_driver_aead_context_t {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub union psa_driver_sign_hash_interruptible_context_t {
-    pub dummy: ::core::ffi::c_uint,
-    pub mbedtls_ctx: mbedtls_psa_sign_hash_interruptible_operation_t,
-}
-impl Default for psa_driver_sign_hash_interruptible_context_t {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub union psa_driver_verify_hash_interruptible_context_t {
-    pub dummy: ::core::ffi::c_uint,
-    pub mbedtls_ctx: mbedtls_psa_verify_hash_interruptible_operation_t,
-}
-impl Default for psa_driver_verify_hash_interruptible_context_t {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub union psa_driver_pake_context_t {
-    pub dummy: ::core::ffi::c_uint,
-    pub mbedtls_ctx: mbedtls_psa_pake_operation_t,
-}
-impl Default for psa_driver_pake_context_t {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[repr(align(16))]
-#[derive(Copy, Clone)]
-pub struct psa_mac_operation_s {
-    /// Unique ID indicating which driver got assigned to do the
-    /// operation. Since driver contexts are driver-specific, swapping
-    /// drivers halfway through the operation is not supported.
-    /// ID values are auto-generated in psa_driver_wrappers.h
-    /// ID value zero means the context is not valid or not assigned to
-    /// any driver (i.e. none of the driver contexts are active).
-    pub private_id: ::core::ffi::c_uint,
-    pub private_mac_size: u8,
-    pub _bitfield_align_1: [u8; 0],
-    pub _bitfield_1: __BindgenBitfieldUnit<[u8; 1usize]>,
-    pub __bindgen_padding_0: u64,
-    pub private_ctx: psa_driver_mac_context_t,
-}
-impl Default for psa_mac_operation_s {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-impl psa_mac_operation_s {
-    #[inline]
-    pub fn private_is_sign(&self) -> ::core::ffi::c_uint {
-        unsafe { ::core::mem::transmute(self._bitfield_1.get(0usize, 1u8) as u32) }
-    }
-    #[inline]
-    pub fn set_private_is_sign(&mut self, val: ::core::ffi::c_uint) {
-        unsafe {
-            let val: u32 = ::core::mem::transmute(val);
-            self._bitfield_1.set(0usize, 1u8, val as u64)
-        }
-    }
-    #[inline]
-    pub unsafe fn private_is_sign_raw(this: *const Self) -> ::core::ffi::c_uint {
-        unsafe {
-            ::core::mem::transmute(<__BindgenBitfieldUnit<[u8; 1usize]>>::raw_get(
-                ::core::ptr::addr_of!((*this)._bitfield_1),
-                0usize,
-                1u8,
-            ) as u32)
-        }
-    }
-    #[inline]
-    pub unsafe fn set_private_is_sign_raw(this: *mut Self, val: ::core::ffi::c_uint) {
-        unsafe {
-            let val: u32 = ::core::mem::transmute(val);
-            <__BindgenBitfieldUnit<[u8; 1usize]>>::raw_set(
-                ::core::ptr::addr_of_mut!((*this)._bitfield_1),
-                0usize,
-                1u8,
-                val as u64,
-            )
-        }
-    }
-    #[inline]
-    pub fn new_bitfield_1(
-        private_is_sign: ::core::ffi::c_uint,
-    ) -> __BindgenBitfieldUnit<[u8; 1usize]> {
-        let mut __bindgen_bitfield_unit: __BindgenBitfieldUnit<[u8; 1usize]> = Default::default();
-        __bindgen_bitfield_unit.set(0usize, 1u8, {
-            let private_is_sign: u32 = unsafe { ::core::mem::transmute(private_is_sign) };
-            private_is_sign as u64
-        });
-        __bindgen_bitfield_unit
-    }
-}
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct psa_aead_operation_s {
-    /// Unique ID indicating which driver got assigned to do the
-    /// operation. Since driver contexts are driver-specific, swapping
-    /// drivers halfway through the operation is not supported.
-    /// ID values are auto-generated in psa_crypto_driver_wrappers.h
-    /// ID value zero means the context is not valid or not assigned to
-    /// any driver (i.e. none of the driver contexts are active).
-    pub private_id: ::core::ffi::c_uint,
-    pub private_alg: psa_algorithm_t,
-    pub private_key_type: psa_key_type_t,
-    pub private_ad_remaining: usize,
-    pub private_body_remaining: usize,
-    pub _bitfield_align_1: [u8; 0],
-    pub _bitfield_1: __BindgenBitfieldUnit<[u8; 1usize]>,
-    pub private_ctx: psa_driver_aead_context_t,
-}
-impl Default for psa_aead_operation_s {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-impl psa_aead_operation_s {
-    #[inline]
-    pub fn private_nonce_set(&self) -> ::core::ffi::c_uint {
-        unsafe { ::core::mem::transmute(self._bitfield_1.get(0usize, 1u8) as u32) }
-    }
-    #[inline]
-    pub fn set_private_nonce_set(&mut self, val: ::core::ffi::c_uint) {
-        unsafe {
-            let val: u32 = ::core::mem::transmute(val);
-            self._bitfield_1.set(0usize, 1u8, val as u64)
-        }
-    }
-    #[inline]
-    pub unsafe fn private_nonce_set_raw(this: *const Self) -> ::core::ffi::c_uint {
-        unsafe {
-            ::core::mem::transmute(<__BindgenBitfieldUnit<[u8; 1usize]>>::raw_get(
-                ::core::ptr::addr_of!((*this)._bitfield_1),
-                0usize,
-                1u8,
-            ) as u32)
-        }
-    }
-    #[inline]
-    pub unsafe fn set_private_nonce_set_raw(this: *mut Self, val: ::core::ffi::c_uint) {
-        unsafe {
-            let val: u32 = ::core::mem::transmute(val);
-            <__BindgenBitfieldUnit<[u8; 1usize]>>::raw_set(
-                ::core::ptr::addr_of_mut!((*this)._bitfield_1),
-                0usize,
-                1u8,
-                val as u64,
-            )
-        }
-    }
-    #[inline]
-    pub fn private_lengths_set(&self) -> ::core::ffi::c_uint {
-        unsafe { ::core::mem::transmute(self._bitfield_1.get(1usize, 1u8) as u32) }
-    }
-    #[inline]
-    pub fn set_private_lengths_set(&mut self, val: ::core::ffi::c_uint) {
-        unsafe {
-            let val: u32 = ::core::mem::transmute(val);
-            self._bitfield_1.set(1usize, 1u8, val as u64)
-        }
-    }
-    #[inline]
-    pub unsafe fn private_lengths_set_raw(this: *const Self) -> ::core::ffi::c_uint {
-        unsafe {
-            ::core::mem::transmute(<__BindgenBitfieldUnit<[u8; 1usize]>>::raw_get(
-                ::core::ptr::addr_of!((*this)._bitfield_1),
-                1usize,
-                1u8,
-            ) as u32)
-        }
-    }
-    #[inline]
-    pub unsafe fn set_private_lengths_set_raw(this: *mut Self, val: ::core::ffi::c_uint) {
-        unsafe {
-            let val: u32 = ::core::mem::transmute(val);
-            <__BindgenBitfieldUnit<[u8; 1usize]>>::raw_set(
-                ::core::ptr::addr_of_mut!((*this)._bitfield_1),
-                1usize,
-                1u8,
-                val as u64,
-            )
-        }
-    }
-    #[inline]
-    pub fn private_ad_started(&self) -> ::core::ffi::c_uint {
-        unsafe { ::core::mem::transmute(self._bitfield_1.get(2usize, 1u8) as u32) }
-    }
-    #[inline]
-    pub fn set_private_ad_started(&mut self, val: ::core::ffi::c_uint) {
-        unsafe {
-            let val: u32 = ::core::mem::transmute(val);
-            self._bitfield_1.set(2usize, 1u8, val as u64)
-        }
-    }
-    #[inline]
-    pub unsafe fn private_ad_started_raw(this: *const Self) -> ::core::ffi::c_uint {
-        unsafe {
-            ::core::mem::transmute(<__BindgenBitfieldUnit<[u8; 1usize]>>::raw_get(
-                ::core::ptr::addr_of!((*this)._bitfield_1),
-                2usize,
-                1u8,
-            ) as u32)
-        }
-    }
-    #[inline]
-    pub unsafe fn set_private_ad_started_raw(this: *mut Self, val: ::core::ffi::c_uint) {
-        unsafe {
-            let val: u32 = ::core::mem::transmute(val);
-            <__BindgenBitfieldUnit<[u8; 1usize]>>::raw_set(
-                ::core::ptr::addr_of_mut!((*this)._bitfield_1),
-                2usize,
-                1u8,
-                val as u64,
-            )
-        }
-    }
-    #[inline]
-    pub fn private_body_started(&self) -> ::core::ffi::c_uint {
-        unsafe { ::core::mem::transmute(self._bitfield_1.get(3usize, 1u8) as u32) }
-    }
-    #[inline]
-    pub fn set_private_body_started(&mut self, val: ::core::ffi::c_uint) {
-        unsafe {
-            let val: u32 = ::core::mem::transmute(val);
-            self._bitfield_1.set(3usize, 1u8, val as u64)
-        }
-    }
-    #[inline]
-    pub unsafe fn private_body_started_raw(this: *const Self) -> ::core::ffi::c_uint {
-        unsafe {
-            ::core::mem::transmute(<__BindgenBitfieldUnit<[u8; 1usize]>>::raw_get(
-                ::core::ptr::addr_of!((*this)._bitfield_1),
-                3usize,
-                1u8,
-            ) as u32)
-        }
-    }
-    #[inline]
-    pub unsafe fn set_private_body_started_raw(this: *mut Self, val: ::core::ffi::c_uint) {
-        unsafe {
-            let val: u32 = ::core::mem::transmute(val);
-            <__BindgenBitfieldUnit<[u8; 1usize]>>::raw_set(
-                ::core::ptr::addr_of_mut!((*this)._bitfield_1),
-                3usize,
-                1u8,
-                val as u64,
-            )
-        }
-    }
-    #[inline]
-    pub fn private_is_encrypt(&self) -> ::core::ffi::c_uint {
-        unsafe { ::core::mem::transmute(self._bitfield_1.get(4usize, 1u8) as u32) }
-    }
-    #[inline]
-    pub fn set_private_is_encrypt(&mut self, val: ::core::ffi::c_uint) {
-        unsafe {
-            let val: u32 = ::core::mem::transmute(val);
-            self._bitfield_1.set(4usize, 1u8, val as u64)
-        }
-    }
-    #[inline]
-    pub unsafe fn private_is_encrypt_raw(this: *const Self) -> ::core::ffi::c_uint {
-        unsafe {
-            ::core::mem::transmute(<__BindgenBitfieldUnit<[u8; 1usize]>>::raw_get(
-                ::core::ptr::addr_of!((*this)._bitfield_1),
-                4usize,
-                1u8,
-            ) as u32)
-        }
-    }
-    #[inline]
-    pub unsafe fn set_private_is_encrypt_raw(this: *mut Self, val: ::core::ffi::c_uint) {
-        unsafe {
-            let val: u32 = ::core::mem::transmute(val);
-            <__BindgenBitfieldUnit<[u8; 1usize]>>::raw_set(
-                ::core::ptr::addr_of_mut!((*this)._bitfield_1),
-                4usize,
-                1u8,
-                val as u64,
-            )
-        }
-    }
-    #[inline]
-    pub fn new_bitfield_1(
-        private_nonce_set: ::core::ffi::c_uint,
-        private_lengths_set: ::core::ffi::c_uint,
-        private_ad_started: ::core::ffi::c_uint,
-        private_body_started: ::core::ffi::c_uint,
-        private_is_encrypt: ::core::ffi::c_uint,
-    ) -> __BindgenBitfieldUnit<[u8; 1usize]> {
-        let mut __bindgen_bitfield_unit: __BindgenBitfieldUnit<[u8; 1usize]> = Default::default();
-        __bindgen_bitfield_unit.set(0usize, 1u8, {
-            let private_nonce_set: u32 = unsafe { ::core::mem::transmute(private_nonce_set) };
-            private_nonce_set as u64
-        });
-        __bindgen_bitfield_unit.set(1usize, 1u8, {
-            let private_lengths_set: u32 = unsafe { ::core::mem::transmute(private_lengths_set) };
-            private_lengths_set as u64
-        });
-        __bindgen_bitfield_unit.set(2usize, 1u8, {
-            let private_ad_started: u32 = unsafe { ::core::mem::transmute(private_ad_started) };
-            private_ad_started as u64
-        });
-        __bindgen_bitfield_unit.set(3usize, 1u8, {
-            let private_body_started: u32 = unsafe { ::core::mem::transmute(private_body_started) };
-            private_body_started as u64
-        });
-        __bindgen_bitfield_unit.set(4usize, 1u8, {
-            let private_is_encrypt: u32 = unsafe { ::core::mem::transmute(private_is_encrypt) };
-            private_is_encrypt as u64
-        });
-        __bindgen_bitfield_unit
-    }
-}
-#[repr(C)]
-#[repr(align(16))]
-#[derive(Copy, Clone)]
-pub struct psa_hkdf_key_derivation_t {
-    pub private_info: *mut u8,
-    pub private_info_length: usize,
-    pub private_offset_in_block: u8,
-    pub private_block_number: u8,
-    pub _bitfield_align_1: [u8; 0],
-    pub _bitfield_1: __BindgenBitfieldUnit<[u8; 1usize]>,
-    pub private_output_block: [u8; 64usize],
-    pub private_prk: [u8; 64usize],
-    pub __bindgen_padding_0: [u64; 0usize],
-    pub private_hmac: psa_mac_operation_s,
-}
-impl Default for psa_hkdf_key_derivation_t {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-impl psa_hkdf_key_derivation_t {
-    #[inline]
-    pub fn private_state(&self) -> ::core::ffi::c_uint {
-        unsafe { ::core::mem::transmute(self._bitfield_1.get(0usize, 2u8) as u32) }
-    }
-    #[inline]
-    pub fn set_private_state(&mut self, val: ::core::ffi::c_uint) {
-        unsafe {
-            let val: u32 = ::core::mem::transmute(val);
-            self._bitfield_1.set(0usize, 2u8, val as u64)
-        }
-    }
-    #[inline]
-    pub unsafe fn private_state_raw(this: *const Self) -> ::core::ffi::c_uint {
-        unsafe {
-            ::core::mem::transmute(<__BindgenBitfieldUnit<[u8; 1usize]>>::raw_get(
-                ::core::ptr::addr_of!((*this)._bitfield_1),
-                0usize,
-                2u8,
-            ) as u32)
-        }
-    }
-    #[inline]
-    pub unsafe fn set_private_state_raw(this: *mut Self, val: ::core::ffi::c_uint) {
-        unsafe {
-            let val: u32 = ::core::mem::transmute(val);
-            <__BindgenBitfieldUnit<[u8; 1usize]>>::raw_set(
-                ::core::ptr::addr_of_mut!((*this)._bitfield_1),
-                0usize,
-                2u8,
-                val as u64,
-            )
-        }
-    }
-    #[inline]
-    pub fn private_info_set(&self) -> ::core::ffi::c_uint {
-        unsafe { ::core::mem::transmute(self._bitfield_1.get(2usize, 1u8) as u32) }
-    }
-    #[inline]
-    pub fn set_private_info_set(&mut self, val: ::core::ffi::c_uint) {
-        unsafe {
-            let val: u32 = ::core::mem::transmute(val);
-            self._bitfield_1.set(2usize, 1u8, val as u64)
-        }
-    }
-    #[inline]
-    pub unsafe fn private_info_set_raw(this: *const Self) -> ::core::ffi::c_uint {
-        unsafe {
-            ::core::mem::transmute(<__BindgenBitfieldUnit<[u8; 1usize]>>::raw_get(
-                ::core::ptr::addr_of!((*this)._bitfield_1),
-                2usize,
-                1u8,
-            ) as u32)
-        }
-    }
-    #[inline]
-    pub unsafe fn set_private_info_set_raw(this: *mut Self, val: ::core::ffi::c_uint) {
-        unsafe {
-            let val: u32 = ::core::mem::transmute(val);
-            <__BindgenBitfieldUnit<[u8; 1usize]>>::raw_set(
-                ::core::ptr::addr_of_mut!((*this)._bitfield_1),
-                2usize,
-                1u8,
-                val as u64,
-            )
-        }
-    }
-    #[inline]
-    pub fn new_bitfield_1(
-        private_state: ::core::ffi::c_uint,
-        private_info_set: ::core::ffi::c_uint,
-    ) -> __BindgenBitfieldUnit<[u8; 1usize]> {
-        let mut __bindgen_bitfield_unit: __BindgenBitfieldUnit<[u8; 1usize]> = Default::default();
-        __bindgen_bitfield_unit.set(0usize, 2u8, {
-            let private_state: u32 = unsafe { ::core::mem::transmute(private_state) };
-            private_state as u64
-        });
-        __bindgen_bitfield_unit.set(2usize, 1u8, {
-            let private_info_set: u32 = unsafe { ::core::mem::transmute(private_info_set) };
-            private_info_set as u64
-        });
-        __bindgen_bitfield_unit
-    }
-}
-#[repr(C)]
-#[derive(Default, Copy, Clone)]
-pub struct psa_tls12_ecjpake_to_pms_t {
-    pub private_data: [u8; 32usize],
-}
-pub const psa_tls12_prf_key_derivation_state_t_PSA_TLS12_PRF_STATE_INIT:
-    psa_tls12_prf_key_derivation_state_t = 0;
-pub const psa_tls12_prf_key_derivation_state_t_PSA_TLS12_PRF_STATE_SEED_SET:
-    psa_tls12_prf_key_derivation_state_t = 1;
-pub const psa_tls12_prf_key_derivation_state_t_PSA_TLS12_PRF_STATE_OTHER_KEY_SET:
-    psa_tls12_prf_key_derivation_state_t = 2;
-pub const psa_tls12_prf_key_derivation_state_t_PSA_TLS12_PRF_STATE_KEY_SET:
-    psa_tls12_prf_key_derivation_state_t = 3;
-pub const psa_tls12_prf_key_derivation_state_t_PSA_TLS12_PRF_STATE_LABEL_SET:
-    psa_tls12_prf_key_derivation_state_t = 4;
-pub const psa_tls12_prf_key_derivation_state_t_PSA_TLS12_PRF_STATE_OUTPUT:
-    psa_tls12_prf_key_derivation_state_t = 5;
-pub type psa_tls12_prf_key_derivation_state_t = ::core::ffi::c_uint;
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct psa_tls12_prf_key_derivation_s {
-    pub private_left_in_block: u8,
-    pub private_block_number: u8,
-    pub private_state: psa_tls12_prf_key_derivation_state_t,
-    pub private_secret: *mut u8,
-    pub private_secret_length: usize,
-    pub private_seed: *mut u8,
-    pub private_seed_length: usize,
-    pub private_label: *mut u8,
-    pub private_label_length: usize,
-    pub private_other_secret: *mut u8,
-    pub private_other_secret_length: usize,
-    pub private_Ai: [u8; 64usize],
-    pub private_output_block: [u8; 64usize],
-}
-impl Default for psa_tls12_prf_key_derivation_s {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-pub type psa_tls12_prf_key_derivation_t = psa_tls12_prf_key_derivation_s;
-#[repr(C)]
-#[repr(align(16))]
-#[derive(Copy, Clone)]
-pub struct psa_key_derivation_s {
-    pub private_alg: psa_algorithm_t,
-    pub _bitfield_align_1: [u8; 0],
-    pub _bitfield_1: __BindgenBitfieldUnit<[u8; 1usize]>,
-    pub private_capacity: usize,
-    pub __bindgen_padding_0: [u64; 0usize],
-    pub private_ctx: psa_key_derivation_s__bindgen_ty_1,
-}
-#[repr(C)]
-#[repr(align(16))]
-#[derive(Copy, Clone)]
-pub union psa_key_derivation_s__bindgen_ty_1 {
-    pub private_dummy: u8,
-    pub private_hkdf: psa_hkdf_key_derivation_t,
-    pub private_tls12_prf: psa_tls12_prf_key_derivation_t,
-    pub private_tls12_ecjpake_to_pms: psa_tls12_ecjpake_to_pms_t,
-}
-impl Default for psa_key_derivation_s__bindgen_ty_1 {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-impl Default for psa_key_derivation_s {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-impl psa_key_derivation_s {
-    #[inline]
-    pub fn private_can_output_key(&self) -> ::core::ffi::c_uint {
-        unsafe { ::core::mem::transmute(self._bitfield_1.get(0usize, 1u8) as u32) }
-    }
-    #[inline]
-    pub fn set_private_can_output_key(&mut self, val: ::core::ffi::c_uint) {
-        unsafe {
-            let val: u32 = ::core::mem::transmute(val);
-            self._bitfield_1.set(0usize, 1u8, val as u64)
-        }
-    }
-    #[inline]
-    pub unsafe fn private_can_output_key_raw(this: *const Self) -> ::core::ffi::c_uint {
-        unsafe {
-            ::core::mem::transmute(<__BindgenBitfieldUnit<[u8; 1usize]>>::raw_get(
-                ::core::ptr::addr_of!((*this)._bitfield_1),
-                0usize,
-                1u8,
-            ) as u32)
-        }
-    }
-    #[inline]
-    pub unsafe fn set_private_can_output_key_raw(this: *mut Self, val: ::core::ffi::c_uint) {
-        unsafe {
-            let val: u32 = ::core::mem::transmute(val);
-            <__BindgenBitfieldUnit<[u8; 1usize]>>::raw_set(
-                ::core::ptr::addr_of_mut!((*this)._bitfield_1),
-                0usize,
-                1u8,
-                val as u64,
-            )
-        }
-    }
-    #[inline]
-    pub fn new_bitfield_1(
-        private_can_output_key: ::core::ffi::c_uint,
-    ) -> __BindgenBitfieldUnit<[u8; 1usize]> {
-        let mut __bindgen_bitfield_unit: __BindgenBitfieldUnit<[u8; 1usize]> = Default::default();
-        __bindgen_bitfield_unit.set(0usize, 1u8, {
-            let private_can_output_key: u32 =
-                unsafe { ::core::mem::transmute(private_can_output_key) };
-            private_can_output_key as u64
-        });
-        __bindgen_bitfield_unit
-    }
-}
-#[repr(C)]
-#[derive(Default, Copy, Clone)]
-pub struct psa_key_policy_s {
-    pub private_usage: psa_key_usage_t,
-    pub private_alg: psa_algorithm_t,
-    pub private_alg2: psa_algorithm_t,
-}
-pub type psa_key_policy_t = psa_key_policy_s;
-pub type psa_key_bits_t = u16;
-/// A mask of flags that can be stored in key attributes.
-///
-/// This type is also used internally to store flags in slots. Internal
-/// flags are defined in library/psa_crypto_core.h. Internal flags may have
-/// the same value as external flags if they are properly handled during
-/// key creation and in psa_get_key_attributes.
-pub type psa_key_attributes_flag_t = u16;
-#[repr(C)]
-#[derive(Default, Copy, Clone)]
-pub struct psa_core_key_attributes_t {
-    pub private_type: psa_key_type_t,
-    pub private_bits: psa_key_bits_t,
-    pub private_lifetime: psa_key_lifetime_t,
-    pub private_id: mbedtls_svc_key_id_t,
-    pub private_policy: psa_key_policy_t,
-    pub private_flags: psa_key_attributes_flag_t,
-}
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct psa_key_attributes_s {
-    pub private_core: psa_core_key_attributes_t,
-    pub private_domain_parameters: *mut ::core::ffi::c_void,
-    pub private_domain_parameters_size: usize,
-}
-impl Default for psa_key_attributes_s {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-unsafe extern "C" {
-    /// \brief Set domain parameters for a key.
-    ///
-    /// Some key types require additional domain parameters in addition to
-    /// the key type identifier and the key size. Use this function instead
-    /// of psa_set_key_type() when you need to specify domain parameters.
-    ///
-    /// The format for the required domain parameters varies based on the key type.
-    ///
-    /// - For RSA keys (#PSA_KEY_TYPE_RSA_PUBLIC_KEY or #PSA_KEY_TYPE_RSA_KEY_PAIR),
-    ///   the domain parameter data consists of the public exponent,
-    ///   represented as a big-endian integer with no leading zeros.
-    ///   This information is used when generating an RSA key pair.
-    ///   When importing a key, the public exponent is read from the imported
-    ///   key data and the exponent recorded in the attribute structure is ignored.
-    ///   As an exception, the public exponent 65537 is represented by an empty
-    ///   byte string.
-    /// - For DSA keys (#PSA_KEY_TYPE_DSA_PUBLIC_KEY or #PSA_KEY_TYPE_DSA_KEY_PAIR),
-    ///   the `Dss-Params` format as defined by RFC 3279 &sect;2.3.2.
-    ///   ```
-    ///   Dss-Params ::= SEQUENCE  {
-    ///      p       INTEGER,
-    ///      q       INTEGER,
-    ///      g       INTEGER
-    ///   }
-    ///   ```
-    /// - For Diffie-Hellman key exchange keys
-    ///   (#PSA_KEY_TYPE_DH_PUBLIC_KEY(#PSA_DH_FAMILY_CUSTOM) or
-    ///   #PSA_KEY_TYPE_DH_KEY_PAIR(#PSA_DH_FAMILY_CUSTOM)), the
-    ///   `DomainParameters` format as defined by RFC 3279 &sect;2.3.3.
-    ///   ```
-    ///   DomainParameters ::= SEQUENCE {
-    ///      p               INTEGER,                    -- odd prime, p=jq +1
-    ///      g               INTEGER,                    -- generator, g
-    ///      q               INTEGER,                    -- factor of p-1
-    ///      j               INTEGER OPTIONAL,           -- subgroup factor
-    ///      validationParams ValidationParams OPTIONAL
-    ///   }
-    ///   ValidationParams ::= SEQUENCE {
-    ///      seed            BIT STRING,
-    ///      pgenCounter     INTEGER
-    ///   }
-    ///   ```
-    ///
-    /// \note This function may allocate memory or other resources.
-    ///       Once you have called this function on an attribute structure,
-    ///       you must call psa_reset_key_attributes() to free these resources.
-    ///
-    /// \note This is an experimental extension to the interface. It may change
-    ///       in future versions of the library.
-    ///
-    /// \param[in,out] attributes    Attribute structure where the specified domain
-    ///                              parameters will be stored.
-    ///                              If this function fails, the content of
-    ///                              \p attributes is not modified.
-    /// \param type                  Key type (a \c PSA_KEY_TYPE_XXX value).
-    /// \param[in] data              Buffer containing the key domain parameters.
-    ///                              The content of this buffer is interpreted
-    ///                              according to \p type as described above.
-    /// \param data_length           Size of the \p data buffer in bytes.
-    ///
-    /// \retval #PSA_SUCCESS \emptydescription
-    /// \retval #PSA_ERROR_INVALID_ARGUMENT \emptydescription
-    /// \retval #PSA_ERROR_NOT_SUPPORTED \emptydescription
-    /// \retval #PSA_ERROR_INSUFFICIENT_MEMORY \emptydescription
-    pub fn psa_set_key_domain_parameters(
-        attributes: *mut psa_key_attributes_t,
-        type_: psa_key_type_t,
-        data: *const u8,
-        data_length: usize,
-    ) -> psa_status_t;
-}
-/// \brief The context for PSA interruptible hash signing.
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct psa_sign_hash_interruptible_operation_s {
-    /// Unique ID indicating which driver got assigned to do the
-    /// operation. Since driver contexts are driver-specific, swapping
-    /// drivers halfway through the operation is not supported.
-    /// ID values are auto-generated in psa_crypto_driver_wrappers.h
-    /// ID value zero means the context is not valid or not assigned to
-    /// any driver (i.e. none of the driver contexts are active).
-    pub private_id: ::core::ffi::c_uint,
-    pub private_ctx: psa_driver_sign_hash_interruptible_context_t,
-    pub _bitfield_align_1: [u8; 0],
-    pub _bitfield_1: __BindgenBitfieldUnit<[u8; 1usize]>,
-    pub private_num_ops: u32,
-}
-impl Default for psa_sign_hash_interruptible_operation_s {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-impl psa_sign_hash_interruptible_operation_s {
-    #[inline]
-    pub fn private_error_occurred(&self) -> ::core::ffi::c_uint {
-        unsafe { ::core::mem::transmute(self._bitfield_1.get(0usize, 1u8) as u32) }
-    }
-    #[inline]
-    pub fn set_private_error_occurred(&mut self, val: ::core::ffi::c_uint) {
-        unsafe {
-            let val: u32 = ::core::mem::transmute(val);
-            self._bitfield_1.set(0usize, 1u8, val as u64)
-        }
-    }
-    #[inline]
-    pub unsafe fn private_error_occurred_raw(this: *const Self) -> ::core::ffi::c_uint {
-        unsafe {
-            ::core::mem::transmute(<__BindgenBitfieldUnit<[u8; 1usize]>>::raw_get(
-                ::core::ptr::addr_of!((*this)._bitfield_1),
-                0usize,
-                1u8,
-            ) as u32)
-        }
-    }
-    #[inline]
-    pub unsafe fn set_private_error_occurred_raw(this: *mut Self, val: ::core::ffi::c_uint) {
-        unsafe {
-            let val: u32 = ::core::mem::transmute(val);
-            <__BindgenBitfieldUnit<[u8; 1usize]>>::raw_set(
-                ::core::ptr::addr_of_mut!((*this)._bitfield_1),
-                0usize,
-                1u8,
-                val as u64,
-            )
-        }
-    }
-    #[inline]
-    pub fn new_bitfield_1(
-        private_error_occurred: ::core::ffi::c_uint,
-    ) -> __BindgenBitfieldUnit<[u8; 1usize]> {
-        let mut __bindgen_bitfield_unit: __BindgenBitfieldUnit<[u8; 1usize]> = Default::default();
-        __bindgen_bitfield_unit.set(0usize, 1u8, {
-            let private_error_occurred: u32 =
-                unsafe { ::core::mem::transmute(private_error_occurred) };
-            private_error_occurred as u64
-        });
-        __bindgen_bitfield_unit
-    }
-}
-/// \brief The context for PSA interruptible hash verification.
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct psa_verify_hash_interruptible_operation_s {
-    /// Unique ID indicating which driver got assigned to do the
-    /// operation. Since driver contexts are driver-specific, swapping
-    /// drivers halfway through the operation is not supported.
-    /// ID values are auto-generated in psa_crypto_driver_wrappers.h
-    /// ID value zero means the context is not valid or not assigned to
-    /// any driver (i.e. none of the driver contexts are active).
-    pub private_id: ::core::ffi::c_uint,
-    pub private_ctx: psa_driver_verify_hash_interruptible_context_t,
-    pub _bitfield_align_1: [u8; 0],
-    pub _bitfield_1: __BindgenBitfieldUnit<[u8; 1usize]>,
-    pub private_num_ops: u32,
-}
-impl Default for psa_verify_hash_interruptible_operation_s {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-impl psa_verify_hash_interruptible_operation_s {
-    #[inline]
-    pub fn private_error_occurred(&self) -> ::core::ffi::c_uint {
-        unsafe { ::core::mem::transmute(self._bitfield_1.get(0usize, 1u8) as u32) }
-    }
-    #[inline]
-    pub fn set_private_error_occurred(&mut self, val: ::core::ffi::c_uint) {
-        unsafe {
-            let val: u32 = ::core::mem::transmute(val);
-            self._bitfield_1.set(0usize, 1u8, val as u64)
-        }
-    }
-    #[inline]
-    pub unsafe fn private_error_occurred_raw(this: *const Self) -> ::core::ffi::c_uint {
-        unsafe {
-            ::core::mem::transmute(<__BindgenBitfieldUnit<[u8; 1usize]>>::raw_get(
-                ::core::ptr::addr_of!((*this)._bitfield_1),
-                0usize,
-                1u8,
-            ) as u32)
-        }
-    }
-    #[inline]
-    pub unsafe fn set_private_error_occurred_raw(this: *mut Self, val: ::core::ffi::c_uint) {
-        unsafe {
-            let val: u32 = ::core::mem::transmute(val);
-            <__BindgenBitfieldUnit<[u8; 1usize]>>::raw_set(
-                ::core::ptr::addr_of_mut!((*this)._bitfield_1),
-                0usize,
-                1u8,
-                val as u64,
-            )
-        }
-    }
-    #[inline]
-    pub fn new_bitfield_1(
-        private_error_occurred: ::core::ffi::c_uint,
-    ) -> __BindgenBitfieldUnit<[u8; 1usize]> {
-        let mut __bindgen_bitfield_unit: __BindgenBitfieldUnit<[u8; 1usize]> = Default::default();
-        __bindgen_bitfield_unit.set(0usize, 1u8, {
-            let private_error_occurred: u32 =
-                unsafe { ::core::mem::transmute(private_error_occurred) };
-            private_error_occurred as u64
-        });
-        __bindgen_bitfield_unit
-    }
-}
 pub type psa_key_handle_t = mbedtls_svc_key_id_t;
 unsafe extern "C" {
     /// Open a handle to an existing persistent key.
@@ -17639,6 +17858,8 @@ unsafe extern "C" {
     ///
     /// This function clears all data associated with the PSA layer,
     /// including the whole key store.
+    /// This function is not thread safe, it wipes every key slot regardless of
+    /// state and reader count. It should only be called when no slot is in use.
     ///
     /// This is an Mbed TLS extension.
     pub fn mbedtls_psa_crypto_free();
@@ -17647,7 +17868,7 @@ unsafe extern "C" {
 /// resource consumption related to the PSA keystore.
 ///
 /// \note The content of this structure is not part of the stable API and ABI
-///       of Mbed Crypto and may change arbitrarily from version to version.
+///       of Mbed TLS and may change arbitrarily from version to version.
 #[repr(C)]
 #[derive(Default, Copy, Clone)]
 pub struct mbedtls_psa_stats_s {
@@ -17677,13 +17898,13 @@ pub struct mbedtls_psa_stats_s {
 /// resource consumption related to the PSA keystore.
 ///
 /// \note The content of this structure is not part of the stable API and ABI
-///       of Mbed Crypto and may change arbitrarily from version to version.
+///       of Mbed TLS and may change arbitrarily from version to version.
 pub type mbedtls_psa_stats_t = mbedtls_psa_stats_s;
 unsafe extern "C" {
     /// \brief Get statistics about
     /// resource consumption related to the PSA keystore.
     ///
-    /// \note When Mbed Crypto is built as part of a service, with isolation
+    /// \note When Mbed TLS is built as part of a service, with isolation
     ///       between the application and the keystore, the service may or
     ///       may not expose this function.
     pub fn mbedtls_psa_get_stats(stats: *mut mbedtls_psa_stats_t);
@@ -17759,60 +17980,6 @@ unsafe extern "C" {
     pub fn mbedtls_psa_inject_entropy(seed: *const u8, seed_size: usize) -> psa_status_t;
 }
 unsafe extern "C" {
-    /// \brief Get domain parameters for a key.
-    ///
-    /// Get the domain parameters for a key with this function, if any. The format
-    /// of the domain parameters written to \p data is specified in the
-    /// documentation for psa_set_key_domain_parameters().
-    ///
-    /// \note This is an experimental extension to the interface. It may change
-    ///       in future versions of the library.
-    ///
-    /// \param[in] attributes        The key attribute structure to query.
-    /// \param[out] data             On success, the key domain parameters.
-    /// \param data_size             Size of the \p data buffer in bytes.
-    ///                              The buffer is guaranteed to be large
-    ///                              enough if its size in bytes is at least
-    ///                              the value given by
-    ///                              PSA_KEY_DOMAIN_PARAMETERS_SIZE().
-    /// \param[out] data_length      On success, the number of bytes
-    ///                              that make up the key domain parameters data.
-    ///
-    /// \retval #PSA_SUCCESS \emptydescription
-    /// \retval #PSA_ERROR_BUFFER_TOO_SMALL \emptydescription
-    pub fn psa_get_key_domain_parameters(
-        attributes: *const psa_key_attributes_t,
-        data: *mut u8,
-        data_size: usize,
-        data_length: *mut usize,
-    ) -> psa_status_t;
-}
-unsafe extern "C" {
-    /// Convert an ECC curve identifier from the PSA encoding to Mbed TLS.
-    ///
-    /// \note This function is provided solely for the convenience of
-    ///       Mbed TLS and may be removed at any time without notice.
-    ///
-    /// \param curve         A PSA elliptic curve identifier
-    ///                      (`PSA_ECC_FAMILY_xxx`).
-    /// \param bits          The bit-length of a private key on \p curve.
-    /// \param bits_is_sloppy If true, \p bits may be the bit-length rounded up
-    ///                      to the nearest multiple of 8. This allows the caller
-    ///                      to infer the exact curve from the length of a key
-    ///                      which is supplied as a byte string.
-    ///
-    /// \return              The corresponding Mbed TLS elliptic curve identifier
-    ///                      (`MBEDTLS_ECP_DP_xxx`).
-    /// \return              #MBEDTLS_ECP_DP_NONE if \c curve is not recognized.
-    /// \return              #MBEDTLS_ECP_DP_NONE if \p bits is not
-    ///                      correct for \p curve.
-    pub fn mbedtls_ecc_group_of_psa(
-        curve: psa_ecc_family_t,
-        bits: usize,
-        bits_is_sloppy: ::core::ffi::c_int,
-    ) -> mbedtls_ecp_group_id;
-}
-unsafe extern "C" {
     /// External random generator function, implemented by the platform.
     ///
     /// When the compile-time option #MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG is enabled,
@@ -17862,6 +18029,39 @@ unsafe extern "C" {
 ///
 /// Values of this type are used to identify built-in keys.
 pub type psa_drv_slot_number_t = u64;
+unsafe extern "C" {
+    /// Check if PSA is capable of handling the specified hash algorithm.
+    ///
+    /// This means that PSA core was built with the corresponding PSA_WANT_ALG_xxx
+    /// set and that psa_crypto_init has already been called.
+    ///
+    /// \note When using the built-in version of the PSA core (i.e.
+    ///       #MBEDTLS_PSA_CRYPTO_C is set), for now, this function only checks
+    ///       the state of the driver subsystem, not the algorithm.
+    ///       This might be improved in the future.
+    ///
+    /// \param hash_alg  The hash algorithm.
+    ///
+    /// \return 1 if the PSA can handle \p hash_alg, 0 otherwise.
+    pub fn psa_can_do_hash(hash_alg: psa_algorithm_t) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// Tell if PSA is ready for this cipher.
+    ///
+    /// \note When using the built-in version of the PSA core (i.e.
+    ///       #MBEDTLS_PSA_CRYPTO_C is set), for now, this function only checks
+    ///       the state of the driver subsystem, not the key type and algorithm.
+    ///       This might be improved in the future.
+    ///
+    /// \param key_type    The key type.
+    /// \param cipher_alg  The cipher algorithm.
+    ///
+    /// \return 1 if the PSA can handle \p cipher_alg, 0 otherwise.
+    pub fn psa_can_do_cipher(
+        key_type: psa_key_type_t,
+        cipher_alg: psa_algorithm_t,
+    ) -> ::core::ffi::c_int;
+}
 /// \brief Encoding of the application role of PAKE
 ///
 /// Encodes the application's role in the algorithm is being executed. For more
@@ -17891,6 +18091,135 @@ pub type psa_pake_family_t = u8;
 ///
 /// For more information see the documentation of the #PSA_PAKE_PRIMITIVE macro.
 pub type psa_pake_primitive_t = u32;
+#[repr(C)]
+#[derive(Default, Copy, Clone)]
+pub struct psa_pake_cipher_suite_s {
+    pub algorithm: psa_algorithm_t,
+    pub type_: psa_pake_primitive_type_t,
+    pub family: psa_pake_family_t,
+    pub bits: u16,
+    pub hash: psa_algorithm_t,
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct psa_crypto_driver_pake_inputs_s {
+    pub private_password: *mut u8,
+    pub private_password_len: usize,
+    pub private_user: *mut u8,
+    pub private_user_len: usize,
+    pub private_peer: *mut u8,
+    pub private_peer_len: usize,
+    pub private_attributes: psa_key_attributes_t,
+    pub private_cipher_suite: psa_pake_cipher_suite_s,
+}
+impl Default for psa_crypto_driver_pake_inputs_s {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub const psa_crypto_driver_pake_step_PSA_JPAKE_STEP_INVALID: psa_crypto_driver_pake_step = 0;
+pub const psa_crypto_driver_pake_step_PSA_JPAKE_X1_STEP_KEY_SHARE: psa_crypto_driver_pake_step = 1;
+pub const psa_crypto_driver_pake_step_PSA_JPAKE_X1_STEP_ZK_PUBLIC: psa_crypto_driver_pake_step = 2;
+pub const psa_crypto_driver_pake_step_PSA_JPAKE_X1_STEP_ZK_PROOF: psa_crypto_driver_pake_step = 3;
+pub const psa_crypto_driver_pake_step_PSA_JPAKE_X2_STEP_KEY_SHARE: psa_crypto_driver_pake_step = 4;
+pub const psa_crypto_driver_pake_step_PSA_JPAKE_X2_STEP_ZK_PUBLIC: psa_crypto_driver_pake_step = 5;
+pub const psa_crypto_driver_pake_step_PSA_JPAKE_X2_STEP_ZK_PROOF: psa_crypto_driver_pake_step = 6;
+pub const psa_crypto_driver_pake_step_PSA_JPAKE_X2S_STEP_KEY_SHARE: psa_crypto_driver_pake_step = 7;
+pub const psa_crypto_driver_pake_step_PSA_JPAKE_X2S_STEP_ZK_PUBLIC: psa_crypto_driver_pake_step = 8;
+pub const psa_crypto_driver_pake_step_PSA_JPAKE_X2S_STEP_ZK_PROOF: psa_crypto_driver_pake_step = 9;
+pub const psa_crypto_driver_pake_step_PSA_JPAKE_X4S_STEP_KEY_SHARE: psa_crypto_driver_pake_step =
+    10;
+pub const psa_crypto_driver_pake_step_PSA_JPAKE_X4S_STEP_ZK_PUBLIC: psa_crypto_driver_pake_step =
+    11;
+pub const psa_crypto_driver_pake_step_PSA_JPAKE_X4S_STEP_ZK_PROOF: psa_crypto_driver_pake_step = 12;
+pub type psa_crypto_driver_pake_step = ::core::ffi::c_uint;
+pub use self::psa_crypto_driver_pake_step as psa_crypto_driver_pake_step_t;
+pub const psa_jpake_round_PSA_JPAKE_FIRST: psa_jpake_round = 0;
+pub const psa_jpake_round_PSA_JPAKE_SECOND: psa_jpake_round = 1;
+pub const psa_jpake_round_PSA_JPAKE_FINISHED: psa_jpake_round = 2;
+pub type psa_jpake_round = ::core::ffi::c_uint;
+pub use self::psa_jpake_round as psa_jpake_round_t;
+pub const psa_jpake_io_mode_PSA_JPAKE_INPUT: psa_jpake_io_mode = 0;
+pub const psa_jpake_io_mode_PSA_JPAKE_OUTPUT: psa_jpake_io_mode = 1;
+pub type psa_jpake_io_mode = ::core::ffi::c_uint;
+pub use self::psa_jpake_io_mode as psa_jpake_io_mode_t;
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct psa_jpake_computation_stage_s {
+    pub private_round: psa_jpake_round_t,
+    pub private_io_mode: psa_jpake_io_mode_t,
+    pub private_inputs: u8,
+    pub private_outputs: u8,
+    pub private_step: psa_pake_step_t,
+}
+impl Default for psa_jpake_computation_stage_s {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct psa_pake_operation_s {
+    /// Unique ID indicating which driver got assigned to do the
+    /// operation. Since driver contexts are driver-specific, swapping
+    /// drivers halfway through the operation is not supported.
+    /// ID values are auto-generated in psa_crypto_driver_wrappers.h
+    /// ID value zero means the context is not valid or not assigned to
+    /// any driver (i.e. none of the driver contexts are active).
+    pub private_id: ::core::ffi::c_uint,
+    pub private_alg: psa_algorithm_t,
+    pub private_primitive: psa_pake_primitive_t,
+    pub private_stage: u8,
+    pub private_computation_stage: psa_pake_operation_s__bindgen_ty_1,
+    pub private_data: psa_pake_operation_s__bindgen_ty_2,
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub union psa_pake_operation_s__bindgen_ty_1 {
+    pub private_dummy: u8,
+    pub private_jpake: psa_jpake_computation_stage_s,
+}
+impl Default for psa_pake_operation_s__bindgen_ty_1 {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub union psa_pake_operation_s__bindgen_ty_2 {
+    pub private_ctx: psa_driver_pake_context_t,
+    pub private_inputs: psa_crypto_driver_pake_inputs_s,
+}
+impl Default for psa_pake_operation_s__bindgen_ty_2 {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+impl Default for psa_pake_operation_s {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
 /// The type of the data structure for PAKE cipher suites.
 ///
 /// This is an implementation-defined \c struct. Applications should not
@@ -17962,21 +18291,6 @@ unsafe extern "C" {
         buffer: *mut u8,
         buffer_size: usize,
         buffer_length: *mut usize,
-    ) -> psa_status_t;
-}
-unsafe extern "C" {
-    /// Get the role from given inputs.
-    ///
-    /// \param[in]  inputs           Operation inputs.
-    /// \param[out] role             Return buffer for role.
-    ///
-    /// \retval #PSA_SUCCESS
-    ///         Success.
-    /// \retval #PSA_ERROR_BAD_STATE
-    ///         Role hasn't been set yet.
-    pub fn psa_crypto_driver_pake_get_role(
-        inputs: *const psa_crypto_driver_pake_inputs_t,
-        role: *mut psa_pake_role_t,
     ) -> psa_status_t;
 }
 unsafe extern "C" {
@@ -18203,6 +18517,10 @@ unsafe extern "C" {
     /// values of type ::psa_algorithm_t such that #PSA_ALG_IS_PAKE(\c alg) is true)
     /// for more information.
     ///
+    /// \note When using the built-in implementation of #PSA_ALG_JPAKE, the user ID
+    ///       must be `"client"` (6-byte string) or `"server"` (6-byte string).
+    ///       Third-party drivers may or may not have this limitation.
+    ///
     /// \param[in,out] operation     The operation object to set the user ID for. It
     ///                              must have been set up by psa_pake_setup() and
     ///                              not yet in use (neither psa_pake_output() nor
@@ -18211,7 +18529,6 @@ unsafe extern "C" {
     ///                              been set (psa_pake_set_user() hasn't been
     ///                              called yet).
     /// \param[in] user_id           The user ID to authenticate with.
-    ///                              (temporary limitation: "client" or "server" only)
     /// \param user_id_len           Size of the \p user_id buffer in bytes.
     ///
     /// \retval #PSA_SUCCESS
@@ -18247,6 +18564,10 @@ unsafe extern "C" {
     /// values of type ::psa_algorithm_t such that #PSA_ALG_IS_PAKE(\c alg) is true)
     /// for more information.
     ///
+    /// \note When using the built-in implementation of #PSA_ALG_JPAKE, the peer ID
+    ///       must be `"client"` (6-byte string) or `"server"` (6-byte string).
+    ///       Third-party drivers may or may not have this limitation.
+    ///
     /// \param[in,out] operation     The operation object to set the peer ID for. It
     ///                              must have been set up by psa_pake_setup() and
     ///                              not yet in use (neither psa_pake_output() nor
@@ -18255,13 +18576,12 @@ unsafe extern "C" {
     ///                              been set (psa_pake_set_peer() hasn't been
     ///                              called yet).
     /// \param[in] peer_id           The peer's ID to authenticate.
-    ///                              (temporary limitation: "client" or "server" only)
     /// \param peer_id_len           Size of the \p peer_id buffer in bytes.
     ///
     /// \retval #PSA_SUCCESS
     ///         Success.
     /// \retval #PSA_ERROR_INVALID_ARGUMENT
-    ///         \p user_id is not valid for the \p operation's algorithm and cipher
+    ///         \p peer_id is not valid for the \p operation's algorithm and cipher
     ///         suite.
     /// \retval #PSA_ERROR_NOT_SUPPORTED
     ///         The algorithm doesn't associate a second identity with the session.
@@ -18347,8 +18667,8 @@ unsafe extern "C" {
     ///                             \c PSA_PAKE_STEP_XXX constants for more
     ///                             information.
     /// \param output_size          Size of the \p output buffer in bytes. This must
-    ///                             be at least #PSA_PAKE_OUTPUT_SIZE(\p alg, \p
-    ///                             primitive, \p step) where \p alg and
+    ///                             be at least #PSA_PAKE_OUTPUT_SIZE(\c alg, \c
+    ///                             primitive, \p output_step) where \c alg and
     ///                             \p primitive are the PAKE algorithm and primitive
     ///                             in the operation's cipher suite, and \p step is
     ///                             the output step.
@@ -18415,9 +18735,9 @@ unsafe extern "C" {
     /// \retval #PSA_ERROR_INVALID_SIGNATURE
     ///         The verification fails for a #PSA_PAKE_STEP_ZK_PROOF input step.
     /// \retval #PSA_ERROR_INVALID_ARGUMENT
-    ///         \p is not compatible with the \p operation’s algorithm, or the
-    ///         \p input is not valid for the \p operation's algorithm, cipher suite
-    ///         or \p step.
+    ///         \p input_length is not compatible with the \p operation’s algorithm,
+    ///         or the \p input is not valid for the \p operation's algorithm,
+    ///         cipher suite or \p step.
     /// \retval #PSA_ERROR_NOT_SUPPORTED
     ///         \p step p is not supported with the \p operation's algorithm, or the
     ///         \p input is not supported for the \p operation's algorithm, cipher
@@ -18468,7 +18788,7 @@ unsafe extern "C" {
     ///
     /// When this function returns successfully, \p operation becomes inactive.
     /// If this function returns an error status, both \p operation
-    /// and \p key_derivation operations enter an error state and must be aborted by
+    /// and \c key_derivation operations enter an error state and must be aborted by
     /// calling psa_pake_abort() and psa_key_derivation_abort() respectively.
     ///
     /// \param[in,out] operation    Active PAKE operation.
@@ -18531,29 +18851,38 @@ unsafe extern "C" {
     ///         results in this error code.
     pub fn psa_pake_abort(operation: *mut psa_pake_operation_t) -> psa_status_t;
 }
-#[repr(C)]
-#[derive(Default, Copy, Clone)]
-pub struct psa_pake_cipher_suite_s {
-    pub algorithm: psa_algorithm_t,
-    pub type_: psa_pake_primitive_type_t,
-    pub family: psa_pake_family_t,
-    pub bits: u16,
-    pub hash: psa_algorithm_t,
-}
+pub const mbedtls_pk_type_t_MBEDTLS_PK_NONE: mbedtls_pk_type_t = 0;
+pub const mbedtls_pk_type_t_MBEDTLS_PK_RSA: mbedtls_pk_type_t = 1;
+pub const mbedtls_pk_type_t_MBEDTLS_PK_ECKEY: mbedtls_pk_type_t = 2;
+pub const mbedtls_pk_type_t_MBEDTLS_PK_ECKEY_DH: mbedtls_pk_type_t = 3;
+pub const mbedtls_pk_type_t_MBEDTLS_PK_ECDSA: mbedtls_pk_type_t = 4;
+pub const mbedtls_pk_type_t_MBEDTLS_PK_RSA_ALT: mbedtls_pk_type_t = 5;
+pub const mbedtls_pk_type_t_MBEDTLS_PK_RSASSA_PSS: mbedtls_pk_type_t = 6;
+pub const mbedtls_pk_type_t_MBEDTLS_PK_OPAQUE: mbedtls_pk_type_t = 7;
+/// \brief          Public key types
+pub type mbedtls_pk_type_t = ::core::ffi::c_uint;
+/// \brief           Options for RSASSA-PSS signature verification.
+///                  See \c mbedtls_rsa_rsassa_pss_verify_ext()
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub struct psa_crypto_driver_pake_inputs_s {
-    pub private_password: *mut u8,
-    pub private_password_len: usize,
-    pub private_role: psa_pake_role_t,
-    pub private_user: *mut u8,
-    pub private_user_len: usize,
-    pub private_peer: *mut u8,
-    pub private_peer_len: usize,
-    pub private_attributes: psa_key_attributes_t,
-    pub private_cipher_suite: psa_pake_cipher_suite_t,
+pub struct mbedtls_pk_rsassa_pss_options {
+    /// The digest to use for MGF1 in PSS.
+    ///
+    /// \note When #MBEDTLS_USE_PSA_CRYPTO is enabled and #MBEDTLS_RSA_C is
+    ///       disabled, this must be equal to the \c md_alg argument passed
+    ///       to mbedtls_pk_verify_ext(). In a future version of the library,
+    ///       this constraint may apply whenever #MBEDTLS_USE_PSA_CRYPTO is
+    ///       enabled regardless of the status of #MBEDTLS_RSA_C.
+    pub mgf1_hash_id: mbedtls_md_type_t,
+    /// The expected length of the salt, in bytes. This may be
+    /// #MBEDTLS_RSA_SALT_LEN_ANY to accept any salt length.
+    ///
+    /// \note When #MBEDTLS_USE_PSA_CRYPTO is enabled, only
+    ///       #MBEDTLS_RSA_SALT_LEN_ANY is valid. Any other value may be
+    ///       ignored (allowing any salt length).
+    pub expected_salt_len: ::core::ffi::c_int,
 }
-impl Default for psa_crypto_driver_pake_inputs_s {
+impl Default for mbedtls_pk_rsassa_pss_options {
     fn default() -> Self {
         let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
         unsafe {
@@ -18562,57 +18891,958 @@ impl Default for psa_crypto_driver_pake_inputs_s {
         }
     }
 }
-pub const psa_jpake_step_PSA_PAKE_STEP_INVALID: psa_jpake_step = 0;
-pub const psa_jpake_step_PSA_PAKE_STEP_X1_X2: psa_jpake_step = 1;
-pub const psa_jpake_step_PSA_PAKE_STEP_X2S: psa_jpake_step = 2;
-pub const psa_jpake_step_PSA_PAKE_STEP_DERIVE: psa_jpake_step = 3;
-pub type psa_jpake_step = ::core::ffi::c_uint;
-pub use self::psa_jpake_step as psa_jpake_step_t;
-pub const psa_jpake_state_PSA_PAKE_STATE_INVALID: psa_jpake_state = 0;
-pub const psa_jpake_state_PSA_PAKE_STATE_SETUP: psa_jpake_state = 1;
-pub const psa_jpake_state_PSA_PAKE_STATE_READY: psa_jpake_state = 2;
-pub const psa_jpake_state_PSA_PAKE_OUTPUT_X1_X2: psa_jpake_state = 3;
-pub const psa_jpake_state_PSA_PAKE_OUTPUT_X2S: psa_jpake_state = 4;
-pub const psa_jpake_state_PSA_PAKE_INPUT_X1_X2: psa_jpake_state = 5;
-pub const psa_jpake_state_PSA_PAKE_INPUT_X4S: psa_jpake_state = 6;
-pub type psa_jpake_state = ::core::ffi::c_uint;
-pub use self::psa_jpake_state as psa_jpake_state_t;
-pub const psa_jpake_sequence_PSA_PAKE_SEQ_INVALID: psa_jpake_sequence = 0;
-pub const psa_jpake_sequence_PSA_PAKE_X1_STEP_KEY_SHARE: psa_jpake_sequence = 1;
-pub const psa_jpake_sequence_PSA_PAKE_X1_STEP_ZK_PUBLIC: psa_jpake_sequence = 2;
-pub const psa_jpake_sequence_PSA_PAKE_X1_STEP_ZK_PROOF: psa_jpake_sequence = 3;
-pub const psa_jpake_sequence_PSA_PAKE_X2_STEP_KEY_SHARE: psa_jpake_sequence = 4;
-pub const psa_jpake_sequence_PSA_PAKE_X2_STEP_ZK_PUBLIC: psa_jpake_sequence = 5;
-pub const psa_jpake_sequence_PSA_PAKE_X2_STEP_ZK_PROOF: psa_jpake_sequence = 6;
-pub const psa_jpake_sequence_PSA_PAKE_SEQ_END: psa_jpake_sequence = 7;
-pub type psa_jpake_sequence = ::core::ffi::c_uint;
-pub use self::psa_jpake_sequence as psa_jpake_sequence_t;
-pub const psa_crypto_driver_pake_step_PSA_JPAKE_STEP_INVALID: psa_crypto_driver_pake_step = 0;
-pub const psa_crypto_driver_pake_step_PSA_JPAKE_X1_STEP_KEY_SHARE: psa_crypto_driver_pake_step = 1;
-pub const psa_crypto_driver_pake_step_PSA_JPAKE_X1_STEP_ZK_PUBLIC: psa_crypto_driver_pake_step = 2;
-pub const psa_crypto_driver_pake_step_PSA_JPAKE_X1_STEP_ZK_PROOF: psa_crypto_driver_pake_step = 3;
-pub const psa_crypto_driver_pake_step_PSA_JPAKE_X2_STEP_KEY_SHARE: psa_crypto_driver_pake_step = 4;
-pub const psa_crypto_driver_pake_step_PSA_JPAKE_X2_STEP_ZK_PUBLIC: psa_crypto_driver_pake_step = 5;
-pub const psa_crypto_driver_pake_step_PSA_JPAKE_X2_STEP_ZK_PROOF: psa_crypto_driver_pake_step = 6;
-pub const psa_crypto_driver_pake_step_PSA_JPAKE_X2S_STEP_KEY_SHARE: psa_crypto_driver_pake_step = 7;
-pub const psa_crypto_driver_pake_step_PSA_JPAKE_X2S_STEP_ZK_PUBLIC: psa_crypto_driver_pake_step = 8;
-pub const psa_crypto_driver_pake_step_PSA_JPAKE_X2S_STEP_ZK_PROOF: psa_crypto_driver_pake_step = 9;
-pub const psa_crypto_driver_pake_step_PSA_JPAKE_X4S_STEP_KEY_SHARE: psa_crypto_driver_pake_step =
+pub const mbedtls_pk_debug_type_MBEDTLS_PK_DEBUG_NONE: mbedtls_pk_debug_type = 0;
+pub const mbedtls_pk_debug_type_MBEDTLS_PK_DEBUG_MPI: mbedtls_pk_debug_type = 1;
+pub const mbedtls_pk_debug_type_MBEDTLS_PK_DEBUG_ECP: mbedtls_pk_debug_type = 2;
+pub const mbedtls_pk_debug_type_MBEDTLS_PK_DEBUG_PSA_EC: mbedtls_pk_debug_type = 3;
+/// \brief           Types for interfacing with the debug module
+pub type mbedtls_pk_debug_type = ::core::ffi::c_uint;
+/// \brief           Item to send to the debug module
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct mbedtls_pk_debug_item {
+    pub private_type: mbedtls_pk_debug_type,
+    pub private_name: *const ::core::ffi::c_char,
+    pub private_value: *mut ::core::ffi::c_void,
+}
+impl Default for mbedtls_pk_debug_item {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct mbedtls_pk_info_t {
+    _unused: [u8; 0],
+}
+/// \brief           Public key container
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct mbedtls_pk_context {
+    ///< Public key information
+    pub private_pk_info: *const mbedtls_pk_info_t,
+    ///< Underlying public key context
+    pub private_pk_ctx: *mut ::core::ffi::c_void,
+}
+impl Default for mbedtls_pk_context {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub type mbedtls_pk_restart_ctx = ::core::ffi::c_void;
+/// \brief           Types for RSA-alt abstraction
+pub type mbedtls_pk_rsa_alt_decrypt_func = ::core::option::Option<
+    unsafe extern "C" fn(
+        ctx: *mut ::core::ffi::c_void,
+        olen: *mut usize,
+        input: *const ::core::ffi::c_uchar,
+        output: *mut ::core::ffi::c_uchar,
+        output_max_len: usize,
+    ) -> ::core::ffi::c_int,
+>;
+pub type mbedtls_pk_rsa_alt_sign_func = ::core::option::Option<
+    unsafe extern "C" fn(
+        ctx: *mut ::core::ffi::c_void,
+        f_rng: mbedtls_f_rng_t,
+        p_rng: *mut ::core::ffi::c_void,
+        md_alg: mbedtls_md_type_t,
+        hashlen: ::core::ffi::c_uint,
+        hash: *const ::core::ffi::c_uchar,
+        sig: *mut ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int,
+>;
+pub type mbedtls_pk_rsa_alt_key_len_func =
+    ::core::option::Option<unsafe extern "C" fn(ctx: *mut ::core::ffi::c_void) -> usize>;
+unsafe extern "C" {
+    /// \brief           Return information associated with the given PK type
+    ///
+    /// \param pk_type   PK type to search for.
+    ///
+    /// \return          The PK info associated with the type or NULL if not found.
+    pub fn mbedtls_pk_info_from_type(pk_type: mbedtls_pk_type_t) -> *const mbedtls_pk_info_t;
+}
+unsafe extern "C" {
+    /// \brief           Initialize a #mbedtls_pk_context (as NONE).
+    ///
+    /// \param ctx       The context to initialize.
+    ///                  This must not be \c NULL.
+    pub fn mbedtls_pk_init(ctx: *mut mbedtls_pk_context);
+}
+unsafe extern "C" {
+    /// \brief           Free the components of a #mbedtls_pk_context.
+    ///
+    /// \param ctx       The context to clear. It must have been initialized.
+    ///                  If this is \c NULL, this function does nothing.
+    ///
+    /// \note            For contexts that have been set up with
+    ///                  mbedtls_pk_setup_opaque(), this does not free the underlying
+    ///                  PSA key and you still need to call psa_destroy_key()
+    ///                  independently if you want to destroy that key.
+    pub fn mbedtls_pk_free(ctx: *mut mbedtls_pk_context);
+}
+unsafe extern "C" {
+    /// \brief           Initialize a PK context with the information given
+    ///                  and allocates the type-specific PK subcontext.
+    ///
+    /// \param ctx       Context to initialize. It must not have been set
+    ///                  up yet (type #MBEDTLS_PK_NONE).
+    /// \param info      Information to use
+    ///
+    /// \return          0 on success,
+    ///                  MBEDTLS_ERR_PK_BAD_INPUT_DATA on invalid input,
+    ///                  MBEDTLS_ERR_PK_ALLOC_FAILED on allocation failure.
+    ///
+    /// \note            For contexts holding an RSA-alt key, use
+    ///                  \c mbedtls_pk_setup_rsa_alt() instead.
+    pub fn mbedtls_pk_setup(
+        ctx: *mut mbedtls_pk_context,
+        info: *const mbedtls_pk_info_t,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           Initialize an RSA-alt context
+    ///
+    /// \param ctx       Context to initialize. It must not have been set
+    ///                  up yet (type #MBEDTLS_PK_NONE).
+    /// \param key       RSA key pointer
+    /// \param decrypt_func  Decryption function
+    /// \param sign_func     Signing function
+    /// \param key_len_func  Function returning key length in bytes
+    ///
+    /// \return          0 on success, or MBEDTLS_ERR_PK_BAD_INPUT_DATA if the
+    ///                  context wasn't already initialized as RSA_ALT.
+    ///
+    /// \note            This function replaces \c mbedtls_pk_setup() for RSA-alt.
+    pub fn mbedtls_pk_setup_rsa_alt(
+        ctx: *mut mbedtls_pk_context,
+        key: *mut ::core::ffi::c_void,
+        decrypt_func: mbedtls_pk_rsa_alt_decrypt_func,
+        sign_func: mbedtls_pk_rsa_alt_sign_func,
+        key_len_func: mbedtls_pk_rsa_alt_key_len_func,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           Get the size in bits of the underlying key
+    ///
+    /// \param ctx       The context to query. It must have been initialized.
+    ///
+    /// \return          Key size in bits, or 0 on error
+    pub fn mbedtls_pk_get_bitlen(ctx: *const mbedtls_pk_context) -> usize;
+}
+unsafe extern "C" {
+    /// \brief           Tell if a context can do the operation given by type
+    ///
+    /// \param ctx       The context to query. It must have been initialized.
+    /// \param type      The desired type.
+    ///
+    /// \return          1 if the context can do operations on the given type.
+    /// \return          0 if the context cannot do the operations on the given
+    ///                  type. This is always the case for a context that has
+    ///                  been initialized but not set up, or that has been
+    ///                  cleared with mbedtls_pk_free().
+    pub fn mbedtls_pk_can_do(
+        ctx: *const mbedtls_pk_context,
+        type_: mbedtls_pk_type_t,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           Determine valid PSA attributes that can be used to
+    ///                  import a key into PSA.
+    ///
+    /// The attributes determined by this function are suitable
+    /// for calling mbedtls_pk_import_into_psa() to create
+    /// a PSA key with the same key material.
+    ///
+    /// The typical flow of operations involving this function is
+    /// ```
+    /// psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    /// int ret = mbedtls_pk_get_psa_attributes(pk, &attributes);
+    /// if (ret != 0) ...; // error handling omitted
+    /// // Tweak attributes if desired
+    /// psa_key_id_t key_id = 0;
+    /// ret = mbedtls_pk_import_into_psa(pk, &attributes, &key_id);
+    /// if (ret != 0) ...; // error handling omitted
+    /// ```
+    ///
+    /// \note            This function does not support RSA-alt contexts
+    ///                  (set up with mbedtls_pk_setup_rsa_alt()).
+    ///
+    /// \param[in] pk    The PK context to use. It must have been set up.
+    ///                  It can either contain a key pair or just a public key.
+    /// \param usage     A single `PSA_KEY_USAGE_xxx` flag among the following:
+    ///                  - #PSA_KEY_USAGE_DECRYPT: \p pk must contain a
+    ///                    key pair. The output \p attributes will contain a
+    ///                    key pair type, and the usage policy will allow
+    ///                    #PSA_KEY_USAGE_ENCRYPT as well as
+    ///                    #PSA_KEY_USAGE_DECRYPT.
+    ///                  - #PSA_KEY_USAGE_DERIVE: \p pk must contain a
+    ///                    key pair. The output \p attributes will contain a
+    ///                    key pair type.
+    ///                  - #PSA_KEY_USAGE_ENCRYPT: The output
+    ///                    \p attributes will contain a public key type.
+    ///                  - #PSA_KEY_USAGE_SIGN_HASH: \p pk must contain a
+    ///                    key pair. The output \p attributes will contain a
+    ///                    key pair type, and the usage policy will allow
+    ///                    #PSA_KEY_USAGE_VERIFY_HASH as well as
+    ///                    #PSA_KEY_USAGE_SIGN_HASH.
+    ///                  - #PSA_KEY_USAGE_SIGN_MESSAGE: \p pk must contain a
+    ///                    key pair. The output \p attributes will contain a
+    ///                    key pair type, and the usage policy will allow
+    ///                    #PSA_KEY_USAGE_VERIFY_MESSAGE as well as
+    ///                    #PSA_KEY_USAGE_SIGN_MESSAGE.
+    ///                  - #PSA_KEY_USAGE_VERIFY_HASH: The output
+    ///                    \p attributes will contain a public key type.
+    ///                  - #PSA_KEY_USAGE_VERIFY_MESSAGE: The output
+    ///                    \p attributes will contain a public key type.
+    /// \param[out] attributes
+    ///                  On success, valid attributes to import the key into PSA.
+    ///                  - The lifetime and key identifier are unchanged. If the
+    ///                    attribute structure was initialized or reset before
+    ///                    calling this function, this will result in a volatile
+    ///                    key. Call psa_set_key_identifier() before or after this
+    ///                    function if you wish to create a persistent key. Call
+    ///                    psa_set_key_lifetime() before or after this function if
+    ///                    you wish to import the key in a secure element.
+    ///                  - The key type and bit-size are determined by the contents
+    ///                    of the PK context. If the PK context contains a key
+    ///                    pair, the key type can be either a key pair type or
+    ///                    the corresponding public key type, depending on
+    ///                    \p usage. If the PK context contains a public key,
+    ///                    the key type is a public key type.
+    ///                  - The key's policy is determined by the key type and
+    ///                    the \p usage parameter. The usage always allows
+    ///                    \p usage, exporting and copying the key, and
+    ///                    possibly other permissions as documented for the
+    ///                    \p usage parameter.
+    ///                    The permitted algorithm policy is determined as follows
+    ///                    based on the #mbedtls_pk_type_t type of \p pk,
+    ///                    the chosen \p usage and other factors:
+    ///                      - #MBEDTLS_PK_RSA whose underlying
+    ///                        #mbedtls_rsa_context has the padding mode
+    ///                        #MBEDTLS_RSA_PKCS_V15:
+    ///                        #PSA_ALG_RSA_PKCS1V15_SIGN(#PSA_ALG_ANY_HASH)
+    ///                        if \p usage is SIGN/VERIFY, and
+    ///                        #PSA_ALG_RSA_PKCS1V15_CRYPT
+    ///                        if \p usage is ENCRYPT/DECRYPT.
+    ///                      - #MBEDTLS_PK_RSA whose underlying
+    ///                        #mbedtls_rsa_context has the padding mode
+    ///                        #MBEDTLS_RSA_PKCS_V21 and the digest type
+    ///                        corresponding to the PSA algorithm \c hash:
+    ///                        #PSA_ALG_RSA_PSS_ANY_SALT(#PSA_ALG_ANY_HASH)
+    ///                        if \p usage is SIGN/VERIFY, and
+    ///                        #PSA_ALG_RSA_OAEP(\c hash)
+    ///                        if \p usage is ENCRYPT/DECRYPT.
+    ///                      - #MBEDTLS_PK_RSA_ALT: not supported.
+    ///                      - #MBEDTLS_PK_ECDSA or #MBEDTLS_PK_ECKEY
+    ///                        if \p usage is SIGN/VERIFY:
+    ///                        #PSA_ALG_DETERMINISTIC_ECDSA(#PSA_ALG_ANY_HASH)
+    ///                        if #MBEDTLS_ECDSA_DETERMINISTIC is enabled,
+    ///                        otherwise #PSA_ALG_ECDSA(#PSA_ALG_ANY_HASH).
+    ///                      - #MBEDTLS_PK_ECKEY_DH or #MBEDTLS_PK_ECKEY
+    ///                        if \p usage is DERIVE:
+    ///                        #PSA_ALG_ECDH.
+    ///                      - #MBEDTLS_PK_OPAQUE: same as the primary algorithm
+    ///                        set for the underlying PSA key, except that
+    ///                        sign/decrypt flags are removed if the type is
+    ///                        set to a public key type.
+    ///                        The underlying key must allow \p usage.
+    ///                        Note that the enrollment algorithm set with
+    ///                        psa_set_key_enrollment_algorithm() is not copied.
+    ///
+    /// \return          0 on success.
+    ///                  #MBEDTLS_ERR_PK_TYPE_MISMATCH if \p pk does not contain
+    ///                  a key of the type identified in \p attributes.
+    ///                  Another error code on other failures.
+    pub fn mbedtls_pk_get_psa_attributes(
+        pk: *const mbedtls_pk_context,
+        usage: psa_key_usage_t,
+        attributes: *mut psa_key_attributes_t,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           Import a key into the PSA key store.
+    ///
+    /// This function is equivalent to calling psa_import_key()
+    /// with the key material from \p pk.
+    ///
+    /// The typical way to use this function is:
+    /// -# Call mbedtls_pk_get_psa_attributes() to obtain
+    ///    attributes for the given key.
+    /// -# If desired, modify the attributes, for example:
+    ///     - To create a persistent key, call
+    ///       psa_set_key_identifier() and optionally
+    ///       psa_set_key_lifetime().
+    ///     - To import only the public part of a key pair:
+    ///
+    ///           psa_set_key_type(&attributes,
+    ///                            PSA_KEY_TYPE_PUBLIC_KEY_OF_KEY_PAIR(
+    ///                                psa_get_key_type(&attributes)));
+    ///     - Restrict the key usage if desired.
+    /// -# Call mbedtls_pk_import_into_psa().
+    ///
+    /// \note            This function does not support RSA-alt contexts
+    ///                  (set up with mbedtls_pk_setup_rsa_alt()).
+    ///
+    /// \param[in] pk    The PK context to use. It must have been set up.
+    ///                  It can either contain a key pair or just a public key.
+    /// \param[in] attributes
+    ///                  The attributes to use for the new key. They must be
+    ///                  compatible with \p pk. In particular, the key type
+    ///                  must match the content of \p pk.
+    ///                  If \p pk contains a key pair, the key type in
+    ///                  attributes can be either the key pair type or the
+    ///                  corresponding public key type (to import only the
+    ///                  public part).
+    /// \param[out] key_id
+    ///                  On success, the identifier of the newly created key.
+    ///                  On error, this is #MBEDTLS_SVC_KEY_ID_INIT.
+    ///
+    /// \return          0 on success.
+    ///                  #MBEDTLS_ERR_PK_TYPE_MISMATCH if \p pk does not contain
+    ///                  a key of the type identified in \p attributes.
+    ///                  Another error code on other failures.
+    pub fn mbedtls_pk_import_into_psa(
+        pk: *const mbedtls_pk_context,
+        attributes: *const psa_key_attributes_t,
+        key_id: *mut mbedtls_svc_key_id_t,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           Create a PK context starting from a key stored in PSA.
+    ///                  This key:
+    ///                  - must be exportable and
+    ///                  - must be an RSA or EC key pair or public key (FFDH is not supported in PK).
+    ///
+    ///                  The resulting PK object will be a transparent type:
+    ///                  - #MBEDTLS_PK_RSA for RSA keys or
+    ///                  - #MBEDTLS_PK_ECKEY for EC keys.
+    ///
+    ///                  Once this functions returns the PK object will be completely
+    ///                  independent from the original PSA key that it was generated
+    ///                  from.
+    ///                  Calling mbedtls_pk_sign(), mbedtls_pk_verify(),
+    ///                  mbedtls_pk_encrypt(), mbedtls_pk_decrypt() on the resulting
+    ///                  PK context will perform the corresponding algorithm for that
+    ///                  PK context type.
+    ///                  * For ECDSA, the choice of deterministic vs randomized will
+    ///                    be based on the compile-time setting #MBEDTLS_ECDSA_DETERMINISTIC.
+    ///                  * For an RSA key, the output PK context will allow both
+    ///                    encrypt/decrypt and sign/verify regardless of the original
+    ///                    key's policy.
+    ///                    The original key's policy determines the output key's padding
+    ///                    mode: PCKS1 v2.1 is set if the PSA key policy is OAEP or PSS,
+    ///                    otherwise PKCS1 v1.5 is set.
+    ///
+    /// \param key_id    The key identifier of the key stored in PSA.
+    /// \param pk        The PK context that will be filled. It must be initialized,
+    ///                  but not set up.
+    ///
+    /// \return          0 on success.
+    /// \return          #MBEDTLS_ERR_PK_BAD_INPUT_DATA in case the provided input
+    ///                  parameters are not correct.
+    pub fn mbedtls_pk_copy_from_psa(
+        key_id: mbedtls_svc_key_id_t,
+        pk: *mut mbedtls_pk_context,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           Create a PK context for the public key of a PSA key.
+    ///
+    ///                  The key must be an RSA or ECC key. It can be either a
+    ///                  public key or a key pair, and only the public key is copied.
+    ///                  The resulting PK object will be a transparent type:
+    ///                  - #MBEDTLS_PK_RSA for RSA keys or
+    ///                  - #MBEDTLS_PK_ECKEY for EC keys.
+    ///
+    ///                  Once this functions returns the PK object will be completely
+    ///                  independent from the original PSA key that it was generated
+    ///                  from.
+    ///                  Calling mbedtls_pk_verify() or
+    ///                  mbedtls_pk_encrypt() on the resulting
+    ///                  PK context will perform the corresponding algorithm for that
+    ///                  PK context type.
+    ///
+    ///                  For an RSA key, the output PK context will allow both
+    ///                  encrypt and verify regardless of the original key's policy.
+    ///                  The original key's policy determines the output key's padding
+    ///                  mode: PCKS1 v2.1 is set if the PSA key policy is OAEP or PSS,
+    ///                  otherwise PKCS1 v1.5 is set.
+    ///
+    /// \param key_id    The key identifier of the key stored in PSA.
+    /// \param pk        The PK context that will be filled. It must be initialized,
+    ///                  but not set up.
+    ///
+    /// \return          0 on success.
+    /// \return          MBEDTLS_ERR_PK_BAD_INPUT_DATA in case the provided input
+    ///                  parameters are not correct.
+    pub fn mbedtls_pk_copy_public_from_psa(
+        key_id: mbedtls_svc_key_id_t,
+        pk: *mut mbedtls_pk_context,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           Verify signature (including padding if relevant).
+    ///
+    /// \param ctx       The PK context to use. It must have been set up.
+    /// \param md_alg    Hash algorithm used.
+    ///                  This can be #MBEDTLS_MD_NONE if the signature algorithm
+    ///                  does not rely on a hash algorithm (non-deterministic
+    ///                  ECDSA, RSA PKCS#1 v1.5).
+    ///                  For PKCS#1 v1.5, if \p md_alg is #MBEDTLS_MD_NONE, then
+    ///                  \p hash is the DigestInfo structure used by RFC 8017
+    ///                  &sect;9.2 steps 3&ndash;6. If \p md_alg is a valid hash
+    ///                  algorithm then \p hash is the digest itself, and this
+    ///                  function calculates the DigestInfo encoding internally.
+    /// \param hash      Hash of the message to sign
+    /// \param hash_len  Hash length
+    /// \param sig       Signature to verify
+    /// \param sig_len   Signature length
+    ///
+    /// \note            For keys of type #MBEDTLS_PK_RSA, the signature algorithm is
+    ///                  either PKCS#1 v1.5 or PSS (accepting any salt length),
+    ///                  depending on the padding mode in the underlying RSA context.
+    ///                  For a pk object constructed by parsing, this is PKCS#1 v1.5
+    ///                  by default. Use mbedtls_pk_verify_ext() to explicitly select
+    ///                  a different algorithm.
+    ///
+    /// \return          0 on success (signature is valid),
+    ///                  #MBEDTLS_ERR_PK_SIG_LEN_MISMATCH if there is a valid
+    ///                  signature in \p sig but its length is less than \p sig_len,
+    ///                  or a specific error code.
+    pub fn mbedtls_pk_verify(
+        ctx: *mut mbedtls_pk_context,
+        md_alg: mbedtls_md_type_t,
+        hash: *const ::core::ffi::c_uchar,
+        hash_len: usize,
+        sig: *const ::core::ffi::c_uchar,
+        sig_len: usize,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           Restartable version of \c mbedtls_pk_verify()
+    ///
+    /// \note            Performs the same job as \c mbedtls_pk_verify(), but can
+    ///                  return early and restart according to the limit set with
+    ///                  \c mbedtls_ecp_set_max_ops() to reduce blocking for ECC
+    ///                  operations. For RSA, same as \c mbedtls_pk_verify().
+    ///
+    /// \param ctx       The PK context to use. It must have been set up.
+    /// \param md_alg    Hash algorithm used (see notes)
+    /// \param hash      Hash of the message to sign
+    /// \param hash_len  Hash length or 0 (see notes)
+    /// \param sig       Signature to verify
+    /// \param sig_len   Signature length
+    /// \param rs_ctx    Restart context (NULL to disable restart)
+    ///
+    /// \return          See \c mbedtls_pk_verify(), or
+    /// \return          #MBEDTLS_ERR_ECP_IN_PROGRESS if maximum number of
+    ///                  operations was reached: see \c mbedtls_ecp_set_max_ops().
+    pub fn mbedtls_pk_verify_restartable(
+        ctx: *mut mbedtls_pk_context,
+        md_alg: mbedtls_md_type_t,
+        hash: *const ::core::ffi::c_uchar,
+        hash_len: usize,
+        sig: *const ::core::ffi::c_uchar,
+        sig_len: usize,
+        rs_ctx: *mut mbedtls_pk_restart_ctx,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           Verify signature, with options.
+    ///                  (Includes verification of the padding depending on type.)
+    ///
+    /// \param type      Signature type (inc. possible padding type) to verify
+    /// \param options   Pointer to type-specific options, or NULL
+    /// \param ctx       The PK context to use. It must have been set up.
+    /// \param md_alg    Hash algorithm used (see notes)
+    /// \param hash      Hash of the message to sign
+    /// \param hash_len  Hash length or 0 (see notes)
+    /// \param sig       Signature to verify
+    /// \param sig_len   Signature length
+    ///
+    /// \return          0 on success (signature is valid),
+    ///                  #MBEDTLS_ERR_PK_TYPE_MISMATCH if the PK context can't be
+    ///                  used for this type of signatures,
+    ///                  #MBEDTLS_ERR_PK_SIG_LEN_MISMATCH if there is a valid
+    ///                  signature in \p sig but its length is less than \p sig_len,
+    ///                  or a specific error code.
+    ///
+    /// \note            If hash_len is 0, then the length associated with md_alg
+    ///                  is used instead, or an error returned if it is invalid.
+    ///
+    /// \note            md_alg may be MBEDTLS_MD_NONE, only if hash_len != 0
+    ///
+    /// \note            If type is MBEDTLS_PK_RSASSA_PSS, then options must point
+    ///                  to a mbedtls_pk_rsassa_pss_options structure,
+    ///                  otherwise it must be NULL. Note that if
+    ///                  #MBEDTLS_USE_PSA_CRYPTO is defined, the salt length is not
+    ///                  verified as PSA_ALG_RSA_PSS_ANY_SALT is used.
+    pub fn mbedtls_pk_verify_ext(
+        type_: mbedtls_pk_type_t,
+        options: *const ::core::ffi::c_void,
+        ctx: *mut mbedtls_pk_context,
+        md_alg: mbedtls_md_type_t,
+        hash: *const ::core::ffi::c_uchar,
+        hash_len: usize,
+        sig: *const ::core::ffi::c_uchar,
+        sig_len: usize,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           Make signature, including padding if relevant.
+    ///
+    /// \param ctx       The PK context to use. It must have been set up
+    ///                  with a private key.
+    /// \param md_alg    Hash algorithm used (see notes)
+    /// \param hash      Hash of the message to sign
+    /// \param hash_len  Hash length
+    /// \param sig       Place to write the signature.
+    ///                  It must have enough room for the signature.
+    ///                  #MBEDTLS_PK_SIGNATURE_MAX_SIZE is always enough.
+    ///                  You may use a smaller buffer if it is large enough
+    ///                  given the key type.
+    /// \param sig_size  The size of the \p sig buffer in bytes.
+    /// \param sig_len   On successful return,
+    ///                  the number of bytes written to \p sig.
+    /// \param f_rng     RNG function, must not be \c NULL.
+    /// \param p_rng     RNG parameter
+    ///
+    /// \note            For keys of type #MBEDTLS_PK_RSA, the signature algorithm is
+    ///                  either PKCS#1 v1.5 or PSS (using the largest possible salt
+    ///                  length up to the hash length), depending on the padding mode
+    ///                  in the underlying RSA context. For a pk object constructed
+    ///                  by parsing, this is PKCS#1 v1.5 by default. Use
+    ///                  mbedtls_pk_verify_ext() to explicitly select a different
+    ///                  algorithm.
+    ///
+    /// \return          0 on success, or a specific error code.
+    ///
+    /// \note            For RSA, md_alg may be MBEDTLS_MD_NONE if hash_len != 0.
+    ///                  For ECDSA, md_alg may never be MBEDTLS_MD_NONE.
+    pub fn mbedtls_pk_sign(
+        ctx: *mut mbedtls_pk_context,
+        md_alg: mbedtls_md_type_t,
+        hash: *const ::core::ffi::c_uchar,
+        hash_len: usize,
+        sig: *mut ::core::ffi::c_uchar,
+        sig_size: usize,
+        sig_len: *mut usize,
+        f_rng: mbedtls_f_rng_t,
+        p_rng: *mut ::core::ffi::c_void,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           Make signature given a signature type.
+    ///
+    /// \param pk_type   Signature type.
+    /// \param ctx       The PK context to use. It must have been set up
+    ///                  with a private key.
+    /// \param md_alg    Hash algorithm used (see notes)
+    /// \param hash      Hash of the message to sign
+    /// \param hash_len  Hash length
+    /// \param sig       Place to write the signature.
+    ///                  It must have enough room for the signature.
+    ///                  #MBEDTLS_PK_SIGNATURE_MAX_SIZE is always enough.
+    ///                  You may use a smaller buffer if it is large enough
+    ///                  given the key type.
+    /// \param sig_size  The size of the \p sig buffer in bytes.
+    /// \param sig_len   On successful return,
+    ///                  the number of bytes written to \p sig.
+    /// \param f_rng     RNG function, must not be \c NULL.
+    /// \param p_rng     RNG parameter
+    ///
+    /// \return          0 on success, or a specific error code.
+    ///
+    /// \note            When \p pk_type is #MBEDTLS_PK_RSASSA_PSS,
+    ///                  see #PSA_ALG_RSA_PSS for a description of PSS options used.
+    ///
+    /// \note            For RSA, md_alg may be MBEDTLS_MD_NONE if hash_len != 0.
+    ///                  For ECDSA, md_alg may never be MBEDTLS_MD_NONE.
+    pub fn mbedtls_pk_sign_ext(
+        pk_type: mbedtls_pk_type_t,
+        ctx: *mut mbedtls_pk_context,
+        md_alg: mbedtls_md_type_t,
+        hash: *const ::core::ffi::c_uchar,
+        hash_len: usize,
+        sig: *mut ::core::ffi::c_uchar,
+        sig_size: usize,
+        sig_len: *mut usize,
+        f_rng: mbedtls_f_rng_t,
+        p_rng: *mut ::core::ffi::c_void,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           Restartable version of \c mbedtls_pk_sign()
+    ///
+    /// \note            Performs the same job as \c mbedtls_pk_sign(), but can
+    ///                  return early and restart according to the limit set with
+    ///                  \c mbedtls_ecp_set_max_ops() to reduce blocking for ECC
+    ///                  operations. For RSA, same as \c mbedtls_pk_sign().
+    ///
+    /// \param ctx       The PK context to use. It must have been set up
+    ///                  with a private key.
+    /// \param md_alg    Hash algorithm used (see notes for mbedtls_pk_sign())
+    /// \param hash      Hash of the message to sign
+    /// \param hash_len  Hash length
+    /// \param sig       Place to write the signature.
+    ///                  It must have enough room for the signature.
+    ///                  #MBEDTLS_PK_SIGNATURE_MAX_SIZE is always enough.
+    ///                  You may use a smaller buffer if it is large enough
+    ///                  given the key type.
+    /// \param sig_size  The size of the \p sig buffer in bytes.
+    /// \param sig_len   On successful return,
+    ///                  the number of bytes written to \p sig.
+    /// \param f_rng     RNG function, must not be \c NULL.
+    /// \param p_rng     RNG parameter
+    /// \param rs_ctx    Restart context (NULL to disable restart)
+    ///
+    /// \return          See \c mbedtls_pk_sign().
+    /// \return          #MBEDTLS_ERR_ECP_IN_PROGRESS if maximum number of
+    ///                  operations was reached: see \c mbedtls_ecp_set_max_ops().
+    pub fn mbedtls_pk_sign_restartable(
+        ctx: *mut mbedtls_pk_context,
+        md_alg: mbedtls_md_type_t,
+        hash: *const ::core::ffi::c_uchar,
+        hash_len: usize,
+        sig: *mut ::core::ffi::c_uchar,
+        sig_size: usize,
+        sig_len: *mut usize,
+        f_rng: mbedtls_f_rng_t,
+        p_rng: *mut ::core::ffi::c_void,
+        rs_ctx: *mut mbedtls_pk_restart_ctx,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           Decrypt message (including padding if relevant).
+    ///
+    /// \param ctx       The PK context to use. It must have been set up
+    ///                  with a private key.
+    /// \param input     Input to decrypt
+    /// \param ilen      Input size
+    /// \param output    Decrypted output
+    /// \param olen      Decrypted message length
+    /// \param osize     Size of the output buffer
+    /// \param f_rng     RNG function, must not be \c NULL.
+    /// \param p_rng     RNG parameter
+    ///
+    /// \note            For keys of type #MBEDTLS_PK_RSA, the signature algorithm is
+    ///                  either PKCS#1 v1.5 or OAEP, depending on the padding mode in
+    ///                  the underlying RSA context. For a pk object constructed by
+    ///                  parsing, this is PKCS#1 v1.5 by default.
+    ///
+    /// \return          0 on success, or a specific error code.
+    pub fn mbedtls_pk_decrypt(
+        ctx: *mut mbedtls_pk_context,
+        input: *const ::core::ffi::c_uchar,
+        ilen: usize,
+        output: *mut ::core::ffi::c_uchar,
+        olen: *mut usize,
+        osize: usize,
+        f_rng: mbedtls_f_rng_t,
+        p_rng: *mut ::core::ffi::c_void,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           Encrypt message (including padding if relevant).
+    ///
+    /// \param ctx       The PK context to use. It must have been set up.
+    /// \param input     Message to encrypt
+    /// \param ilen      Message size
+    /// \param output    Encrypted output
+    /// \param olen      Encrypted output length
+    /// \param osize     Size of the output buffer
+    /// \param f_rng     RNG function, must not be \c NULL.
+    /// \param p_rng     RNG parameter
+    ///
+    /// \note            For keys of type #MBEDTLS_PK_RSA, the signature algorithm is
+    ///                  either PKCS#1 v1.5 or OAEP, depending on the padding mode in
+    ///                  the underlying RSA context. For a pk object constructed by
+    ///                  parsing, this is PKCS#1 v1.5 by default.
+    ///
+    /// \note            \p f_rng is used for padding generation.
+    ///
+    /// \return          0 on success, or a specific error code.
+    pub fn mbedtls_pk_encrypt(
+        ctx: *mut mbedtls_pk_context,
+        input: *const ::core::ffi::c_uchar,
+        ilen: usize,
+        output: *mut ::core::ffi::c_uchar,
+        olen: *mut usize,
+        osize: usize,
+        f_rng: mbedtls_f_rng_t,
+        p_rng: *mut ::core::ffi::c_void,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           Check if a public-private pair of keys matches.
+    ///
+    /// \param pub       Context holding a public key.
+    /// \param prv       Context holding a private (and public) key.
+    /// \param f_rng     RNG function, must not be \c NULL.
+    /// \param p_rng     RNG parameter
+    ///
+    /// \return          \c 0 on success (keys were checked and match each other).
+    /// \return          #MBEDTLS_ERR_PK_FEATURE_UNAVAILABLE if the keys could not
+    ///                  be checked - in that case they may or may not match.
+    /// \return          #MBEDTLS_ERR_PK_BAD_INPUT_DATA if a context is invalid.
+    /// \return          Another non-zero value if the keys do not match.
+    pub fn mbedtls_pk_check_pair(
+        pub_: *const mbedtls_pk_context,
+        prv: *const mbedtls_pk_context,
+        f_rng: mbedtls_f_rng_t,
+        p_rng: *mut ::core::ffi::c_void,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           Export debug information
+    ///
+    /// \param ctx       The PK context to use. It must have been initialized.
+    /// \param items     Place to write debug items
+    ///
+    /// \return          0 on success or MBEDTLS_ERR_PK_BAD_INPUT_DATA
+    pub fn mbedtls_pk_debug(
+        ctx: *const mbedtls_pk_context,
+        items: *mut mbedtls_pk_debug_item,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           Access the type name
+    ///
+    /// \param ctx       The PK context to use. It must have been initialized.
+    ///
+    /// \return          Type name on success, or "invalid PK"
+    pub fn mbedtls_pk_get_name(ctx: *const mbedtls_pk_context) -> *const ::core::ffi::c_char;
+}
+unsafe extern "C" {
+    /// \brief           Get the key type
+    ///
+    /// \param ctx       The PK context to use. It must have been initialized.
+    ///
+    /// \return          Type on success.
+    /// \return          #MBEDTLS_PK_NONE for a context that has not been set up.
+    pub fn mbedtls_pk_get_type(ctx: *const mbedtls_pk_context) -> mbedtls_pk_type_t;
+}
+unsafe extern "C" {
+    /// \ingroup pk_module */
+    ////**
+    /// \brief           Parse a private key in PEM or DER format
+    ///
+    /// \note            If #MBEDTLS_USE_PSA_CRYPTO is enabled, the PSA crypto
+    ///                  subsystem must have been initialized by calling
+    ///                  psa_crypto_init() before calling this function.
+    ///
+    /// \param ctx       The PK context to fill. It must have been initialized
+    ///                  but not set up.
+    /// \param key       Input buffer to parse.
+    ///                  The buffer must contain the input exactly, with no
+    ///                  extra trailing material. For PEM, the buffer must
+    ///                  contain a null-terminated string.
+    /// \param keylen    Size of \b key in bytes.
+    ///                  For PEM data, this includes the terminating null byte,
+    ///                  so \p keylen must be equal to `strlen(key) + 1`.
+    /// \param pwd       Optional password for decryption.
+    ///                  Pass \c NULL if expecting a non-encrypted key.
+    ///                  Pass a string of \p pwdlen bytes if expecting an encrypted
+    ///                  key; a non-encrypted key will also be accepted.
+    ///                  The empty password is not supported.
+    /// \param pwdlen    Size of the password in bytes.
+    ///                  Ignored if \p pwd is \c NULL.
+    /// \param f_rng     RNG function, must not be \c NULL. Used for blinding.
+    /// \param p_rng     RNG parameter
+    ///
+    /// \note            On entry, ctx must be empty, either freshly initialised
+    ///                  with mbedtls_pk_init() or reset with mbedtls_pk_free(). If you need a
+    ///                  specific key type, check the result with mbedtls_pk_can_do().
+    ///
+    /// \note            The key is also checked for correctness.
+    ///
+    /// \return          0 if successful, or a specific PK or PEM error code
+    pub fn mbedtls_pk_parse_key(
+        ctx: *mut mbedtls_pk_context,
+        key: *const ::core::ffi::c_uchar,
+        keylen: usize,
+        pwd: *const ::core::ffi::c_uchar,
+        pwdlen: usize,
+        f_rng: mbedtls_f_rng_t,
+        p_rng: *mut ::core::ffi::c_void,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \ingroup pk_module */
+    ////**
+    /// \brief           Parse a public key in PEM or DER format
+    ///
+    /// \note            If #MBEDTLS_USE_PSA_CRYPTO is enabled, the PSA crypto
+    ///                  subsystem must have been initialized by calling
+    ///                  psa_crypto_init() before calling this function.
+    ///
+    /// \param ctx       The PK context to fill. It must have been initialized
+    ///                  but not set up.
+    /// \param key       Input buffer to parse.
+    ///                  The buffer must contain the input exactly, with no
+    ///                  extra trailing material. For PEM, the buffer must
+    ///                  contain a null-terminated string.
+    /// \param keylen    Size of \b key in bytes.
+    ///                  For PEM data, this includes the terminating null byte,
+    ///                  so \p keylen must be equal to `strlen(key) + 1`.
+    ///
+    /// \note            On entry, ctx must be empty, either freshly initialised
+    ///                  with mbedtls_pk_init() or reset with mbedtls_pk_free(). If you need a
+    ///                  specific key type, check the result with mbedtls_pk_can_do().
+    ///
+    /// \note            For compressed points, see #MBEDTLS_ECP_PF_COMPRESSED for
+    ///                  limitations.
+    ///
+    /// \note            The key is also checked for correctness.
+    ///
+    /// \return          0 if successful, or a specific PK or PEM error code
+    pub fn mbedtls_pk_parse_public_key(
+        ctx: *mut mbedtls_pk_context,
+        key: *const ::core::ffi::c_uchar,
+        keylen: usize,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           Write a private key to a PKCS#1 or SEC1 DER structure
+    ///                  Note: data is written at the end of the buffer! Use the
+    ///                        return value to determine where you should start
+    ///                        using the buffer
+    ///
+    /// \param ctx       PK context which must contain a valid private key.
+    /// \param buf       buffer to write to
+    /// \param size      size of the buffer
+    ///
+    /// \return          length of data written if successful, or a specific
+    ///                  error code
+    pub fn mbedtls_pk_write_key_der(
+        ctx: *const mbedtls_pk_context,
+        buf: *mut ::core::ffi::c_uchar,
+        size: usize,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           Write a public key to a SubjectPublicKeyInfo DER structure
+    ///                  Note: data is written at the end of the buffer! Use the
+    ///                        return value to determine where you should start
+    ///                        using the buffer
+    ///
+    /// \param ctx       PK context which must contain a valid public or private key.
+    /// \param buf       buffer to write to
+    /// \param size      size of the buffer
+    ///
+    /// \return          length of data written if successful, or a specific
+    ///                  error code
+    pub fn mbedtls_pk_write_pubkey_der(
+        ctx: *const mbedtls_pk_context,
+        buf: *mut ::core::ffi::c_uchar,
+        size: usize,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           Write a public key to a PEM string
+    ///
+    /// \param ctx       PK context which must contain a valid public or private key.
+    /// \param buf       Buffer to write to. The output includes a
+    ///                  terminating null byte.
+    /// \param size      Size of the buffer in bytes.
+    ///
+    /// \return          0 if successful, or a specific error code
+    pub fn mbedtls_pk_write_pubkey_pem(
+        ctx: *const mbedtls_pk_context,
+        buf: *mut ::core::ffi::c_uchar,
+        size: usize,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           Write a private key to a PKCS#1 or SEC1 PEM string
+    ///
+    /// \param ctx       PK context which must contain a valid private key.
+    /// \param buf       Buffer to write to. The output includes a
+    ///                  terminating null byte.
+    /// \param size      Size of the buffer in bytes.
+    ///
+    /// \return          0 if successful, or a specific error code
+    pub fn mbedtls_pk_write_key_pem(
+        ctx: *const mbedtls_pk_context,
+        buf: *mut ::core::ffi::c_uchar,
+        size: usize,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           Parse a SubjectPublicKeyInfo DER structure
+    ///
+    /// \param p         the position in the ASN.1 data
+    /// \param end       end of the buffer
+    /// \param pk        The PK context to fill. It must have been initialized
+    ///                  but not set up.
+    ///
+    /// \return          0 if successful, or a specific PK error code
+    pub fn mbedtls_pk_parse_subpubkey(
+        p: *mut *mut ::core::ffi::c_uchar,
+        end: *const ::core::ffi::c_uchar,
+        pk: *mut mbedtls_pk_context,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           Write a subjectPublicKey to ASN.1 data
+    ///                  Note: function works backwards in data buffer
+    ///
+    /// \param p         reference to current position pointer
+    /// \param start     start of the buffer (for bounds-checking)
+    /// \param key       PK context which must contain a valid public or private key.
+    ///
+    /// \return          the length written or a negative error code
+    pub fn mbedtls_pk_write_pubkey(
+        p: *mut *mut ::core::ffi::c_uchar,
+        start: *mut ::core::ffi::c_uchar,
+        key: *const mbedtls_pk_context,
+    ) -> ::core::ffi::c_int;
+}
+pub const mbedtls_key_exchange_type_t_MBEDTLS_KEY_EXCHANGE_NONE: mbedtls_key_exchange_type_t = 0;
+pub const mbedtls_key_exchange_type_t_MBEDTLS_KEY_EXCHANGE_RSA: mbedtls_key_exchange_type_t = 1;
+pub const mbedtls_key_exchange_type_t_MBEDTLS_KEY_EXCHANGE_DHE_RSA: mbedtls_key_exchange_type_t = 2;
+pub const mbedtls_key_exchange_type_t_MBEDTLS_KEY_EXCHANGE_ECDHE_RSA: mbedtls_key_exchange_type_t =
+    3;
+pub const mbedtls_key_exchange_type_t_MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA:
+    mbedtls_key_exchange_type_t = 4;
+pub const mbedtls_key_exchange_type_t_MBEDTLS_KEY_EXCHANGE_PSK: mbedtls_key_exchange_type_t = 5;
+pub const mbedtls_key_exchange_type_t_MBEDTLS_KEY_EXCHANGE_DHE_PSK: mbedtls_key_exchange_type_t = 6;
+pub const mbedtls_key_exchange_type_t_MBEDTLS_KEY_EXCHANGE_RSA_PSK: mbedtls_key_exchange_type_t = 7;
+pub const mbedtls_key_exchange_type_t_MBEDTLS_KEY_EXCHANGE_ECDHE_PSK: mbedtls_key_exchange_type_t =
+    8;
+pub const mbedtls_key_exchange_type_t_MBEDTLS_KEY_EXCHANGE_ECDH_RSA: mbedtls_key_exchange_type_t =
+    9;
+pub const mbedtls_key_exchange_type_t_MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA: mbedtls_key_exchange_type_t =
     10;
-pub const psa_crypto_driver_pake_step_PSA_JPAKE_X4S_STEP_ZK_PUBLIC: psa_crypto_driver_pake_step =
+pub const mbedtls_key_exchange_type_t_MBEDTLS_KEY_EXCHANGE_ECJPAKE: mbedtls_key_exchange_type_t =
     11;
-pub const psa_crypto_driver_pake_step_PSA_JPAKE_X4S_STEP_ZK_PROOF: psa_crypto_driver_pake_step = 12;
-pub type psa_crypto_driver_pake_step = ::core::ffi::c_uint;
-pub use self::psa_crypto_driver_pake_step as psa_crypto_driver_pake_step_t;
+pub type mbedtls_key_exchange_type_t = ::core::ffi::c_uint;
+/// \brief   This structure is used for storing ciphersuite information
+///
+/// \note    members are defined using integral types instead of enums
+///          in order to pack structure and reduce memory usage by internal
+///          \c ciphersuite_definitions[]
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub struct psa_jpake_computation_stage_s {
-    pub private_state: psa_jpake_state_t,
-    pub private_sequence: psa_jpake_sequence_t,
-    pub private_input_step: psa_jpake_step_t,
-    pub private_output_step: psa_jpake_step_t,
+pub struct mbedtls_ssl_ciphersuite_t {
+    pub private_id: ::core::ffi::c_int,
+    pub private_name: *const ::core::ffi::c_char,
+    pub private_cipher: u8,
+    pub private_mac: u8,
+    pub private_key_exchange: u8,
+    pub private_flags: u8,
+    pub private_min_tls_version: u16,
+    pub private_max_tls_version: u16,
 }
-impl Default for psa_jpake_computation_stage_s {
+impl Default for mbedtls_ssl_ciphersuite_t {
     fn default() -> Self {
         let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
         unsafe {
@@ -18621,59 +19851,23 @@ impl Default for psa_jpake_computation_stage_s {
         }
     }
 }
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct psa_pake_operation_s {
-    /// Unique ID indicating which driver got assigned to do the
-    /// operation. Since driver contexts are driver-specific, swapping
-    /// drivers halfway through the operation is not supported.
-    /// ID values are auto-generated in psa_crypto_driver_wrappers.h
-    /// ID value zero means the context is not valid or not assigned to
-    /// any driver (i.e. none of the driver contexts are active).
-    pub private_id: ::core::ffi::c_uint,
-    pub private_alg: psa_algorithm_t,
-    pub private_stage: u8,
-    pub private_computation_stage: psa_pake_operation_s__bindgen_ty_1,
-    pub private_data: psa_pake_operation_s__bindgen_ty_2,
+unsafe extern "C" {
+    pub fn mbedtls_ssl_list_ciphersuites() -> *const ::core::ffi::c_int;
 }
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub union psa_pake_operation_s__bindgen_ty_1 {
-    pub private_dummy: u8,
-    pub private_jpake: psa_jpake_computation_stage_t,
+unsafe extern "C" {
+    pub fn mbedtls_ssl_ciphersuite_from_string(
+        ciphersuite_name: *const ::core::ffi::c_char,
+    ) -> *const mbedtls_ssl_ciphersuite_t;
 }
-impl Default for psa_pake_operation_s__bindgen_ty_1 {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
+unsafe extern "C" {
+    pub fn mbedtls_ssl_ciphersuite_from_id(
+        ciphersuite_id: ::core::ffi::c_int,
+    ) -> *const mbedtls_ssl_ciphersuite_t;
 }
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub union psa_pake_operation_s__bindgen_ty_2 {
-    pub private_ctx: psa_driver_pake_context_t,
-    pub private_inputs: psa_crypto_driver_pake_inputs_t,
-}
-impl Default for psa_pake_operation_s__bindgen_ty_2 {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-impl Default for psa_pake_operation_s {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
+unsafe extern "C" {
+    pub fn mbedtls_ssl_ciphersuite_get_cipher_key_bitlen(
+        info: *const mbedtls_ssl_ciphersuite_t,
+    ) -> usize;
 }
 /// Type-length-value structure that allows for ASN1 using DER.
 pub type mbedtls_x509_buf = mbedtls_asn1_buf;
@@ -18684,6 +19878,23 @@ pub type mbedtls_x509_bitstring = mbedtls_asn1_bitstring;
 pub type mbedtls_x509_name = mbedtls_asn1_named_data;
 /// Container for a sequence of ASN.1 items
 pub type mbedtls_x509_sequence = mbedtls_asn1_sequence;
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct mbedtls_x509_authority {
+    pub keyIdentifier: mbedtls_x509_buf,
+    pub authorityCertIssuer: mbedtls_x509_sequence,
+    pub authorityCertSerialNumber: mbedtls_x509_buf,
+    pub raw: mbedtls_x509_buf,
+}
+impl Default for mbedtls_x509_authority {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
 /// Container for date and time (precision in seconds).
 #[repr(C)]
 #[derive(Default, Copy, Clone)]
@@ -18775,9 +19986,9 @@ pub struct mbedtls_x509_subject_alternative_name {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub union mbedtls_x509_subject_alternative_name__bindgen_ty_1 {
-    ///< The otherName supported type.
     pub other_name: mbedtls_x509_san_other_name,
-    ///< The buffer for the unconstructed types. Only rfc822Name, dnsName and uniformResourceIdentifier are currently supported
+    pub directory_name: mbedtls_x509_name,
+    ///< The buffer for the unstructured types. rfc822Name, dnsName and uniformResourceIdentifier are currently supported.
     pub unstructured_name: mbedtls_x509_buf,
 }
 impl Default for mbedtls_x509_subject_alternative_name__bindgen_ty_1 {
@@ -18790,6 +20001,21 @@ impl Default for mbedtls_x509_subject_alternative_name__bindgen_ty_1 {
     }
 }
 impl Default for mbedtls_x509_subject_alternative_name {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct mbedtls_x509_san_list {
+    pub node: mbedtls_x509_subject_alternative_name,
+    pub next: *mut mbedtls_x509_san_list,
+}
+impl Default for mbedtls_x509_san_list {
     fn default() -> Self {
         let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
         unsafe {
@@ -18815,6 +20041,26 @@ unsafe extern "C" {
     ) -> ::core::ffi::c_int;
 }
 unsafe extern "C" {
+    /// \brief            Convert the certificate DN string \p name into
+    ///                   a linked list of mbedtls_x509_name (equivalent to
+    ///                   mbedtls_asn1_named_data).
+    ///
+    /// \note             This function allocates a linked list, and places the head
+    ///                   pointer in \p head. This list must later be freed by a
+    ///                   call to mbedtls_asn1_free_named_data_list().
+    ///
+    /// \param[out] head  Address in which to store the pointer to the head of the
+    ///                   allocated list of mbedtls_x509_name. Must point to NULL on
+    ///                   entry.
+    /// \param[in] name   The string representation of a DN to convert
+    ///
+    /// \return           0 on success, or a negative error code.
+    pub fn mbedtls_x509_string_to_names(
+        head: *mut *mut mbedtls_asn1_named_data,
+        name: *const ::core::ffi::c_char,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
     /// \brief          Store the certificate serial in printable form into buf;
     ///                 no more than size characters will be written.
     ///
@@ -18828,6 +20074,20 @@ unsafe extern "C" {
         buf: *mut ::core::ffi::c_char,
         size: usize,
         serial: *const mbedtls_x509_buf,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          Compare pair of mbedtls_x509_time.
+    ///
+    /// \param t1       mbedtls_x509_time to compare
+    /// \param t2       mbedtls_x509_time to compare
+    ///
+    /// \return         < 0 if t1 is before t2
+    ///                   0 if t1 equals t2
+    ///                 > 0 if t1 is after t2
+    pub fn mbedtls_x509_time_cmp(
+        t1: *const mbedtls_x509_time,
+        t2: *const mbedtls_x509_time,
     ) -> ::core::ffi::c_int;
 }
 unsafe extern "C" {
@@ -18858,21 +20118,25 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     /// \brief          This function parses an item in the SubjectAlternativeNames
-    ///                 extension.
+    ///                 extension. Please note that this function might allocate
+    ///                 additional memory for a subject alternative name, thus
+    ///                 mbedtls_x509_free_subject_alt_name has to be called
+    ///                 to dispose of this additional memory afterwards.
     ///
     /// \param san_buf  The buffer holding the raw data item of the subject
     ///                 alternative name.
     /// \param san      The target structure to populate with the parsed presentation
-    ///                 of the subject alternative name encoded in \p san_raw.
+    ///                 of the subject alternative name encoded in \p san_buf.
     ///
     /// \note           Supported GeneralName types, as defined in RFC 5280:
-    ///                 "rfc822Name", "dnsName", "uniformResourceIdentifier" and "hardware_module_name"
+    ///                 "rfc822Name", "dnsName", "directoryName",
+    ///                 "uniformResourceIdentifier" and "hardware_module_name"
     ///                 of type "otherName", as defined in RFC 4108.
     ///
     /// \note           This function should be called on a single raw data of
     ///                 subject alternative name. For example, after successful
     ///                 certificate parsing, one must iterate on every item in the
-    ///                 \p crt->subject_alt_names sequence, and pass it to
+    ///                 \c crt->subject_alt_names sequence, and pass it to
     ///                 this function.
     ///
     /// \warning        The target structure contains pointers to the raw data of the
@@ -18889,173 +20153,29 @@ unsafe extern "C" {
     ) -> ::core::ffi::c_int;
 }
 unsafe extern "C" {
-    /// \} addtogroup x509_module
-    pub fn mbedtls_x509_get_name(
-        p: *mut *mut ::core::ffi::c_uchar,
-        end: *const ::core::ffi::c_uchar,
-        cur: *mut mbedtls_x509_name,
-    ) -> ::core::ffi::c_int;
+    /// \brief          Unallocate all data related to subject alternative name
+    ///
+    /// \param san      SAN structure - extra memory owned by this structure will be freed
+    pub fn mbedtls_x509_free_subject_alt_name(san: *mut mbedtls_x509_subject_alternative_name);
 }
 unsafe extern "C" {
-    pub fn mbedtls_x509_get_alg_null(
-        p: *mut *mut ::core::ffi::c_uchar,
-        end: *const ::core::ffi::c_uchar,
-        alg: *mut mbedtls_x509_buf,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn mbedtls_x509_get_alg(
-        p: *mut *mut ::core::ffi::c_uchar,
-        end: *const ::core::ffi::c_uchar,
-        alg: *mut mbedtls_x509_buf,
-        params: *mut mbedtls_x509_buf,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn mbedtls_x509_get_rsassa_pss_params(
-        params: *const mbedtls_x509_buf,
-        md_alg: *mut mbedtls_md_type_t,
-        mgf_md: *mut mbedtls_md_type_t,
-        salt_len: *mut ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn mbedtls_x509_get_sig(
-        p: *mut *mut ::core::ffi::c_uchar,
-        end: *const ::core::ffi::c_uchar,
-        sig: *mut mbedtls_x509_buf,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn mbedtls_x509_get_sig_alg(
-        sig_oid: *const mbedtls_x509_buf,
-        sig_params: *const mbedtls_x509_buf,
-        md_alg: *mut mbedtls_md_type_t,
-        pk_alg: *mut mbedtls_pk_type_t,
-        sig_opts: *mut *mut ::core::ffi::c_void,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn mbedtls_x509_get_time(
-        p: *mut *mut ::core::ffi::c_uchar,
-        end: *const ::core::ffi::c_uchar,
-        t: *mut mbedtls_x509_time,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn mbedtls_x509_get_serial(
-        p: *mut *mut ::core::ffi::c_uchar,
-        end: *const ::core::ffi::c_uchar,
-        serial: *mut mbedtls_x509_buf,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn mbedtls_x509_get_ext(
-        p: *mut *mut ::core::ffi::c_uchar,
-        end: *const ::core::ffi::c_uchar,
-        ext: *mut mbedtls_x509_buf,
-        tag: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn mbedtls_x509_sig_alg_gets(
-        buf: *mut ::core::ffi::c_char,
-        size: usize,
-        sig_oid: *const mbedtls_x509_buf,
-        pk_alg: mbedtls_pk_type_t,
-        md_alg: mbedtls_md_type_t,
-        sig_opts: *const ::core::ffi::c_void,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn mbedtls_x509_key_size_helper(
-        buf: *mut ::core::ffi::c_char,
-        buf_size: usize,
-        name: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn mbedtls_x509_string_to_names(
-        head: *mut *mut mbedtls_asn1_named_data,
-        name: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn mbedtls_x509_set_extension(
-        head: *mut *mut mbedtls_asn1_named_data,
-        oid: *const ::core::ffi::c_char,
-        oid_len: usize,
-        critical: ::core::ffi::c_int,
-        val: *const ::core::ffi::c_uchar,
-        val_len: usize,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn mbedtls_x509_write_extensions(
-        p: *mut *mut ::core::ffi::c_uchar,
-        start: *mut ::core::ffi::c_uchar,
-        first: *mut mbedtls_asn1_named_data,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn mbedtls_x509_write_names(
-        p: *mut *mut ::core::ffi::c_uchar,
-        start: *mut ::core::ffi::c_uchar,
-        first: *mut mbedtls_asn1_named_data,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn mbedtls_x509_write_sig(
-        p: *mut *mut ::core::ffi::c_uchar,
-        start: *mut ::core::ffi::c_uchar,
-        oid: *const ::core::ffi::c_char,
-        oid_len: usize,
-        sig: *mut ::core::ffi::c_uchar,
-        size: usize,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn mbedtls_x509_get_ns_cert_type(
-        p: *mut *mut ::core::ffi::c_uchar,
-        end: *const ::core::ffi::c_uchar,
-        ns_cert_type: *mut ::core::ffi::c_uchar,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn mbedtls_x509_get_key_usage(
-        p: *mut *mut ::core::ffi::c_uchar,
-        end: *const ::core::ffi::c_uchar,
-        key_usage: *mut ::core::ffi::c_uint,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn mbedtls_x509_get_subject_alt_name(
-        p: *mut *mut ::core::ffi::c_uchar,
-        end: *const ::core::ffi::c_uchar,
-        subject_alt_name: *mut mbedtls_x509_sequence,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn mbedtls_x509_info_subject_alt_name(
-        buf: *mut *mut ::core::ffi::c_char,
-        size: *mut usize,
-        subject_alt_name: *const mbedtls_x509_sequence,
-        prefix: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn mbedtls_x509_info_cert_type(
-        buf: *mut *mut ::core::ffi::c_char,
-        size: *mut usize,
-        ns_cert_type: ::core::ffi::c_uchar,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    pub fn mbedtls_x509_info_key_usage(
-        buf: *mut *mut ::core::ffi::c_char,
-        size: *mut usize,
-        key_usage: ::core::ffi::c_uint,
-    ) -> ::core::ffi::c_int;
+    /// \brief          This function parses a CN string as an IP address.
+    ///
+    /// \param cn       The CN string to parse. CN string MUST be null-terminated.
+    /// \param dst      The target buffer to populate with the binary IP address.
+    ///                 The buffer MUST be 16 bytes to save IPv6, and should be
+    ///                 4-byte aligned if the result will be used as struct in_addr.
+    ///                 e.g. uint32_t dst[4]
+    ///
+    /// \note           \p cn is parsed as an IPv6 address if string contains ':',
+    ///                 else \p cn is parsed as an IPv4 address.
+    ///
+    /// \return         Length of binary IP address; num bytes written to target.
+    /// \return         \c 0 on failure to parse CN string as an IP address.
+    pub fn mbedtls_x509_crt_parse_cn_inet_pton(
+        cn: *const ::core::ffi::c_char,
+        dst: *mut ::core::ffi::c_void,
+    ) -> usize;
 }
 /// Certificate revocation list entry.
 /// Contains the CA-specific serial numbers and revocation dates.
@@ -19247,8 +20367,12 @@ pub struct mbedtls_x509_crt {
     pub subject_id: mbedtls_x509_buf,
     ///< Optional X.509 v3 extensions.
     pub v3_ext: mbedtls_x509_buf,
-    ///< Optional list of raw entries of Subject Alternative Names extension (currently only dNSName, uniformResourceIdentifier and OtherName are listed).
+    ///< Optional list of raw entries of Subject Alternative Names extension. These can be later parsed by mbedtls_x509_parse_subject_alt_name.
     pub subject_alt_names: mbedtls_x509_sequence,
+    ///< Optional X.509 v3 extension subject key identifier.
+    pub subject_key_id: mbedtls_x509_buf,
+    ///< Optional X.509 v3 extension authority key identifier.
+    pub authority_key_id: mbedtls_x509_authority,
     ///< Optional list of certificate policies (Only anyPolicy is printed and enforced, however the rest of the policies are still listed).
     pub certificate_policies: mbedtls_x509_sequence,
     ///< Bit string containing detected and parsed extensions
@@ -19346,6 +20470,22 @@ impl Default for mbedtls_x509write_cert {
             s.assume_init()
         }
     }
+}
+unsafe extern "C" {
+    /// \brief           Set Subject Alternative Name
+    ///
+    /// \param ctx       Certificate context to use
+    /// \param san_list  List of SAN values
+    ///
+    /// \return          0 if successful, or MBEDTLS_ERR_X509_ALLOC_FAILED
+    ///
+    /// \note            "dnsName", "uniformResourceIdentifier", "IP address",
+    ///                  "otherName", and "DirectoryName", as defined in RFC 5280,
+    ///                  are supported.
+    pub fn mbedtls_x509write_crt_set_subject_alternative_name(
+        ctx: *mut mbedtls_x509write_cert,
+        san_list: *const mbedtls_x509_san_list,
+    ) -> ::core::ffi::c_int;
 }
 /// Item in a verification chain: cert and flags for it
 #[repr(C)]
@@ -19685,8 +20825,12 @@ unsafe extern "C" {
     /// \param cn       The expected Common Name. This will be checked to be
     ///                 present in the certificate's subjectAltNames extension or,
     ///                 if this extension is absent, as a CN component in its
-    ///                 Subject name. Currently only DNS names are supported. This
-    ///                 may be \c NULL if the CN need not be verified.
+    ///                 Subject name. DNS names and IP addresses are fully
+    ///                 supported, while the URI subtype is partially supported:
+    ///                 only exact matching, without any normalization procedures
+    ///                 described in 7.4 of RFC5280, will result in a positive
+    ///                 URI verification.
+    ///                 This may be \c NULL if the CN need not be verified.
     /// \param flags    The address at which to store the result of the verification.
     ///                 If the verification couldn't be completed, the flag value is
     ///                 set to (uint32_t) -1.
@@ -19918,6 +21062,16 @@ unsafe extern "C" {
     pub fn mbedtls_x509_crt_free(crt: *mut mbedtls_x509_crt);
 }
 unsafe extern "C" {
+    /// \brief               Access the ca_istrue field
+    ///
+    /// \param[in] crt       Certificate to be queried, must not be \c NULL
+    ///
+    /// \return              \c 1 if this a CA certificate \c 0 otherwise.
+    /// \return              MBEDTLS_ERR_X509_INVALID_EXTENSIONS if the certificate does not contain
+    ///                      the Optional Basic Constraint extension.
+    pub fn mbedtls_x509_crt_get_ca_istrue(crt: *const mbedtls_x509_crt) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
     /// \brief           Initialize a CRT writing context
     ///
     /// \param ctx       CRT context to initialize
@@ -19997,7 +21151,7 @@ unsafe extern "C" {
     /// \brief           Set the issuer name for a Certificate
     ///                  Issuer names should contain a comma-separated list
     ///                  of OID types and values:
-    ///                  e.g. "C=UK,O=ARM,CN=mbed TLS CA"
+    ///                  e.g. "C=UK,O=ARM,CN=Mbed TLS CA"
     ///
     /// \param ctx           CRT context to use
     /// \param issuer_name   issuer name to set
@@ -20013,7 +21167,7 @@ unsafe extern "C" {
     /// \brief           Set the subject name for a Certificate
     ///                  Subject names should contain a comma-separated list
     ///                  of OID types and values:
-    ///                  e.g. "C=UK,O=ARM,CN=mbed TLS Server 1"
+    ///                  e.g. "C=UK,O=ARM,CN=Mbed TLS Server 1"
     ///
     /// \param ctx           CRT context to use
     /// \param subject_name  subject name to set
@@ -20183,13 +21337,7 @@ unsafe extern "C" {
         ctx: *mut mbedtls_x509write_cert,
         buf: *mut ::core::ffi::c_uchar,
         size: usize,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
     ) -> ::core::ffi::c_int;
 }
@@ -20209,13 +21357,7 @@ unsafe extern "C" {
         ctx: *mut mbedtls_x509write_cert,
         buf: *mut ::core::ffi::c_uchar,
         size: usize,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
     ) -> ::core::ffi::c_int;
 }
@@ -20336,13 +21478,7 @@ unsafe extern "C" {
         x_size: ::core::ffi::c_int,
         output: *mut ::core::ffi::c_uchar,
         olen: *mut usize,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
     ) -> ::core::ffi::c_int;
 }
@@ -20415,13 +21551,7 @@ unsafe extern "C" {
         x_size: ::core::ffi::c_int,
         output: *mut ::core::ffi::c_uchar,
         olen: usize,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
     ) -> ::core::ffi::c_int;
 }
@@ -20455,13 +21585,7 @@ unsafe extern "C" {
         output: *mut ::core::ffi::c_uchar,
         output_size: usize,
         olen: *mut usize,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
     ) -> ::core::ffi::c_int;
 }
@@ -20492,7 +21616,7 @@ unsafe extern "C" {
     ///                 initialized.
     ///
     /// \return         \c 0 on success.
-    /// \return         #MBEDTLS_ERR_DHM_BAD_INPUT_DATA if \p field is invalid.
+    /// \return         #MBEDTLS_ERR_DHM_BAD_INPUT_DATA if \p param is invalid.
     /// \return         An \c MBEDTLS_ERR_MPI_XXX error code if the copy fails.
     pub fn mbedtls_dhm_get_value(
         ctx: *const mbedtls_dhm_context,
@@ -20621,6 +21745,18 @@ impl Default for mbedtls_ecdh_context {
     }
 }
 unsafe extern "C" {
+    /// \brief          Return the ECP group for provided context.
+    ///
+    /// \note           To access group specific fields, users should use
+    ///                 `mbedtls_ecp_curve_info_from_grp_id` or
+    ///                 `mbedtls_ecp_group_load` on the extracted `group_id`.
+    ///
+    /// \param ctx      The ECDH context to parse. This must not be \c NULL.
+    ///
+    /// \return         The \c mbedtls_ecp_group_id of the context.
+    pub fn mbedtls_ecdh_get_grp_id(ctx: *mut mbedtls_ecdh_context) -> mbedtls_ecp_group_id;
+}
+unsafe extern "C" {
     /// \brief          Check whether a given group can be used for ECDH.
     ///
     /// \param gid      The ECP group ID to check.
@@ -20656,13 +21792,7 @@ unsafe extern "C" {
         grp: *mut mbedtls_ecp_group,
         d: *mut mbedtls_mpi,
         Q: *mut mbedtls_ecp_point,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
     ) -> ::core::ffi::c_int;
 }
@@ -20701,13 +21831,7 @@ unsafe extern "C" {
         z: *mut mbedtls_mpi,
         Q: *const mbedtls_ecp_point,
         d: *const mbedtls_mpi,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
     ) -> ::core::ffi::c_int;
 }
@@ -20774,13 +21898,7 @@ unsafe extern "C" {
         olen: *mut usize,
         buf: *mut ::core::ffi::c_uchar,
         blen: usize,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
     ) -> ::core::ffi::c_int;
 }
@@ -20816,7 +21934,7 @@ unsafe extern "C" {
     /// \brief           This function sets up an ECDH context from an EC key.
     ///
     ///                  It is used by clients and servers in place of the
-    ///                  ServerKeyEchange for static ECDH, and imports ECDH
+    ///                  ServerKeyExchange for static ECDH, and imports ECDH
     ///                  parameters from the EC key information of a certificate.
     ///
     /// \see             ecp.h
@@ -20865,13 +21983,7 @@ unsafe extern "C" {
         olen: *mut usize,
         buf: *mut ::core::ffi::c_uchar,
         blen: usize,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
     ) -> ::core::ffi::c_int;
 }
@@ -20932,19 +22044,14 @@ unsafe extern "C" {
         olen: *mut usize,
         buf: *mut ::core::ffi::c_uchar,
         blen: usize,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
     ) -> ::core::ffi::c_int;
 }
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub union mbedtls_ssl_premaster_secret {
+    pub dummy: ::core::ffi::c_uchar,
     pub _pms_rsa: [::core::ffi::c_uchar; 48usize],
     pub _pms_dhm: [::core::ffi::c_uchar; 1024usize],
     pub _pms_ecdh: [::core::ffi::c_uchar; 66usize],
@@ -21216,6 +22323,8 @@ pub struct mbedtls_ssl_session {
     ///< MaxFragmentLength negotiated by peer
     pub private_mfl_code: ::core::ffi::c_uchar,
     pub private_exported: ::core::ffi::c_uchar,
+    ///< 0: client, 1: server
+    pub private_endpoint: u8,
     /// TLS version negotiated in the session. Used if and when renegotiating
     ///  or resuming a session instead of the configured minor TLS version.
     pub private_tls_version: mbedtls_ssl_protocol_version,
@@ -21237,12 +22346,10 @@ pub struct mbedtls_ssl_session {
     pub private_ticket_len: usize,
     ///< ticket lifetime hint
     pub private_ticket_lifetime: u32,
-    ///< 0: client, 1: server
-    pub private_endpoint: u8,
-    ///< Ticket flags
-    pub private_ticket_flags: u8,
     ///< Randomly generated value used to obscure the age of the ticket
     pub private_ticket_age_add: u32,
+    ///< Ticket flags
+    pub private_ticket_flags: u8,
     ///< resumption_key length
     pub private_resumption_key_len: u8,
     pub private_resumption_key: [::core::ffi::c_uchar; 48usize],
@@ -21581,22 +22688,30 @@ pub struct mbedtls_ssl_context {
     ///number of retransmissions of request if
     ///renego_max_records is < 0
     pub private_renego_records_seen: ::core::ffi::c_int,
-    /// Server: Negotiated TLS protocol version.
-    ///  Client: Maximum TLS version to be negotiated, then negotiated TLS
-    ///          version.
+    /// Maximum TLS version to be negotiated, then negotiated TLS version.
     ///
-    ///  It is initialized as the maximum TLS version to be negotiated in the
-    ///  ClientHello writing preparation stage and used throughout the
-    ///  ClientHello writing. For a fresh handshake not linked to any previous
-    ///  handshake, it is initialized to the configured maximum TLS version
-    ///  to be negotiated. When renegotiating or resuming a session, it is
-    ///  initialized to the previously negotiated TLS version.
+    /// It is initialized as the configured maximum TLS version to be
+    /// negotiated by mbedtls_ssl_setup().
     ///
-    ///  Updated to the negotiated TLS version as soon as the ServerHello is
-    ///  received.
+    /// When renegotiating or resuming a session, it is overwritten in the
+    /// ClientHello writing preparation stage with the previously negotiated
+    /// TLS version.
+    ///
+    /// On client side, it is updated to the TLS version selected by the server
+    /// for the handshake when the ServerHello is received.
+    ///
+    /// On server side, it is updated to the TLS version the server selects for
+    /// the handshake when the ClientHello is received.
     pub private_tls_version: mbedtls_ssl_protocol_version,
-    ///< records with a bad MAC received
-    pub private_badmac_seen: ::core::ffi::c_uint,
+    /// Multipurpose field.
+    ///
+    /// - DTLS: records with a bad MAC received.
+    /// - TLS: accumulated length of handshake fragments (up to \c in_hslen).
+    ///
+    /// This field is multipurpose in order to preserve the ABI in the
+    /// Mbed TLS 3.6 LTS branch. Until 3.6.2, it was only used in DTLS
+    /// and called `badmac_seen`.
+    pub private_badmac_seen_or_in_hsfraglen: ::core::ffi::c_uint,
     /// Callback to customize X.509 certificate chain verification
     pub private_f_vrfy: ::core::option::Option<
         unsafe extern "C" fn(
@@ -21733,8 +22848,33 @@ pub struct mbedtls_ssl_context {
     pub private_cur_out_ctr: [::core::ffi::c_uchar; 8usize],
     ///< path mtu, used to fragment outgoing messages
     pub private_mtu: u16,
-    ///< expected peer CN for verification
-    ///(and SNI if available)
+    /// Expected peer CN for verification.
+    ///
+    /// Also used on clients for SNI,
+    /// and for TLS 1.3 session resumption using tickets.
+    ///
+    /// The value of this field can be:
+    /// - \p NULL in a newly initialized or reset context.
+    /// - A heap-allocated copy of the last value passed to
+    ///   mbedtls_ssl_set_hostname(), if the last call had a non-null
+    ///  \p hostname argument.
+    /// - A special value to indicate that mbedtls_ssl_set_hostname()
+    ///   was called with \p NULL (as opposed to never having been called).
+    ///   See `mbedtls_ssl_get_hostname_pointer()` in `ssl_tls.c`.
+    ///
+    /// If this field contains the value \p NULL and the configuration option
+    /// #MBEDTLS_SSL_CLI_ALLOW_WEAK_CERTIFICATE_VERIFICATION_WITHOUT_HOSTNAME
+    /// is unset, on a TLS client, attempting to verify a server certificate
+    /// results in the error
+    /// #MBEDTLS_ERR_SSL_CERTIFICATE_VERIFICATION_WITHOUT_HOSTNAME.
+    ///
+    /// If this field contains the special value described above, or if
+    /// the value is \p NULL and the configuration option
+    /// #MBEDTLS_SSL_CLI_ALLOW_WEAK_CERTIFICATE_VERIFICATION_WITHOUT_HOSTNAME
+    /// is set, then the peer name verification is skipped, which may be
+    /// insecure, especially on a client. Furthermore, on a client, the
+    /// server_name extension is not sent, and the server name is ignored
+    /// in TLS 1.3 session resumption using tickets.
     pub private_hostname: *mut ::core::ffi::c_char,
     ///<  negotiated protocol
     pub private_alpn_chosen: *const ::core::ffi::c_char,
@@ -21829,6 +22969,14 @@ unsafe extern "C" {
     /// \warning        This function must be called exactly once per context.
     ///                 Calling mbedtls_ssl_setup again is not supported, even
     ///                 if no session is active.
+    ///
+    /// \warning        After setting up a client context, if certificate-based
+    ///                 authentication is enabled, you should call
+    ///                 mbedtls_ssl_set_hostname() to specifiy the expected
+    ///                 name of the server. Without this, in most scenarios,
+    ///                 the TLS connection is insecure. See
+    ///                 #MBEDTLS_ERR_SSL_CERTIFICATE_VERIFICATION_WITHOUT_HOSTNAME
+    ///                 for more information.
     ///
     /// \note           If #MBEDTLS_USE_PSA_CRYPTO is enabled, the PSA crypto
     ///                 subsystem must have been initialized by calling
@@ -21933,18 +23081,16 @@ unsafe extern "C" {
 unsafe extern "C" {
     /// \brief          Set the random number generator callback
     ///
+    /// \note           The callback with its parameter must remain valid as
+    ///                 long as there is an SSL context that uses the
+    ///                 SSL configuration.
+    ///
     /// \param conf     SSL configuration
     /// \param f_rng    RNG function (mandatory)
     /// \param p_rng    RNG parameter
     pub fn mbedtls_ssl_conf_rng(
         conf: *mut mbedtls_ssl_config,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
     );
 }
@@ -22047,10 +23193,10 @@ unsafe extern "C" {
     /// \param own_cid     The address of the readable buffer holding the CID we want
     ///                    the peer to use when sending encrypted messages to us.
     ///                    This may be \c NULL if \p own_cid_len is \c 0.
-    ///                    This parameter is unused if \p enabled is set to
+    ///                    This parameter is unused if \p enable is set to
     ///                    MBEDTLS_SSL_CID_DISABLED.
     /// \param own_cid_len The length of \p own_cid.
-    ///                    This parameter is unused if \p enabled is set to
+    ///                    This parameter is unused if \p enable is set to
     ///                    MBEDTLS_SSL_CID_DISABLED.
     ///
     /// \note              The value of \p own_cid_len must match the value of the
@@ -22705,16 +23851,16 @@ unsafe extern "C" {
     ///                 a full handshake.
     ///
     /// \note           This function can handle a variety of mechanisms for session
-    ///                 resumption: For TLS 1.2, both session ID-based resumption and
-    ///                 ticket-based resumption will be considered. For TLS 1.3,
-    ///                 once implemented, sessions equate to tickets, and loading
-    ///                 one or more sessions via this call will lead to their
-    ///                 corresponding tickets being advertised as resumption PSKs
-    ///                 by the client.
-    ///
-    /// \note           Calling this function multiple times will only be useful
-    ///                 once TLS 1.3 is supported. For TLS 1.2 connections, this
-    ///                 function should be called at most once.
+    ///                 resumption: For TLS 1.2, both session ID-based resumption
+    ///                 and ticket-based resumption will be considered. For TLS 1.3,
+    ///                 sessions equate to tickets, and loading one session by
+    ///                 calling this function will lead to its corresponding ticket
+    ///                 being advertised as resumption PSK by the client. This
+    ///                 depends on session tickets being enabled (see
+    ///                 #MBEDTLS_SSL_SESSION_TICKETS configuration option) though.
+    ///                 If session tickets are disabled, a call to this function
+    ///                 with a TLS 1.3 session, will not have any effect on the next
+    ///                 handshake for the SSL context \p ssl.
     ///
     /// \param ssl      The SSL context representing the connection which should
     ///                 be attempted to be setup using session resumption. This
@@ -22729,9 +23875,10 @@ unsafe extern "C" {
     ///
     /// \return         \c 0 if successful.
     /// \return         \c MBEDTLS_ERR_SSL_FEATURE_UNAVAILABLE if the session
-    ///                 could not be loaded because of an implementation limitation.
-    ///                 This error is non-fatal, and has no observable effect on
-    ///                 the SSL context or the session that was attempted to be loaded.
+    ///                 could not be loaded because one session has already been
+    ///                 loaded. This error is non-fatal, and has no observable
+    ///                 effect on the SSL context or the session that was attempted
+    ///                 to be loaded.
     /// \return         Another negative error code on other kinds of failure.
     ///
     /// \sa             mbedtls_ssl_get_session()
@@ -22789,8 +23936,8 @@ unsafe extern "C" {
     ///
     /// \param session  The session structure to be saved.
     /// \param buf      The buffer to write the serialized data to. It must be a
-    ///                 writeable buffer of at least \p len bytes, or may be \c
-    ///                 NULL if \p len is \c 0.
+    ///                 writeable buffer of at least \p buf_len bytes, or may be \c
+    ///                 NULL if \p buf_len is \c 0.
     /// \param buf_len  The number of bytes available for writing in \p buf.
     /// \param olen     The size in bytes of the data that has been or would have
     ///                 been written. It must point to a valid \c size_t.
@@ -22800,8 +23947,16 @@ unsafe extern "C" {
     ///                 to determine the necessary size by calling this function
     ///                 with \p buf set to \c NULL and \p buf_len to \c 0.
     ///
+    /// \note           For TLS 1.3 sessions, this feature is supported only if the
+    ///                 MBEDTLS_SSL_SESSION_TICKETS configuration option is enabled,
+    ///                 as in TLS 1.3 session resumption is possible only with
+    ///                 tickets.
+    ///
     /// \return         \c 0 if successful.
     /// \return         #MBEDTLS_ERR_SSL_BUFFER_TOO_SMALL if \p buf is too small.
+    /// \return         #MBEDTLS_ERR_SSL_FEATURE_UNAVAILABLE if the
+    ///                 MBEDTLS_SSL_SESSION_TICKETS configuration option is disabled
+    ///                 and the session is a TLS 1.3 session.
     pub fn mbedtls_ssl_session_save(
         session: *const mbedtls_ssl_session,
         buf: *mut ::core::ffi::c_uchar,
@@ -22927,7 +24082,7 @@ unsafe extern "C" {
     ///                      record headers.
     ///
     /// \return              \c 0 on success.
-    /// \return              #MBEDTLS_ERR_SSL_BAD_INPUT_DATA if \p own_cid_len
+    /// \return              #MBEDTLS_ERR_SSL_BAD_INPUT_DATA if \p len
     ///                      is too large.
     pub fn mbedtls_ssl_conf_cid(
         conf: *mut mbedtls_ssl_config,
@@ -23254,6 +24409,8 @@ unsafe extern "C" {
     ///                 used for certificate signature are controlled by the
     ///                 verification profile, see \c mbedtls_ssl_conf_cert_profile().
     ///
+    /// \deprecated     Superseded by mbedtls_ssl_conf_sig_algs().
+    ///
     /// \note           This list should be ordered by decreasing preference
     ///                 (preferred hash first).
     ///
@@ -23278,27 +24435,43 @@ unsafe extern "C" {
     );
 }
 unsafe extern "C" {
-    /// \brief          Configure allowed signature algorithms for use in TLS 1.3
+    /// \brief          Configure allowed signature algorithms for use in TLS
     ///
     /// \param conf     The SSL configuration to use.
     /// \param sig_algs List of allowed IANA values for TLS 1.3 signature algorithms,
-    ///                 terminated by \c MBEDTLS_TLS1_3_SIG_NONE. The list must remain
-    ///                 available throughout the lifetime of the conf object. Supported
-    ///                 values are available as \c MBEDTLS_TLS1_3_SIG_XXXX
+    ///                 terminated by #MBEDTLS_TLS1_3_SIG_NONE. The list must remain
+    ///                 available throughout the lifetime of the conf object.
+    ///                 - For TLS 1.3, values of \c MBEDTLS_TLS1_3_SIG_XXXX should be
+    ///                   used.
+    ///                 - For TLS 1.2, values should be given as
+    ///                   "(HashAlgorithm << 8) | SignatureAlgorithm".
     pub fn mbedtls_ssl_conf_sig_algs(conf: *mut mbedtls_ssl_config, sig_algs: *const u16);
 }
 unsafe extern "C" {
     /// \brief          Set or reset the hostname to check against the received
-    ///                 server certificate. It sets the ServerName TLS extension,
-    ///                 too, if that extension is enabled. (client-side only)
+    ///                 peer certificate. On a client, this also sets the
+    ///                 ServerName TLS extension, if that extension is enabled.
+    ///                 On a TLS 1.3 client, this also sets the server name in
+    ///                 the session resumption ticket, if that feature is enabled.
     ///
     /// \param ssl      SSL context
-    /// \param hostname the server hostname, may be NULL to clear hostname
+    /// \param hostname The server hostname. This may be \c NULL to clear
+    ///                 the hostname.
     ///
-    /// \note           Maximum hostname length MBEDTLS_SSL_MAX_HOST_NAME_LEN.
+    /// \note           Maximum hostname length #MBEDTLS_SSL_MAX_HOST_NAME_LEN.
     ///
-    /// \return         0 if successful, MBEDTLS_ERR_SSL_ALLOC_FAILED on
-    ///                 allocation failure, MBEDTLS_ERR_SSL_BAD_INPUT_DATA on
+    /// \note           If the hostname is \c NULL on a client, then the server
+    ///                 is not authenticated: it only needs to have a valid
+    ///                 certificate, not a certificate matching its name.
+    ///                 Therefore you should always call this function on a client,
+    ///                 unless the connection is set up to only allow
+    ///                 pre-shared keys, or in scenarios where server
+    ///                 impersonation is not a concern. See the documentation of
+    ///                 #MBEDTLS_ERR_SSL_CERTIFICATE_VERIFICATION_WITHOUT_HOSTNAME
+    ///                 for more details.
+    ///
+    /// \return         0 if successful, #MBEDTLS_ERR_SSL_ALLOC_FAILED on
+    ///                 allocation failure, #MBEDTLS_ERR_SSL_BAD_INPUT_DATA on
     ///                 too long input hostname.
     ///
     ///                 Hostname set to the one provided on success (cleared
@@ -23311,8 +24484,8 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     /// \brief          Retrieve SNI extension value for the current handshake.
-    ///                 Available in \p f_cert_cb of \c mbedtls_ssl_conf_cert_cb(),
-    ///                 this is the same value passed to \p f_sni callback of
+    ///                 Available in \c f_cert_cb of \c mbedtls_ssl_conf_cert_cb(),
+    ///                 this is the same value passed to \c f_sni callback of
     ///                 \c mbedtls_ssl_conf_sni() and may be used instead of
     ///                 \c mbedtls_ssl_conf_sni().
     ///
@@ -23321,10 +24494,10 @@ unsafe extern "C" {
     ///                 0 if SNI extension is not present or not yet processed.
     ///
     /// \return         const pointer to SNI extension value.
-    ///                 - value is valid only when called in \p f_cert_cb
+    ///                 - value is valid only when called in \c f_cert_cb
     ///                   registered with \c mbedtls_ssl_conf_cert_cb().
     ///                 - value is NULL if SNI extension is not present.
-    ///                 - value is not '\0'-terminated.  Use \c name_len for len.
+    ///                 - value is not '\0'-terminated. Use \c name_len for len.
     ///                 - value must not be freed.
     pub fn mbedtls_ssl_get_hs_sni(
         ssl: *mut mbedtls_ssl_context,
@@ -23574,6 +24747,10 @@ unsafe extern "C" {
     ///                 with \c mbedtls_ssl_read()), not handshake messages.
     ///                 With DTLS, this affects both ApplicationData and handshake.
     ///
+    /// \note           Defragmentation of TLS handshake messages is supported
+    ///                 with some limitations. See the documentation of
+    ///                 mbedtls_ssl_handshake() for details.
+    ///
     /// \note           This sets the maximum length for a record's payload,
     ///                 excluding record overhead that will be added to it, see
     ///                 \c mbedtls_ssl_get_record_expansion().
@@ -23607,17 +24784,46 @@ unsafe extern "C" {
     );
 }
 unsafe extern "C" {
-    /// \brief          Enable / Disable session tickets (client only).
-    ///                 (Default: MBEDTLS_SSL_SESSION_TICKETS_ENABLED.)
+    /// \brief          Enable / Disable TLS 1.2 session tickets (client only,
+    ///                 TLS 1.2 only). Enabled by default.
     ///
     /// \note           On server, use \c mbedtls_ssl_conf_session_tickets_cb().
     ///
     /// \param conf     SSL configuration
-    /// \param use_tickets   Enable or disable (MBEDTLS_SSL_SESSION_TICKETS_ENABLED or
-    ///                                         MBEDTLS_SSL_SESSION_TICKETS_DISABLED)
+    /// \param use_tickets   Enable or disable (#MBEDTLS_SSL_SESSION_TICKETS_ENABLED or
+    ///                                         #MBEDTLS_SSL_SESSION_TICKETS_DISABLED)
     pub fn mbedtls_ssl_conf_session_tickets(
         conf: *mut mbedtls_ssl_config,
         use_tickets: ::core::ffi::c_int,
+    );
+}
+unsafe extern "C" {
+    /// \brief Enable / Disable handling of TLS 1.3 NewSessionTicket messages
+    ///        (client only, TLS 1.3 only).
+    ///
+    ///        The handling of TLS 1.3 NewSessionTicket messages is disabled by
+    ///        default.
+    ///
+    ///        In TLS 1.3, servers may send a NewSessionTicket message at any time,
+    ///        and may send multiple NewSessionTicket messages. By default, TLS 1.3
+    ///        clients ignore NewSessionTicket messages.
+    ///
+    ///        To support session tickets in TLS 1.3 clients, call this function
+    ///        with #MBEDTLS_SSL_TLS1_3_SIGNAL_NEW_SESSION_TICKETS_ENABLED. When
+    ///        this is enabled, when a client receives a NewSessionTicket message,
+    ///        the next call to a message processing functions (notably
+    ///        mbedtls_ssl_handshake() and mbedtls_ssl_read()) will return
+    ///        #MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET. The client should then
+    ///        call mbedtls_ssl_get_session() to retrieve the session ticket before
+    ///        calling the same message processing function again.
+    ///
+    /// \param conf  SSL configuration
+    /// \param signal_new_session_tickets Enable or disable
+    ///                                   (#MBEDTLS_SSL_TLS1_3_SIGNAL_NEW_SESSION_TICKETS_ENABLED or
+    ///                                    #MBEDTLS_SSL_TLS1_3_SIGNAL_NEW_SESSION_TICKETS_DISABLED)
+    pub fn mbedtls_ssl_conf_tls13_enable_signal_new_session_tickets(
+        conf: *mut mbedtls_ssl_config,
+        signal_new_session_tickets: ::core::ffi::c_int,
     );
 }
 unsafe extern "C" {
@@ -23948,29 +25154,22 @@ unsafe extern "C" {
     /// \param ssl      The SSL context representing the connection for which to
     ///                 to export a session structure for later resumption.
     /// \param session  The target structure in which to store the exported session.
-    ///                 This must have been initialized with mbedtls_ssl_init_session()
+    ///                 This must have been initialized with mbedtls_ssl_session_init()
     ///                 but otherwise be unused.
     ///
     /// \note           This function can handle a variety of mechanisms for session
     ///                 resumption: For TLS 1.2, both session ID-based resumption and
     ///                 ticket-based resumption will be considered. For TLS 1.3,
-    ///                 once implemented, sessions equate to tickets, and calling
-    ///                 this function multiple times will export the available
-    ///                 tickets one a time until no further tickets are available,
-    ///                 in which case MBEDTLS_ERR_SSL_FEATURE_UNAVAILABLE will
-    ///                 be returned.
-    ///
-    /// \note           Calling this function multiple times will only be useful
-    ///                 once TLS 1.3 is supported. For TLS 1.2 connections, this
-    ///                 function should be called at most once.
+    ///                 sessions equate to tickets, and if session tickets are
+    ///                 enabled (see #MBEDTLS_SSL_SESSION_TICKETS configuration
+    ///                 option), this function exports the last received ticket and
+    ///                 the exported session may be used to resume the TLS 1.3
+    ///                 session. If session tickets are disabled, exported sessions
+    ///                 cannot be used to resume a TLS 1.3 session.
     ///
     /// \return         \c 0 if successful. In this case, \p session can be used for
     ///                 session resumption by passing it to mbedtls_ssl_set_session(),
     ///                 and serialized for storage via mbedtls_ssl_session_save().
-    /// \return         #MBEDTLS_ERR_SSL_FEATURE_UNAVAILABLE if no further session
-    ///                 is available for export.
-    ///                 This error is a non-fatal, and has no observable effect on
-    ///                 the SSL context or the destination session.
     /// \return         Another negative error code on other kinds of failure.
     ///
     /// \sa             mbedtls_ssl_set_session()
@@ -24002,6 +25201,17 @@ unsafe extern "C" {
     /// \return         #MBEDTLS_ERR_SSL_HELLO_VERIFY_REQUIRED if DTLS is in use
     ///                 and the client did not demonstrate reachability yet - in
     ///                 this case you must stop using the context (see below).
+    /// \return         #MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET if a TLS 1.3
+    ///                 NewSessionTicket message has been received. See the
+    ///                 documentation of mbedtls_ssl_read() for more information
+    ///                 about this error code.
+    /// \return         #MBEDTLS_ERR_SSL_RECEIVED_EARLY_DATA if early data, as
+    ///                 defined in RFC 8446 (TLS 1.3 specification), has been
+    ///                 received as part of the handshake. This is server specific
+    ///                 and may occur only if the early data feature has been
+    ///                 enabled on server (see mbedtls_ssl_conf_early_data()
+    ///                 documentation). You must call mbedtls_ssl_read_early_data()
+    ///                 to read the early data before resuming the handshake.
     /// \return         Another SSL error code - in this case you must stop using
     ///                 the context (see below).
     ///
@@ -24010,7 +25220,9 @@ unsafe extern "C" {
     ///                 #MBEDTLS_ERR_SSL_WANT_READ,
     ///                 #MBEDTLS_ERR_SSL_WANT_WRITE,
     ///                 #MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS or
-    ///                 #MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS,
+    ///                 #MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS or
+    ///                 #MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET or
+    ///                 #MBEDTLS_ERR_SSL_RECEIVED_EARLY_DATA,
     ///                 you must stop using the SSL context for reading or writing,
     ///                 and either free it or call \c mbedtls_ssl_session_reset()
     ///                 on it before re-using it for a new connection; the current
@@ -24030,10 +25242,31 @@ unsafe extern "C" {
     ///                 currently being processed might or might not contain further
     ///                 DTLS records.
     ///
-    /// \note           If the context is configured to allow TLS 1.3, or if
-    ///                 #MBEDTLS_USE_PSA_CRYPTO is enabled, the PSA crypto
+    /// \note           If #MBEDTLS_USE_PSA_CRYPTO is enabled, the PSA crypto
     ///                 subsystem must have been initialized by calling
     ///                 psa_crypto_init() before calling this function.
+    ///                 Otherwise, the handshake may call psa_crypto_init()
+    ///                 if a negotiation involving TLS 1.3 takes place (this may
+    ///                 be the case even if TLS 1.3 is offered but eventually
+    ///                 not selected).
+    ///
+    /// \note           In TLS, reception of fragmented handshake messages is
+    ///                 supported with some limitations (those limitations do
+    ///                 not apply to DTLS, where defragmentation is fully
+    ///                 supported):
+    ///                 - On an Mbed TLS server that only accepts TLS 1.2,
+    ///                   the initial ClientHello message must not be fragmented.
+    ///                   A TLS 1.2 ClientHello may be fragmented if the server
+    ///                   also accepts TLS 1.3 connections (meaning
+    ///                   that #MBEDTLS_SSL_PROTO_TLS1_3 enabled, and the
+    ///                   accepted versions have not been restricted with
+    ///                   mbedtls_ssl_conf_max_tls_version() or the like).
+    ///                 - The first fragment of a handshake message must be
+    ///                   at least 4 bytes long.
+    ///                 - Non-handshake records must not be interleaved between
+    ///                   the fragments of a handshake message. (This is permitted
+    ///                   in TLS 1.2 but not in TLS 1.3, but Mbed TLS rejects it
+    ///                   even in TLS 1.2.)
     pub fn mbedtls_ssl_handshake(ssl: *mut mbedtls_ssl_context) -> ::core::ffi::c_int;
 }
 unsafe extern "C" {
@@ -24062,8 +25295,10 @@ unsafe extern "C" {
     ///
     /// \warning        If this function returns something other than \c 0,
     ///                 #MBEDTLS_ERR_SSL_WANT_READ, #MBEDTLS_ERR_SSL_WANT_WRITE,
-    ///                 #MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS or
-    ///                 #MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS, you must stop using
+    ///                 #MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS,
+    ///                 #MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS or
+    ///                 #MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET or
+    ///                 #MBEDTLS_ERR_SSL_RECEIVED_EARLY_DATA, you must stop using
     ///                 the SSL context for reading or writing, and either free it
     ///                 or call \c mbedtls_ssl_session_reset() on it before
     ///                 re-using it for a new connection; the current connection
@@ -24126,6 +25361,24 @@ unsafe extern "C" {
     /// \return         #MBEDTLS_ERR_SSL_CLIENT_RECONNECT if we're at the server
     ///                 side of a DTLS connection and the client is initiating a
     ///                 new connection using the same source port. See below.
+    /// \return         #MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET if a TLS 1.3
+    ///                 NewSessionTicket message has been received.
+    ///                 This error code is only returned on the client side. It is
+    ///                 only returned if handling of TLS 1.3 NewSessionTicket
+    ///                 messages has been enabled through
+    ///                 mbedtls_ssl_conf_tls13_enable_signal_new_session_tickets().
+    ///                 This error code indicates that a TLS 1.3 NewSessionTicket
+    ///                 message has been received and parsed successfully by the
+    ///                 client. The ticket data can be retrieved from the SSL
+    ///                 context by calling mbedtls_ssl_get_session(). It remains
+    ///                 available until the next call to mbedtls_ssl_read().
+    /// \return         #MBEDTLS_ERR_SSL_RECEIVED_EARLY_DATA if early data, as
+    ///                 defined in RFC 8446 (TLS 1.3 specification), has been
+    ///                 received as part of the handshake. This is server specific
+    ///                 and may occur only if the early data feature has been
+    ///                 enabled on server (see mbedtls_ssl_conf_early_data()
+    ///                 documentation). You must call mbedtls_ssl_read_early_data()
+    ///                 to read the early data before resuming the handshake.
     /// \return         Another SSL error code - in this case you must stop using
     ///                 the context (see below).
     ///
@@ -24134,8 +25387,10 @@ unsafe extern "C" {
     ///                 #MBEDTLS_ERR_SSL_WANT_READ,
     ///                 #MBEDTLS_ERR_SSL_WANT_WRITE,
     ///                 #MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS,
-    ///                 #MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS or
-    ///                 #MBEDTLS_ERR_SSL_CLIENT_RECONNECT,
+    ///                 #MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS,
+    ///                 #MBEDTLS_ERR_SSL_CLIENT_RECONNECT or
+    ///                 #MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET or
+    ///                 #MBEDTLS_ERR_SSL_RECEIVED_EARLY_DATA,
     ///                 you must stop using the SSL context for reading or writing,
     ///                 and either free it or call \c mbedtls_ssl_session_reset()
     ///                 on it before re-using it for a new connection; the current
@@ -24202,6 +25457,17 @@ unsafe extern "C" {
     ///                 operation is in progress (see mbedtls_ecp_set_max_ops()) -
     ///                 in this case you must call this function again to complete
     ///                 the handshake when you're done attending other tasks.
+    /// \return         #MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET if a TLS 1.3
+    ///                 NewSessionTicket message has been received. See the
+    ///                 documentation of mbedtls_ssl_read() for more information
+    ///                 about this error code.
+    /// \return         #MBEDTLS_ERR_SSL_RECEIVED_EARLY_DATA if early data, as
+    ///                 defined in RFC 8446 (TLS 1.3 specification), has been
+    ///                 received as part of the handshake. This is server specific
+    ///                 and may occur only if the early data feature has been
+    ///                 enabled on server (see mbedtls_ssl_conf_early_data()
+    ///                 documentation). You must call mbedtls_ssl_read_early_data()
+    ///                 to read the early data before resuming the handshake.
     /// \return         Another SSL error code - in this case you must stop using
     ///                 the context (see below).
     ///
@@ -24209,8 +25475,10 @@ unsafe extern "C" {
     ///                 a non-negative value,
     ///                 #MBEDTLS_ERR_SSL_WANT_READ,
     ///                 #MBEDTLS_ERR_SSL_WANT_WRITE,
-    ///                 #MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS or
-    ///                 #MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS,
+    ///                 #MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS,
+    ///                 #MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS or
+    ///                 #MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET or
+    ///                 #MBEDTLS_ERR_SSL_RECEIVED_EARLY_DATA,
     ///                 you must stop using the SSL context for reading or writing,
     ///                 and either free it or call \c mbedtls_ssl_session_reset()
     ///                 on it before re-using it for a new connection; the current
@@ -24511,323 +25779,6 @@ unsafe extern "C" {
     pub fn mbedtls_debug_set_threshold(threshold: ::core::ffi::c_int);
 }
 unsafe extern "C" {
-    /// \brief    Print a message to the debug output. This function is always used
-    ///          through the MBEDTLS_SSL_DEBUG_MSG() macro, which supplies the ssl
-    ///          context, file and line number parameters.
-    ///
-    /// \param ssl       SSL context
-    /// \param level     error level of the debug message
-    /// \param file      file the message has occurred in
-    /// \param line      line number the message has occurred at
-    /// \param format    format specifier, in printf format
-    /// \param ...       variables used by the format specifier
-    ///
-    /// \attention       This function is intended for INTERNAL usage within the
-    ///                  library only.
-    pub fn mbedtls_debug_print_msg(
-        ssl: *const mbedtls_ssl_context,
-        level: ::core::ffi::c_int,
-        file: *const ::core::ffi::c_char,
-        line: ::core::ffi::c_int,
-        format: *const ::core::ffi::c_char,
-        ...
-    );
-}
-unsafe extern "C" {
-    /// \brief   Print the return value of a function to the debug output. This
-    ///          function is always used through the MBEDTLS_SSL_DEBUG_RET() macro,
-    ///          which supplies the ssl context, file and line number parameters.
-    ///
-    /// \param ssl       SSL context
-    /// \param level     error level of the debug message
-    /// \param file      file the error has occurred in
-    /// \param line      line number the error has occurred in
-    /// \param text      the name of the function that returned the error
-    /// \param ret       the return code value
-    ///
-    /// \attention       This function is intended for INTERNAL usage within the
-    ///                  library only.
-    pub fn mbedtls_debug_print_ret(
-        ssl: *const mbedtls_ssl_context,
-        level: ::core::ffi::c_int,
-        file: *const ::core::ffi::c_char,
-        line: ::core::ffi::c_int,
-        text: *const ::core::ffi::c_char,
-        ret: ::core::ffi::c_int,
-    );
-}
-unsafe extern "C" {
-    /// \brief   Output a buffer of size len bytes to the debug output. This function
-    ///          is always used through the MBEDTLS_SSL_DEBUG_BUF() macro,
-    ///          which supplies the ssl context, file and line number parameters.
-    ///
-    /// \param ssl       SSL context
-    /// \param level     error level of the debug message
-    /// \param file      file the error has occurred in
-    /// \param line      line number the error has occurred in
-    /// \param text      a name or label for the buffer being dumped. Normally the
-    ///                  variable or buffer name
-    /// \param buf       the buffer to be outputted
-    /// \param len       length of the buffer
-    ///
-    /// \attention       This function is intended for INTERNAL usage within the
-    ///                  library only.
-    pub fn mbedtls_debug_print_buf(
-        ssl: *const mbedtls_ssl_context,
-        level: ::core::ffi::c_int,
-        file: *const ::core::ffi::c_char,
-        line: ::core::ffi::c_int,
-        text: *const ::core::ffi::c_char,
-        buf: *const ::core::ffi::c_uchar,
-        len: usize,
-    );
-}
-unsafe extern "C" {
-    /// \brief   Print a MPI variable to the debug output. This function is always
-    ///          used through the MBEDTLS_SSL_DEBUG_MPI() macro, which supplies the
-    ///          ssl context, file and line number parameters.
-    ///
-    /// \param ssl       SSL context
-    /// \param level     error level of the debug message
-    /// \param file      file the error has occurred in
-    /// \param line      line number the error has occurred in
-    /// \param text      a name or label for the MPI being output. Normally the
-    ///                  variable name
-    /// \param X         the MPI variable
-    ///
-    /// \attention       This function is intended for INTERNAL usage within the
-    ///                  library only.
-    pub fn mbedtls_debug_print_mpi(
-        ssl: *const mbedtls_ssl_context,
-        level: ::core::ffi::c_int,
-        file: *const ::core::ffi::c_char,
-        line: ::core::ffi::c_int,
-        text: *const ::core::ffi::c_char,
-        X: *const mbedtls_mpi,
-    );
-}
-unsafe extern "C" {
-    /// \brief   Print an ECP point to the debug output. This function is always
-    ///          used through the MBEDTLS_SSL_DEBUG_ECP() macro, which supplies the
-    ///          ssl context, file and line number parameters.
-    ///
-    /// \param ssl       SSL context
-    /// \param level     error level of the debug message
-    /// \param file      file the error has occurred in
-    /// \param line      line number the error has occurred in
-    /// \param text      a name or label for the ECP point being output. Normally the
-    ///                  variable name
-    /// \param X         the ECP point
-    ///
-    /// \attention       This function is intended for INTERNAL usage within the
-    ///                  library only.
-    pub fn mbedtls_debug_print_ecp(
-        ssl: *const mbedtls_ssl_context,
-        level: ::core::ffi::c_int,
-        file: *const ::core::ffi::c_char,
-        line: ::core::ffi::c_int,
-        text: *const ::core::ffi::c_char,
-        X: *const mbedtls_ecp_point,
-    );
-}
-unsafe extern "C" {
-    /// \brief   Print a X.509 certificate structure to the debug output. This
-    ///          function is always used through the MBEDTLS_SSL_DEBUG_CRT() macro,
-    ///          which supplies the ssl context, file and line number parameters.
-    ///
-    /// \param ssl       SSL context
-    /// \param level     error level of the debug message
-    /// \param file      file the error has occurred in
-    /// \param line      line number the error has occurred in
-    /// \param text      a name or label for the certificate being output
-    /// \param crt       X.509 certificate structure
-    ///
-    /// \attention       This function is intended for INTERNAL usage within the
-    ///                  library only.
-    pub fn mbedtls_debug_print_crt(
-        ssl: *const mbedtls_ssl_context,
-        level: ::core::ffi::c_int,
-        file: *const ::core::ffi::c_char,
-        line: ::core::ffi::c_int,
-        text: *const ::core::ffi::c_char,
-        crt: *const mbedtls_x509_crt,
-    );
-}
-pub const mbedtls_debug_ecdh_attr_MBEDTLS_DEBUG_ECDH_Q: mbedtls_debug_ecdh_attr = 0;
-pub const mbedtls_debug_ecdh_attr_MBEDTLS_DEBUG_ECDH_QP: mbedtls_debug_ecdh_attr = 1;
-pub const mbedtls_debug_ecdh_attr_MBEDTLS_DEBUG_ECDH_Z: mbedtls_debug_ecdh_attr = 2;
-pub type mbedtls_debug_ecdh_attr = ::core::ffi::c_uint;
-unsafe extern "C" {
-    /// \brief   Print a field of the ECDH structure in the SSL context to the debug
-    ///          output. This function is always used through the
-    ///          MBEDTLS_SSL_DEBUG_ECDH() macro, which supplies the ssl context, file
-    ///          and line number parameters.
-    ///
-    /// \param ssl       SSL context
-    /// \param level     error level of the debug message
-    /// \param file      file the error has occurred in
-    /// \param line      line number the error has occurred in
-    /// \param ecdh      the ECDH context
-    /// \param attr      the identifier of the attribute being output
-    ///
-    /// \attention       This function is intended for INTERNAL usage within the
-    ///                  library only.
-    pub fn mbedtls_debug_printf_ecdh(
-        ssl: *const mbedtls_ssl_context,
-        level: ::core::ffi::c_int,
-        file: *const ::core::ffi::c_char,
-        line: ::core::ffi::c_int,
-        ecdh: *const mbedtls_ecdh_context,
-        attr: mbedtls_debug_ecdh_attr,
-    );
-}
-/// \brief           Entropy poll callback pointer
-///
-/// \param data      Callback-specific data pointer
-/// \param output    Data to fill
-/// \param len       Maximum size to provide
-/// \param olen      The actual amount of bytes put into the buffer (Can be 0)
-///
-/// \return          0 if no critical failures occurred,
-///                  MBEDTLS_ERR_ENTROPY_SOURCE_FAILED otherwise
-pub type mbedtls_entropy_f_source_ptr = ::core::option::Option<
-    unsafe extern "C" fn(
-        data: *mut ::core::ffi::c_void,
-        output: *mut ::core::ffi::c_uchar,
-        len: usize,
-        olen: *mut usize,
-    ) -> ::core::ffi::c_int,
->;
-/// \brief           Entropy source state
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct mbedtls_entropy_source_state {
-    ///< The entropy source callback
-    pub private_f_source: mbedtls_entropy_f_source_ptr,
-    ///< The callback data pointer
-    pub private_p_source: *mut ::core::ffi::c_void,
-    ///< Amount received in bytes
-    pub private_size: usize,
-    ///< Minimum bytes required before release
-    pub private_threshold: usize,
-    ///< Is the source strong?
-    pub private_strong: ::core::ffi::c_int,
-}
-impl Default for mbedtls_entropy_source_state {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-/// \brief           Entropy context structure
-#[repr(C)]
-#[repr(align(16))]
-#[derive(Copy, Clone)]
-pub struct mbedtls_entropy_context {
-    pub private_accumulator_started: ::core::ffi::c_int,
-    pub __bindgen_padding_0: u64,
-    pub private_accumulator: mbedtls_sha512_context,
-    pub private_source_count: ::core::ffi::c_int,
-    pub private_source: [mbedtls_entropy_source_state; 20usize],
-}
-impl Default for mbedtls_entropy_context {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-unsafe extern "C" {
-    /// \brief           Initialize the context
-    ///
-    /// \param ctx       Entropy context to initialize
-    pub fn mbedtls_entropy_init(ctx: *mut mbedtls_entropy_context);
-}
-unsafe extern "C" {
-    /// \brief           Free the data in the context
-    ///
-    /// \param ctx       Entropy context to free
-    pub fn mbedtls_entropy_free(ctx: *mut mbedtls_entropy_context);
-}
-unsafe extern "C" {
-    /// \brief           Adds an entropy source to poll
-    ///                  (Thread-safe if MBEDTLS_THREADING_C is enabled)
-    ///
-    /// \param ctx       Entropy context
-    /// \param f_source  Entropy function
-    /// \param p_source  Function data
-    /// \param threshold Minimum required from source before entropy is released
-    ///                  ( with mbedtls_entropy_func() ) (in bytes)
-    /// \param strong    MBEDTLS_ENTROPY_SOURCE_STRONG or
-    ///                  MBEDTLS_ENTROPY_SOURCE_WEAK.
-    ///                  At least one strong source needs to be added.
-    ///                  Weaker sources (such as the cycle counter) can be used as
-    ///                  a complement.
-    ///
-    /// \return          0 if successful or MBEDTLS_ERR_ENTROPY_MAX_SOURCES
-    pub fn mbedtls_entropy_add_source(
-        ctx: *mut mbedtls_entropy_context,
-        f_source: mbedtls_entropy_f_source_ptr,
-        p_source: *mut ::core::ffi::c_void,
-        threshold: usize,
-        strong: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           Trigger an extra gather poll for the accumulator
-    ///                  (Thread-safe if MBEDTLS_THREADING_C is enabled)
-    ///
-    /// \param ctx       Entropy context
-    ///
-    /// \return          0 if successful, or MBEDTLS_ERR_ENTROPY_SOURCE_FAILED
-    pub fn mbedtls_entropy_gather(ctx: *mut mbedtls_entropy_context) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           Retrieve entropy from the accumulator
-    ///                  (Maximum length: MBEDTLS_ENTROPY_BLOCK_SIZE)
-    ///                  (Thread-safe if MBEDTLS_THREADING_C is enabled)
-    ///
-    /// \param data      Entropy context
-    /// \param output    Buffer to fill
-    /// \param len       Number of bytes desired, must be at most MBEDTLS_ENTROPY_BLOCK_SIZE
-    ///
-    /// \return          0 if successful, or MBEDTLS_ERR_ENTROPY_SOURCE_FAILED
-    pub fn mbedtls_entropy_func(
-        data: *mut ::core::ffi::c_void,
-        output: *mut ::core::ffi::c_uchar,
-        len: usize,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief           Add data to the accumulator manually
-    ///                  (Thread-safe if MBEDTLS_THREADING_C is enabled)
-    ///
-    /// \param ctx       Entropy context
-    /// \param data      Data to add
-    /// \param len       Length of data
-    ///
-    /// \return          0 if successful
-    pub fn mbedtls_entropy_update_manual(
-        ctx: *mut mbedtls_entropy_context,
-        data: *const ::core::ffi::c_uchar,
-        len: usize,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
-    /// \brief          Checkup routine
-    ///
-    ///                 This module self-test also calls the entropy self-test,
-    ///                 mbedtls_entropy_source_self_test();
-    ///
-    /// \return         0 if successful, or 1 if a test failed
-    pub fn mbedtls_entropy_self_test(verbose: ::core::ffi::c_int) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
     ///  \brief  This is the HMAC-based Extract-and-Expand Key Derivation Function
     ///          (HKDF).
     ///
@@ -24994,8 +25945,8 @@ unsafe extern "C" {
     /// \param len           The length of the personalization string.
     ///                      This must be at most #MBEDTLS_HMAC_DRBG_MAX_INPUT
     ///                      and also at most
-    ///                      #MBEDTLS_HMAC_DRBG_MAX_SEED_INPUT - \p entropy_len * 3 / 2
-    ///                      where \p entropy_len is the entropy length
+    ///                      #MBEDTLS_HMAC_DRBG_MAX_SEED_INPUT - \c entropy_len * 3 / 2
+    ///                      where \c entropy_len is the entropy length
     ///                      described above.
     ///
     /// \return              \c 0 if successful.
@@ -25120,8 +26071,8 @@ unsafe extern "C" {
     /// \param len           The length of the additional data.
     ///                      This must be at most #MBEDTLS_HMAC_DRBG_MAX_INPUT
     ///                      and also at most
-    ///                      #MBEDTLS_HMAC_DRBG_MAX_SEED_INPUT - \p entropy_len
-    ///                      where \p entropy_len is the entropy length
+    ///                      #MBEDTLS_HMAC_DRBG_MAX_SEED_INPUT - \c entropy_len
+    ///                      where \c entropy_len is the entropy length
     ///                      (see mbedtls_hmac_drbg_set_entropy_len()).
     ///
     /// \return              \c 0 if successful.
@@ -25605,6 +26556,28 @@ unsafe extern "C" {
     ) -> ::core::ffi::c_int;
 }
 unsafe extern "C" {
+    /// \brief           Translate a string containing a dotted-decimal
+    ///                  representation of an ASN.1 OID into its encoded form
+    ///                  (e.g. "1.2.840.113549" into "\x2A\x86\x48\x86\xF7\x0D").
+    ///                  On success, this function allocates oid->buf from the
+    ///                  heap. It must be freed by the caller using mbedtls_free().
+    ///
+    /// \param oid       #mbedtls_asn1_buf to populate with the DER-encoded OID
+    /// \param oid_str   string representation of the OID to parse
+    /// \param size      length of the OID string, not including any null terminator
+    ///
+    /// \return          0 if successful
+    /// \return          #MBEDTLS_ERR_ASN1_INVALID_DATA if \p oid_str does not
+    ///                  represent a valid OID
+    /// \return          #MBEDTLS_ERR_ASN1_ALLOC_FAILED if the function fails to
+    ///                  allocate oid->buf
+    pub fn mbedtls_oid_from_numeric_string(
+        oid: *mut mbedtls_asn1_buf,
+        oid_str: *const ::core::ffi::c_char,
+        size: usize,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
     /// \brief          Translate an X.509 extension OID into local values
     ///
     /// \param oid      OID to use
@@ -25676,6 +26649,34 @@ unsafe extern "C" {
     ///
     /// \return         0 if successful, or MBEDTLS_ERR_OID_NOT_FOUND
     pub fn mbedtls_oid_get_oid_by_ec_grp(
+        grp_id: mbedtls_ecp_group_id,
+        oid: *mut *const ::core::ffi::c_char,
+        olen: *mut usize,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          Translate AlgorithmIdentifier OID into an EC group identifier,
+    ///                 for curves that are directly encoded at this level
+    ///
+    /// \param oid      OID to use
+    /// \param grp_id   place to store group id
+    ///
+    /// \return         0 if successful, or MBEDTLS_ERR_OID_NOT_FOUND
+    pub fn mbedtls_oid_get_ec_grp_algid(
+        oid: *const mbedtls_asn1_buf,
+        grp_id: *mut mbedtls_ecp_group_id,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          Translate EC group identifier into AlgorithmIdentifier OID,
+    ///                 for curves that are directly encoded at this level
+    ///
+    /// \param grp_id   EC group identifier
+    /// \param oid      place to store ASN.1 OID string pointer
+    /// \param olen     length of the OID
+    ///
+    /// \return         0 if successful, or MBEDTLS_ERR_OID_NOT_FOUND
+    pub fn mbedtls_oid_get_oid_by_ec_grp_algid(
         grp_id: mbedtls_ecp_group_id,
         oid: *mut *const ::core::ffi::c_char,
         olen: *mut usize,
@@ -25848,11 +26849,11 @@ unsafe extern "C" {
     /// \param data      source data to look in (must be nul-terminated)
     /// \param pwd       password for decryption (can be NULL)
     /// \param pwdlen    length of password
-    /// \param use_len   destination for total length used (set after header is
-    ///                  correctly read, so unless you get
+    /// \param use_len   destination for total length used from data buffer. It is
+    ///                  set after header is correctly read, so unless you get
     ///                  MBEDTLS_ERR_PEM_BAD_INPUT_DATA or
     ///                  MBEDTLS_ERR_PEM_NO_HEADER_FOOTER_PRESENT, use_len is
-    ///                  the length to skip)
+    ///                  the length to skip.
     ///
     /// \note            Attempts to check password correctness by verifying if
     ///                  the decrypted text starts with an ASN.1 sequence of
@@ -25917,13 +26918,40 @@ unsafe extern "C" {
 unsafe extern "C" {
     /// \brief          PKCS#5 PBES2 function
     ///
+    /// \note           When encrypting, #MBEDTLS_CIPHER_PADDING_PKCS7 must
+    ///                 be enabled at compile time.
+    ///
+    /// \deprecated     This function is deprecated and will be removed in a
+    ///                 future version of the library.
+    ///                 Please use mbedtls_pkcs5_pbes2_ext() instead.
+    ///
+    /// \warning        When decrypting:
+    ///                 - if #MBEDTLS_CIPHER_PADDING_PKCS7 is enabled at compile
+    ///                   time, this function validates the CBC padding and returns
+    ///                   #MBEDTLS_ERR_PKCS5_PASSWORD_MISMATCH if the padding is
+    ///                   invalid. Note that this can help active adversaries
+    ///                   attempting to brute-forcing the password. Note also that
+    ///                   there is no guarantee that an invalid password will be
+    ///                   detected (the chances of a valid padding with a random
+    ///                   password are about 1/255).
+    ///                 - if #MBEDTLS_CIPHER_PADDING_PKCS7 is disabled at compile
+    ///                   time, this function does not validate the CBC padding.
+    ///
     /// \param pbe_params the ASN.1 algorithm parameters
-    /// \param mode       either MBEDTLS_PKCS5_DECRYPT or MBEDTLS_PKCS5_ENCRYPT
+    /// \param mode       either #MBEDTLS_PKCS5_DECRYPT or #MBEDTLS_PKCS5_ENCRYPT
     /// \param pwd        password to use when generating key
     /// \param pwdlen     length of password
     /// \param data       data to process
     /// \param datalen    length of data
-    /// \param output     output buffer
+    /// \param output     Output buffer.
+    ///                   On success, it contains the encrypted or decrypted data,
+    ///                   possibly followed by the CBC padding.
+    ///                   On failure, the content is indeterminate.
+    ///                   For decryption, there must be enough room for \p datalen
+    ///                   bytes.
+    ///                   For encryption, there must be enough room for
+    ///                   \p datalen + 1 bytes, rounded up to the block size of
+    ///                   the block cipher identified by \p pbe_params.
     ///
     /// \returns        0 on success, or a MBEDTLS_ERR_XXX code if verification fails.
     pub fn mbedtls_pkcs5_pbes2(
@@ -25934,6 +26962,50 @@ unsafe extern "C" {
         data: *const ::core::ffi::c_uchar,
         datalen: usize,
         output: *mut ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          PKCS#5 PBES2 function
+    ///
+    /// \warning        When decrypting:
+    ///                 - This function validates the CBC padding and returns
+    ///                   #MBEDTLS_ERR_PKCS5_PASSWORD_MISMATCH if the padding is
+    ///                   invalid. Note that this can help active adversaries
+    ///                   attempting to brute-forcing the password. Note also that
+    ///                   there is no guarantee that an invalid password will be
+    ///                   detected (the chances of a valid padding with a random
+    ///                   password are about 1/255).
+    ///
+    /// \param pbe_params the ASN.1 algorithm parameters
+    /// \param mode       either #MBEDTLS_PKCS5_DECRYPT or #MBEDTLS_PKCS5_ENCRYPT
+    /// \param pwd        password to use when generating key
+    /// \param pwdlen     length of password
+    /// \param data       data to process
+    /// \param datalen    length of data
+    /// \param output     Output buffer.
+    ///                   On success, it contains the decrypted data.
+    ///                   On failure, the content is indetermidate.
+    ///                   For decryption, there must be enough room for \p datalen
+    ///                   bytes.
+    ///                   For encryption, there must be enough room for
+    ///                   \p datalen + 1 bytes, rounded up to the block size of
+    ///                   the block cipher identified by \p pbe_params.
+    /// \param output_size size of output buffer.
+    ///                    This must be big enough to accommodate for output plus
+    ///                    padding data.
+    /// \param output_len On success, length of actual data written to the output buffer.
+    ///
+    /// \returns        0 on success, or a MBEDTLS_ERR_XXX code if parsing or decryption fails.
+    pub fn mbedtls_pkcs5_pbes2_ext(
+        pbe_params: *const mbedtls_asn1_buf,
+        mode: ::core::ffi::c_int,
+        pwd: *const ::core::ffi::c_uchar,
+        pwdlen: usize,
+        data: *const ::core::ffi::c_uchar,
+        datalen: usize,
+        output: *mut ::core::ffi::c_uchar,
+        output_size: usize,
+        output_len: *mut usize,
     ) -> ::core::ffi::c_int;
 }
 unsafe extern "C" {
@@ -26167,6 +27239,25 @@ unsafe extern "C" {
     /// \brief            PKCS12 Password Based function (encryption / decryption)
     ///                   for cipher-based and mbedtls_md-based PBE's
     ///
+    /// \note             When encrypting, #MBEDTLS_CIPHER_PADDING_PKCS7 must
+    ///                   be enabled at compile time.
+    ///
+    /// \deprecated       This function is deprecated and will be removed in a
+    ///                   future version of the library.
+    ///                   Please use mbedtls_pkcs12_pbe_ext() instead.
+    ///
+    /// \warning          When decrypting:
+    ///                   - if #MBEDTLS_CIPHER_PADDING_PKCS7 is enabled at compile
+    ///                     time, this function validates the CBC padding and returns
+    ///                     #MBEDTLS_ERR_PKCS12_PASSWORD_MISMATCH if the padding is
+    ///                     invalid. Note that this can help active adversaries
+    ///                     attempting to brute-forcing the password. Note also that
+    ///                     there is no guarantee that an invalid password will be
+    ///                     detected (the chances of a valid padding with a random
+    ///                     password are about 1/255).
+    ///                   - if #MBEDTLS_CIPHER_PADDING_PKCS7 is disabled at compile
+    ///                     time, this function does not validate the CBC padding.
+    ///
     /// \param pbe_params an ASN1 buffer containing the pkcs-12 PbeParams structure
     /// \param mode       either #MBEDTLS_PKCS12_PBE_ENCRYPT or
     ///                   #MBEDTLS_PKCS12_PBE_DECRYPT
@@ -26175,9 +27266,17 @@ unsafe extern "C" {
     /// \param pwd        Latin1-encoded password used. This may only be \c NULL when
     ///                   \p pwdlen is 0. No null terminator should be used.
     /// \param pwdlen     length of the password (may be 0)
-    /// \param input      the input data
+    /// \param data       the input data
     /// \param len        data length
-    /// \param output     the output buffer
+    /// \param output     Output buffer.
+    ///                   On success, it contains the encrypted or decrypted data,
+    ///                   possibly followed by the CBC padding.
+    ///                   On failure, the content is indeterminate.
+    ///                   For decryption, there must be enough room for \p len
+    ///                   bytes.
+    ///                   For encryption, there must be enough room for
+    ///                   \p len + 1 bytes, rounded up to the block size of
+    ///                   the block cipher identified by \p pbe_params.
     ///
     /// \return           0 if successful, or a MBEDTLS_ERR_XXX code
     pub fn mbedtls_pkcs12_pbe(
@@ -26187,9 +27286,62 @@ unsafe extern "C" {
         md_type: mbedtls_md_type_t,
         pwd: *const ::core::ffi::c_uchar,
         pwdlen: usize,
-        input: *const ::core::ffi::c_uchar,
+        data: *const ::core::ffi::c_uchar,
         len: usize,
         output: *mut ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief            PKCS12 Password Based function (encryption / decryption)
+    ///                   for cipher-based and mbedtls_md-based PBE's
+    ///
+    ///
+    /// \warning          When decrypting:
+    ///                   - This function validates the CBC padding and returns
+    ///                     #MBEDTLS_ERR_PKCS12_PASSWORD_MISMATCH if the padding is
+    ///                     invalid. Note that this can help active adversaries
+    ///                     attempting to brute-forcing the password. Note also that
+    ///                     there is no guarantee that an invalid password will be
+    ///                     detected (the chances of a valid padding with a random
+    ///                     password are about 1/255).
+    ///
+    /// \param pbe_params an ASN1 buffer containing the pkcs-12 PbeParams structure
+    /// \param mode       either #MBEDTLS_PKCS12_PBE_ENCRYPT or
+    ///                   #MBEDTLS_PKCS12_PBE_DECRYPT
+    /// \param cipher_type the cipher used
+    /// \param md_type    the mbedtls_md used
+    /// \param pwd        Latin1-encoded password used. This may only be \c NULL when
+    ///                   \p pwdlen is 0. No null terminator should be used.
+    /// \param pwdlen     length of the password (may be 0)
+    /// \param data       the input data
+    /// \param len        data length
+    /// \param output     Output buffer.
+    ///                   On success, it contains the encrypted or decrypted data,
+    ///                   possibly followed by the CBC padding.
+    ///                   On failure, the content is indeterminate.
+    ///                   For decryption, there must be enough room for \p len
+    ///                   bytes.
+    ///                   For encryption, there must be enough room for
+    ///                   \p len + 1 bytes, rounded up to the block size of
+    ///                   the block cipher identified by \p pbe_params.
+    /// \param output_size size of output buffer.
+    ///                    This must be big enough to accommodate for output plus
+    ///                    padding data.
+    /// \param output_len On success, length of actual data written to the output buffer.
+    ///
+    /// \return           0 if successful, or a MBEDTLS_ERR_XXX code
+    pub fn mbedtls_pkcs12_pbe_ext(
+        pbe_params: *mut mbedtls_asn1_buf,
+        mode: ::core::ffi::c_int,
+        cipher_type: mbedtls_cipher_type_t,
+        md_type: mbedtls_md_type_t,
+        pwd: *const ::core::ffi::c_uchar,
+        pwdlen: usize,
+        data: *const ::core::ffi::c_uchar,
+        len: usize,
+        output: *mut ::core::ffi::c_uchar,
+        output_size: usize,
+        output_len: *mut usize,
     ) -> ::core::ffi::c_int;
 }
 unsafe extern "C" {
@@ -26288,6 +27440,11 @@ unsafe extern "C" {
     /// \param session_id_len  The length of \p session_id in bytes.
     /// \param session         The address at which to store the session
     ///                        associated with \p session_id, if present.
+    ///
+    /// \return                \c 0 on success.
+    /// \return                #MBEDTLS_ERR_SSL_CACHE_ENTRY_NOT_FOUND if there is
+    ///                        no cache entry with specified session ID found, or
+    ///                        any other negative error code for other failures.
     pub fn mbedtls_ssl_cache_get(
         data: *mut ::core::ffi::c_void,
         session_id: *const ::core::ffi::c_uchar,
@@ -26304,6 +27461,9 @@ unsafe extern "C" {
     ///                        associated to \p session.
     /// \param session_id_len  The length of \p session_id in bytes.
     /// \param session         The session to store.
+    ///
+    /// \return                \c 0 on success.
+    /// \return                A negative error code on failure.
     pub fn mbedtls_ssl_cache_set(
         data: *mut ::core::ffi::c_void,
         session_id: *const ::core::ffi::c_uchar,
@@ -26317,12 +27477,13 @@ unsafe extern "C" {
     ///
     /// \param data            The SSL cache context to use.
     /// \param session_id      The pointer to the buffer holding the session ID
-    ///                        associated to \p session.
+    ///                        associated to session.
     /// \param session_id_len  The length of \p session_id in bytes.
     ///
-    /// \return                0: The cache entry for session with provided ID
-    ///                           is removed or does not exist.
-    ///                        Otherwise: fail.
+    /// \return                \c 0 on success. This indicates the cache entry for
+    ///                        the session with provided ID is removed or does not
+    ///                        exist.
+    /// \return                A negative error code on failure.
     pub fn mbedtls_ssl_cache_remove(
         data: *mut ::core::ffi::c_void,
         session_id: *const ::core::ffi::c_uchar,
@@ -26375,13 +27536,7 @@ unsafe extern "C" {
     /// \brief          Setup cookie context (generate keys)
     pub fn mbedtls_ssl_cookie_setup(
         ctx: *mut mbedtls_ssl_cookie_ctx,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
     ) -> ::core::ffi::c_int;
 }
@@ -26427,6 +27582,9 @@ unsafe extern "C" {
 #[derive(Copy, Clone)]
 pub struct mbedtls_ssl_ticket_key {
     pub private_name: [::core::ffi::c_uchar; 4usize],
+    /// Lifetime of the key in seconds. This is also the lifetime of the
+    ///  tickets created under that key.
+    pub private_lifetime: u32,
     ///< context for auth enc/decryption
     pub private_ctx: mbedtls_cipher_context_t,
 }
@@ -26482,7 +27640,9 @@ unsafe extern "C" {
     ///
     /// \param ctx       Context to be set up
     /// \param f_rng     RNG callback function (mandatory)
-    /// \param p_rng     RNG callback context
+    /// \param p_rng     RNG callback context.
+    ///                  Note that the RNG callback must remain valid
+    ///                  until the ticket context is freed.
     /// \param cipher    AEAD cipher to use for ticket protection.
     ///                  Recommended value: MBEDTLS_CIPHER_AES_256_GCM.
     /// \param lifetime  Tickets lifetime in seconds
@@ -26492,21 +27652,21 @@ unsafe extern "C" {
     ///                  least as strong as the strongest ciphersuite
     ///                  supported. Usually that means a 256-bit key.
     ///
-    /// \note            The lifetime of the keys is twice the lifetime of tickets.
-    ///                  It is recommended to pick a reasonable lifetime so as not
+    /// \note            It is recommended to pick a reasonable lifetime so as not
     ///                  to negate the benefits of forward secrecy.
+    ///
+    /// \note            The TLS 1.3 specification states that ticket lifetime must
+    ///                  be smaller than seven days. If ticket lifetime has been
+    ///                  set to a value greater than seven days in this module then
+    ///                  if the TLS 1.3 is configured to send tickets after the
+    ///                  handshake it will fail the connection when trying to send
+    ///                  the first ticket.
     ///
     /// \return          0 if successful,
     ///                  or a specific MBEDTLS_ERR_XXX error code
     pub fn mbedtls_ssl_ticket_setup(
         ctx: *mut mbedtls_ssl_ticket_context,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
         cipher: mbedtls_cipher_type_t,
         lifetime: u32,
@@ -26537,9 +27697,15 @@ unsafe extern "C" {
     /// \note            \c klength must be sufficient for use by cipher specified
     ///                  to \c mbedtls_ssl_ticket_setup
     ///
-    /// \note            The lifetime of the keys is twice the lifetime of tickets.
-    ///                  It is recommended to pick a reasonable lifetime so as not
+    /// \note            It is recommended to pick a reasonable lifetime so as not
     ///                  to negate the benefits of forward secrecy.
+    ///
+    /// \note            The TLS 1.3 specification states that ticket lifetime must
+    ///                  be smaller than seven days. If ticket lifetime has been
+    ///                  set to a value greater than seven days in this module then
+    ///                  if the TLS 1.3 is configured to send tickets after the
+    ///                  handshake it will fail the connection when trying to send
+    ///                  the first ticket.
     ///
     /// \return          0 if successful,
     ///                  or a specific MBEDTLS_ERR_XXX error code
@@ -26606,7 +27772,7 @@ pub struct mbedtls_x509_csr {
     pub key_usage: ::core::ffi::c_uint,
     ///< Optional Netscape certificate type extension value: See the values in x509.h
     pub ns_cert_type: ::core::ffi::c_uchar,
-    ///< Optional list of raw entries of Subject Alternative Names extension (currently only dNSName and OtherName are listed).
+    ///< Optional list of raw entries of Subject Alternative Names extension. These can be later parsed by mbedtls_x509_parse_subject_alt_name.
     pub subject_alt_names: mbedtls_x509_sequence,
     ///< Bit string containing detected and parsed extensions
     pub private_ext_types: ::core::ffi::c_int,
@@ -26646,25 +27812,12 @@ impl Default for mbedtls_x509write_csr {
         }
     }
 }
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct mbedtls_x509_san_list {
-    pub node: mbedtls_x509_subject_alternative_name,
-    pub next: *mut mbedtls_x509_san_list,
-}
-impl Default for mbedtls_x509_san_list {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
 unsafe extern "C" {
     /// \brief          Load a Certificate Signing Request (CSR) in DER format
     ///
-    /// \note           CSR attributes (if any) are currently silently ignored.
+    /// \note           Any unsupported requested extensions are silently
+    ///                 ignored, unless the critical flag is set, in which case
+    ///                 the CSR is rejected.
     ///
     /// \note           If #MBEDTLS_USE_PSA_CRYPTO is enabled, the PSA crypto
     ///                 subsystem must have been initialized by calling
@@ -26679,6 +27832,70 @@ unsafe extern "C" {
         csr: *mut mbedtls_x509_csr,
         buf: *const ::core::ffi::c_uchar,
         buflen: usize,
+    ) -> ::core::ffi::c_int;
+}
+/// \brief          The type of certificate extension callbacks.
+///
+///                 Callbacks of this type are passed to and used by the
+///                 mbedtls_x509_csr_parse_der_with_ext_cb() routine when
+///                 it encounters either an unsupported extension.
+///                 Future versions of the library may invoke the callback
+///                 in other cases, if and when the need arises.
+///
+/// \param p_ctx    An opaque context passed to the callback.
+/// \param csr      The CSR being parsed.
+/// \param oid      The OID of the extension.
+/// \param critical Whether the extension is critical.
+/// \param p        Pointer to the start of the extension value
+///                 (the content of the OCTET STRING).
+/// \param end      End of extension value.
+///
+/// \note           The callback must fail and return a negative error code
+///                 if it can not parse or does not support the extension.
+///                 When the callback fails to parse a critical extension
+///                 mbedtls_x509_csr_parse_der_with_ext_cb() also fails.
+///                 When the callback fails to parse a non critical extension
+///                 mbedtls_x509_csr_parse_der_with_ext_cb() simply skips
+///                 the extension and continues parsing.
+///
+/// \return         \c 0 on success.
+/// \return         A negative error code on failure.
+pub type mbedtls_x509_csr_ext_cb_t = ::core::option::Option<
+    unsafe extern "C" fn(
+        p_ctx: *mut ::core::ffi::c_void,
+        csr: *const mbedtls_x509_csr,
+        oid: *const mbedtls_x509_buf,
+        critical: ::core::ffi::c_int,
+        p: *const ::core::ffi::c_uchar,
+        end: *const ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int,
+>;
+unsafe extern "C" {
+    /// \brief          Load a Certificate Signing Request (CSR) in DER format
+    ///
+    /// \note           Any unsupported requested extensions are silently
+    ///                 ignored, unless the critical flag is set, in which case
+    ///                 the result of the callback function decides whether
+    ///                 CSR is rejected.
+    ///
+    /// \note           If #MBEDTLS_USE_PSA_CRYPTO is enabled, the PSA crypto
+    ///                 subsystem must have been initialized by calling
+    ///                 psa_crypto_init() before calling this function.
+    ///
+    /// \param csr      CSR context to fill
+    /// \param buf      buffer holding the CRL data
+    /// \param buflen   size of the buffer
+    /// \param cb       A callback invoked for every unsupported certificate
+    ///                 extension.
+    /// \param p_ctx    An opaque context passed to the callback.
+    ///
+    /// \return         0 if successful, or a specific X509 error code
+    pub fn mbedtls_x509_csr_parse_der_with_ext_cb(
+        csr: *mut mbedtls_x509_csr,
+        buf: *const ::core::ffi::c_uchar,
+        buflen: usize,
+        cb: mbedtls_x509_csr_ext_cb_t,
+        p_ctx: *mut ::core::ffi::c_void,
     ) -> ::core::ffi::c_int;
 }
 unsafe extern "C" {
@@ -26742,7 +27959,7 @@ unsafe extern "C" {
     /// \brief           Set the subject name for a CSR
     ///                  Subject names should contain a comma-separated list
     ///                  of OID types and values:
-    ///                  e.g. "C=UK,O=ARM,CN=mbed TLS Server 1"
+    ///                  e.g. "C=UK,O=ARM,CN=Mbed TLS Server 1"
     ///
     /// \param ctx           CSR context to use
     /// \param subject_name  subject name to set
@@ -26873,13 +28090,7 @@ unsafe extern "C" {
         ctx: *mut mbedtls_x509write_csr,
         buf: *mut ::core::ffi::c_uchar,
         size: usize,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
     ) -> ::core::ffi::c_int;
 }
@@ -26900,13 +28111,7 @@ unsafe extern "C" {
         ctx: *mut mbedtls_x509write_csr,
         buf: *mut ::core::ffi::c_uchar,
         size: usize,
-        f_rng: ::core::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::core::ffi::c_void,
-                arg2: *mut ::core::ffi::c_uchar,
-                arg3: usize,
-            ) -> ::core::ffi::c_int,
-        >,
+        f_rng: mbedtls_f_rng_t,
         p_rng: *mut ::core::ffi::c_void,
     ) -> ::core::ffi::c_int;
 }
