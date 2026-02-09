@@ -1,4 +1,4 @@
-# Certificates for the `esp-mbedtls` Examples
+# Certificates for the `mbedtls-rs` Examples
 
 This folder contains certificates used by the examples:
 - `ca-bundle.pem`
@@ -9,12 +9,12 @@ This folder contains certificates used by the examples:
     ```
 - `ca-bundle-small.pem`
   - A manual extraction of just two root CAs from `ca-bundle.pem` which are known to be used by the websites used in the client examples (`httpbin.org` and `certauth.cryptomix.com`)
-  - Done for reducing memory and flash size when using `esp-mbedtls`
+  - Done for reducing memory and flash size when using `mbedtls-rs`
 - `cert.der` / `cert.pem` + `key.der` / `key.pem`
   - Self-signed certificate used by the server examples and its corresponding key
   - Can be re-generated with:
     ```sh
-    openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -sha256 -days 3650 -nodes -subj "/CN=esp-mbedtls.local"
+    openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -sha256 -days 3650 -nodes -subj "/CN=mbedtls-rs.local"
     openssl x509 -in cert.pem -out cert.der -outform DER
     openssl rsa -in key.pem -out key.der -outform DER
     ```

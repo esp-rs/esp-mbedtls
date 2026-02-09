@@ -16,8 +16,8 @@ use esp_hal::rng::Trng;
 use esp_hal::rng::TrngSource;
 use esp_hal::timer::timg::TimerGroup;
 
-use esp_mbedtls::sys::accel::esp::EspAccel;
-use esp_mbedtls::Tls;
+use mbedtls_rs::sys::accel::esp::EspAccel;
+use mbedtls_rs::Tls;
 
 use esp_metadata_generated::memory_range;
 

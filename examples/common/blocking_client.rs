@@ -2,9 +2,9 @@
 
 use core::ffi::CStr;
 
-use esp_mbedtls::blocking::io::{Read, Write};
-use esp_mbedtls::blocking::Session;
-use esp_mbedtls::{SessionConfig, SessionError, TlsReference};
+use mbedtls_rs::blocking::io::{Read, Write};
+use mbedtls_rs::blocking::Session;
+use mbedtls_rs::{SessionConfig, SessionError, TlsReference};
 
 use log::info;
 

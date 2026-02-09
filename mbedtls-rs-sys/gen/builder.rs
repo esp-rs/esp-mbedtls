@@ -75,7 +75,7 @@ impl MbedtlsBuilder {
         }
     }
 
-    /// Generate bindings for esp-mbedtls-sys
+    /// Generate bindings for mbedtls-rs-sys
     ///
     /// Arguments:
     /// - `out_path`: Path to write the bindings to

@@ -1,5 +1,5 @@
 //! Example of an HTTPS server implemented with the `edge-http` crate.
-//! Demonstrates the usage of the `edge-nal` `TcpAccept` trait implementation in `esp-mbedtls`.
+//! Demonstrates the usage of the `edge-nal` `TcpAccept` trait implementation in `mbedtls-rs`.
 
 use core::net::{IpAddr, Ipv4Addr, SocketAddr};
 
@@ -7,9 +7,9 @@ use edge_http::io::server::{Connection, Handler, Server};
 use edge_http::io::Error;
 use edge_http::Method;
 
-use esp_mbedtls::io::{Read, Write};
-use esp_mbedtls::nal::{TcpBind, WithTimeout};
-use esp_mbedtls::{Tls, TlsAcceptor};
+use mbedtls_rs::io::{Read, Write};
+use mbedtls_rs::nal::{TcpBind, WithTimeout};
+use mbedtls_rs::{Tls, TlsAcceptor};
 
 use log::info;
 
@@ -32,7 +32,7 @@ pub async fn run<const HANDLERS: usize, const BUF: usize, const HEADERS: usize, 
 
     info!("Listening for incoming HTTPs connections on port {}", port);
 
-    // Next, layer the esp-mbedtls TLS stack on top of it
+    // Next, layer the mbedtls-rs TLS stack on top of it
     let tls_acceptor = TlsAcceptor::new(tls.reference(), tcp_acceptor, &certs::server_conf(false));
 
     // Finally, run the HTTP server on top of the TLS acceptor
@@ -79,7 +79,7 @@ impl Handler for HttpHandler {
                 .await?;
 
             connection
-                .write_all(b"Hello from esp-mbedtls, edge-http and edge-nal!")
+                .write_all(b"Hello from mbedtls-rs, edge-http and edge-nal!")
                 .await?;
         }
 

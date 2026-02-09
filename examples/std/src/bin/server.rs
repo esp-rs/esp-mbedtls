@@ -1,5 +1,5 @@
 //! Example of an HTTPS server.
-//! Demonstrates the usage of the async API of esp-mbedtls.
+//! Demonstrates the usage of the async API of mbedtls-rs.
 //!
 //! Since the server certificates are self-signed, the easiest way to test is with:
 //! ```sh
@@ -18,7 +18,7 @@ use async_io_mini::Async;
 
 use embedded_io_adapters::futures_03::FromFutures;
 
-use esp_mbedtls::Tls;
+use mbedtls_rs::Tls;
 
 use log::{info, warn};
 
