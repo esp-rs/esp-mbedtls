@@ -1386,54 +1386,6 @@ pub type uint_fast8_t = u8;
 pub type intmax_t = ::core::ffi::c_longlong;
 pub type uintmax_t = ::core::ffi::c_ulonglong;
 pub type mbedtls_iso_c_forbids_empty_translation_units = ::core::ffi::c_int;
-pub type time_t = i64;
-#[repr(C)]
-#[derive(Default, Copy, Clone)]
-pub struct tm {
-    pub tm_sec: ::core::ffi::c_int,
-    pub tm_min: ::core::ffi::c_int,
-    pub tm_hour: ::core::ffi::c_int,
-    pub tm_mday: ::core::ffi::c_int,
-    pub tm_mon: ::core::ffi::c_int,
-    pub tm_year: ::core::ffi::c_int,
-    pub tm_wday: ::core::ffi::c_int,
-    pub tm_yday: ::core::ffi::c_int,
-    pub tm_isdst: ::core::ffi::c_int,
-}
-unsafe extern "C" {
-    pub fn time(timer: *mut time_t) -> time_t;
-}
-pub type mbedtls_time_t = time_t;
-pub type mbedtls_ms_time_t = i64;
-unsafe extern "C" {
-    /// \brief   Get time in milliseconds.
-    ///
-    /// \return Monotonically-increasing current time in milliseconds.
-    ///
-    /// \note Define MBEDTLS_PLATFORM_MS_TIME_ALT to be able to provide an
-    ///       alternative implementation
-    ///
-    /// \warning This function returns a monotonically-increasing time value from a
-    ///          start time that will differ from platform to platform, and possibly
-    ///          from run to run of the process.
-    pub fn mbedtls_ms_time() -> mbedtls_ms_time_t;
-}
-unsafe extern "C" {
-    pub static mut mbedtls_time:
-        ::core::option::Option<unsafe extern "C" fn(time: *mut mbedtls_time_t) -> mbedtls_time_t>;
-}
-unsafe extern "C" {
-    /// \brief   Set your own time function pointer
-    ///
-    /// \param   time_func   the time function implementation
-    ///
-    /// \return              0
-    pub fn mbedtls_platform_set_time(
-        time_func: ::core::option::Option<
-            unsafe extern "C" fn(time: *mut mbedtls_time_t) -> mbedtls_time_t,
-        >,
-    ) -> ::core::ffi::c_int;
-}
 pub type wchar_t = ::core::ffi::c_int;
 #[repr(C)]
 #[derive(Default, Copy, Clone)]
@@ -1586,33 +1538,6 @@ pub type mbedtls_f_rng_t = ::core::option::Option<
         output_size: usize,
     ) -> ::core::ffi::c_int,
 >;
-unsafe extern "C" {
-    /// \brief      Platform-specific implementation of gmtime_r()
-    ///
-    ///             The function is a thread-safe abstraction that behaves
-    ///             similarly to the gmtime_r() function from Unix/POSIX.
-    ///
-    ///             Mbed TLS will try to identify the underlying platform and
-    ///             make use of an appropriate underlying implementation (e.g.
-    ///             gmtime_r() for POSIX and gmtime_s() for Windows). If this is
-    ///             not possible, then gmtime() will be used. In this case, calls
-    ///             from the library to gmtime() will be guarded by the mutex
-    ///             mbedtls_threading_gmtime_mutex if MBEDTLS_THREADING_C is
-    ///             enabled. It is recommended that calls from outside the library
-    ///             are also guarded by this mutex.
-    ///
-    ///             If MBEDTLS_PLATFORM_GMTIME_R_ALT is defined, then Mbed TLS will
-    ///             unconditionally use the alternative implementation for
-    ///             mbedtls_platform_gmtime_r() supplied by the user at compile time.
-    ///
-    /// \param tt     Pointer to an object containing time (in seconds) since the
-    ///               epoch to be converted
-    /// \param tm_buf Pointer to an object where the results will be stored
-    ///
-    /// \return      Pointer to an object of type struct tm on success, otherwise
-    ///              NULL
-    pub fn mbedtls_platform_gmtime_r(tt: *const mbedtls_time_t, tm_buf: *mut tm) -> *mut tm;
-}
 /// \brief The AES context-type definition.
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -20164,19 +20089,6 @@ unsafe extern "C" {
     ) -> ::core::ffi::c_int;
 }
 unsafe extern "C" {
-    /// \brief          Fill mbedtls_x509_time with provided mbedtls_time_t.
-    ///
-    /// \param tt       mbedtls_time_t to convert
-    /// \param now      mbedtls_x509_time to fill with converted mbedtls_time_t
-    ///
-    /// \return         \c 0 on success
-    /// \return         A non-zero return value on failure.
-    pub fn mbedtls_x509_time_gmtime(
-        tt: mbedtls_time_t,
-        now: *mut mbedtls_x509_time,
-    ) -> ::core::ffi::c_int;
-}
-unsafe extern "C" {
     /// \brief          Check a given mbedtls_x509_time against the system time
     ///                 and tell if it's in the past.
     ///
@@ -22414,8 +22326,6 @@ pub struct mbedtls_ssl_session {
     /// TLS version negotiated in the session. Used if and when renegotiating
     ///  or resuming a session instead of the configured minor TLS version.
     pub private_tls_version: mbedtls_ssl_protocol_version,
-    ///< start time of current session
-    pub private_start: mbedtls_time_t,
     ///< chosen ciphersuite
     pub private_ciphersuite: ::core::ffi::c_int,
     ///< session id length
@@ -22434,22 +22344,6 @@ pub struct mbedtls_ssl_session {
     pub private_ticket_len: usize,
     ///< ticket lifetime hint
     pub private_ticket_lifetime: u32,
-    /// When a ticket is created by a TLS server as part of an established TLS
-    ///  session, the ticket creation time may need to be saved for the ticket
-    ///  module to be able to check the ticket age when the ticket is used.
-    ///  That's the purpose of this field.
-    ///  Before creating a new ticket, an Mbed TLS server set this field with
-    ///  its current time in milliseconds. This time may then be saved in the
-    ///  session ticket data by the session ticket writing function and
-    ///  recovered by the ticket parsing function later when the ticket is used.
-    ///  The ticket module may then use this time to compute the ticket age and
-    ///  determine if it has expired or not.
-    ///  The Mbed TLS implementations of the session ticket writing and parsing
-    ///  functions save and retrieve the ticket creation time as part of the
-    ///  session ticket data. The session ticket parsing function relies on
-    ///  the mbedtls_ssl_session_get_ticket_creation_time() API to get the
-    ///  ticket creation time from the session ticket data.
-    pub private_ticket_creation_time: mbedtls_ms_time_t,
     ///< Randomly generated value used to obscure the age of the ticket
     pub private_ticket_age_add: u32,
     ///< Ticket flags
@@ -22459,8 +22353,6 @@ pub struct mbedtls_ssl_session {
     pub private_resumption_key: [::core::ffi::c_uchar; 48usize],
     ///< host name binded with tickets
     pub private_hostname: *mut ::core::ffi::c_char,
-    /// Time in milliseconds when the last ticket was received.
-    pub private_ticket_reception_time: mbedtls_ms_time_t,
     ///< flag for EtM activation
     pub private_encrypt_then_mac: ::core::ffi::c_int,
     pub private_app_secrets: mbedtls_ssl_tls13_application_secrets,
@@ -27492,8 +27384,6 @@ unsafe extern "C" {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mbedtls_ssl_cache_entry {
-    ///< entry timestamp
-    pub private_timestamp: mbedtls_time_t,
     ///< session ID
     pub private_session_id: [::core::ffi::c_uchar; 32usize],
     pub private_session_id_len: usize,
@@ -27599,19 +27489,6 @@ unsafe extern "C" {
     ) -> ::core::ffi::c_int;
 }
 unsafe extern "C" {
-    /// \brief          Set the cache timeout
-    ///                 (Default: MBEDTLS_SSL_CACHE_DEFAULT_TIMEOUT (1 day))
-    ///
-    ///                 A timeout of 0 indicates no timeout.
-    ///
-    /// \param cache    SSL cache context
-    /// \param timeout  cache entry timeout in seconds
-    pub fn mbedtls_ssl_cache_set_timeout(
-        cache: *mut mbedtls_ssl_cache_context,
-        timeout: ::core::ffi::c_int,
-    );
-}
-unsafe extern "C" {
     /// \brief          Set the maximum number of cache entries
     ///                 (Default: MBEDTLS_SSL_CACHE_DEFAULT_MAX_ENTRIES (50))
     ///
@@ -27634,6 +27511,8 @@ unsafe extern "C" {
 pub struct mbedtls_ssl_cookie_ctx {
     ///< context for the HMAC portion
     pub private_hmac_ctx: mbedtls_md_context_t,
+    ///< serial number for expiration
+    pub private_serial: ::core::ffi::c_ulong,
     ///< timeout delay, in seconds if HAVE_TIME,
     ///or in number of tickets issued
     pub private_timeout: ::core::ffi::c_ulong,
@@ -27701,8 +27580,6 @@ unsafe extern "C" {
 #[derive(Copy, Clone)]
 pub struct mbedtls_ssl_ticket_key {
     pub private_name: [::core::ffi::c_uchar; 4usize],
-    ///< key generation timestamp (seconds)
-    pub private_generation_time: mbedtls_time_t,
     /// Lifetime of the key in seconds. This is also the lifetime of the
     ///  tickets created under that key.
     pub private_lifetime: u32,
