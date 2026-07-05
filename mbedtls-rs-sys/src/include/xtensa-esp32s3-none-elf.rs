@@ -177,6 +177,7 @@ pub const MBEDTLS_VERSION_NUMBER: u32 = 50726144;
 pub const MBEDTLS_VERSION_STRING: &[u8; 6] = b"3.6.5\0";
 pub const MBEDTLS_VERSION_STRING_FULL: &[u8; 15] = b"Mbed TLS 3.6.5\0";
 pub const MBEDTLS_SSL_DTLS_CONNECTION_ID_COMPAT: u32 = 0;
+pub const MBEDTLS_AES_ALT_WORK_AREA_SIZE: u32 = 512;
 pub const MBEDTLS_SHA1_ALT_WORK_AREA_SIZE: u32 = 208;
 pub const MBEDTLS_SHA256_ALT_WORK_AREA_SIZE: u32 = 208;
 pub const MBEDTLS_SHA512_ALT_WORK_AREA_SIZE: u32 = 304;
@@ -1503,24 +1504,11 @@ pub type mbedtls_f_rng_t = ::core::option::Option<
         output_size: usize,
     ) -> ::core::ffi::c_int,
 >;
-/// \brief The AES context-type definition.
 #[repr(C)]
+#[repr(align(16))]
 #[derive(Copy, Clone)]
 pub struct mbedtls_aes_context {
-    ///< The number of rounds.
-    pub private_nr: ::core::ffi::c_int,
-    ///< The offset in array elements to AES
-    ///round keys in the buffer.
-    pub private_rk_offset: usize,
-    ///< Unaligned data buffer. This buffer can
-    ///hold 32 extra Bytes, which can be used for
-    ///one of the following purposes:
-    ///<ul><li>Alignment if VIA padlock is
-    ///used.</li>
-    ///<li>Simplifying key expansion in the 256-bit
-    ///case by generating an extra round key.
-    ///</li></ul>
-    pub private_buf: [u32; 68usize],
+    pub work_area: [::core::ffi::c_uchar; 512usize],
 }
 impl Default for mbedtls_aes_context {
     fn default() -> Self {
@@ -1531,16 +1519,12 @@ impl Default for mbedtls_aes_context {
         }
     }
 }
-/// \brief The AES XTS context-type definition.
 #[repr(C)]
+#[repr(align(16))]
 #[derive(Copy, Clone)]
 pub struct mbedtls_aes_xts_context {
-    ///< The AES context to use for AES block
-    ///encryption or decryption.
-    pub private_crypt: mbedtls_aes_context,
-    ///< The AES context used for tweak
-    ///computation.
-    pub private_tweak: mbedtls_aes_context,
+    pub crypt: mbedtls_aes_context,
+    pub tweak: mbedtls_aes_context,
 }
 impl Default for mbedtls_aes_xts_context {
     fn default() -> Self {
@@ -6842,6 +6826,7 @@ unsafe extern "C" {
 }
 /// \brief          The CTR_DRBG context structure.
 #[repr(C)]
+#[repr(align(16))]
 #[derive(Copy, Clone)]
 pub struct mbedtls_ctr_drbg_context {
     ///< The counter (V).
@@ -27726,5 +27711,28 @@ unsafe extern "C" {
         E: *const mbedtls_mpi,
         N: *const mbedtls_mpi,
         prec_RR: *mut mbedtls_mpi,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    pub fn ecp_mul_restartable_internal_soft(
+        grp: *mut mbedtls_ecp_group,
+        R: *mut mbedtls_ecp_point,
+        m: *const mbedtls_mpi,
+        P: *const mbedtls_ecp_point,
+        f_rng: ::core::option::Option<
+            unsafe extern "C" fn(
+                arg1: *mut ::core::ffi::c_void,
+                arg2: *mut ::core::ffi::c_uchar,
+                arg3: usize,
+            ) -> ::core::ffi::c_int,
+        >,
+        p_rng: *mut ::core::ffi::c_void,
+        rs_ctx: *mut mbedtls_ecp_restart_ctx,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    pub fn mbedtls_ecp_check_pubkey_soft(
+        grp: *const mbedtls_ecp_group,
+        pt: *const mbedtls_ecp_point,
     ) -> ::core::ffi::c_int;
 }

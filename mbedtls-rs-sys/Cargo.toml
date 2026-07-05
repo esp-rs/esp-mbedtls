@@ -72,11 +72,22 @@ use-gcc = []
 force-esp-riscv-gcc = ["use-gcc"]
 
 # Disable all or some hooks; this would preclude hooking custom HW-accelerated algos
-nohook = ["nohook-sha1", "nohook-sha256", "nohook-sha512", "nohook-exp-mod"]
+nohook = [
+    "nohook-sha1",
+    "nohook-sha256",
+    "nohook-sha512",
+    "nohook-exp-mod",
+    "nohook-aes",
+    "nohook-ecp-mul",
+    "nohook-ecp-verify",
+]
 nohook-sha1 = []
 nohook-sha256 = []
 nohook-sha512 = []
 nohook-exp-mod = []
+nohook-aes = []
+nohook-ecp-mul = []
+nohook-ecp-verify = []
 # Enable timer/wall-clock hooks for custom time implementations
 hook-timer = []
 hook-wall-clock = ["hook-timer"] # 'hook-wall-clock' feature requires 'hook-timer' to be enabled. MbedTLS X.509 certificate validation requires both time() and gmtime_r() functions.
@@ -271,6 +282,8 @@ digest = { workspace = true, default-features = false }
 sha1 = { workspace = true, default-features = false }
 # For some reason, `soft` results in enormous slowdowns on xtensa and riscv32
 sha2 = { workspace = true, default-features = false, features = ["force-soft-compact"] }
+aes = { workspace = true, default-features = false }
+cipher = { workspace = true, default-features = false }
 time = { workspace = true, default-features = false, optional = true }
 critical-section = { workspace = true }
 
@@ -285,6 +298,11 @@ embassy-time = {workspace = true, optional = true }
 # All other platforms: mbedtls libs and bindings are created on the fly
 [target.'cfg(target_os = "espidf")'.dependencies]
 esp-idf-sys = { version = "0.37", default-features = false }
+
+[dev-dependencies]
+# The hook dispatch uses `critical_section`; provide the std implementation
+# for the host-side integration tests (on embedded targets the HAL provides it)
+critical-section = { workspace = true, features = ["std"] }
 
 [build-dependencies]
 anyhow = { workspace = true, default-features = true }

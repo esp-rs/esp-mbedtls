@@ -51,10 +51,36 @@
 // Provides a function prototype to generate bindings for mbedtls_mpi_exp_mod_soft()
 #if defined(MBEDTLS_MPI_EXP_MOD_ALT_FALLBACK)
 int mbedtls_mpi_exp_mod_soft(
-    mbedtls_mpi *X, 
+    mbedtls_mpi *X,
     const mbedtls_mpi *A,
-    const mbedtls_mpi *E, 
+    const mbedtls_mpi *E,
     const mbedtls_mpi *N,
     mbedtls_mpi *prec_RR
+);
+#endif
+
+// Provides a function prototype to generate bindings for ecp_mul_restartable_internal_soft(),
+// the software scalar multiplication kept (renamed) by the Espressif MbedTLS fork when
+// MBEDTLS_ECP_MUL_ALT_SOFT_FALLBACK is defined. The alternative implementation provides
+// `ecp_mul_restartable_internal` and may delegate to this soft variant.
+#if defined(MBEDTLS_ECP_MUL_ALT_SOFT_FALLBACK)
+int ecp_mul_restartable_internal_soft(
+    mbedtls_ecp_group *grp,
+    mbedtls_ecp_point *R,
+    const mbedtls_mpi *m,
+    const mbedtls_ecp_point *P,
+    int (*f_rng)(void *, unsigned char *, size_t),
+    void *p_rng,
+    mbedtls_ecp_restart_ctx *rs_ctx
+);
+#endif
+
+// Same for mbedtls_ecp_check_pubkey_soft(), the software point-on-curve check kept
+// (renamed) when MBEDTLS_ECP_VERIFY_ALT_SOFT_FALLBACK is defined. The alternative
+// implementation provides `mbedtls_ecp_check_pubkey` and may delegate to this soft variant.
+#if defined(MBEDTLS_ECP_VERIFY_ALT_SOFT_FALLBACK)
+int mbedtls_ecp_check_pubkey_soft(
+    const mbedtls_ecp_group *grp,
+    const mbedtls_ecp_point *pt
 );
 #endif

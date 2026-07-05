@@ -259,7 +259,7 @@ fn validate_macro_literal(lit: &str) {
 /// path (see `builder.rs` `Hook::includes`).
 fn validate_header_path(header: &str) {
     assert!(
-        matches!(header, "time_alt.h"),
+        matches!(header, "time_alt.h" | "ecp_mul_alt.h"),
         "BUG: header {header:?} is not in the codegen allowlist; add it explicitly to gen/config.rs::validate_header_path",
     );
 }

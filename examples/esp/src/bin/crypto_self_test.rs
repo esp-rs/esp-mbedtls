@@ -67,14 +67,22 @@ async fn main(_s: Spawner) {
 
     run_tests(false, &mut sw_cycles);
 
-    #[cfg(not(any(feature = "esp32", feature = "esp32c2")))]
-    let mut accel = EspAccel::new(peripherals.SHA, peripherals.RSA);
+    #[cfg(any(feature = "esp32c5", feature = "esp32c6", feature = "esp32h2"))]
+    let mut accel = EspAccel::new(
+        peripherals.SHA,
+        peripherals.RSA,
+        peripherals.AES,
+        peripherals.ECC,
+    );
+
+    #[cfg(any(feature = "esp32s2", feature = "esp32s3", feature = "esp32c3"))]
+    let mut accel = EspAccel::new(peripherals.SHA, peripherals.RSA, peripherals.AES);
 
     #[cfg(feature = "esp32")]
-    let mut accel = EspAccel::new(peripherals.RSA);
+    let mut accel = EspAccel::new(peripherals.RSA, peripherals.AES);
 
     #[cfg(feature = "esp32c2")]
-    let mut accel = EspAccel::new(peripherals.SHA);
+    let mut accel = EspAccel::new(peripherals.SHA, peripherals.ECC);
 
     let _accel_queue = accel.start();
 

@@ -9,8 +9,15 @@ use cmake::Config;
 use enumset::{enum_set, EnumSet, EnumSetType};
 
 // This set MUST contain all opt-out hooks
-pub const DEFAULT_HOOKS: EnumSet<Hook> =
-    enum_set!(Hook::Sha1 | Hook::Sha256 | Hook::Sha512 | Hook::ExpMod);
+pub const DEFAULT_HOOKS: EnumSet<Hook> = enum_set!(
+    Hook::Sha1
+        | Hook::Sha256
+        | Hook::Sha512
+        | Hook::ExpMod
+        | Hook::Aes
+        | Hook::EcpMul
+        | Hook::EcpVerify
+);
 
 mod config;
 #[path = "features.rs"]
@@ -27,6 +34,12 @@ pub enum Hook {
     Sha512,
     /// MPI modular exponentiation
     ExpMod,
+    /// The AES block cipher (whole module, incl. all cipher modes)
+    Aes,
+    /// ECP scalar multiplication (R = m * P)
+    EcpMul,
+    /// ECP public key (point-on-curve) verification
+    EcpVerify,
     /// Timer support
     Timer,
     /// Wall clock support
@@ -34,12 +47,28 @@ pub enum Hook {
 }
 
 impl Hook {
-    const fn work_area_size(self) -> Option<usize> {
+    fn work_area_size(self) -> Option<usize> {
         match self {
             Self::Sha1 => Some(208),
             Self::Sha256 => Some(208),
             Self::Sha512 => Some(304),
+            // Must fit the largest hook state; the worst case is the RustCrypto
+            // fallback's fixsliced AES-256 key schedule plus the enum
+            // discriminant and alignment slack. The fixsliced representation is
+            // word-sized, so it needs 480 bytes on 32-bit targets but 960 bytes
+            // on 64-bit ones (where the runtime-dispatched AES-NI/soft state is
+            // a union of both). Compile-time-asserted against the bound state
+            // types in `src/hook/aes.rs`.
+            Self::Aes => Some(
+                if std::env::var("CARGO_CFG_TARGET_POINTER_WIDTH").as_deref() == Ok("64") {
+                    1024
+                } else {
+                    512
+                },
+            ),
             Self::ExpMod => None,
+            Self::EcpMul => None,
+            Self::EcpVerify => None,
             Self::Timer => None,
             Self::WallClock => None,
         }
@@ -52,6 +81,14 @@ impl Hook {
             Self::Sha256 => "SHA256_ALT",
             Self::Sha512 => "SHA512_ALT",
             Self::ExpMod => "MPI_EXP_MOD_ALT_FALLBACK",
+            Self::Aes => "AES_ALT",
+            // Espressif-fork hooks: defining only the `*_SOFT_FALLBACK` macro
+            // renames the built-in implementation to a `*_soft` symbol (which
+            // the Rust hook layer uses as its fallback) and expects the
+            // primary symbol (`ecp_mul_restartable_internal` /
+            // `mbedtls_ecp_check_pubkey`) to be provided externally.
+            Self::EcpMul => "ECP_MUL_ALT_SOFT_FALLBACK",
+            Self::EcpVerify => "ECP_VERIFY_ALT_SOFT_FALLBACK",
             Self::Timer => "HAVE_TIME",
             Self::WallClock => "HAVE_TIME_DATE",
         }
@@ -60,7 +97,13 @@ impl Hook {
     /// Returns extra config options and values required for the hook the function properly.
     fn extra_options(self) -> Option<Vec<(&'static str, Value)>> {
         match self {
-            Self::Sha1 | Self::Sha256 | Self::Sha512 | Self::ExpMod => None,
+            Self::Sha1
+            | Self::Sha256
+            | Self::Sha512
+            | Self::ExpMod
+            | Self::Aes
+            | Self::EcpMul
+            | Self::EcpVerify => None,
             Self::Timer => Some(vec![
                 // using a mbedtls prefix to ensure we don't have conflicting 'time' symbols on std
                 ("PLATFORM_STD_TIME", Value::from("mbedtls_sec_time")),
@@ -77,6 +120,10 @@ impl Hook {
         match self {
             // Unlike crypto alts, platform_time.h has no _alt.h inclusion mechanism
             Hook::Timer => Some(&["time_alt.h"]),
+            // The Espressif fork keeps calling `ecp_mul_restartable_internal`
+            // but provides no declaration for it when only the soft-fallback
+            // rename is active; inject one (see the header for details)
+            Hook::EcpMul => Some(&["ecp_mul_alt.h"]),
             _ => None,
         }
     }
@@ -223,6 +270,9 @@ impl MbedtlsBuilder {
             .allowlist_item("MBEDTLS_.+")
             .allowlist_item("psa_.+")
             .allowlist_item("PSA_.+")
+            // The Espressif-fork soft-fallback symbol for the EcpMul hook does
+            // not carry the `mbedtls_` prefix (see `gen/include/include.h`).
+            .allowlist_item("ecp_mul_restartable_internal_soft")
             .header(
                 self.crate_root_path
                     .join("gen")

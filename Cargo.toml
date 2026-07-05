@@ -14,6 +14,8 @@ enumset = { version = "1", default-features = false }
 digest = { version = "0.10", default-features = false }
 sha1 = { version = "0.10", default-features = false }
 sha2 = { version = "0.10", default-features = false }
+aes = { version = "0.8", default-features = false }
+cipher = { version = "0.4", default-features = false }
 time = { version = "0.3", default-features = false }
 critical-section = { version = "1", default-features = false }
 

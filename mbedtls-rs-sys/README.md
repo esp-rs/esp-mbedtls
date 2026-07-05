@@ -57,7 +57,11 @@ Say, you want the SHA-1 algorithm beging accelerated. You then need to:
 - Provide your own `mbedtls_sha1_context` structure to MbedTLS - **at C compile-time** - in a custom C header file (the structure is treated as opaque by MbedTLS).
 
 Needless to say, this is a lot of lift-and-shift for Rust developers, especially if they plan to plug-in **Rust-based** hardware accelerated routines.
-For that reason, `mbedtls-rs-sys` provides the so called Hooking mechanism. Currently, only for some MbedTLS crypto-functions, but the list is expected to grow a bit possibly including EC curves and AES.
+For that reason, `mbedtls-rs-sys` provides the so called Hooking mechanism, currently for:
+- The SHA-1, SHA-224/256 and SHA-384/512 digests (`hook_sha1`, `hook_sha224`, `hook_sha256`, `hook_sha384`, `hook_sha512`)
+- The AES block cipher, including all its cipher modes and everything MbedTLS builds on top of it - CCM, GCM, CMAC and CTR-DRBG (`hook_aes`)
+- The ECP scalar multiplication (`R = m * P`) and public-key (point-on-curve) check, through which all ECDH / ECDSA / ECJPAKE (and generic SPAKE2+-style protocol) math funnels (`hook_ecp_mul`, `hook_ecp_verify`)
+- The MPI (bignum) modular exponentiation used by RSA and DHM (`hook_exp_mod`)
 
 In essence Hooking relies on the "_ALT" functionality in MbedTLS and specifically does the following:
 - It replaces e.g. the `mbedtls_sha1_context` of MbedTLS with a custom one which is just a sequence of bytes (called a "work area" throughout `mbedtls-rs-sys`)

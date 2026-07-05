@@ -32,6 +32,9 @@ fn main() -> Result<()> {
         ("CARGO_FEATURE_NOHOOK_SHA256", Hook::Sha256),
         ("CARGO_FEATURE_NOHOOK_SHA512", Hook::Sha512),
         ("CARGO_FEATURE_NOHOOK_EXP_MOD", Hook::ExpMod),
+        ("CARGO_FEATURE_NOHOOK_AES", Hook::Aes),
+        ("CARGO_FEATURE_NOHOOK_ECP_MUL", Hook::EcpMul),
+        ("CARGO_FEATURE_NOHOOK_ECP_VERIFY", Hook::EcpVerify),
     ] {
         if env::var(feature).is_ok() {
             hooks.remove(hook);
