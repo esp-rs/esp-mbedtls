@@ -149,22 +149,20 @@ pub async fn bootstrap_stack<const SOCKETS: usize>(
         mbedtls_rs::sys::hook::wall_clock::hook_wall_clock(Some(clock));
     }
 
-    #[cfg(any(feature = "esp32c5", feature = "esp32c6", feature = "esp32h2"))]
-    let accel = EspAccel::new(
-        peripherals.SHA,
-        peripherals.RSA,
-        peripherals.AES,
-        peripherals.ECC,
-    );
-
-    #[cfg(any(feature = "esp32s2", feature = "esp32s3", feature = "esp32c3"))]
-    let accel = EspAccel::new(peripherals.SHA, peripherals.RSA, peripherals.AES);
-
-    #[cfg(feature = "esp32")]
-    let accel = EspAccel::new(peripherals.RSA, peripherals.AES);
-
-    #[cfg(feature = "esp32c2")]
-    let accel = EspAccel::new(peripherals.SHA, peripherals.ECC);
+    // Configure every accelerator the chip has; each `with_*` exists only on
+    // the chips with the corresponding peripheral.
+    let accel = EspAccel::new();
+    #[cfg(not(feature = "esp32"))]
+    let accel = accel.with_sha(peripherals.SHA);
+    #[cfg(not(feature = "esp32c2"))]
+    let accel = accel.with_rsa(peripherals.RSA).with_aes(peripherals.AES);
+    #[cfg(any(
+        feature = "esp32c2",
+        feature = "esp32c5",
+        feature = "esp32c6",
+        feature = "esp32h2"
+    ))]
+    let accel = accel.with_ecc(peripherals.ECC);
 
     let _trng_source = TrngSource::new(peripherals.RNG, peripherals.ADC1);
 

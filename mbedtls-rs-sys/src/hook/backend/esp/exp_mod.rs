@@ -12,7 +12,7 @@ use crypto_bigint::{U1024, U2048, U512};
 use crypto_bigint::{U256, U384};
 use esp_hal::rsa::{operand_sizes, RsaContext};
 
-use crate::hook::backend::esp_exp_mod_route::{HwKind, Route};
+use super::exp_mod_route::{HwKind, Route};
 use crate::hook::exp_mod::MbedtlsMpiExpMod;
 use crate::{
     mbedtls_mpi, mbedtls_mpi_cmp_int, mbedtls_mpi_exp_mod_soft, mbedtls_mpi_free, mbedtls_mpi_grow,

@@ -67,24 +67,25 @@ async fn main(_s: Spawner) {
 
     run_tests(false, &mut sw_cycles);
 
-    #[cfg(any(feature = "esp32c5", feature = "esp32c6", feature = "esp32h2"))]
-    let mut accel = EspAccel::new(
-        peripherals.SHA,
-        peripherals.RSA,
-        peripherals.AES,
-        peripherals.ECC,
-    );
+    // Configure every accelerator the chip has; each `with_*` exists only on
+    // the chips with the corresponding peripheral.
+    let accel = EspAccel::new();
+    #[cfg(not(feature = "esp32"))]
+    let accel = accel.with_sha(peripherals.SHA);
+    #[cfg(not(feature = "esp32c2"))]
+    let accel = accel.with_rsa(peripherals.RSA).with_aes(peripherals.AES);
+    #[cfg(any(
+        feature = "esp32c2",
+        feature = "esp32c5",
+        feature = "esp32c6",
+        feature = "esp32h2"
+    ))]
+    let accel = accel.with_ecc(peripherals.ECC);
+    let mut accel = accel;
 
-    #[cfg(any(feature = "esp32s2", feature = "esp32s3", feature = "esp32c3"))]
-    let mut accel = EspAccel::new(peripherals.SHA, peripherals.RSA, peripherals.AES);
-
-    #[cfg(feature = "esp32")]
-    let mut accel = EspAccel::new(peripherals.RSA, peripherals.AES);
-
-    #[cfg(feature = "esp32c2")]
-    let mut accel = EspAccel::new(peripherals.SHA, peripherals.ECC);
-
-    let _accel_queue = accel.start();
+    let accel_queue = accel.start();
+    // Hook exactly the algorithms whose work queues are being serviced.
+    let _hooked = unsafe { accel_queue.hook() };
 
     run_tests(true, &mut hw_cycles);
 

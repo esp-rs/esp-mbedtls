@@ -11,7 +11,10 @@ keywords = ["mbedtls", "tls", "ssl", "embedded", "no-std"]
 categories = ["cryptography", "embedded", "no-std", "network-programming"]
 
 [lib]
-harness = false
+# No unit tests in the lib itself, so don't build a lib test target. (NOT
+# `harness = false` — that still builds a test binary but expects it to
+# provide its own `main`, breaking a bare `cargo test`.)
+test = false
 
 [features]
 # The `tls` bundle reproduces the historical full algorithm surface and is ON by

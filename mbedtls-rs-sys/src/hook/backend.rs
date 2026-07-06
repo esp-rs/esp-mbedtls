@@ -1,13 +1,10 @@
 #[cfg(feature = "embassy-time")]
 pub mod embassy;
-#[cfg(feature = "esp-hal")]
+// Mounted without `esp-hal` too (under the internal `_route-test` feature) so
+// the pure-logic `esp::exp_mod_route` submodule can be unit tested on the
+// host; every `esp-hal`-dependent item inside is gated on the `esp-hal`
+// feature.
+#[cfg(any(feature = "esp-hal", feature = "_route-test"))]
 pub mod esp;
-#[cfg(all(not(feature = "esp-hal"), feature = "_route-test"))]
-pub mod esp_exp_mod_route;
-#[cfg(all(
-    feature = "esp-hal",
-    not(any(feature = "esp32c2", feature = "nohook-exp-mod"))
-))]
-pub(crate) mod esp_exp_mod_route;
 #[cfg(feature = "std")]
 pub mod std;

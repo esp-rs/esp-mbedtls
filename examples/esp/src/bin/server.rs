@@ -47,7 +47,9 @@ async fn main(spawner: Spawner) {
 
     tls.set_debug(1);
 
-    let _accel_queue = accel.start();
+    let accel_queue = accel.start();
+    // Hook exactly the algorithms whose work queues are being serviced.
+    let _hooked = unsafe { accel_queue.hook() };
 
     let tls = mk_static!(Tls, tls);
 

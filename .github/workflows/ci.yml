@@ -76,6 +76,15 @@ jobs:
       - name: Build
         run: cargo build
 
+      - name: Test
+        run: cargo test
+
+      # Host-only test of the ESP exp_mod routing logic (`_route-test` mounts
+      # `backend::esp::exp_mod_route` without `esp-hal`); not part of the
+      # default feature set, so it needs its own invocation.
+      - name: Test - ESP exp_mod routing
+        run: cargo test -p mbedtls-rs-sys --features _route-test --test exp_mod_route
+
       - name: Fmt Check - STD Examples
         run: cd examples/std; cargo fmt -- --check
 

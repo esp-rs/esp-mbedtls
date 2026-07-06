@@ -8,12 +8,13 @@ use super::{MRc, SessionError};
 ///
 /// # Examples
 /// Initialize with a PEM certificate
-/// ```
+/// (`ignore`d: the examples include user-provided certificate files)
+/// ```ignore
 /// let x509 = X509::PEM(CStr::from_bytes_with_nul(concat!(include_str!("cert.pem"), "\0").as_bytes()).unwrap());
 /// ```
 ///
 /// Initialize with a DER certificate
-/// ```
+/// ```ignore
 /// let x509 = X509::DER(include_bytes!("cert.der"));
 /// ```
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
