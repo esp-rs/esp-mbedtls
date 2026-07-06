@@ -1,14 +1,13 @@
 #include <stdint.h>
 
-// NOTE: deliberately NO alignment attribute on `work_area` — callers place
-// contexts in opaque, minimally-aligned storage (e.g. OpenThread's AesEcb
-// context storage is only 8-aligned), where a stronger declared alignment is
-// UB once the Rust hook forms a reference to the context. The Rust `WorkArea`
-// helpers align the emplaced state at runtime within the work-area slack
-// instead (the size assert in `src/hook/aes.rs` budgets +16 for exactly
-// this). See `sha256_alt.h` for the full rationale.
+// `aligned(16)` is REQUIRED so that compiler-managed relocation (Rust moves,
+// C struct assignment) lands contexts at uniformly aligned addresses, keeping
+// the runtime-emplaced hook state at a stable offset — while the Rust hooks
+// must still tolerate under-aligned opaque storage (e.g. OpenThread's
+// 8-aligned `AesEcb` context storage) and therefore never form references to
+// the whole struct. See `sha256_alt.h` for the full rationale.
 typedef struct mbedtls_aes_context {
-    unsigned char work_area[MBEDTLS_AES_ALT_WORK_AREA_SIZE];
+    __attribute__((aligned(16))) unsigned char work_area[MBEDTLS_AES_ALT_WORK_AREA_SIZE];
 } mbedtls_aes_context;
 
 #if defined(MBEDTLS_CIPHER_MODE_XTS)

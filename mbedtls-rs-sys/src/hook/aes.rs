@@ -347,7 +347,7 @@ mod alt {
 
     use critical_section::Mutex;
 
-    use crate::hook::{WorkArea, WorkAreaMemory};
+    use crate::hook::{RawWorkArea, WorkAreaMemory};
     use crate::{
         mbedtls_aes_context, MbedtlsError, MBEDTLS_AES_DECRYPT, MBEDTLS_AES_ENCRYPT,
         MBEDTLS_ERR_AES_BAD_INPUT_DATA, MBEDTLS_ERR_AES_INVALID_KEY_LENGTH,
@@ -356,7 +356,8 @@ mod alt {
     use super::{AesBlock, MbedtlsAes, RustCryptoAes, RustCryptoAesState, AES_BLOCK_SIZE};
 
     // The work area must be able to host the largest state used by the
-    // fallback (plus emplacement slack); hardware backends embedding
+    // fallback, plus emplacement slack for under-aligned opaque storage (see
+    // the `WorkArea` docs in `src/hook.rs`); hardware backends embedding
     // `RustCryptoAesState` as a software escape hatch are covered by the
     // same bound.
     const _: () = assert!(
@@ -381,13 +382,13 @@ mod alt {
         }
     }
 
-    impl WorkArea for mbedtls_aes_context {
-        fn memory(&self) -> &WorkAreaMemory {
-            &self.work_area
+    impl RawWorkArea for mbedtls_aes_context {
+        unsafe fn work_area<'a>(ctx: *const Self) -> &'a WorkAreaMemory {
+            unsafe { &*core::ptr::addr_of!((*ctx).work_area) }
         }
 
-        fn memory_mut(&mut self) -> &mut WorkAreaMemory {
-            &mut self.work_area
+        unsafe fn work_area_mut<'a>(ctx: *mut Self) -> &'a mut WorkAreaMemory {
+            unsafe { &mut *core::ptr::addr_of_mut!((*ctx).work_area) }
         }
     }
 
@@ -411,17 +412,17 @@ mod alt {
 
     #[no_mangle]
     unsafe extern "C" fn mbedtls_aes_init(ctx: *mut mbedtls_aes_context) {
-        algo().init(unsafe { &mut *ctx }.memory_mut());
+        algo().init(unsafe { mbedtls_aes_context::work_area_mut(ctx) });
     }
 
     #[no_mangle]
     unsafe extern "C" fn mbedtls_aes_free(ctx: *mut mbedtls_aes_context) {
         // MbedTLS contract: `mbedtls_aes_free(NULL)` is documented as valid
-        let Some(ctx) = (unsafe { ctx.as_mut() }) else {
+        if ctx.is_null() {
             return;
-        };
+        }
 
-        algo().free(ctx.memory_mut());
+        algo().free(unsafe { mbedtls_aes_context::work_area_mut(ctx) });
     }
 
     #[no_mangle]
@@ -430,10 +431,9 @@ mod alt {
         key: *const c_uchar,
         keybits: c_uint,
     ) -> c_int {
-        result(
-            unsafe { key_slice(key, keybits) }
-                .and_then(|key| algo().set_enc_key(unsafe { &mut *ctx }.memory_mut(), key)),
-        )
+        result(unsafe { key_slice(key, keybits) }.and_then(|key| {
+            algo().set_enc_key(unsafe { mbedtls_aes_context::work_area_mut(ctx) }, key)
+        }))
     }
 
     #[no_mangle]
@@ -442,10 +442,9 @@ mod alt {
         key: *const c_uchar,
         keybits: c_uint,
     ) -> c_int {
-        result(
-            unsafe { key_slice(key, keybits) }
-                .and_then(|key| algo().set_dec_key(unsafe { &mut *ctx }.memory_mut(), key)),
-        )
+        result(unsafe { key_slice(key, keybits) }.and_then(|key| {
+            algo().set_dec_key(unsafe { mbedtls_aes_context::work_area_mut(ctx) }, key)
+        }))
     }
 
     #[inline(always)]
@@ -463,7 +462,7 @@ mod alt {
             core::ptr::copy_nonoverlapping(input, block.as_mut_ptr(), AES_BLOCK_SIZE);
         }
 
-        let memory = unsafe { &mut *ctx }.memory_mut();
+        let memory = unsafe { mbedtls_aes_context::work_area_mut(ctx) };
 
         match mode {
             ENCRYPT => algo.encrypt(memory, &mut block)?,
@@ -541,7 +540,7 @@ mod alt {
 
         let data = unsafe { core::slice::from_raw_parts_mut(output, length) };
         let iv = unsafe { &mut *(iv as *mut AesBlock) };
-        let memory = unsafe { &mut *ctx }.memory_mut();
+        let memory = unsafe { mbedtls_aes_context::work_area_mut(ctx) };
 
         result(if mode == DECRYPT {
             algo.decrypt_cbc(memory, iv, data)
@@ -574,7 +573,7 @@ mod alt {
         }
 
         let iv = unsafe { &mut *(iv as *mut AesBlock) };
-        let memory = unsafe { &mut *ctx }.memory_mut();
+        let memory = unsafe { mbedtls_aes_context::work_area_mut(ctx) };
 
         for i in 0..length {
             if n == 0 {
@@ -625,7 +624,7 @@ mod alt {
         }
 
         let iv = unsafe { &mut *(iv as *mut AesBlock) };
-        let memory = unsafe { &mut *ctx }.memory_mut();
+        let memory = unsafe { mbedtls_aes_context::work_area_mut(ctx) };
 
         for i in 0..length {
             let ov = *iv;
@@ -668,7 +667,7 @@ mod alt {
         }
 
         let iv = unsafe { &mut *(iv as *mut AesBlock) };
-        let memory = unsafe { &mut *ctx }.memory_mut();
+        let memory = unsafe { mbedtls_aes_context::work_area_mut(ctx) };
 
         for i in 0..length {
             if n == 0 {
@@ -712,7 +711,7 @@ mod alt {
 
         let nonce_counter = unsafe { &mut *(nonce_counter as *mut AesBlock) };
         let stream_block = unsafe { &mut *(stream_block as *mut AesBlock) };
-        let memory = unsafe { &mut *ctx }.memory_mut();
+        let memory = unsafe { mbedtls_aes_context::work_area_mut(ctx) };
 
         let mut i = 0;
         while i < length {
@@ -762,10 +761,11 @@ mod alt {
     mod xts {
         use core::ffi::{c_int, c_uchar, c_uint};
 
-        use crate::hook::WorkArea;
+        use crate::hook::{RawWorkArea, WorkAreaMemory};
         use crate::{
-            mbedtls_aes_xts_context, MbedtlsError, MBEDTLS_ERR_AES_BAD_INPUT_DATA,
-            MBEDTLS_ERR_AES_INVALID_INPUT_LENGTH, MBEDTLS_ERR_AES_INVALID_KEY_LENGTH,
+            mbedtls_aes_context, mbedtls_aes_xts_context, MbedtlsError,
+            MBEDTLS_ERR_AES_BAD_INPUT_DATA, MBEDTLS_ERR_AES_INVALID_INPUT_LENGTH,
+            MBEDTLS_ERR_AES_INVALID_KEY_LENGTH,
         };
 
         use super::super::{xor_in_place, AesBlock, AES_BLOCK_SIZE};
@@ -794,26 +794,42 @@ mod alt {
             Ok(key.split_at(key.len() / 2))
         }
 
+        /// Raw projections to the two embedded AES contexts' work areas (no
+        /// reference to the XTS struct may be formed — see `RawWorkArea`).
+        ///
+        /// # Safety
+        /// `ctx` must be non-null and valid for reads/writes; the two helpers
+        /// borrow disjoint fields, so their results may coexist.
+        #[inline(always)]
+        unsafe fn crypt_wa<'a>(ctx: *mut mbedtls_aes_xts_context) -> &'a mut WorkAreaMemory {
+            unsafe { mbedtls_aes_context::work_area_mut(core::ptr::addr_of_mut!((*ctx).crypt)) }
+        }
+
+        /// See [`crypt_wa`].
+        #[inline(always)]
+        unsafe fn tweak_wa<'a>(ctx: *mut mbedtls_aes_xts_context) -> &'a mut WorkAreaMemory {
+            unsafe { mbedtls_aes_context::work_area_mut(core::ptr::addr_of_mut!((*ctx).tweak)) }
+        }
+
         #[no_mangle]
         unsafe extern "C" fn mbedtls_aes_xts_init(ctx: *mut mbedtls_aes_xts_context) {
             let algo = algo();
-            let ctx = unsafe { &mut *ctx };
 
-            algo.init(ctx.crypt.memory_mut());
-            algo.init(ctx.tweak.memory_mut());
+            algo.init(unsafe { crypt_wa(ctx) });
+            algo.init(unsafe { tweak_wa(ctx) });
         }
 
         #[no_mangle]
         unsafe extern "C" fn mbedtls_aes_xts_free(ctx: *mut mbedtls_aes_xts_context) {
             // MbedTLS contract: freeing NULL is valid
-            let Some(ctx) = (unsafe { ctx.as_mut() }) else {
+            if ctx.is_null() {
                 return;
-            };
+            }
 
             let algo = algo();
 
-            algo.free(ctx.crypt.memory_mut());
-            algo.free(ctx.tweak.memory_mut());
+            algo.free(unsafe { crypt_wa(ctx) });
+            algo.free(unsafe { tweak_wa(ctx) });
         }
 
         #[no_mangle]
@@ -823,7 +839,6 @@ mod alt {
             keybits: c_uint,
         ) -> c_int {
             let algo = algo();
-            let ctx = unsafe { &mut *ctx };
 
             result((|| {
                 if keybits % 8 != 0 {
@@ -833,8 +848,8 @@ mod alt {
                 let key = unsafe { core::slice::from_raw_parts(key, keybits as usize / 8) };
                 let (crypt_key, tweak_key) = split_key(key)?;
 
-                algo.set_enc_key(ctx.crypt.memory_mut(), crypt_key)?;
-                algo.set_enc_key(ctx.tweak.memory_mut(), tweak_key)
+                algo.set_enc_key(unsafe { crypt_wa(ctx) }, crypt_key)?;
+                algo.set_enc_key(unsafe { tweak_wa(ctx) }, tweak_key)
             })())
         }
 
@@ -845,7 +860,6 @@ mod alt {
             keybits: c_uint,
         ) -> c_int {
             let algo = algo();
-            let ctx = unsafe { &mut *ctx };
 
             result((|| {
                 if keybits % 8 != 0 {
@@ -855,9 +869,9 @@ mod alt {
                 let key = unsafe { core::slice::from_raw_parts(key, keybits as usize / 8) };
                 let (crypt_key, tweak_key) = split_key(key)?;
 
-                algo.set_dec_key(ctx.crypt.memory_mut(), crypt_key)?;
+                algo.set_dec_key(unsafe { crypt_wa(ctx) }, crypt_key)?;
                 // The tweak is always computed with the encryption schedule
-                algo.set_enc_key(ctx.tweak.memory_mut(), tweak_key)
+                algo.set_enc_key(unsafe { tweak_wa(ctx) }, tweak_key)
             })())
         }
 
@@ -871,7 +885,9 @@ mod alt {
             mut output: *mut c_uchar,
         ) -> c_int {
             let algo = algo();
-            let ctx = unsafe { &mut *ctx };
+            // Disjoint raw projections into the two embedded contexts.
+            let crypt_memory = unsafe { crypt_wa(ctx) };
+            let tweak_memory = unsafe { tweak_wa(ctx) };
 
             if mode != ENCRYPT && mode != DECRYPT {
                 return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
@@ -891,7 +907,7 @@ mod alt {
             unsafe {
                 core::ptr::copy_nonoverlapping(data_unit, tweak.as_mut_ptr(), AES_BLOCK_SIZE);
             }
-            if let Err(e) = algo.encrypt(ctx.tweak.memory_mut(), &mut tweak) {
+            if let Err(e) = algo.encrypt(tweak_memory, &mut tweak) {
                 return e.code();
             }
 
@@ -913,9 +929,9 @@ mod alt {
                 xor_in_place(&mut tmp, &tweak);
 
                 let crypted = if mode == DECRYPT {
-                    algo.decrypt(ctx.crypt.memory_mut(), &mut tmp)
+                    algo.decrypt(crypt_memory, &mut tmp)
                 } else {
-                    algo.encrypt(ctx.crypt.memory_mut(), &mut tmp)
+                    algo.encrypt(crypt_memory, &mut tmp)
                 };
                 if let Err(e) = crypted {
                     return e.code();
@@ -955,9 +971,9 @@ mod alt {
                 }
 
                 let crypted = if mode == DECRYPT {
-                    algo.decrypt(ctx.crypt.memory_mut(), &mut tmp)
+                    algo.decrypt(crypt_memory, &mut tmp)
                 } else {
-                    algo.encrypt(ctx.crypt.memory_mut(), &mut tmp)
+                    algo.encrypt(crypt_memory, &mut tmp)
                 };
                 if let Err(e) = crypted {
                     return e.code();

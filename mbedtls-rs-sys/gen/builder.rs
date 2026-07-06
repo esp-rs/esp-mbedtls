@@ -51,13 +51,15 @@ impl Hook {
     /// (see `gen/hook/*_alt.h`).
     ///
     /// Sizing rule: the largest state a hook emplaces, **plus at least 16
-    /// bytes of emplacement slack**. The context structs deliberately declare
-    /// no alignment (callers put them in arbitrarily-aligned storage — see the
-    /// `WorkArea` docs in `src/hook.rs`), so the state is aligned at runtime
-    /// within the work area and up to `align_of - 1` bytes (bounded by 16, the
-    /// max alignment the `WorkArea` casts support) can be lost to the offset.
-    /// Compile-time asserts in `src/hook/{digest/*,aes}.rs` enforce this bound
-    /// for the built-in RustCrypto fallback states.
+    /// bytes of emplacement slack**. The state is aligned at runtime within
+    /// the work area; although the context structs declare `aligned(16)` (so
+    /// compiler-managed storage — and Rust *moves* — keep the offset at zero),
+    /// opaque external storage may under-align them (e.g. OpenThread's
+    /// 8-aligned context arrays — see the `WorkArea` docs in `src/hook.rs`),
+    /// costing up to `align_of - 1` bytes (bounded by 16, the max alignment
+    /// the `WorkArea` casts support) of offset. Compile-time asserts in
+    /// `src/hook/{digest/*,aes}.rs` enforce this bound for the built-in
+    /// RustCrypto fallback states.
     fn work_area_size(self) -> Option<usize> {
         match self {
             Self::Sha1 => Some(208),

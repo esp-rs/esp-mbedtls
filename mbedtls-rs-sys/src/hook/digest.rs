@@ -9,7 +9,7 @@ use digest::Digest;
 
 use crate::hook::WorkAreaMemory;
 
-use super::WorkArea;
+use super::{RawWorkArea, WorkArea};
 
 pub use sha1::*;
 pub use sha256::*;
@@ -169,13 +169,13 @@ where
 
 #[allow(unused)]
 #[inline(always)]
-unsafe fn digest_init<T: WorkArea>(algo: &dyn MbedtlsDigest, memory: *mut T) {
-    algo.init(memory.as_mut().unwrap().memory_mut());
+unsafe fn digest_init<T: RawWorkArea>(algo: &dyn MbedtlsDigest, memory: *mut T) {
+    algo.init(unsafe { T::work_area_mut(memory) });
 }
 
 #[allow(unused)]
 #[inline(always)]
-unsafe fn digest_free<T: WorkArea>(algo: &dyn MbedtlsDigest, memory: *mut T) {
+unsafe fn digest_free<T: RawWorkArea>(algo: &dyn MbedtlsDigest, memory: *mut T) {
     // MbedTLS upstream contract: `mbedtls_*_free(NULL)` is explicitly documented
     // as valid (sha1.h:76-82, sha256.h, sha512.h: "ctx ... may be NULL, in which
     // case this function returns immediately"). No current caller in MbedTLS 3.x
@@ -186,36 +186,35 @@ unsafe fn digest_free<T: WorkArea>(algo: &dyn MbedtlsDigest, memory: *mut T) {
     // upstream implementation, any future caller that elects to pass NULL through
     // would land here, and panicking across the FFI boundary is strictly worse
     // than the documented no-op.
-    let Some(memory) = memory.as_mut() else {
+    if memory.is_null() {
         return;
-    };
-    algo.free(memory.memory_mut());
+    }
+    algo.free(unsafe { T::work_area_mut(memory) });
 }
 
 #[allow(unused)]
 #[inline(always)]
-unsafe fn digest_clone<T: WorkArea>(
+unsafe fn digest_clone<T: RawWorkArea>(
     algo: &dyn MbedtlsDigest,
     src_work_area: *const T,
     dst_work_area: *mut T,
 ) {
-    algo.clone(
-        src_work_area.as_ref().unwrap().memory(),
-        dst_work_area.as_mut().unwrap().memory_mut(),
-    );
+    algo.clone(unsafe { T::work_area(src_work_area) }, unsafe {
+        T::work_area_mut(dst_work_area)
+    });
 }
 
 #[allow(unused)]
 #[inline(always)]
-unsafe fn digest_starts<T: WorkArea>(algo: &dyn MbedtlsDigest, memory: *mut T) -> c_int {
-    algo.reset(memory.as_mut().unwrap().memory_mut());
+unsafe fn digest_starts<T: RawWorkArea>(algo: &dyn MbedtlsDigest, memory: *mut T) -> c_int {
+    algo.reset(unsafe { T::work_area_mut(memory) });
 
     0
 }
 
 #[allow(unused)]
 #[inline(always)]
-unsafe fn digest_update<T: WorkArea>(
+unsafe fn digest_update<T: RawWorkArea>(
     algo: &dyn MbedtlsDigest,
     memory: *mut T,
     input: *const c_uchar,
@@ -224,7 +223,7 @@ unsafe fn digest_update<T: WorkArea>(
     if ilen > 0 {
         let data = unsafe { core::slice::from_raw_parts(input, ilen) };
 
-        algo.update(memory.as_mut().unwrap().memory_mut(), data);
+        algo.update(unsafe { T::work_area_mut(memory) }, data);
     }
 
     0
@@ -232,16 +231,15 @@ unsafe fn digest_update<T: WorkArea>(
 
 #[allow(unused)]
 #[inline(always)]
-unsafe fn digest_finish<T: WorkArea>(
+unsafe fn digest_finish<T: RawWorkArea>(
     algo: &dyn MbedtlsDigest,
     memory: *mut T,
     output: *mut c_uchar,
 ) -> c_int {
-    let output_slice = unsafe {
-        core::slice::from_raw_parts_mut(output, algo.output_size(memory.as_ref().unwrap().memory()))
-    };
+    let output_slice =
+        unsafe { core::slice::from_raw_parts_mut(output, algo.output_size(T::work_area(memory))) };
 
-    algo.finish(memory.as_mut().unwrap().memory_mut(), output_slice);
+    algo.finish(unsafe { T::work_area_mut(memory) }, output_slice);
 
     0
 }

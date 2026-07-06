@@ -63,7 +63,7 @@ mod alt {
         digest_clone, digest_finish, digest_free, digest_init, digest_starts, digest_update,
         MbedtlsDigest, RustCryptoDigest,
     };
-    use crate::hook::{WorkArea, WorkAreaMemory};
+    use crate::hook::{RawWorkArea, WorkAreaMemory};
     use crate::mbedtls_sha512_context;
 
     use super::{MbedtlsSha384, MbedtlsSha512};
@@ -75,7 +75,7 @@ mod alt {
     impl MbedtlsSha384 for RustCryptoSha384 {}
 
     // The work area must be able to host the fallback's state at *any* runtime
-    // offset (up to 15 bytes of emplacement waste — see `sha256.rs` for the
+    // offset (up to 15 bytes of emplacement waste at under-aligned opaque storage — see `sha256.rs` for the
     // full rationale).
     const _: () = assert!(
         core::mem::size_of::<Option<sha2::Sha512>>() + 16
@@ -96,9 +96,22 @@ mod alt {
         Mutex::new(Cell::new(None));
     static SHA384_RUST_CRYPTO: RustCryptoSha384 = RustCryptoSha384::new();
 
+    /// Read `is384` via raw field projection — `ctx` may be under-aligned
+    /// (see `RawWorkArea`), so no reference to the struct may be formed; the
+    /// `u8` field itself is loadable at any address.
+    #[inline(always)]
+    fn is384(ctx: *const mbedtls_sha512_context) -> u8 {
+        unsafe { core::ptr::addr_of!((*ctx).is384).read() }
+    }
+
+    #[inline(always)]
+    fn set_is384(ctx: *mut mbedtls_sha512_context, value: u8) {
+        unsafe { core::ptr::addr_of_mut!((*ctx).is384).write(value) }
+    }
+
     #[inline(always)]
     fn algo<'a>(ctx: *const mbedtls_sha512_context) -> &'a dyn MbedtlsDigest {
-        if unsafe { (*ctx).is384 } != 0 {
+        if is384(ctx) != 0 {
             if let Some(sha) = critical_section::with(|cs| SHA384.borrow(cs).get()) {
                 sha
             } else {
@@ -111,20 +124,19 @@ mod alt {
         }
     }
 
-    impl WorkArea for mbedtls_sha512_context {
-        fn memory(&self) -> &WorkAreaMemory {
-            &self.work_area
+    impl RawWorkArea for mbedtls_sha512_context {
+        unsafe fn work_area<'a>(ctx: *const Self) -> &'a WorkAreaMemory {
+            unsafe { &*core::ptr::addr_of!((*ctx).work_area) }
         }
 
-        fn memory_mut(&mut self) -> &mut WorkAreaMemory {
-            &mut self.work_area
+        unsafe fn work_area_mut<'a>(ctx: *mut Self) -> &'a mut WorkAreaMemory {
+            unsafe { &mut *core::ptr::addr_of_mut!((*ctx).work_area) }
         }
     }
 
     #[no_mangle]
     unsafe extern "C" fn mbedtls_sha512_init(ctx: *mut mbedtls_sha512_context) {
-        let ctx = unsafe { &mut *ctx };
-        ctx.is384 = 0;
+        set_is384(ctx, 0);
 
         digest_init(algo(ctx), ctx);
     }
@@ -146,13 +158,10 @@ mod alt {
         dst: *mut mbedtls_sha512_context,
         src: *const mbedtls_sha512_context,
     ) {
-        let dst = unsafe { &mut *dst };
-        let src = unsafe { &*src };
-
-        if src.is384 != dst.is384 {
+        if is384(src) != is384(dst) {
             digest_free(algo(dst), dst);
 
-            dst.is384 = src.is384;
+            set_is384(dst, is384(src));
             digest_init(algo(dst), dst);
         }
 
@@ -164,12 +173,10 @@ mod alt {
         ctx: *mut mbedtls_sha512_context,
         is384: c_int,
     ) -> c_int {
-        let ctx = unsafe { &mut *ctx };
-
-        if is384 != ctx.is384 as _ {
+        if is384 != self::is384(ctx) as _ {
             digest_free(algo(ctx), ctx);
 
-            ctx.is384 = is384 as _;
+            set_is384(ctx, is384 as _);
             digest_init(algo(ctx), ctx);
         }
 

@@ -34,29 +34,33 @@ pub type WorkAreaMemory = [u8];
 /// Typically, mult-stage algorithms (e.g., digests) will use this work area to store their
 /// intermediate state between calls (as in, between init/reset/update/finish).
 ///
-/// # Context alignment and the no-raw-memcpy contract
+/// # Context alignment: why `aligned(16)` on the C struct AND runtime alignment here
 ///
-/// The C context structs carrying a work area (see `gen/hook/*_alt.h`) deliberately declare
-/// **no** alignment for it: callers routinely place contexts in storage the C compiler never
-/// sees as the struct type — OpenThread's `OT_DEFINE_ALIGNED_VAR(..., uint64_t)` opaque
-/// crypto-context storage is only 8-aligned, some heaps return 4-aligned memory, and contexts
-/// get embedded at arbitrary offsets inside other structs. A declared alignment stronger than
-/// what such a caller really provides is undefined behavior the moment a hook forms a Rust
-/// reference to the context. Instead, the emplaced state is aligned *at runtime* within the
-/// work area (whose size includes slack for the worst-case waste — see `Hook::work_area_size`
-/// in `gen/builder.rs`).
+/// The emplaced state's offset within the work area is computed *at runtime* from the work
+/// area's address (see [`WorkArea::cast_mut_maybe`]). Two storage worlds have to coexist:
 ///
-/// The consequence is that the state's offset within the work area is a function of the
-/// context's *address*, which imposes one contract on C-side users (that vanilla MbedTLS
-/// contexts do not have): a context must NOT be relocated or duplicated with a raw
-/// `memcpy`/struct assignment, because the copied state bytes would sit at the *source's*
-/// offset while the hooks would look for them at the *destination's* offset. Contexts must
-/// stay where they were initialized (heap contexts never move, so those are always fine), and
-/// duplication must go through the module's clone API (`mbedtls_shaX_clone` etc.), which the
-/// hooks implement as a *typed* clone: the state is read at the source's offset and
-/// re-emplaced at the destination's own offset. All context-cloning call sites in the bundled
-/// MbedTLS (md.c, ssl, psa) go through those APIs, and none of the bundled C raw-copies a
-/// hooked context.
+/// - **Compiler-managed storage relocates contexts.** A context that lives in a Rust local,
+///   a `Box`, or as a field of a moved struct (e.g. `mbedtls_entropy_context` embeds a SHA
+///   context) is relocated by plain bitwise copies that no hook observes — **Rust move
+///   semantics** most of all, and C struct assignment. Such a copy is only safe if the new
+///   location has the same alignment (mod 16) as the old one, so that the stored state sits
+///   at the same offset. This is what the `aligned(16)` attribute on the C structs (see
+///   `gen/hook/*_alt.h`) guarantees: every compiler-chosen location is uniformly 16-aligned,
+///   the runtime offset is always the same (zero), and bitwise relocation is safe.
+///
+/// - **Opaque external storage under-aligns contexts — but never moves them.** OpenThread
+///   casts its contexts out of `OT_DEFINE_ALIGNED_VAR(..., uint64_t)` byte arrays (8-aligned),
+///   and some heaps return 4-aligned memory. There the runtime offset is nonzero but *stable*
+///   (heap allocations and OT's in-place storage do not relocate), so runtime alignment makes
+///   them work — provided the hooks never create a `&`/`&mut` to the whole context struct,
+///   which would assert the declared 16-byte alignment and be instant UB. Hook entry points
+///   therefore use raw field projection only — see [`RawWorkArea`]. The `*_WORK_AREA_SIZE`
+///   values include slack for the worst-case emplacement offset (see `Hook::work_area_size`
+///   in `gen/builder.rs`).
+///
+/// Duplication through the module clone APIs (`mbedtls_shaX_clone`) is implemented as a
+/// *typed* clone (read at the source's offset, re-emplace at the destination's), so it is
+/// correct even between differently-aligned locations.
 pub trait WorkArea {
     /// Get a reference to the work area memory as a slice
     fn memory(&self) -> &WorkAreaMemory;
@@ -156,4 +160,30 @@ impl WorkArea for WorkAreaMemory {
     fn memory_mut(&mut self) -> &mut WorkAreaMemory {
         self
     }
+}
+
+/// Raw, alignment-agnostic access to a hook context's `work_area` bytes,
+/// implemented by the C context structs (`mbedtls_sha256_context`, ...).
+///
+/// Hook entry points receive `*mut ctx` pointers whose declared 16-byte
+/// alignment may be violated by opaque external storage (see the [`WorkArea`]
+/// docs), so they must never do `&mut *ctx` — a reference to the whole struct
+/// asserts the declared alignment. These accessors use raw field projection
+/// (`&raw mut (*ctx).work_area`, legal at any address) and hand out slices of
+/// the byte array, which has alignment 1 and is therefore referenceable
+/// anywhere.
+pub trait RawWorkArea {
+    /// Borrow the context's work-area bytes.
+    ///
+    /// # Safety
+    /// `ctx` must be non-null and valid for reads of `Self`, and the borrow
+    /// must not outlive the context or overlap a mutable one.
+    unsafe fn work_area<'a>(ctx: *const Self) -> &'a WorkAreaMemory;
+
+    /// Mutably borrow the context's work-area bytes.
+    ///
+    /// # Safety
+    /// `ctx` must be non-null and valid for reads and writes of `Self`, and
+    /// the borrow must not overlap any other borrow of the context.
+    unsafe fn work_area_mut<'a>(ctx: *mut Self) -> &'a mut WorkAreaMemory;
 }

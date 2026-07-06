@@ -41,7 +41,7 @@ mod alt {
         digest_clone, digest_finish, digest_free, digest_init, digest_starts, digest_update,
         MbedtlsDigest, RustCryptoDigest,
     };
-    use crate::hook::{WorkArea, WorkAreaMemory};
+    use crate::hook::{RawWorkArea, WorkAreaMemory};
     use crate::mbedtls_sha1_context;
 
     use super::MbedtlsSha1;
@@ -51,7 +51,8 @@ mod alt {
     impl MbedtlsSha1 for RustCryptoSha1 {}
 
     // The work area must be able to host the fallback's state at *any* runtime
-    // offset (up to 15 bytes of emplacement waste — see `sha256.rs` for the
+    // offset (up to 15 bytes of emplacement waste at under-aligned opaque
+    // storage — see `sha256.rs` for the
     // full rationale).
     const _: () = assert!(
         core::mem::size_of::<Option<sha1::Sha1>>() + 16
@@ -72,13 +73,13 @@ mod alt {
         }
     }
 
-    impl WorkArea for mbedtls_sha1_context {
-        fn memory(&self) -> &WorkAreaMemory {
-            &self.work_area
+    impl RawWorkArea for mbedtls_sha1_context {
+        unsafe fn work_area<'a>(ctx: *const Self) -> &'a WorkAreaMemory {
+            unsafe { &*core::ptr::addr_of!((*ctx).work_area) }
         }
 
-        fn memory_mut(&mut self) -> &mut WorkAreaMemory {
-            &mut self.work_area
+        unsafe fn work_area_mut<'a>(ctx: *mut Self) -> &'a mut WorkAreaMemory {
+            unsafe { &mut *core::ptr::addr_of_mut!((*ctx).work_area) }
         }
     }
 

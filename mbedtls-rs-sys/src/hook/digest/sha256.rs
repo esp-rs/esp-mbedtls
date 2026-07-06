@@ -63,7 +63,7 @@ mod alt {
         digest_clone, digest_finish, digest_free, digest_init, digest_starts, digest_update,
         MbedtlsDigest, RustCryptoDigest,
     };
-    use crate::hook::{WorkArea, WorkAreaMemory};
+    use crate::hook::{RawWorkArea, WorkAreaMemory};
     use crate::mbedtls_sha256_context;
 
     use super::{MbedtlsSha224, MbedtlsSha256};
@@ -75,11 +75,12 @@ mod alt {
     impl MbedtlsSha224 for RustCryptoSha224 {}
 
     // The work area must be able to host the fallback's state at *any* runtime
-    // offset: the context struct deliberately declares no alignment (see
-    // `gen/hook/sha256_alt.h`), so emplacement may lose up to `align_of - 1`
-    // bytes (bounded by 16, the max alignment the `WorkArea` casts support) —
-    // hence the `+ 16`. Registered hardware backends emplace their own types
-    // and are covered by the runtime fit check in `WorkArea::cast_mut_maybe`.
+    // offset: opaque external storage may under-align the context (see the
+    // `WorkArea` docs in `src/hook.rs`), so emplacement may lose up to
+    // `align_of - 1` bytes (bounded by 16, the max alignment the `WorkArea`
+    // casts support) — hence the `+ 16`. Registered hardware backends emplace
+    // their own types and are covered by the runtime fit check in
+    // `WorkArea::cast_mut_maybe`.
     const _: () = assert!(
         core::mem::size_of::<Option<sha2::Sha256>>() + 16
             <= crate::MBEDTLS_SHA256_ALT_WORK_AREA_SIZE as usize,
@@ -99,9 +100,22 @@ mod alt {
         Mutex::new(Cell::new(None));
     static SHA224_RUST_CRYPTO: RustCryptoSha224 = RustCryptoSha224::new();
 
+    /// Read `is224` via raw field projection — `ctx` may be under-aligned
+    /// (see `RawWorkArea`), so no reference to the struct may be formed; the
+    /// `u8` field itself is loadable at any address.
+    #[inline(always)]
+    fn is224(ctx: *const mbedtls_sha256_context) -> u8 {
+        unsafe { core::ptr::addr_of!((*ctx).is224).read() }
+    }
+
+    #[inline(always)]
+    fn set_is224(ctx: *mut mbedtls_sha256_context, value: u8) {
+        unsafe { core::ptr::addr_of_mut!((*ctx).is224).write(value) }
+    }
+
     #[inline(always)]
     fn algo<'a>(ctx: *const mbedtls_sha256_context) -> &'a dyn MbedtlsDigest {
-        if unsafe { (*ctx).is224 } != 0 {
+        if is224(ctx) != 0 {
             if let Some(sha) = critical_section::with(|cs| SHA224.borrow(cs).get()) {
                 sha
             } else {
@@ -114,20 +128,19 @@ mod alt {
         }
     }
 
-    impl WorkArea for mbedtls_sha256_context {
-        fn memory(&self) -> &WorkAreaMemory {
-            &self.work_area
+    impl RawWorkArea for mbedtls_sha256_context {
+        unsafe fn work_area<'a>(ctx: *const Self) -> &'a WorkAreaMemory {
+            unsafe { &*core::ptr::addr_of!((*ctx).work_area) }
         }
 
-        fn memory_mut(&mut self) -> &mut WorkAreaMemory {
-            &mut self.work_area
+        unsafe fn work_area_mut<'a>(ctx: *mut Self) -> &'a mut WorkAreaMemory {
+            unsafe { &mut *core::ptr::addr_of_mut!((*ctx).work_area) }
         }
     }
 
     #[no_mangle]
     unsafe extern "C" fn mbedtls_sha256_init(ctx: *mut mbedtls_sha256_context) {
-        let ctx = unsafe { &mut *ctx };
-        ctx.is224 = 0;
+        set_is224(ctx, 0);
 
         digest_init(algo(ctx), ctx);
     }
@@ -149,13 +162,10 @@ mod alt {
         dst: *mut mbedtls_sha256_context,
         src: *const mbedtls_sha256_context,
     ) {
-        let dst = unsafe { &mut *dst };
-        let src = unsafe { &*src };
-
-        if src.is224 != dst.is224 {
+        if is224(src) != is224(dst) {
             digest_free(algo(dst), dst);
 
-            dst.is224 = src.is224;
+            set_is224(dst, is224(src));
             digest_init(algo(dst), dst);
         }
 
@@ -167,12 +177,10 @@ mod alt {
         ctx: *mut mbedtls_sha256_context,
         is224: c_int,
     ) -> c_int {
-        let ctx = unsafe { &mut *ctx };
-
-        if is224 != ctx.is224 as _ {
+        if is224 != self::is224(ctx) as _ {
             digest_free(algo(ctx), ctx);
 
-            ctx.is224 = is224 as _;
+            set_is224(ctx, is224 as _);
             digest_init(algo(ctx), ctx);
         }
 
