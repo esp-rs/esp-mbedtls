@@ -74,6 +74,23 @@ mod alt {
     impl MbedtlsSha256 for RustCryptoSha256 {}
     impl MbedtlsSha224 for RustCryptoSha224 {}
 
+    // The work area must be able to host the fallback's state at *any* runtime
+    // offset: the context struct deliberately declares no alignment (see
+    // `gen/hook/sha256_alt.h`), so emplacement may lose up to `align_of - 1`
+    // bytes (bounded by 16, the max alignment the `WorkArea` casts support) —
+    // hence the `+ 16`. Registered hardware backends emplace their own types
+    // and are covered by the runtime fit check in `WorkArea::cast_mut_maybe`.
+    const _: () = assert!(
+        core::mem::size_of::<Option<sha2::Sha256>>() + 16
+            <= crate::MBEDTLS_SHA256_ALT_WORK_AREA_SIZE as usize,
+        "The RustCrypto SHA-256 state does not fit the SHA-256 hook work area"
+    );
+    const _: () = assert!(
+        core::mem::size_of::<Option<sha2::Sha224>>() + 16
+            <= crate::MBEDTLS_SHA256_ALT_WORK_AREA_SIZE as usize,
+        "The RustCrypto SHA-224 state does not fit the SHA-256 hook work area"
+    );
+
     pub(crate) static SHA256: Mutex<Cell<Option<&(dyn MbedtlsSha256 + Send + Sync)>>> =
         Mutex::new(Cell::new(None));
     static SHA256_RUST_CRYPTO: RustCryptoSha256 = RustCryptoSha256::new();

@@ -50,6 +50,15 @@ mod alt {
 
     impl MbedtlsSha1 for RustCryptoSha1 {}
 
+    // The work area must be able to host the fallback's state at *any* runtime
+    // offset (up to 15 bytes of emplacement waste — see `sha256.rs` for the
+    // full rationale).
+    const _: () = assert!(
+        core::mem::size_of::<Option<sha1::Sha1>>() + 16
+            <= crate::MBEDTLS_SHA1_ALT_WORK_AREA_SIZE as usize,
+        "The RustCrypto SHA-1 state does not fit the SHA-1 hook work area"
+    );
+
     pub(crate) static SHA1: Mutex<Cell<Option<&(dyn MbedtlsSha1 + Send + Sync)>>> =
         Mutex::new(Cell::new(None));
     pub(crate) static SHA1_RUST_CRYPTO: RustCryptoSha1 = RustCryptoSha1::new();

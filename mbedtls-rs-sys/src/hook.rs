@@ -33,6 +33,30 @@ pub type WorkAreaMemory = [u8];
 ///
 /// Typically, mult-stage algorithms (e.g., digests) will use this work area to store their
 /// intermediate state between calls (as in, between init/reset/update/finish).
+///
+/// # Context alignment and the no-raw-memcpy contract
+///
+/// The C context structs carrying a work area (see `gen/hook/*_alt.h`) deliberately declare
+/// **no** alignment for it: callers routinely place contexts in storage the C compiler never
+/// sees as the struct type — OpenThread's `OT_DEFINE_ALIGNED_VAR(..., uint64_t)` opaque
+/// crypto-context storage is only 8-aligned, some heaps return 4-aligned memory, and contexts
+/// get embedded at arbitrary offsets inside other structs. A declared alignment stronger than
+/// what such a caller really provides is undefined behavior the moment a hook forms a Rust
+/// reference to the context. Instead, the emplaced state is aligned *at runtime* within the
+/// work area (whose size includes slack for the worst-case waste — see `Hook::work_area_size`
+/// in `gen/builder.rs`).
+///
+/// The consequence is that the state's offset within the work area is a function of the
+/// context's *address*, which imposes one contract on C-side users (that vanilla MbedTLS
+/// contexts do not have): a context must NOT be relocated or duplicated with a raw
+/// `memcpy`/struct assignment, because the copied state bytes would sit at the *source's*
+/// offset while the hooks would look for them at the *destination's* offset. Contexts must
+/// stay where they were initialized (heap contexts never move, so those are always fine), and
+/// duplication must go through the module's clone API (`mbedtls_shaX_clone` etc.), which the
+/// hooks implement as a *typed* clone: the state is read at the source's offset and
+/// re-emplaced at the destination's own offset. All context-cloning call sites in the bundled
+/// MbedTLS (md.c, ssl, psa) go through those APIs, and none of the bundled C raw-copies a
+/// hooked context.
 pub trait WorkArea {
     /// Get a reference to the work area memory as a slice
     fn memory(&self) -> &WorkAreaMemory;

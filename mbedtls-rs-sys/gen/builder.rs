@@ -47,6 +47,17 @@ pub enum Hook {
 }
 
 impl Hook {
+    /// The size of the `work_area` byte array in the hook's C context struct
+    /// (see `gen/hook/*_alt.h`).
+    ///
+    /// Sizing rule: the largest state a hook emplaces, **plus at least 16
+    /// bytes of emplacement slack**. The context structs deliberately declare
+    /// no alignment (callers put them in arbitrarily-aligned storage — see the
+    /// `WorkArea` docs in `src/hook.rs`), so the state is aligned at runtime
+    /// within the work area and up to `align_of - 1` bytes (bounded by 16, the
+    /// max alignment the `WorkArea` casts support) can be lost to the offset.
+    /// Compile-time asserts in `src/hook/{digest/*,aes}.rs` enforce this bound
+    /// for the built-in RustCrypto fallback states.
     fn work_area_size(self) -> Option<usize> {
         match self {
             Self::Sha1 => Some(208),
