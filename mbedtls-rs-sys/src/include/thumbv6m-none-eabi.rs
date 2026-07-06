@@ -1505,6 +1505,7 @@ pub type mbedtls_f_rng_t = ::core::option::Option<
     ) -> ::core::ffi::c_int,
 >;
 #[repr(C)]
+#[repr(align(16))]
 #[derive(Copy, Clone)]
 pub struct mbedtls_aes_context {
     pub work_area: [::core::ffi::c_uchar; 512usize],
@@ -1519,6 +1520,7 @@ impl Default for mbedtls_aes_context {
     }
 }
 #[repr(C)]
+#[repr(align(16))]
 #[derive(Copy, Clone)]
 pub struct mbedtls_aes_xts_context {
     pub crypt: mbedtls_aes_context,
@@ -6824,6 +6826,7 @@ unsafe extern "C" {
 }
 /// \brief          The CTR_DRBG context structure.
 #[repr(C)]
+#[repr(align(16))]
 #[derive(Copy, Clone)]
 pub struct mbedtls_ctr_drbg_context {
     ///< The counter (V).
@@ -10632,6 +10635,7 @@ unsafe extern "C" {
     pub fn mbedtls_ripemd160_self_test(verbose: ::core::ffi::c_int) -> ::core::ffi::c_int;
 }
 #[repr(C)]
+#[repr(align(16))]
 #[derive(Copy, Clone)]
 pub struct mbedtls_sha1_context {
     pub work_area: [::core::ffi::c_uchar; 208usize],
@@ -10792,6 +10796,7 @@ unsafe extern "C" {
     pub fn mbedtls_sha1_self_test(verbose: ::core::ffi::c_int) -> ::core::ffi::c_int;
 }
 #[repr(C)]
+#[repr(align(16))]
 #[derive(Copy, Clone)]
 pub struct mbedtls_sha256_context {
     pub work_area: [::core::ffi::c_uchar; 208usize],
@@ -10943,6 +10948,7 @@ unsafe extern "C" {
     pub fn mbedtls_sha256_self_test(verbose: ::core::ffi::c_int) -> ::core::ffi::c_int;
 }
 #[repr(C)]
+#[repr(align(16))]
 #[derive(Copy, Clone)]
 pub struct mbedtls_sha512_context {
     pub work_area: [::core::ffi::c_uchar; 304usize],
@@ -11238,12 +11244,15 @@ unsafe extern "C" {
     pub fn mbedtls_sha3_self_test(verbose: ::core::ffi::c_int) -> ::core::ffi::c_int;
 }
 #[repr(C)]
+#[repr(align(16))]
 #[derive(Copy, Clone)]
 pub struct mbedtls_psa_hash_operation_t {
     pub private_alg: psa_algorithm_t,
+    pub __bindgen_padding_0: u64,
     pub private_ctx: mbedtls_psa_hash_operation_t__bindgen_ty_1,
 }
 #[repr(C)]
+#[repr(align(16))]
 #[derive(Copy, Clone)]
 pub union mbedtls_psa_hash_operation_t__bindgen_ty_1 {
     pub dummy: ::core::ffi::c_uint,
@@ -11304,6 +11313,7 @@ impl Default for mbedtls_psa_cipher_operation_t {
     }
 }
 #[repr(C)]
+#[repr(align(16))]
 #[derive(Copy, Clone)]
 pub union psa_driver_hash_context_t {
     pub dummy: ::core::ffi::c_uint,
@@ -11334,6 +11344,7 @@ impl Default for psa_driver_cipher_context_t {
     }
 }
 #[repr(C)]
+#[repr(align(16))]
 #[derive(Copy, Clone)]
 pub struct psa_hash_operation_s {
     /// Unique ID indicating which driver got assigned to do the
@@ -11343,6 +11354,7 @@ pub struct psa_hash_operation_s {
     /// ID value zero means the context is not valid or not assigned to
     /// any driver (i.e. the driver context is not active, in use).
     pub private_id: ::core::ffi::c_uint,
+    pub __bindgen_padding_0: u64,
     pub private_ctx: psa_driver_hash_context_t,
 }
 impl Default for psa_hash_operation_s {
@@ -11802,10 +11814,12 @@ unsafe extern "C" {
     pub fn mbedtls_gcm_self_test(verbose: ::core::ffi::c_int) -> ::core::ffi::c_int;
 }
 #[repr(C)]
+#[repr(align(16))]
 #[derive(Copy, Clone)]
 pub struct mbedtls_psa_hmac_operation_t {
     /// The HMAC algorithm in use
     pub private_alg: psa_algorithm_t,
+    pub __bindgen_padding_0: u64,
     /// The hash context.
     pub hash_ctx: psa_hash_operation_s,
     /// The HMAC part of the context.
@@ -11821,12 +11835,15 @@ impl Default for mbedtls_psa_hmac_operation_t {
     }
 }
 #[repr(C)]
+#[repr(align(16))]
 #[derive(Copy, Clone)]
 pub struct mbedtls_psa_mac_operation_t {
     pub private_alg: psa_algorithm_t,
+    pub __bindgen_padding_0: u64,
     pub private_ctx: mbedtls_psa_mac_operation_t__bindgen_ty_1,
 }
 #[repr(C)]
+#[repr(align(16))]
 #[derive(Copy, Clone)]
 pub union mbedtls_psa_mac_operation_t__bindgen_ty_1 {
     pub private_dummy: ::core::ffi::c_uint,
@@ -12253,6 +12270,7 @@ impl Default for mbedtls_psa_pake_operation_t {
     }
 }
 #[repr(C)]
+#[repr(align(16))]
 #[derive(Copy, Clone)]
 pub union psa_driver_mac_context_t {
     pub dummy: ::core::ffi::c_uint,
@@ -12328,6 +12346,7 @@ impl Default for psa_driver_pake_context_t {
     }
 }
 #[repr(C)]
+#[repr(align(16))]
 #[derive(Copy, Clone)]
 pub struct psa_mac_operation_s {
     /// Unique ID indicating which driver got assigned to do the
@@ -12340,6 +12359,7 @@ pub struct psa_mac_operation_s {
     pub private_mac_size: u8,
     pub _bitfield_align_1: [u8; 0],
     pub _bitfield_1: __BindgenBitfieldUnit<[u8; 1usize]>,
+    pub __bindgen_padding_0: u64,
     pub private_ctx: psa_driver_mac_context_t,
 }
 impl Default for psa_mac_operation_s {
@@ -12623,6 +12643,7 @@ impl psa_aead_operation_s {
     }
 }
 #[repr(C)]
+#[repr(align(16))]
 #[derive(Copy, Clone)]
 pub struct psa_hkdf_key_derivation_t {
     pub private_info: *mut u8,
@@ -12633,6 +12654,7 @@ pub struct psa_hkdf_key_derivation_t {
     pub _bitfield_1: __BindgenBitfieldUnit<[u8; 1usize]>,
     pub private_output_block: [u8; 64usize],
     pub private_prk: [u8; 64usize],
+    pub __bindgen_padding_0: [u64; 0usize],
     pub private_hmac: psa_mac_operation_s,
 }
 impl Default for psa_hkdf_key_derivation_t {
@@ -12774,6 +12796,7 @@ impl Default for psa_tls12_prf_key_derivation_s {
 }
 pub type psa_tls12_prf_key_derivation_t = psa_tls12_prf_key_derivation_s;
 #[repr(C)]
+#[repr(align(16))]
 #[derive(Copy, Clone)]
 pub union psa_driver_key_derivation_context_t {
     pub dummy: ::core::ffi::c_uint,
@@ -12791,12 +12814,14 @@ impl Default for psa_driver_key_derivation_context_t {
     }
 }
 #[repr(C)]
+#[repr(align(16))]
 #[derive(Copy, Clone)]
 pub struct psa_key_derivation_s {
     pub private_alg: psa_algorithm_t,
     pub _bitfield_align_1: [u8; 0],
     pub _bitfield_1: __BindgenBitfieldUnit<[u8; 1usize]>,
     pub private_capacity: usize,
+    pub __bindgen_padding_0: [u64; 0usize],
     pub private_ctx: psa_driver_key_derivation_context_t,
 }
 impl Default for psa_key_derivation_s {
