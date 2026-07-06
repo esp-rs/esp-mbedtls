@@ -7,6 +7,8 @@
 
 #[cfg(feature = "alg-aes")]
 use crate::mbedtls_aes_self_test;
+#[cfg(feature = "alg-ecp")]
+use crate::mbedtls_ecp_self_test;
 #[cfg(feature = "alg-md5")]
 use crate::mbedtls_md5_self_test;
 #[cfg(feature = "alg-rsa")]
@@ -42,6 +44,10 @@ pub enum MbedtlsSelfTest {
     Aes = 7,
     #[cfg(feature = "alg-md5")]
     Md5 = 8,
+    /// Elliptic-curve point multiplication: exercises `mbedtls_ecp_mul`, and
+    /// with it the `hook::ecp` shims and their hardware backends where hooked.
+    #[cfg(feature = "alg-ecp")]
+    Ecp = 9,
 }
 
 impl MbedtlsSelfTest {
@@ -73,6 +79,8 @@ impl MbedtlsSelfTest {
                 Self::Aes => mbedtls_aes_self_test(verbose),
                 #[cfg(feature = "alg-md5")]
                 Self::Md5 => mbedtls_md5_self_test(verbose),
+                #[cfg(feature = "alg-ecp")]
+                Self::Ecp => mbedtls_ecp_self_test(verbose),
             }
         };
 
@@ -100,6 +108,8 @@ impl core::fmt::Display for MbedtlsSelfTest {
             MbedtlsSelfTest::Aes => write!(f, "AES"),
             #[cfg(feature = "alg-md5")]
             MbedtlsSelfTest::Md5 => write!(f, "MD5"),
+            #[cfg(feature = "alg-ecp")]
+            MbedtlsSelfTest::Ecp => write!(f, "ECP"),
         }
     }
 }
