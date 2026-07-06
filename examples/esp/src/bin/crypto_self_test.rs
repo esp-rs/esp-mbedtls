@@ -66,6 +66,7 @@ async fn main(_s: Spawner) {
     let mut hw_cycles = [0; 20];
 
     run_tests(false, &mut sw_cycles);
+    let ecdsa_sw = run_ecdsa_bench(false);
 
     // Configure every accelerator the chip has; each `with_*` exists only on
     // the chips with the corresponding peripheral.
@@ -88,6 +89,7 @@ async fn main(_s: Spawner) {
     let _hooked = unsafe { accel_queue.hook() };
 
     run_tests(true, &mut hw_cycles);
+    let ecdsa_hw = run_ecdsa_bench(true);
 
     // | Hash Algorithm | Software (cycles) | Hardware (cycles) | Hardware Faster (x times) |
     // |----------------|-------------------|-------------------|---------------------------|
@@ -119,6 +121,20 @@ async fn main(_s: Spawner) {
             }
         );
     }
+
+    // The production-shaped ECDSA figures (cycles per operation; see
+    // `run_ecdsa_bench` for why these are more honest than the ECP self-test).
+    if let (Some(sw), Some(hw)) = (ecdsa_sw, ecdsa_hw) {
+        for (name, s, h) in [("P256-Sign", sw.0, hw.0), ("P256-Verify", sw.1, hw.1)] {
+            info!(
+                "| {:14} | {:17} | {:17} | {:25.2} |",
+                name,
+                s,
+                h,
+                if h != 0 { s as f64 / h as f64 } else { 0.0 }
+            );
+        }
+    }
 }
 
 fn run_tests(hw_accel: bool, summary: &mut [u64]) {
@@ -145,6 +161,76 @@ fn run_tests(hw_accel: bool, summary: &mut [u64]) {
 
         summary[test as usize] = cycles;
     }
+}
+
+/// The production-shaped ECDSA P-256 benchmark (see
+/// [`EcdsaP256Bench`](mbedtls_rs::sys::self_test::EcdsaP256Bench) for why it
+/// is more honest about hardware acceleration than the ECP self-test).
+///
+/// Returns the average `(sign, verify)` cycles per operation.
+fn run_ecdsa_bench(hw_accel: bool) -> Option<(u64, u64)> {
+    use mbedtls_rs::sys::self_test::EcdsaP256Bench;
+
+    const ITERS: u32 = 4;
+
+    info!(
+        ">>> Running ECDSA-P256 bench {} hardware acceleration",
+        if hw_accel { "WITH" } else { "WITHOUT" }
+    );
+
+    let mut rng = |buf: &mut [u8]| {
+        critical_section::with(|cs| {
+            let mut rng = RNG.borrow(cs).borrow_mut();
+            let rng = rng.as_mut().unwrap();
+
+            for chunk in buf.chunks_mut(4) {
+                let word = rng.random().to_le_bytes();
+                chunk.copy_from_slice(&word[..chunk.len()]);
+            }
+        })
+    };
+
+    let Some(mut bench) = EcdsaP256Bench::new(&mut rng) else {
+        error!("ECDSA-P256 bench setup failed!");
+        return None;
+    };
+
+    let mut ok = true;
+
+    let mut sign_total = 0;
+    for _ in 0..ITERS {
+        let before = cycles();
+        ok &= bench.sign();
+        sign_total += cycles().saturating_sub(before);
+
+        if !ok {
+            break;
+        }
+    }
+
+    let mut verify_total = 0;
+    for _ in 0..ITERS {
+        if !ok {
+            break;
+        }
+
+        let before = cycles();
+        ok &= bench.verify();
+        verify_total += cycles().saturating_sub(before);
+    }
+
+    if !ok {
+        error!("ECDSA-P256 bench failed!");
+        return None;
+    }
+
+    let sign = sign_total / ITERS as u64;
+    let verify = verify_total / ITERS as u64;
+
+    info!("ECDSA-P256 sign   took {:17?} cycles/op", sign);
+    info!("ECDSA-P256 verify took {:17?} cycles/op", verify);
+
+    Some((sign, verify))
 }
 
 fn cycles() -> u64 {
