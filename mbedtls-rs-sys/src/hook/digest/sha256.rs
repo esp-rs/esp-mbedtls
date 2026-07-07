@@ -81,12 +81,13 @@ mod alt {
     // casts support) — hence the `+ 16`. Registered hardware backends emplace
     // their own types and are covered by the runtime fit check in
     // `WorkArea::cast_mut_maybe`.
-    const _: () = assert!(
+    // `core::assert!`, not the crate `assert!` (whose `defmt` variant is not const-callable)
+    const _: () = core::assert!(
         core::mem::size_of::<Option<sha2::Sha256>>() + 16
             <= crate::MBEDTLS_SHA256_ALT_WORK_AREA_SIZE as usize,
         "The RustCrypto SHA-256 state does not fit the SHA-256 hook work area"
     );
-    const _: () = assert!(
+    const _: () = core::assert!(
         core::mem::size_of::<Option<sha2::Sha224>>() + 16
             <= crate::MBEDTLS_SHA256_ALT_WORK_AREA_SIZE as usize,
         "The RustCrypto SHA-224 state does not fit the SHA-256 hook work area"

@@ -54,7 +54,8 @@ mod alt {
     // offset (up to 15 bytes of emplacement waste at under-aligned opaque
     // storage — see `sha256.rs` for the
     // full rationale).
-    const _: () = assert!(
+    // `core::assert!`, not the crate `assert!` (whose `defmt` variant is not const-callable)
+    const _: () = core::assert!(
         core::mem::size_of::<Option<sha1::Sha1>>() + 16
             <= crate::MBEDTLS_SHA1_ALT_WORK_AREA_SIZE as usize,
         "The RustCrypto SHA-1 state does not fit the SHA-1 hook work area"

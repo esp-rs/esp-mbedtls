@@ -77,12 +77,13 @@ mod alt {
     // The work area must be able to host the fallback's state at *any* runtime
     // offset (up to 15 bytes of emplacement waste at under-aligned opaque storage — see `sha256.rs` for the
     // full rationale).
-    const _: () = assert!(
+    // `core::assert!`, not the crate `assert!` (whose `defmt` variant is not const-callable)
+    const _: () = core::assert!(
         core::mem::size_of::<Option<sha2::Sha512>>() + 16
             <= crate::MBEDTLS_SHA512_ALT_WORK_AREA_SIZE as usize,
         "The RustCrypto SHA-512 state does not fit the SHA-512 hook work area"
     );
-    const _: () = assert!(
+    const _: () = core::assert!(
         core::mem::size_of::<Option<sha2::Sha384>>() + 16
             <= crate::MBEDTLS_SHA512_ALT_WORK_AREA_SIZE as usize,
         "The RustCrypto SHA-384 state does not fit the SHA-512 hook work area"

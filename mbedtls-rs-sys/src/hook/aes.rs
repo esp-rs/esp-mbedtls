@@ -360,7 +360,8 @@ mod alt {
     // the `WorkArea` docs in `src/hook.rs`); hardware backends embedding
     // `RustCryptoAesState` as a software escape hatch are covered by the
     // same bound.
-    const _: () = assert!(
+    // `core::assert!`, not the crate `assert!` (whose `defmt` variant is not const-callable)
+    const _: () = core::assert!(
         core::mem::size_of::<Option<RustCryptoAesState>>() + 16
             <= crate::MBEDTLS_AES_ALT_WORK_AREA_SIZE as usize,
         "The RustCrypto AES state does not fit the AES hook work area"
