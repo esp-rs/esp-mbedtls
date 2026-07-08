@@ -458,7 +458,26 @@ impl MbedtlsBuilder {
             .define("MBEDTLS_FATAL_WARNINGS", "OFF")
             .define("MBEDTLS_USER_CONFIG_FILE", user_config_path)
             .cflag(format!("-I{}", hook_header_dir.display()))
-            .profile("MinSizeRel")
+            .profile("MinSizeRel");
+
+        // Enum ABI (see the matching `-fshort-enums` passed to `bindgen` in
+        // `generate_bindings`): on ARM-embedded (`-none-eabi*`) targets, force
+        // short enums on the C build so the produced `.a` carries
+        // `Tag_ABI_enum_size: small`. This is a FIXED ecosystem policy, NOT the
+        // compiler default — clang defaults to 4-byte `int` enums for
+        // `--target=thumbv*-none-eabi`. The two sides MUST agree or every struct
+        // with an enum field gets a different layout on the Rust vs C side; and
+        // the value (short) is dictated by the un-recompilable neighbours this
+        // library links alongside in a single firmware image (Nordic's prebuilt
+        // `libmpsl`/SoftDevice Controller blobs are stamped `small`, and
+        // `nrf-802154-sys` / `openthread-sys` force short enums too). Without
+        // this, the C build was `int` while bindgen was `small` — the exact
+        // desync that bit OpenThread's `otSrpClientHostInfo.mState`.
+        if self.short_enums() {
+            config.cflag("-fshort-enums").cxxflag("-fshort-enums");
+        }
+
+        config
             .out_dir(&target_dir)
             // The `cmake` crate defaults to running `cmake --build . --target install`.
             // mbedtls' install target writes pkg-config files, CMake helpers, and
