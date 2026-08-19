@@ -27,8 +27,8 @@ use crate::{mbedtls_ecp_group, mbedtls_ecp_point, mbedtls_mpi, MbedtlsError};
 /// side-channel attacks may ignore it; software fallbacks must pass it on.
 pub type MbedtlsFRng = crate::mbedtls_f_rng_t;
 
-/// The (opaque) restart context type; always null unless MbedTLS is built
-/// with `MBEDTLS_ECP_RESTARTABLE` (which this crate does not enable)
+/// The (opaque) restart context type; null unless Mbed TLS is built with the
+/// opt-in `ecp-restartable` feature.
 pub type MbedtlsEcpRestartCtx = crate::mbedtls_ecp_restart_ctx;
 
 /// Trait representing a custom (hooked) MbedTLS ECP scalar multiplication:
@@ -46,7 +46,7 @@ pub trait MbedtlsEcpMul {
     /// - `m` - The scalar
     /// - `p` - The point to multiply
     /// - `f_rng`/`p_rng` - RNG callback for blinding (see [`MbedtlsFRng`])
-    /// - `rs_ctx` - Restart context (always null in this crate's builds)
+    /// - `rs_ctx` - Restart context (null unless `ecp-restartable` is enabled)
     ///
     /// # Safety
     /// - `f_rng`/`p_rng`/`rs_ctx` are raw values passed through from MbedTLS;

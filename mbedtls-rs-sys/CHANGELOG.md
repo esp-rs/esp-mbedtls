@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 * Build `riscv32imafc-*` with the hard-float `ilp32f` ABI rustc uses, fixing a link failure on ESP32-P4 / ESP32-S31
+* Add an opt-in `ecp-restartable` feature that enables `MBEDTLS_ECP_RESTARTABLE`
 
 ## [0.2.0] - 2026-08-20
 * (Breaking) Enforce the short-enums policy across all of clang, GCC and bindgen (#168)

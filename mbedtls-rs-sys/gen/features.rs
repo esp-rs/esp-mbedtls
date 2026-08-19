@@ -136,6 +136,7 @@ pub const OPTIONAL_UNIVERSE: &[&str] = &[
     "DHM_C",
     "ECP_C",
     "ECP_NIST_OPTIM",
+    "ECP_RESTARTABLE",
     "ECDH_C",
     "ECDSA_C",
     "ECDSA_DETERMINISTIC",
@@ -273,6 +274,7 @@ pub const FEATURE_DEFINES: &[(&str, &[&str])] = &[
     ("ALG_RSA_PSS", &["PKCS1_V21", "X509_RSASSA_PSS_SUPPORT"]),
     ("ALG_DHM", &["DHM_C"]),
     ("ALG_ECP", &["ECP_C", "ECP_NIST_OPTIM"]),
+    ("ECP_RESTARTABLE", &["ECP_RESTARTABLE"]),
     ("ALG_ECDH", &["ECDH_C"]),
     // Deterministic ECDSA (RFC 6979) requires HMAC-DRBG (check_config.h), so
     // it is folded in here.

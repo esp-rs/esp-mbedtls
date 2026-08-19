@@ -27,6 +27,9 @@ default = ["tls"]
 defmt = ["dep:defmt", "mbedtls-rs-sys/defmt"]
 log = ["dep:log", "mbedtls-rs-sys/log"]
 
+# Enable restartable elliptic-curve operations in Mbed TLS.
+ecp-restartable = ["mbedtls-rs-sys/ecp-restartable"]
+
 # ─── Algorithm profile selection (granular passthrough to mbedtls-rs-sys) ───
 # Curated bundles
 # `tls`/`openthread` compile in MBEDTLS_DEBUG_C, so they also enable local
