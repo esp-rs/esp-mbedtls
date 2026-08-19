@@ -981,6 +981,12 @@ where
                 mbedtls_ssl_set_bio(ssl_context, core::ptr::null_mut(), None, None, None);
             }
 
+            #[cfg(feature = "ecp-restartable")]
+            if result == MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS {
+                io_ctx.ctx.waker().wake_by_ref();
+                return Poll::Pending;
+            }
+
             Poll::Ready(result)
         })
         .await

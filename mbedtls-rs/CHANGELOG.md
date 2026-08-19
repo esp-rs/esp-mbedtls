@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 * (Breaking) Add `ClientSessionConfig::skip_hostname_verification`: skip the certificate hostname (CN/SAN) check while still sending SNI and verifying the certificate chain, mirroring esp-idf's `skip_cert_common_name_check` (#174)
+* Add an opt-in `ecp-restartable` feature: async sessions turn in-progress restartable ECC operations into cooperative yields, blocking sessions retry them to completion, and `ecp::set_restartable_max_ops` configures the process-wide operation budget
 
 ## [0.2.0] - 2026-08-20
 * (Breaking) Enforce the short-enums policy across all of clang, GCC and bindgen (#168)

@@ -305,7 +305,8 @@ where
         Ok(())
     }
 
-    /// Helper function to call MbedTLS functions with BIO callbacks set
+    /// Helper function to call MbedTLS functions with BIO callbacks set.
+    /// With `ecp-restartable`, in-progress ECC operations are retried until completion.
     fn call_mbedtls<F>(&mut self, mut f: F) -> c_int
     where
         F: FnMut(&mut mbedtls_ssl_context) -> c_int,
@@ -324,6 +325,17 @@ where
             );
         }
 
+        // A blocking call cannot yield, so immediately re-enter a restartable ECC
+        // operation in progress until it completes; only the async session yields.
+        #[cfg(feature = "ecp-restartable")]
+        let result = loop {
+            let result = f(&mut self.state.ssl_context);
+            if result == MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS {
+                continue;
+            }
+            break result;
+        };
+        #[cfg(not(feature = "ecp-restartable"))]
         let result = f(&mut self.state.ssl_context);
 
         // Remove the callbacks so that we get a warning from MbedTLS in case
