@@ -30,7 +30,7 @@ crypto-bigint = { version = "0.5.3", default-features = false }
 # For embassy timer hook impl
 embassy-time = {version = "0.5", default-features = false}
 
-mbedtls-rs-sys = { version = "0.1", path = "mbedtls-rs-sys", default-features = false }
+mbedtls-rs-sys = { version = "0.2", path = "mbedtls-rs-sys", default-features = false }
 
 # Build dependencies
 anyhow = "1"
