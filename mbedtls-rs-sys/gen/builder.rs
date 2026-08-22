@@ -872,7 +872,7 @@ impl CMakeConfigurer {
                 "riscv32imafc-unknown-none-elf" | "riscv32imafc-esp-espidf" => &[
                     "--target=riscv32-esp-elf",
                     "-march=rv32imafc",
-                    "-mabi=ilp32",
+                    "-mabi=ilp32f",
                 ],
                 "xtensa-esp32-none-elf" | "xtensa-esp32-espidf" => {
                     &["--target=xtensa-esp-elf", "-mcpu=esp32"]
@@ -894,7 +894,7 @@ impl CMakeConfigurer {
                     &["-march=rv32imac", "-mabi=ilp32"]
                 }
                 "riscv32imafc-unknown-none-elf" | "riscv32imafc-esp-espidf" => {
-                    &["-march=rv32imafc", "-mabi=ilp32"]
+                    &["-march=rv32imafc", "-mabi=ilp32f"]
                 }
                 "xtensa-esp32-none-elf" | "xtensa-esp32-espidf" => &["-mlongcalls"],
                 "xtensa-esp32s2-none-elf" | "xtensa-esp32s2-espidf" => &["-mlongcalls"],
