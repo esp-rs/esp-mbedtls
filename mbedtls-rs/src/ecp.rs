@@ -7,8 +7,9 @@ use crate::RNG;
 ///
 /// Call this during initialization, before creating a [`crate::Tls`] instance. A value of zero
 /// disables the operation limit, so elliptic-curve operations run to completion without yielding.
-/// Blocking `Session`s cannot yield, so they immediately re-enter an in-progress restartable
-/// operation and run it to completion; only async sessions turn it into a cooperative yield.
+/// Blocking `Session`s re-enter an in-progress restartable operation and run it to completion,
+/// invoking the platform yield hook accepted by `Session::new_with_yield` between the bounded
+/// slices; async sessions turn it into a cooperative yield.
 ///
 /// # Panics
 ///

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * (Breaking) Add `ClientSessionConfig::skip_hostname_verification`: skip the certificate hostname (CN/SAN) check while still sending SNI and verifying the certificate chain, mirroring esp-idf's `skip_cert_common_name_check` (#174)
 * Add an opt-in `ecp-restartable` feature: async sessions turn in-progress restartable ECC operations into cooperative yields, blocking sessions retry them to completion, and `ecp::set_restartable_max_ops` configures the process-wide operation budget
 * (Breaking) Add an optional `max_version` to `ClientSessionConfig`; capping at TLS 1.2 is what lets a restartable client yield, as Mbed TLS 3.6's TLS 1.3 handshake crypto is not restartable
+* Add `Session::new_with_yield` to the blocking session: a platform yield hook (e.g. `std::thread::yield_now`) invoked between restartable-ECC retry slices
 
 ## [0.2.0] - 2026-08-20
 * (Breaking) Enforce the short-enums policy across all of clang, GCC and bindgen (#168)

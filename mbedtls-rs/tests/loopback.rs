@@ -366,7 +366,11 @@ where
     }
 }
 
-fn run_blocking_loopback(tls_reference: TlsReference<'_>, maximum_version: Option<TlsVersion>) {
+fn run_blocking_loopback(
+    tls_reference: TlsReference<'_>,
+    maximum_version: Option<TlsVersion>,
+    client_yield_fn: Option<fn()>,
+) {
     let (client_stream, server_stream) = blocking_pipe();
 
     std::thread::scope(|scope| {
@@ -381,11 +385,13 @@ fn run_blocking_loopback(tls_reference: TlsReference<'_>, maximum_version: Optio
             session.close().unwrap();
         });
         let client = scope.spawn(move || {
-            let mut session = BlockingSession::new(
-                tls_reference,
-                client_stream,
-                &client_config(maximum_version),
-            )
+            let config = client_config(maximum_version);
+            let mut session = match client_yield_fn {
+                Some(yield_fn) => {
+                    BlockingSession::new_with_yield(tls_reference, client_stream, &config, yield_fn)
+                }
+                None => BlockingSession::new(tls_reference, client_stream, &config),
+            }
             .unwrap();
             session.connect().unwrap();
             blocking_write_all(&mut session, PAYLOAD);
@@ -437,7 +443,7 @@ fn blocking_loopback_handshake_and_echo() {
     // dropped in this scope before the borrowed RNG can go out of scope.
     let tls = unsafe { Tls::new_local_borrows(&mut rng) }.unwrap();
 
-    run_blocking_loopback(tls.reference(), None);
+    run_blocking_loopback(tls.reference(), None, None);
 }
 
 #[cfg(feature = "ecp-restartable")]
@@ -461,6 +467,11 @@ fn async_restartable_handshake_yields() {
 #[cfg(feature = "ecp-restartable")]
 #[test]
 fn blocking_restartable_handshake_completes() {
+    static YIELD_CALLS: AtomicUsize = AtomicUsize::new(0);
+    fn count_yield() {
+        YIELD_CALLS.fetch_add(1, Ordering::Relaxed);
+    }
+
     let _serial = SERIAL.lock().unwrap_or_else(|error| error.into_inner());
     // Declared before Tls so unwinding drops Tls before resetting the global budget.
     let _restartable = RestartableGuard::with_max_ops(1);
@@ -469,5 +480,10 @@ fn blocking_restartable_handshake_completes() {
     // dropped in this scope before the borrowed RNG can go out of scope.
     let tls = unsafe { Tls::new_local_borrows(&mut rng) }.unwrap();
 
-    run_blocking_loopback(tls.reference(), Some(TlsVersion::Tls1_2));
+    YIELD_CALLS.store(0, Ordering::Relaxed);
+    run_blocking_loopback(tls.reference(), Some(TlsVersion::Tls1_2), Some(count_yield));
+    assert!(
+        YIELD_CALLS.load(Ordering::Relaxed) > 0,
+        "yield hook never invoked during a restartable handshake"
+    );
 }
