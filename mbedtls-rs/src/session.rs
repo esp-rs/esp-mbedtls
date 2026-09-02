@@ -191,6 +191,8 @@ pub struct ClientSessionConfig<'a> {
     /// server (e.g. pinned or self-signed certificates served behind a
     /// different domain).
     pub skip_hostname_verification: bool,
+    /// Ordered key-exchange groups to offer. `None` keeps Mbed TLS's defaults.
+    pub key_exchange_groups: Option<&'static [TlsGroup]>,
 }
 
 impl<'a> Default for ClientSessionConfig<'a> {
@@ -210,7 +212,39 @@ impl<'a> ClientSessionConfig<'a> {
             max_version: None,
             alpn_protocols: None,
             skip_hostname_verification: false,
+            key_exchange_groups: None,
         }
+    }
+}
+
+/// A named group that can be offered during TLS key exchange.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[repr(u16)]
+pub enum TlsGroup {
+    Secp192k1 = MBEDTLS_SSL_IANA_TLS_GROUP_SECP192K1 as u16,
+    Secp192r1 = MBEDTLS_SSL_IANA_TLS_GROUP_SECP192R1 as u16,
+    Secp224k1 = MBEDTLS_SSL_IANA_TLS_GROUP_SECP224K1 as u16,
+    Secp224r1 = MBEDTLS_SSL_IANA_TLS_GROUP_SECP224R1 as u16,
+    Secp256k1 = MBEDTLS_SSL_IANA_TLS_GROUP_SECP256K1 as u16,
+    Secp256r1 = MBEDTLS_SSL_IANA_TLS_GROUP_SECP256R1 as u16,
+    Secp384r1 = MBEDTLS_SSL_IANA_TLS_GROUP_SECP384R1 as u16,
+    Secp521r1 = MBEDTLS_SSL_IANA_TLS_GROUP_SECP521R1 as u16,
+    BrainpoolP256r1 = MBEDTLS_SSL_IANA_TLS_GROUP_BP256R1 as u16,
+    BrainpoolP384r1 = MBEDTLS_SSL_IANA_TLS_GROUP_BP384R1 as u16,
+    BrainpoolP512r1 = MBEDTLS_SSL_IANA_TLS_GROUP_BP512R1 as u16,
+    X25519 = MBEDTLS_SSL_IANA_TLS_GROUP_X25519 as u16,
+    X448 = MBEDTLS_SSL_IANA_TLS_GROUP_X448 as u16,
+    Ffdhe2048 = MBEDTLS_SSL_IANA_TLS_GROUP_FFDHE2048 as u16,
+    Ffdhe3072 = MBEDTLS_SSL_IANA_TLS_GROUP_FFDHE3072 as u16,
+    Ffdhe4096 = MBEDTLS_SSL_IANA_TLS_GROUP_FFDHE4096 as u16,
+    Ffdhe6144 = MBEDTLS_SSL_IANA_TLS_GROUP_FFDHE6144 as u16,
+    Ffdhe8192 = MBEDTLS_SSL_IANA_TLS_GROUP_FFDHE8192 as u16,
+}
+
+impl TlsGroup {
+    const fn mbedtls_id(self) -> u16 {
+        self as u16
     }
 }
 
@@ -297,6 +331,16 @@ impl<'a> SessionConfig<'a> {
         }
     }
 
+    fn key_exchange_groups(&self) -> Option<&'static [TlsGroup]> {
+        match self {
+            SessionConfig::Client(ClientSessionConfig {
+                key_exchange_groups,
+                ..
+            }) => *key_exchange_groups,
+            SessionConfig::Server { .. } => None,
+        }
+    }
+
     fn raw_mode(&self) -> c_int {
         match self {
             Self::Client { .. } => MBEDTLS_SSL_IS_CLIENT as c_int,
@@ -343,6 +387,31 @@ impl<'a> Drop for ALPNArray<'a> {
     }
 }
 
+/// Owned, zero-terminated group-ID array allocated through Mbed TLS.
+struct GroupArray(NonNull<u16>);
+
+impl GroupArray {
+    fn from_slice(groups: &[TlsGroup]) -> Option<Self> {
+        let count = groups.len().checked_add(1)?;
+        let ptr = NonNull::new(unsafe { mbedtls_calloc(count, size_of::<u16>()) }.cast::<u16>())?;
+        let output = unsafe { core::slice::from_raw_parts_mut(ptr.as_ptr(), groups.len()) };
+        for (output, group) in output.iter_mut().zip(groups) {
+            *output = group.mbedtls_id();
+        }
+        Some(Self(ptr))
+    }
+
+    fn as_ptr(&self) -> *const u16 {
+        self.0.as_ptr()
+    }
+}
+
+impl Drop for GroupArray {
+    fn drop(&mut self) {
+        unsafe { mbedtls_free(self.0.as_ptr().cast::<c_void>()) }
+    }
+}
+
 /// Session state
 struct SessionState<'a> {
     /// The SSL context
@@ -372,6 +441,10 @@ struct SessionState<'a> {
     /// While not explicitly used, we need to keep a reference to it as it is used
     /// by the SSL context via a raw pointer
     _alpn_ptrs: Option<ALPNArray<'a>>,
+    /// Key-exchange group IDs referenced by the SSL configuration.
+    ///
+    /// This must remain after `ssl_context` and `_ssl_config` so Rust drops those fields first.
+    _group_ids: Option<GroupArray>,
 }
 
 impl<'a> SessionState<'a> {
@@ -433,6 +506,18 @@ impl<'a> SessionState<'a> {
             None
         };
 
+        let group_ids = if let Some(groups) = conf.key_exchange_groups() {
+            if groups.is_empty() {
+                return Err(MbedtlsError::new(MBEDTLS_ERR_SSL_BAD_INPUT_DATA));
+            }
+            let group_ids = GroupArray::from_slice(groups)
+                .ok_or(MbedtlsError::new(MBEDTLS_ERR_SSL_ALLOC_FAILED))?;
+            unsafe { mbedtls_ssl_conf_groups(&mut *ssl_config, group_ids.as_ptr()) };
+            Some(group_ids)
+        } else {
+            None
+        };
+
         let mut drbg_context =
             MBox::new().ok_or(MbedtlsError::new(MBEDTLS_ERR_SSL_ALLOC_FAILED))?;
 
@@ -474,6 +559,7 @@ impl<'a> SessionState<'a> {
             _ca_chain: conf.ca_chain().cloned(),
             _creds: conf.creds().cloned(),
             _alpn_ptrs: alpn,
+            _group_ids: group_ids,
         })
     }
 }
