@@ -31,6 +31,7 @@ pub use session::*;
 pub(crate) mod fmt; // MUST be the first so that the other modules can see it
 
 mod cert;
+// Mbed TLS declares mbedtls_ecp_set_max_ops only when built with MBEDTLS_ECP_RESTARTABLE.
 #[cfg(feature = "ecp-restartable")]
 pub mod ecp;
 mod session;

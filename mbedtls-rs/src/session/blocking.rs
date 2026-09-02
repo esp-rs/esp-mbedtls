@@ -36,10 +36,6 @@ where
     /// MbedTLS code.
     last_io_err: Option<ErrorKind>,
     /// Platform yield hook invoked between restartable-ECC retry slices.
-    ///
-    /// Only read when the `ecp-restartable` feature is enabled; stored
-    /// unconditionally so `new` and `new_with_yield` share one layout.
-    #[cfg_attr(not(feature = "ecp-restartable"), allow(dead_code))]
     yield_fn: fn(),
     /// Reference to the active Tls instance
     _tls_ref: TlsReference<'a>,
@@ -74,11 +70,12 @@ where
 
     /// Create a session for a TLS stream with a platform yield hook.
     ///
-    /// With the `ecp-restartable` feature enabled, `yield_fn` is invoked between the bounded
-    /// slices of an in-progress restartable elliptic-curve operation, so platforms with a
-    /// scheduler can give up the rest of their time slice (e.g. `std::thread::yield_now`)
-    /// instead of re-entering Mbed TLS immediately. Without the feature the hook is never
-    /// invoked.
+    /// `yield_fn` is invoked between the bounded slices of an in-progress restartable
+    /// elliptic-curve operation, so platforms with a scheduler can give up the rest of their
+    /// time slice (e.g. `std::thread::yield_now`) instead of re-entering Mbed TLS immediately.
+    /// Mbed TLS only reports an in-progress operation when it is built with restartable ECP
+    /// (the `ecp-restartable` feature, or `CONFIG_MBEDTLS_ECP_RESTARTABLE` on ESP-IDF);
+    /// otherwise the hook is never invoked.
     ///
     /// # Arguments
     /// - `tls_ref` - A reference to the active `Tls` instance.
@@ -344,8 +341,8 @@ where
     }
 
     /// Helper function to call MbedTLS functions with BIO callbacks set.
-    /// With `ecp-restartable`, in-progress ECC operations are retried until completion,
-    /// invoking the session's yield hook between retries.
+    /// In-progress ECC operations are retried until completion, invoking the
+    /// session's yield hook between retries.
     fn call_mbedtls<F>(&mut self, mut f: F) -> c_int
     where
         F: FnMut(&mut mbedtls_ssl_context) -> c_int,
@@ -366,8 +363,10 @@ where
 
         // Re-enter a restartable ECC operation in progress until it completes,
         // invoking the platform yield hook between the bounded slices; only the
-        // async session turns it into a cooperative `Poll::Pending`.
-        #[cfg(feature = "ecp-restartable")]
+        // async session turns it into a cooperative `Poll::Pending`. Mbed TLS only
+        // reports an in-progress result when built with restartable ECP (the
+        // `ecp-restartable` feature, or `CONFIG_MBEDTLS_ECP_RESTARTABLE` on ESP-IDF),
+        // so the loop is a no-op otherwise.
         let result = loop {
             let result = f(&mut self.state.ssl_context);
             if result == MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS {
@@ -376,8 +375,6 @@ where
             }
             break result;
         };
-        #[cfg(not(feature = "ecp-restartable"))]
-        let result = f(&mut self.state.ssl_context);
 
         // Remove the callbacks so that we get a warning from MbedTLS in case
         // it needs to invoke them when we don't anticipate so (for bugs detection)
