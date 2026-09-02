@@ -55,13 +55,17 @@ impl TryRng for StdRng {
 
 impl TryCryptoRng for StdRng {}
 
-fn client_config(maximum_version: Option<TlsVersion>) -> SessionConfig<'static> {
-    SessionConfig::Client(ClientSessionConfig {
+fn client_session_config(maximum_version: Option<TlsVersion>) -> ClientSessionConfig<'static> {
+    ClientSessionConfig {
         ca_chain: Some(Certificate::new_no_copy(CERTIFICATE).unwrap()),
         server_name: Some(c"mbedtls-rs.local"),
         max_version: maximum_version,
         ..ClientSessionConfig::new()
-    })
+    }
+}
+
+fn client_config(maximum_version: Option<TlsVersion>) -> SessionConfig<'static> {
+    SessionConfig::Client(client_session_config(maximum_version))
 }
 
 fn server_config() -> SessionConfig<'static> {
@@ -433,6 +437,44 @@ fn async_loopback_handshake_and_echo() {
     let tls = unsafe { Tls::new_local_borrows(&mut rng) }.unwrap();
 
     run_async_loopback(tls.reference(), None);
+}
+
+#[test]
+fn async_construction_failure_leaves_borrowed_stream_usable() {
+    let _serial = SERIAL.lock().unwrap_or_else(|error| error.into_inner());
+    let mut rng = StdRng;
+    // SAFETY: `rng` is declared before `tls`, and every session and `tls` are
+    // dropped in this scope before the borrowed RNG can go out of scope.
+    let tls = unsafe { Tls::new_local_borrows(&mut rng) }.unwrap();
+
+    let (mut client_stream, server_stream) = async_pipe();
+
+    // A caller that wants the stream back after a failed creation passes it by
+    // `&mut`: the borrow ends with the returned error. An over-long server name
+    // is the easiest deterministic constructor failure.
+    let over_long_name = std::ffi::CString::new(vec![b'a'; 256]).unwrap();
+    let failing_config = SessionConfig::Client(ClientSessionConfig {
+        server_name: Some(&over_long_name),
+        ..client_session_config(None)
+    });
+    let failed = AsyncSession::new(tls.reference(), &mut client_stream, &failing_config);
+    assert!(
+        failed.is_err(),
+        "over-long server name should be rejected at session creation"
+    );
+    drop(failed);
+
+    // The same stream, still owned by the caller, then carries a working
+    // session through a full handshake.
+    let mut client =
+        AsyncSession::new(tls.reference(), &mut client_stream, &client_config(None)).unwrap();
+    let mut server = AsyncSession::new(tls.reference(), server_stream, &server_config()).unwrap();
+
+    let handshake_wake = Arc::new(CountingWake(AtomicUsize::new(0)));
+    let (client_result, server_result) =
+        drive_pair(client.connect(), server.connect(), handshake_wake);
+    client_result.unwrap();
+    server_result.unwrap();
 }
 
 #[test]

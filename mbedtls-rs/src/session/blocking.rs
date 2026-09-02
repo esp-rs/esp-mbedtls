@@ -58,6 +58,12 @@ where
     ///
     /// # Returns
     /// - A `Session` instance or a `TlsError` on failure.
+    ///
+    /// The stream is consumed, and is dropped alongside the error if creation
+    /// fails. A caller that wants to keep the stream across a failed creation
+    /// can pass `&mut stream` instead — `Read` and `Write` are implemented for
+    /// `&mut T`, and on failure the borrow ends with the returned error,
+    /// leaving the stream usable.
     pub fn new(
         tls: TlsReference<'a>,
         stream: T,
