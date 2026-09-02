@@ -178,6 +178,9 @@ pub struct ClientSessionConfig<'a> {
     pub auth_mode: AuthMode,
     /// The minimum TLS version that will be supported by a particular `Session` instance
     pub min_version: TlsVersion,
+    /// The maximum TLS version that will be supported by a particular `Session` instance.
+    /// `None` keeps Mbed TLS's default maximum.
+    pub max_version: Option<TlsVersion>,
     /// ALPN protocols
     pub alpn_protocols: Option<&'a [&'a CStr]>,
     /// Skip the certificate hostname (CN/SAN) match check while still sending
@@ -204,6 +207,7 @@ impl<'a> ClientSessionConfig<'a> {
             server_name: None,
             auth_mode: AuthMode::Required,
             min_version: TlsVersion::Tls1_2,
+            max_version: None,
             alpn_protocols: None,
             skip_hostname_verification: false,
         }
@@ -276,6 +280,13 @@ impl<'a> SessionConfig<'a> {
         match self {
             SessionConfig::Client(ClientSessionConfig { min_version, .. }) => *min_version,
             SessionConfig::Server(ServerSessionConfig { min_version, .. }) => *min_version,
+        }
+    }
+
+    fn max_version(&self) -> Option<TlsVersion> {
+        match self {
+            SessionConfig::Client(ClientSessionConfig { max_version, .. }) => *max_version,
+            SessionConfig::Server { .. } => None,
         }
     }
 
@@ -382,6 +393,10 @@ impl<'a> SessionState<'a> {
         // Set the minimum TLS version
         // Use a direct field modified for compatibility with the `esp-idf-svc` mbedtls
         ssl_config.private_min_tls_version = conf.min_version().mbed_tls_version();
+
+        if let Some(max_version) = conf.max_version() {
+            ssl_config.private_max_tls_version = max_version.mbed_tls_version();
+        }
 
         Tls::hook_debug_logs(&mut ssl_config);
 
