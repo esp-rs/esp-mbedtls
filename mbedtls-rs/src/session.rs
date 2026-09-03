@@ -108,6 +108,20 @@ pub(crate) fn check_saved_session_server_name(
 }
 
 /// Certificate verification mode used for a session
+///
+/// # Certificate validity dates are not checked by default
+///
+/// `MBEDTLS_HAVE_TIME_DATE` is off unless the `hook-wall-clock` feature is
+/// enabled, so the `notBefore` / `notAfter` window is **not** verified: an
+/// expired or not-yet-valid peer certificate is accepted even under
+/// [`AuthMode::Required`]. Chain, signature and hostname verification are
+/// unaffected.
+///
+/// This is the default because a `no_std` target has no wall clock unless the
+/// consumer supplies one. To enable the checks, turn on `hook-wall-clock` and
+/// install an `MbedtlsWallClock` implementation (plus an `MbedtlsTimer`, which
+/// `hook-wall-clock` pulls in) before any X.509 use. With the feature enabled
+/// and no clock installed, verification fails closed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum AuthMode {

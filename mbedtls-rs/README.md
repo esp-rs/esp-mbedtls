@@ -5,6 +5,12 @@ Rust library implementing transparent TLS encryption/decryption for IO streams.
 
 Uses MbedTLS 3.X under the hood, via `mbedtls-rs-sys`.
 
+## Certificate validity dates
+
+By default the `notBefore` / `notAfter` window of a peer certificate is **not** checked, so an expired or not-yet-valid certificate is accepted even under `AuthMode::Required`. Chain, signature and hostname verification are unaffected.
+
+This is because `MBEDTLS_HAVE_TIME_DATE` is off unless the `hook-wall-clock` feature is enabled: a `no_std` target has no wall clock unless the consumer supplies one. To enable the date checks, turn on `hook-wall-clock` and install an `MbedtlsWallClock` implementation (plus an `MbedtlsTimer`, which `hook-wall-clock` enables) before any X.509 use. With the feature enabled and no clock installed, validation fails closed.
+
 Example (see all in the `examples` folder):
 ```rust
 //! A platform-agnostic HTTPS 1.0 request-response client using the async API.

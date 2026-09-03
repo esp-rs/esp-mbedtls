@@ -63,6 +63,12 @@ For that reason, `mbedtls-rs-sys` provides the so called Hooking mechanism, curr
 - The ECP scalar multiplication (`R = m * P`) and public-key (point-on-curve) check, through which all ECDH / ECDSA / ECJPAKE (and generic SPAKE2+-style protocol) math funnels (`hook_ecp_mul`, `hook_ecp_verify`)
 - The MPI (bignum) modular exponentiation used by RSA and DHM (`hook_exp_mod`)
 
+Besides the hardware-acceleration hooks above, two further hooks supply platform facilities that MbedTLS cannot obtain by itself on a baremetal target:
+- A monotonic timer, for DTLS retransmission timeouts (`hook_timer`, behind the `hook-timer` feature)
+- A wall clock, for X.509 certificate time validation (`hook_wall_clock`, behind the `hook-wall-clock` feature, which enables `hook-timer` too)
+
+**The wall clock hook has a security consequence and is off by default.** Without the `hook-wall-clock` feature, `MBEDTLS_HAVE_TIME_DATE` is undefined, so the `notBefore` / `notAfter` window of a certificate is not checked at all: an expired or not-yet-valid peer certificate is accepted even when verification is otherwise required. Chain, signature and hostname verification are unaffected. Enable `hook-wall-clock` and install an `MbedtlsWallClock` (plus an `MbedtlsTimer`) before any X.509 use to get the date checks; with the feature enabled and no clock installed, validation fails closed.
+
 In essence Hooking relies on the "_ALT" functionality in MbedTLS and specifically does the following:
 - It replaces e.g. the `mbedtls_sha1_context` of MbedTLS with a custom one which is just a sequence of bytes (called a "work area" throughout `mbedtls-rs-sys`)
   - The exact number of bytes of the work area depends on the concrete algorithm being hooked, but the size **IS** hard-coded yet chosen large enough to be "good enough" for any Rust based HW-accel implementation
