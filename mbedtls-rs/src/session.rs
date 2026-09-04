@@ -180,6 +180,14 @@ pub struct ClientSessionConfig<'a> {
     pub min_version: TlsVersion,
     /// ALPN protocols
     pub alpn_protocols: Option<&'a [&'a CStr]>,
+    /// Skip the certificate hostname (CN/SAN) match check while still sending
+    /// SNI (`server_name`) and verifying the rest of the certificate chain.
+    ///
+    /// Equivalent to esp-idf's `skip_cert_common_name_check`: use this when
+    /// the server certificate does not match the hostname used to reach the
+    /// server (e.g. pinned or self-signed certificates served behind a
+    /// different domain).
+    pub skip_hostname_verification: bool,
 }
 
 impl<'a> Default for ClientSessionConfig<'a> {
@@ -197,6 +205,7 @@ impl<'a> ClientSessionConfig<'a> {
             auth_mode: AuthMode::Required,
             min_version: TlsVersion::Tls1_2,
             alpn_protocols: None,
+            skip_hostname_verification: false,
         }
     }
 }
@@ -429,6 +438,18 @@ impl<'a> SessionState<'a> {
             if let Some(name) = conf.server_name {
                 merr!(unsafe { mbedtls_ssl_set_hostname(&mut *ssl_context, name.as_ptr()) })?;
             }
+            // SNI is still sent (`set_hostname` above), but the verify callback
+            // clears the leaf certificate's CN/SAN mismatch flag. The rest of the
+            // chain verification is not affected.
+            if conf.skip_hostname_verification {
+                unsafe {
+                    mbedtls_ssl_conf_verify(
+                        &mut *ssl_config,
+                        Some(verify_skip_hostname_mismatch),
+                        core::ptr::null_mut(),
+                    );
+                }
+            }
         }
 
         Ok(Self {
@@ -440,6 +461,21 @@ impl<'a> SessionState<'a> {
             _alpn_ptrs: alpn,
         })
     }
+}
+
+/// Clears the hostname mismatch flag of the leaf certificate (depth 0). All
+/// other verification flags are left untouched and are still evaluated by
+/// MbedTLS according to the configured [AuthMode].
+unsafe extern "C" fn verify_skip_hostname_mismatch(
+    _ctx: *mut c_void,
+    _crt: *mut mbedtls_x509_crt,
+    depth: c_int,
+    flags: *mut u32,
+) -> c_int {
+    if depth == 0 && !flags.is_null() {
+        unsafe { *flags &= !MBEDTLS_X509_BADCERT_CN_MISMATCH };
+    }
+    0
 }
 
 /// Error type for session operations
