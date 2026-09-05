@@ -4,9 +4,11 @@
 //! This enables providing hardware-accelerated crypto or platform-specific time sources
 //! on platforms that support it.
 //!
-//! NOTE: For crypto algorithms specifically, when hooking is enabled, those that remain
-//! "un-hooked" by the user will NOT use the software implementations provided by MbedTLS,
-//! but rather - RustCrypto based ones!
+//! Crypto algorithms that remain "un-hooked" by the user fall back to the software
+//! implementations of MbedTLS itself. For the whole-module `_ALT` hooks (the digests and
+//! AES), MbedTLS would normally compile its own implementation out; the crate keeps it by
+//! compiling those modules a second time under `mbedtls_*_soft_*` symbol names (see
+//! `SoftFallback` in `gen/builder.rs`) and forwarding to them.
 
 pub mod aes;
 pub mod backend;

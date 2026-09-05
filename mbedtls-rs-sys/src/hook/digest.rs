@@ -1,15 +1,11 @@
 //! Hooking for MbedTLS Digest algorithms
 
 use core::ffi::{c_int, c_uchar};
-use core::marker::PhantomData;
 use core::ops::Deref;
-use core::ptr::drop_in_place;
-
-use digest::Digest;
 
 use crate::hook::WorkAreaMemory;
 
-use super::{RawWorkArea, WorkArea};
+use super::RawWorkArea;
 
 pub use sha1::*;
 pub use sha256::*;
@@ -103,69 +99,116 @@ where
     }
 }
 
-/// MbedTLS Digest algorithm implementation that delegates
-/// to implementations based on the RustCrypto `Digest` trait
-pub struct RustCryptoDigest<T>(PhantomData<fn() -> T>);
+/// Defines an [`MbedtlsDigest`] implementation over one of the MbedTLS
+/// software digest implementations.
+///
+/// The library compiles those under `mbedtls_*_soft_*` names next to the
+/// hooked (`_ALT`) entry points (see `SoftFallback` in `gen/builder.rs`), and
+/// they are the fallback used when no custom implementation is hooked.
+///
+/// The (plain-old-data) `mbedtls_*_soft_context` is emplaced in the work area
+/// and driven through the `*_soft` functions. Those only fail on invalid
+/// arguments, which the hook entry points never pass, so their results are
+/// not checked.
+///
+/// `starts` is a `fn(*mut ctx) -> c_int` (typically a closure) so that the
+/// SHA-224/384 variants can bind the variant flag of the shared `*_starts`.
+#[cfg(any(
+    all(feature = "alg-sha1", not(feature = "nohook-sha1")),
+    all(feature = "alg-sha256", not(feature = "nohook-sha256")),
+    all(feature = "alg-sha512", not(feature = "nohook-sha512")),
+))]
+macro_rules! soft_digest {
+    (
+        $(#[$meta:meta])*
+        $name:ident: $ctx:ty, output_size = $output_size:expr,
+        init = $init:path, free = $free:path, clone = $clone:path,
+        starts = $starts:expr, update = $update:path, finish = $finish:path $(,)?
+    ) => {
+        $(#[$meta])*
+        pub struct $name(());
 
-impl<T> RustCryptoDigest<T> {
-    /// Create a new `RustCryptoDigest` instance
-    pub const fn new() -> Self {
-        Self(PhantomData)
-    }
-}
-
-impl<T> Default for RustCryptoDigest<T> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl<T> MbedtlsDigest for RustCryptoDigest<T>
-where
-    T: Digest + Clone,
-{
-    fn output_size(&self, _work_area: &WorkAreaMemory) -> usize {
-        <T as Digest>::output_size()
-    }
-
-    fn init(&self, memory: &mut WorkAreaMemory) {
-        unsafe { memory.cast_mut_maybe::<Option<T>>() }.write(None);
-    }
-
-    fn free(&self, memory: &mut WorkAreaMemory) {
-        let ptr = unsafe { memory.cast_mut::<Option<T>>() } as *mut _;
-
-        unsafe {
-            drop_in_place(ptr);
+        impl $name {
+            /// Create a new instance
+            pub const fn new() -> Self {
+                Self(())
+            }
         }
 
-        memory.fill(0);
-    }
+        impl Default for $name {
+            fn default() -> Self {
+                Self::new()
+            }
+        }
 
-    fn reset(&self, memory: &mut WorkAreaMemory) {
-        *unsafe { memory.cast_mut() } = Some(T::new());
-    }
+        impl $crate::hook::digest::MbedtlsDigest for $name {
+            fn output_size(&self, _memory: &$crate::hook::WorkAreaMemory) -> usize {
+                $output_size
+            }
 
-    fn update(&self, memory: &mut WorkAreaMemory, data: &[u8]) {
-        Digest::update(
-            unsafe { memory.cast_mut::<Option<T>>() }.as_mut().unwrap(),
-            data,
-        );
-    }
+            fn init(&self, memory: &mut $crate::hook::WorkAreaMemory) {
+                use $crate::hook::WorkArea;
 
-    fn finish(&self, memory: &mut WorkAreaMemory, output: &mut [u8]) {
-        output.copy_from_slice(
-            &unsafe { memory.cast_mut::<Option<T>>() }
-                .take()
-                .unwrap()
-                .finalize(),
-        );
-    }
+                // `*_init` zeroes the context, i.e. fully initializes it
+                let ctx = unsafe { memory.cast_mut_maybe::<$ctx>() }.as_mut_ptr();
+                unsafe { $init(ctx) };
+            }
 
-    fn clone(&self, src_work_area: &WorkAreaMemory, dst_work_area: &mut WorkAreaMemory) {
-        *unsafe { dst_work_area.cast_mut() } = unsafe { src_work_area.cast::<Option<T>>() }.clone();
-    }
+            fn free(&self, memory: &mut $crate::hook::WorkAreaMemory) {
+                use $crate::hook::WorkArea;
+
+                let ctx: *mut $ctx = unsafe { memory.cast_mut::<$ctx>() };
+                unsafe { $free(ctx) };
+
+                memory.fill(0);
+            }
+
+            fn reset(&self, memory: &mut $crate::hook::WorkAreaMemory) {
+                use $crate::hook::WorkArea;
+
+                let starts: fn(*mut $ctx) -> ::core::ffi::c_int = $starts;
+
+                let ctx: *mut $ctx = unsafe { memory.cast_mut::<$ctx>() };
+                starts(ctx);
+            }
+
+            fn update(&self, memory: &mut $crate::hook::WorkAreaMemory, data: &[u8]) {
+                use $crate::hook::WorkArea;
+
+                let ctx: *mut $ctx = unsafe { memory.cast_mut::<$ctx>() };
+                unsafe { $update(ctx, data.as_ptr(), data.len()) };
+            }
+
+            fn finish(&self, memory: &mut $crate::hook::WorkAreaMemory, output: &mut [u8]) {
+                use $crate::hook::WorkArea;
+
+                assert!(output.len() >= $output_size);
+
+                let ctx: *mut $ctx = unsafe { memory.cast_mut::<$ctx>() };
+                unsafe { $finish(ctx, output.as_mut_ptr()) };
+            }
+
+            fn clone(
+                &self,
+                src_work_area: &$crate::hook::WorkAreaMemory,
+                dst_work_area: &mut $crate::hook::WorkAreaMemory,
+            ) {
+                use $crate::hook::WorkArea;
+
+                let src: *const $ctx = unsafe { src_work_area.cast::<$ctx>() };
+                let dst: *mut $ctx = unsafe { dst_work_area.cast_mut::<$ctx>() };
+                unsafe { $clone(dst, src) };
+            }
+        }
+    };
 }
+
+#[cfg(any(
+    all(feature = "alg-sha1", not(feature = "nohook-sha1")),
+    all(feature = "alg-sha256", not(feature = "nohook-sha256")),
+    all(feature = "alg-sha512", not(feature = "nohook-sha512")),
+))]
+pub(crate) use soft_digest;
 
 #[allow(unused)]
 #[inline(always)]

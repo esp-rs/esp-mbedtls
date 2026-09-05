@@ -1,11 +1,14 @@
 //! Hooking for the MbedTLS AES block cipher.
 //!
 //! Unlike the granular `MBEDTLS_AES_*_ALT` options (which keep the upstream
-//! key-schedule context layout and therefore cannot host a RustCrypto cipher
+//! key-schedule context layout and therefore cannot host a hardware backend's
 //! state), this hook replaces the AES module wholesale (`MBEDTLS_AES_ALT`):
 //! `mbedtls_aes_context` becomes an opaque, 16-byte-aligned work area (see
 //! `gen/hook/aes_alt.h`) and every `mbedtls_aes_*` entry point is provided in
-//! Rust, dispatching through the [`MbedtlsAes`] trait.
+//! Rust, dispatching through the [`MbedtlsAes`] trait. When nothing is
+//! hooked, the entry points fall back to MbedTLS's own software AES, which
+//! the library keeps compiled under `mbedtls_aes_soft_*` names (see
+//! [`SoftAes`]).
 //!
 //! Since every MbedTLS AES consumer funnels through these entry points -
 //! CCM/GCM (via the block-cipher/cipher layers), CMAC (via the cipher layer),
@@ -19,11 +22,12 @@
 
 use core::ops::Deref;
 
-use cipher::{BlockDecrypt, BlockEncrypt, KeyInit};
-
 use crate::hook::WorkAreaMemory;
-use crate::{MbedtlsError, MBEDTLS_ERR_AES_BAD_INPUT_DATA, MBEDTLS_ERR_AES_INVALID_KEY_LENGTH};
+use crate::MbedtlsError;
+#[cfg(all(feature = "alg-aes", not(feature = "nohook-aes")))]
+use crate::{MBEDTLS_ERR_AES_BAD_INPUT_DATA, MBEDTLS_ERR_AES_INVALID_KEY_LENGTH};
 
+#[cfg(all(feature = "alg-aes", not(feature = "nohook-aes")))]
 use super::WorkArea;
 
 /// The AES block size, in bytes
@@ -182,115 +186,169 @@ fn xor_in_place(block: &mut AesBlock, other: &AesBlock) {
     }
 }
 
-/// A keyed AES cipher state based on the RustCrypto `aes` crate.
+/// A keyed AES cipher state based on the MbedTLS software AES implementation.
 ///
-/// Used as the state of the [`RustCryptoAes`] fallback, and reusable by
-/// hardware backends that need a software escape hatch (e.g. for key sizes
-/// their AES peripheral does not support).
-pub enum RustCryptoAesState {
-    /// AES-128 encryption state
-    Enc128(aes::Aes128Enc),
-    /// AES-192 encryption state
-    Enc192(aes::Aes192Enc),
-    /// AES-256 encryption state
-    Enc256(aes::Aes256Enc),
-    /// AES-128 decryption state
-    Dec128(aes::Aes128Dec),
-    /// AES-192 decryption state
-    Dec192(aes::Aes192Dec),
-    /// AES-256 decryption state
-    Dec256(aes::Aes256Dec),
+/// The library compiles that implementation under `mbedtls_aes_soft_*` names
+/// next to the hooked (`_ALT`) entry points (see `SoftFallback` in
+/// `gen/builder.rs`). This is the state of the [`SoftAes`] fallback, and is
+/// reusable by hardware backends that need a software escape hatch (e.g. for
+/// key sizes their AES peripheral does not support).
+///
+/// Plain-old-data: just the MbedTLS key schedule plus the direction the key
+/// was scheduled for.
+#[cfg(all(feature = "alg-aes", not(feature = "nohook-aes")))]
+pub struct SoftAesState {
+    ctx: crate::mbedtls_aes_soft_context,
+    dec: bool,
 }
 
-impl RustCryptoAesState {
+#[cfg(all(feature = "alg-aes", not(feature = "nohook-aes")))]
+impl SoftAesState {
     /// Create a new encryption state by scheduling `key` (16, 24 or 32 bytes)
     pub fn new_enc(key: &[u8]) -> Result<Self, MbedtlsError> {
-        Ok(match key.len() {
-            16 => Self::Enc128(aes::Aes128Enc::new_from_slice(key).unwrap()),
-            24 => Self::Enc192(aes::Aes192Enc::new_from_slice(key).unwrap()),
-            32 => Self::Enc256(aes::Aes256Enc::new_from_slice(key).unwrap()),
-            _ => return Err(MbedtlsError::new(MBEDTLS_ERR_AES_INVALID_KEY_LENGTH)),
-        })
+        Self::new(key, false)
     }
 
     /// Create a new decryption state by scheduling `key` (16, 24 or 32 bytes)
     pub fn new_dec(key: &[u8]) -> Result<Self, MbedtlsError> {
-        Ok(match key.len() {
-            16 => Self::Dec128(aes::Aes128Dec::new_from_slice(key).unwrap()),
-            24 => Self::Dec192(aes::Aes192Dec::new_from_slice(key).unwrap()),
-            32 => Self::Dec256(aes::Aes256Dec::new_from_slice(key).unwrap()),
-            _ => return Err(MbedtlsError::new(MBEDTLS_ERR_AES_INVALID_KEY_LENGTH)),
-        })
+        Self::new(key, true)
+    }
+
+    fn new(key: &[u8], dec: bool) -> Result<Self, MbedtlsError> {
+        if !matches!(key.len(), 16 | 24 | 32) {
+            return Err(MbedtlsError::new(MBEDTLS_ERR_AES_INVALID_KEY_LENGTH));
+        }
+
+        let mut ctx = core::mem::MaybeUninit::<crate::mbedtls_aes_soft_context>::uninit();
+
+        // `mbedtls_aes_soft_init` zeroes the context, i.e. fully initializes it
+        let ctx = unsafe {
+            crate::mbedtls_aes_soft_init(ctx.as_mut_ptr());
+            ctx.assume_init()
+        };
+
+        let mut this = Self { ctx, dec };
+
+        let keybits = key.len() as u32 * 8;
+        let ret = if dec {
+            unsafe { crate::mbedtls_aes_soft_setkey_dec(&mut this.ctx, key.as_ptr(), keybits) }
+        } else {
+            unsafe { crate::mbedtls_aes_soft_setkey_enc(&mut this.ctx, key.as_ptr(), keybits) }
+        };
+        crate::merr!(ret)?;
+
+        Ok(this)
     }
 
     /// Encrypt a single block in-place (state must be an encryption state)
-    pub fn encrypt(&self, block: &mut AesBlock) -> Result<(), MbedtlsError> {
-        let block = aes::Block::from_mut_slice(block);
-
-        match self {
-            Self::Enc128(cipher) => cipher.encrypt_block(block),
-            Self::Enc192(cipher) => cipher.encrypt_block(block),
-            Self::Enc256(cipher) => cipher.encrypt_block(block),
-            _ => return Err(MbedtlsError::new(MBEDTLS_ERR_AES_BAD_INPUT_DATA)),
+    pub fn encrypt(&mut self, block: &mut AesBlock) -> Result<(), MbedtlsError> {
+        if self.dec {
+            return Err(MbedtlsError::new(MBEDTLS_ERR_AES_BAD_INPUT_DATA));
         }
+
+        crate::merr!(unsafe {
+            crate::mbedtls_internal_aes_soft_encrypt(
+                &mut self.ctx,
+                block.as_ptr(),
+                block.as_mut_ptr(),
+            )
+        })?;
 
         Ok(())
     }
 
     /// Decrypt a single block in-place (state must be a decryption state)
-    pub fn decrypt(&self, block: &mut AesBlock) -> Result<(), MbedtlsError> {
-        let block = aes::Block::from_mut_slice(block);
-
-        match self {
-            Self::Dec128(cipher) => cipher.decrypt_block(block),
-            Self::Dec192(cipher) => cipher.decrypt_block(block),
-            Self::Dec256(cipher) => cipher.decrypt_block(block),
-            _ => return Err(MbedtlsError::new(MBEDTLS_ERR_AES_BAD_INPUT_DATA)),
+    pub fn decrypt(&mut self, block: &mut AesBlock) -> Result<(), MbedtlsError> {
+        if !self.dec {
+            return Err(MbedtlsError::new(MBEDTLS_ERR_AES_BAD_INPUT_DATA));
         }
+
+        crate::merr!(unsafe {
+            crate::mbedtls_internal_aes_soft_decrypt(
+                &mut self.ctx,
+                block.as_ptr(),
+                block.as_mut_ptr(),
+            )
+        })?;
+
+        Ok(())
+    }
+
+    /// Bulk in-place CBC en/decryption via the MbedTLS software CBC mode,
+    /// with the [`MbedtlsAes::encrypt_cbc`] / [`MbedtlsAes::decrypt_cbc`] IV
+    /// chaining semantics
+    #[cfg(feature = "cipher-mode-cbc")]
+    pub fn crypt_cbc(
+        &mut self,
+        dec: bool,
+        iv: &mut AesBlock,
+        data: &mut [u8],
+    ) -> Result<(), MbedtlsError> {
+        if self.dec != dec {
+            return Err(MbedtlsError::new(MBEDTLS_ERR_AES_BAD_INPUT_DATA));
+        }
+
+        let mode = if dec {
+            crate::MBEDTLS_AES_DECRYPT
+        } else {
+            crate::MBEDTLS_AES_ENCRYPT
+        };
+
+        crate::merr!(unsafe {
+            crate::mbedtls_aes_soft_crypt_cbc(
+                &mut self.ctx,
+                mode as _,
+                data.len(),
+                iv.as_mut_ptr(),
+                data.as_ptr(),
+                data.as_mut_ptr(),
+            )
+        })?;
 
         Ok(())
     }
 }
 
-/// MbedTLS AES implementation that delegates to the RustCrypto `aes` crate
-pub struct RustCryptoAes(());
+/// MbedTLS AES implementation that delegates to the MbedTLS software AES
+/// implementation; the fallback when no custom implementation is hooked
+#[cfg(all(feature = "alg-aes", not(feature = "nohook-aes")))]
+pub struct SoftAes(());
 
-impl RustCryptoAes {
-    /// Create a new `RustCryptoAes` instance
+#[cfg(all(feature = "alg-aes", not(feature = "nohook-aes")))]
+impl SoftAes {
+    /// Create a new `SoftAes` instance
     pub const fn new() -> Self {
         Self(())
     }
 }
 
-impl Default for RustCryptoAes {
+#[cfg(all(feature = "alg-aes", not(feature = "nohook-aes")))]
+impl Default for SoftAes {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl MbedtlsAes for RustCryptoAes {
+#[cfg(all(feature = "alg-aes", not(feature = "nohook-aes")))]
+impl MbedtlsAes for SoftAes {
     fn init(&self, memory: &mut WorkAreaMemory) {
-        unsafe { memory.cast_mut_maybe::<Option<RustCryptoAesState>>() }.write(None);
+        unsafe { memory.cast_mut_maybe::<Option<SoftAesState>>() }.write(None);
     }
 
     fn free(&self, memory: &mut WorkAreaMemory) {
-        let ptr = unsafe { memory.cast_mut::<Option<RustCryptoAesState>>() } as *mut _;
-
-        unsafe {
-            core::ptr::drop_in_place(ptr);
-        }
-
+        // Plain-old-data: nothing to drop, wiping the work area frees (and
+        // zeroizes) the state
         memory.fill(0);
     }
 
     fn set_enc_key(&self, memory: &mut WorkAreaMemory, key: &[u8]) -> Result<(), MbedtlsError> {
-        *unsafe { memory.cast_mut() } = Some(RustCryptoAesState::new_enc(key)?);
+        *unsafe { memory.cast_mut() } = Some(SoftAesState::new_enc(key)?);
 
         Ok(())
     }
 
     fn set_dec_key(&self, memory: &mut WorkAreaMemory, key: &[u8]) -> Result<(), MbedtlsError> {
-        *unsafe { memory.cast_mut() } = Some(RustCryptoAesState::new_dec(key)?);
+        *unsafe { memory.cast_mut() } = Some(SoftAesState::new_dec(key)?);
 
         Ok(())
     }
@@ -300,8 +358,8 @@ impl MbedtlsAes for RustCryptoAes {
         memory: &mut WorkAreaMemory,
         block: &mut AesBlock,
     ) -> Result<(), MbedtlsError> {
-        unsafe { memory.cast::<Option<RustCryptoAesState>>() }
-            .as_ref()
+        unsafe { memory.cast_mut::<Option<SoftAesState>>() }
+            .as_mut()
             .ok_or(MbedtlsError::new(MBEDTLS_ERR_AES_BAD_INPUT_DATA))?
             .encrypt(block)
     }
@@ -311,10 +369,36 @@ impl MbedtlsAes for RustCryptoAes {
         memory: &mut WorkAreaMemory,
         block: &mut AesBlock,
     ) -> Result<(), MbedtlsError> {
-        unsafe { memory.cast::<Option<RustCryptoAesState>>() }
-            .as_ref()
+        unsafe { memory.cast_mut::<Option<SoftAesState>>() }
+            .as_mut()
             .ok_or(MbedtlsError::new(MBEDTLS_ERR_AES_BAD_INPUT_DATA))?
             .decrypt(block)
+    }
+
+    #[cfg(feature = "cipher-mode-cbc")]
+    fn encrypt_cbc(
+        &self,
+        memory: &mut WorkAreaMemory,
+        iv: &mut AesBlock,
+        data: &mut [u8],
+    ) -> Result<(), MbedtlsError> {
+        unsafe { memory.cast_mut::<Option<SoftAesState>>() }
+            .as_mut()
+            .ok_or(MbedtlsError::new(MBEDTLS_ERR_AES_BAD_INPUT_DATA))?
+            .crypt_cbc(false, iv, data)
+    }
+
+    #[cfg(feature = "cipher-mode-cbc")]
+    fn decrypt_cbc(
+        &self,
+        memory: &mut WorkAreaMemory,
+        iv: &mut AesBlock,
+        data: &mut [u8],
+    ) -> Result<(), MbedtlsError> {
+        unsafe { memory.cast_mut::<Option<SoftAesState>>() }
+            .as_mut()
+            .ok_or(MbedtlsError::new(MBEDTLS_ERR_AES_BAD_INPUT_DATA))?
+            .crypt_cbc(true, iv, data)
     }
 }
 
@@ -353,18 +437,22 @@ mod alt {
         MBEDTLS_ERR_AES_BAD_INPUT_DATA, MBEDTLS_ERR_AES_INVALID_KEY_LENGTH,
     };
 
-    use super::{AesBlock, MbedtlsAes, RustCryptoAes, RustCryptoAesState, AES_BLOCK_SIZE};
+    use super::{AesBlock, MbedtlsAes, SoftAes, SoftAesState, AES_BLOCK_SIZE};
 
     // The work area must be able to host the largest state used by the
     // fallback, plus emplacement slack for under-aligned opaque storage (see
     // the `WorkArea` docs in `src/hook.rs`); hardware backends embedding
-    // `RustCryptoAesState` as a software escape hatch are covered by the
-    // same bound.
+    // `SoftAesState` as a software escape hatch are covered by the same bound
+    // as long as their own state is not larger.
     // `core::assert!`, not the crate `assert!` (whose `defmt` variant is not const-callable)
     const _: () = core::assert!(
-        core::mem::size_of::<Option<RustCryptoAesState>>() + 16
+        core::mem::size_of::<Option<SoftAesState>>() + 16
             <= crate::MBEDTLS_AES_ALT_WORK_AREA_SIZE as usize,
-        "The RustCrypto AES state does not fit the AES hook work area"
+        "The MbedTLS software AES state does not fit the AES hook work area"
+    );
+    const _: () = core::assert!(
+        core::mem::align_of::<Option<SoftAesState>>() <= 16,
+        "The MbedTLS software AES state is over-aligned for the work area"
     );
 
     const ENCRYPT: c_int = MBEDTLS_AES_ENCRYPT as c_int;
@@ -372,14 +460,14 @@ mod alt {
 
     pub(crate) static AES: Mutex<Cell<Option<&(dyn MbedtlsAes + Send + Sync)>>> =
         Mutex::new(Cell::new(None));
-    static AES_RUST_CRYPTO: RustCryptoAes = RustCryptoAes::new();
+    static AES_SOFT: SoftAes = SoftAes::new();
 
     #[inline(always)]
     fn algo<'a>() -> &'a dyn MbedtlsAes {
         if let Some(aes) = critical_section::with(|cs| AES.borrow(cs).get()) {
             aes
         } else {
-            &AES_RUST_CRYPTO
+            &AES_SOFT
         }
     }
 

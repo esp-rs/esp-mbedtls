@@ -6,14 +6,14 @@
 
 use esp_hal::aes::{cipher_modes, AesContext, Key, Operation};
 
-use crate::hook::aes::{AesBlock, MbedtlsAes, RustCryptoAesState, AES_BLOCK_SIZE};
+use crate::hook::aes::{AesBlock, MbedtlsAes, SoftAesState, AES_BLOCK_SIZE};
 use crate::hook::{WorkArea, WorkAreaMemory};
 use crate::{MbedtlsError, MBEDTLS_ERR_AES_BAD_INPUT_DATA, MBEDTLS_ERR_AES_INVALID_KEY_LENGTH};
 
 /// Whether the AES peripheral supports 192-bit keys.
 ///
 /// The ESP32-S3/C3/C5/C6/H2 AES peripherals only support 128- and 256-bit
-/// keys; 192-bit keys are handled with the RustCrypto software implementation
+/// keys; 192-bit keys are handled with the MbedTLS software implementation
 /// there.
 const HW_192: bool = cfg!(any(feature = "esp32", feature = "esp32s2"));
 
@@ -32,7 +32,7 @@ enum EspAesState {
         dec: bool,
     },
     /// Software fallback for key sizes the peripheral does not support
-    Soft(RustCryptoAesState),
+    Soft(SoftAesState),
 }
 
 impl EspAesState {
@@ -43,9 +43,9 @@ impl EspAesState {
                 if HW_192 {
                     Self::new_hw(key, dec)
                 } else if dec {
-                    Self::Soft(RustCryptoAesState::new_dec(key)?)
+                    Self::Soft(SoftAesState::new_dec(key)?)
                 } else {
-                    Self::Soft(RustCryptoAesState::new_enc(key)?)
+                    Self::Soft(SoftAesState::new_enc(key)?)
                 }
             }
             _ => return Err(MbedtlsError::new(MBEDTLS_ERR_AES_INVALID_KEY_LENGTH)),
@@ -99,7 +99,7 @@ impl EspAesState {
         Ok(())
     }
 
-    fn crypt_block(&self, dec: bool, block: &mut AesBlock) -> Result<(), MbedtlsError> {
+    fn crypt_block(&mut self, dec: bool, block: &mut AesBlock) -> Result<(), MbedtlsError> {
         match self {
             Self::Hw {
                 key,
@@ -126,7 +126,7 @@ impl EspAesState {
 }
 
 /// AES implementation using the ESP32XX AES peripheral (via the `esp-hal`
-/// AES work queue), with a RustCrypto software fallback for key sizes the
+/// AES work queue), with the MbedTLS software AES as fallback for key sizes the
 /// peripheral does not support (192-bit keys on ESP32-C3/C5/C6/H2).
 pub struct EspAes(());
 
@@ -266,8 +266,8 @@ impl MbedtlsAes for EspAes {
 }
 
 #[inline(always)]
-fn state(memory: &mut WorkAreaMemory) -> Result<&EspAesState, MbedtlsError> {
-    unsafe { memory.cast::<Option<EspAesState>>() }
-        .as_ref()
+fn state(memory: &mut WorkAreaMemory) -> Result<&mut EspAesState, MbedtlsError> {
+    unsafe { memory.cast_mut::<Option<EspAesState>>() }
+        .as_mut()
         .ok_or(MbedtlsError::new(MBEDTLS_ERR_AES_BAD_INPUT_DATA))
 }

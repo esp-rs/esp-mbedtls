@@ -61,7 +61,7 @@ async fn main(_s: Spawner) {
         info!("============\nInput: {:x?}", input);
 
         {
-            use sha1::Digest;
+            use esp_hal::sha::Digest;
 
             let mut sha1 = esp_hal::sha::Sha1Context::new();
 
