@@ -192,7 +192,7 @@ pub struct ClientSessionConfig<'a> {
     /// different domain).
     pub skip_hostname_verification: bool,
     /// Ordered key-exchange groups to offer. `None` keeps Mbed TLS's defaults.
-    pub key_exchange_groups: Option<&'static [TlsGroup]>,
+    pub key_exchange_groups: Option<&'a [TlsGroup]>,
 }
 
 impl<'a> Default for ClientSessionConfig<'a> {
@@ -331,7 +331,7 @@ impl<'a> SessionConfig<'a> {
         }
     }
 
-    fn key_exchange_groups(&self) -> Option<&'static [TlsGroup]> {
+    fn key_exchange_groups(&self) -> Option<&'a [TlsGroup]> {
         match self {
             SessionConfig::Client(ClientSessionConfig {
                 key_exchange_groups,

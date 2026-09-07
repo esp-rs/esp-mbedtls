@@ -148,7 +148,7 @@ fn client_config() -> SessionConfig<'static> {
 
 fn idle_session_is_created(
     tls_reference: TlsReference<'_>,
-    key_exchange_groups: Option<&'static [TlsGroup]>,
+    key_exchange_groups: Option<&[TlsGroup]>,
 ) -> Result<(), SessionError> {
     let config = SessionConfig::Client(ClientSessionConfig {
         key_exchange_groups,
