@@ -11,11 +11,6 @@ exclude = ["examples", "xtask"]
 defmt = { version = "1", default-features = false }
 log = { version = "0.4", default-features = false }
 enumset = { version = "1", default-features = false }
-digest = { version = "0.10", default-features = false }
-sha1 = { version = "0.10", default-features = false }
-sha2 = { version = "0.10", default-features = false }
-aes = { version = "0.8", default-features = false }
-cipher = { version = "0.4", default-features = false }
 time = { version = "0.3", default-features = false }
 critical-section = { version = "1", default-features = false }
 
@@ -25,7 +20,7 @@ rand_core = { version = "0.10.1", default-features = false }
 
 # For esp-hal hook impls
 esp-hal = { version = "~1.1.0", default-features = false }
-crypto-bigint = { version = "0.5.3", default-features = false }
+crypto-bigint = { version = "0.7", default-features = false }
 
 # For embassy timer hook impl
 embassy-time = {version = "0.5", default-features = false}

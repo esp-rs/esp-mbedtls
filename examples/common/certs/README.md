@@ -8,8 +8,15 @@ This folder contains certificates used by the examples:
     mk-ca-bundle.pl ca-bundle.pem
     ```
 - `ca-bundle-small.pem`
-  - A manual extraction of just two root CAs from `ca-bundle.pem` which are known to be used by the websites used in the client examples (`httpbin.org` and `certauth.cryptomix.com`)
+  - A manual extraction of just two root CAs from `ca-bundle.pem` which are known to be used by the websites used in the client examples (`httpbin.org` and `client.badssl.com`)
   - Done for reducing memory and flash size when using `mbedtls-rs`
+- `badssl-client-cert.der` / `badssl-client-key.der`
+  - The client certificate (and its key, decrypted) that `https://client.badssl.com/` requires for its mutual-TLS test endpoint, used by the client examples. It is published by badssl.com and rotated every couple of years; refresh it with:
+    ```sh
+    curl -O https://badssl.com/certs/badssl.com-client.pem
+    openssl x509 -in badssl.com-client.pem -outform DER -out badssl-client-cert.der
+    openssl pkey -in badssl.com-client.pem -passin pass:badssl.com -outform DER -out badssl-client-key.der
+    ```
 - `cert.der` / `cert.pem` + `key.der` / `key.pem`
   - Self-signed certificate used by the server examples and its corresponding key
   - Can be re-generated with:

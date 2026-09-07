@@ -77,8 +77,10 @@ impl MbedtlsUserConfig {
     pub(crate) fn set(&mut self, ident: &str, value: impl Into<Value>) -> &mut Self {
         validate_macro_ident(ident);
         let v = value.into();
-        if let ValueInner::Literal(lit) = &v.0 {
-            validate_macro_literal(lit);
+        match &v.0 {
+            ValueInner::Literal(lit) => validate_macro_literal(lit),
+            ValueInner::PresenceUnless(guard) => validate_macro_ident(guard),
+            ValueInner::Presence(_) => {}
         }
         self.options.insert(ident.into(), v);
         self
@@ -97,6 +99,9 @@ impl MbedtlsUserConfig {
                 ValueInner::Presence(false) => None,
                 ValueInner::Presence(true) => Some((ident.as_ref(), "")),
                 ValueInner::Literal(v) => Some((ident.as_ref(), v.as_ref())),
+                // Distinct from a plain presence: the guard is part of what the
+                // library was compiled with.
+                ValueInner::PresenceUnless(guard) => Some((ident.as_ref(), guard.as_ref())),
             })
             .collect()
     }
@@ -139,14 +144,16 @@ impl fmt::Display for MbedtlsUserConfig {
             // Always undefine the default definition, if present.
             // Undefining an already undefined option is harmless.
             writeln!(f, "#undef MBEDTLS_{ident}")?;
-            if matches!(&value.0, ValueInner::Presence(false)) {
-                continue;
+            match &value.0 {
+                ValueInner::Presence(false) => {}
+                ValueInner::Presence(true) => writeln!(f, "#define MBEDTLS_{ident}")?,
+                ValueInner::Literal(value) => writeln!(f, "#define MBEDTLS_{ident} {value}")?,
+                ValueInner::PresenceUnless(guard) => {
+                    writeln!(f, "#if !defined({guard})")?;
+                    writeln!(f, "#define MBEDTLS_{ident}")?;
+                    writeln!(f, "#endif")?;
+                }
             }
-            write!(f, "#define MBEDTLS_{ident}")?;
-            if let ValueInner::Literal(value) = &value.0 {
-                write!(f, " {value}")?;
-            }
-            f.write_str("\n")?;
         }
         for header in &self.includes {
             writeln!(f, "#include \"{header}\"")?;
@@ -167,6 +174,23 @@ enum ValueInner {
     Literal(Box<str>),
     /// A define whose presence in the config controls a feature.
     Presence(bool),
+    /// A presence define that is skipped in translation units compiled with
+    /// the given (full-name) guard macro defined.
+    PresenceUnless(Box<str>),
+}
+
+impl Value {
+    /// A presence-on define, except in translation units that are compiled
+    /// with the `guard` macro defined (its full name, not `MBEDTLS_`-prefixed).
+    ///
+    /// Renders as `#if !defined(guard) / #define MBEDTLS_{ident} / #endif`,
+    /// which is how a single user config can switch an `_ALT` module on for
+    /// the library as a whole while a designated translation unit still
+    /// compiles the built-in implementation (see the soft fallback in
+    /// `gen/builder.rs`).
+    pub(crate) fn unless_defined(guard: &str) -> Self {
+        Self(ValueInner::PresenceUnless(guard.into()))
+    }
 }
 
 impl From<bool> for Value {
@@ -272,7 +296,7 @@ mod tests {
     //! `#[should_panic(expected = ...)]` to confirm the validator emits the
     //! expected error pattern; positive cases just assert the call returns.
 
-    use super::MbedtlsUserConfig;
+    use super::{MbedtlsUserConfig, Value};
 
     // ---- positive cases ----
 
@@ -461,5 +485,23 @@ mod tests {
         assert!(s.contains("#define MBEDTLS_FOO_BAR\n"), "{s}");
         assert!(s.contains("#define MBEDTLS_BAZ 0x42\n"), "{s}");
         assert!(s.contains("#include \"time_alt.h\"\n"), "{s}");
+    }
+
+    #[test]
+    fn renders_guarded_presence() {
+        let mut c = MbedtlsUserConfig::new();
+        c.set("FOO_ALT", Value::unless_defined("SOME_GUARD"));
+        let s = c.to_string();
+        assert!(
+            s.contains("#undef MBEDTLS_FOO_ALT\n#if !defined(SOME_GUARD)\n#define MBEDTLS_FOO_ALT\n#endif\n"),
+            "{s}"
+        );
+        assert_eq!(c.effective_defines().get("FOO_ALT"), Some(&"SOME_GUARD"));
+    }
+
+    #[test]
+    #[should_panic(expected = "invalid MbedTLS config identifier")]
+    fn rejects_guard_with_newline() {
+        MbedtlsUserConfig::new().set("FOO_ALT", Value::unless_defined("X)\n#undef Y"));
     }
 }

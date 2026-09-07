@@ -27736,3 +27736,1058 @@ unsafe extern "C" {
         pt: *const mbedtls_ecp_point,
     ) -> ::core::ffi::c_int;
 }
+/// \brief          The SHA-1 context structure.
+///
+/// \warning        SHA-1 is considered a weak message digest and its use
+///                 constitutes a security risk. We recommend considering
+///                 stronger message digests instead.
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct mbedtls_sha1_soft_context {
+    ///< The number of Bytes processed.
+    pub private_total: [u32; 2usize],
+    ///< The intermediate digest state.
+    pub private_state: [u32; 5usize],
+    ///< The data block being processed.
+    pub private_buffer: [::core::ffi::c_uchar; 64usize],
+}
+impl Default for mbedtls_sha1_soft_context {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+unsafe extern "C" {
+    /// \brief          This function initializes a SHA-1 context.
+    ///
+    /// \warning        SHA-1 is considered a weak message digest and its use
+    ///                 constitutes a security risk. We recommend considering
+    ///                 stronger message digests instead.
+    ///
+    /// \param ctx      The SHA-1 context to initialize.
+    ///                 This must not be \c NULL.
+    pub fn mbedtls_sha1_soft_init(ctx: *mut mbedtls_sha1_soft_context);
+}
+unsafe extern "C" {
+    /// \brief          This function clears a SHA-1 context.
+    ///
+    /// \warning        SHA-1 is considered a weak message digest and its use
+    ///                 constitutes a security risk. We recommend considering
+    ///                 stronger message digests instead.
+    ///
+    /// \param ctx      The SHA-1 context to clear. This may be \c NULL,
+    ///                 in which case this function does nothing. If it is
+    ///                 not \c NULL, it must point to an initialized
+    ///                 SHA-1 context.
+    pub fn mbedtls_sha1_soft_free(ctx: *mut mbedtls_sha1_soft_context);
+}
+unsafe extern "C" {
+    /// \brief          This function clones the state of a SHA-1 context.
+    ///
+    /// \warning        SHA-1 is considered a weak message digest and its use
+    ///                 constitutes a security risk. We recommend considering
+    ///                 stronger message digests instead.
+    ///
+    /// \param dst      The SHA-1 context to clone to. This must be initialized.
+    /// \param src      The SHA-1 context to clone from. This must be initialized.
+    pub fn mbedtls_sha1_soft_clone(
+        dst: *mut mbedtls_sha1_soft_context,
+        src: *const mbedtls_sha1_soft_context,
+    );
+}
+unsafe extern "C" {
+    /// \brief          This function starts a SHA-1 checksum calculation.
+    ///
+    /// \warning        SHA-1 is considered a weak message digest and its use
+    ///                 constitutes a security risk. We recommend considering
+    ///                 stronger message digests instead.
+    ///
+    /// \param ctx      The SHA-1 context to initialize. This must be initialized.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         A negative error code on failure.
+    pub fn mbedtls_sha1_soft_starts(ctx: *mut mbedtls_sha1_soft_context) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          This function feeds an input buffer into an ongoing SHA-1
+    ///                 checksum calculation.
+    ///
+    /// \warning        SHA-1 is considered a weak message digest and its use
+    ///                 constitutes a security risk. We recommend considering
+    ///                 stronger message digests instead.
+    ///
+    /// \param ctx      The SHA-1 context. This must be initialized
+    ///                 and have a hash operation started.
+    /// \param input    The buffer holding the input data.
+    ///                 This must be a readable buffer of length \p ilen Bytes.
+    /// \param ilen     The length of the input data \p input in Bytes.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         A negative error code on failure.
+    pub fn mbedtls_sha1_soft_update(
+        ctx: *mut mbedtls_sha1_soft_context,
+        input: *const ::core::ffi::c_uchar,
+        ilen: usize,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          This function finishes the SHA-1 operation, and writes
+    ///                 the result to the output buffer.
+    ///
+    /// \warning        SHA-1 is considered a weak message digest and its use
+    ///                 constitutes a security risk. We recommend considering
+    ///                 stronger message digests instead.
+    ///
+    /// \param ctx      The SHA-1 context to use. This must be initialized and
+    ///                 have a hash operation started.
+    /// \param output   The SHA-1 checksum result. This must be a writable
+    ///                 buffer of length \c 20 Bytes.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         A negative error code on failure.
+    pub fn mbedtls_sha1_soft_finish(
+        ctx: *mut mbedtls_sha1_soft_context,
+        output: *mut ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          SHA-1 process data block (internal use only).
+    ///
+    /// \warning        SHA-1 is considered a weak message digest and its use
+    ///                 constitutes a security risk. We recommend considering
+    ///                 stronger message digests instead.
+    ///
+    /// \param ctx      The SHA-1 context to use. This must be initialized.
+    /// \param data     The data block being processed. This must be a
+    ///                 readable buffer of length \c 64 Bytes.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         A negative error code on failure.
+    pub fn mbedtls_internal_sha1_soft_process(
+        ctx: *mut mbedtls_sha1_soft_context,
+        data: *const ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          This function calculates the SHA-1 checksum of a buffer.
+    ///
+    ///                 The function allocates the context, performs the
+    ///                 calculation, and frees the context.
+    ///
+    ///                 The SHA-1 result is calculated as
+    ///                 output = SHA-1(input buffer).
+    ///
+    /// \warning        SHA-1 is considered a weak message digest and its use
+    ///                 constitutes a security risk. We recommend considering
+    ///                 stronger message digests instead.
+    ///
+    /// \param input    The buffer holding the input data.
+    ///                 This must be a readable buffer of length \p ilen Bytes.
+    /// \param ilen     The length of the input data \p input in Bytes.
+    /// \param output   The SHA-1 checksum result.
+    ///                 This must be a writable buffer of length \c 20 Bytes.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         A negative error code on failure.
+    pub fn mbedtls_sha1_soft(
+        input: *const ::core::ffi::c_uchar,
+        ilen: usize,
+        output: *mut ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          The SHA-1 checkup routine.
+    ///
+    /// \warning        SHA-1 is considered a weak message digest and its use
+    ///                 constitutes a security risk. We recommend considering
+    ///                 stronger message digests instead.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         \c 1 on failure.
+    pub fn mbedtls_sha1_soft_self_test(verbose: ::core::ffi::c_int) -> ::core::ffi::c_int;
+}
+/// \brief          The SHA-256 context structure.
+///
+///                 The structure is used both for SHA-256 and for SHA-224
+///                 checksum calculations. The choice between these two is
+///                 made in the call to mbedtls_sha256_starts().
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct mbedtls_sha256_soft_context {
+    ///< The data block being processed.
+    pub private_buffer: [::core::ffi::c_uchar; 64usize],
+    ///< The number of Bytes processed.
+    pub private_total: [u32; 2usize],
+    ///< The intermediate digest state.
+    pub private_state: [u32; 8usize],
+    ///< Determines which function to use:
+    ///0: Use SHA-256, or 1: Use SHA-224.
+    pub private_is224: ::core::ffi::c_int,
+}
+impl Default for mbedtls_sha256_soft_context {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+unsafe extern "C" {
+    /// \brief          This function initializes a SHA-256 context.
+    ///
+    /// \param ctx      The SHA-256 context to initialize. This must not be \c NULL.
+    pub fn mbedtls_sha256_soft_init(ctx: *mut mbedtls_sha256_soft_context);
+}
+unsafe extern "C" {
+    /// \brief          This function clears a SHA-256 context.
+    ///
+    /// \param ctx      The SHA-256 context to clear. This may be \c NULL, in which
+    ///                 case this function returns immediately. If it is not \c NULL,
+    ///                 it must point to an initialized SHA-256 context.
+    pub fn mbedtls_sha256_soft_free(ctx: *mut mbedtls_sha256_soft_context);
+}
+unsafe extern "C" {
+    /// \brief          This function clones the state of a SHA-256 context.
+    ///
+    /// \param dst      The destination context. This must be initialized.
+    /// \param src      The context to clone. This must be initialized.
+    pub fn mbedtls_sha256_soft_clone(
+        dst: *mut mbedtls_sha256_soft_context,
+        src: *const mbedtls_sha256_soft_context,
+    );
+}
+unsafe extern "C" {
+    /// \brief          This function starts a SHA-224 or SHA-256 checksum
+    ///                 calculation.
+    ///
+    /// \param ctx      The context to use. This must be initialized.
+    /// \param is224    This determines which function to use. This must be
+    ///                 either \c 0 for SHA-256, or \c 1 for SHA-224.
+    ///
+    /// \note           is224 must be defined accordingly to the enabled
+    ///                 MBEDTLS_SHA224_C/MBEDTLS_SHA256_C symbols otherwise the
+    ///                 function will return #MBEDTLS_ERR_SHA512_BAD_INPUT_DATA.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         A negative error code on failure.
+    pub fn mbedtls_sha256_soft_starts(
+        ctx: *mut mbedtls_sha256_soft_context,
+        is224: ::core::ffi::c_int,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          This function feeds an input buffer into an ongoing
+    ///                 SHA-256 checksum calculation.
+    ///
+    /// \param ctx      The SHA-256 context. This must be initialized
+    ///                 and have a hash operation started.
+    /// \param input    The buffer holding the data. This must be a readable
+    ///                 buffer of length \p ilen Bytes.
+    /// \param ilen     The length of the input data in Bytes.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         A negative error code on failure.
+    pub fn mbedtls_sha256_soft_update(
+        ctx: *mut mbedtls_sha256_soft_context,
+        input: *const ::core::ffi::c_uchar,
+        ilen: usize,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          This function finishes the SHA-256 operation, and writes
+    ///                 the result to the output buffer.
+    ///
+    /// \param ctx      The SHA-256 context. This must be initialized
+    ///                 and have a hash operation started.
+    /// \param output   The SHA-224 or SHA-256 checksum result.
+    ///                 This must be a writable buffer of length \c 32 bytes
+    ///                 for SHA-256, \c 28 bytes for SHA-224.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         A negative error code on failure.
+    pub fn mbedtls_sha256_soft_finish(
+        ctx: *mut mbedtls_sha256_soft_context,
+        output: *mut ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          This function processes a single data block within
+    ///                 the ongoing SHA-256 computation. This function is for
+    ///                 internal use only.
+    ///
+    /// \param ctx      The SHA-256 context. This must be initialized.
+    /// \param data     The buffer holding one block of data. This must
+    ///                 be a readable buffer of length \c 64 Bytes.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         A negative error code on failure.
+    pub fn mbedtls_internal_sha256_soft_process(
+        ctx: *mut mbedtls_sha256_soft_context,
+        data: *const ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          This function calculates the SHA-224 or SHA-256
+    ///                 checksum of a buffer.
+    ///
+    ///                 The function allocates the context, performs the
+    ///                 calculation, and frees the context.
+    ///
+    ///                 The SHA-256 result is calculated as
+    ///                 output = SHA-256(input buffer).
+    ///
+    /// \param input    The buffer holding the data. This must be a readable
+    ///                 buffer of length \p ilen Bytes.
+    /// \param ilen     The length of the input data in Bytes.
+    /// \param output   The SHA-224 or SHA-256 checksum result.
+    ///                 This must be a writable buffer of length \c 32 bytes
+    ///                 for SHA-256, \c 28 bytes for SHA-224.
+    /// \param is224    Determines which function to use. This must be
+    ///                 either \c 0 for SHA-256, or \c 1 for SHA-224.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         A negative error code on failure.
+    pub fn mbedtls_sha256_soft(
+        input: *const ::core::ffi::c_uchar,
+        ilen: usize,
+        output: *mut ::core::ffi::c_uchar,
+        is224: ::core::ffi::c_int,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          The SHA-224 checkup routine.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         \c 1 on failure.
+    pub fn mbedtls_sha224_soft_self_test(verbose: ::core::ffi::c_int) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          The SHA-256 checkup routine.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         \c 1 on failure.
+    pub fn mbedtls_sha256_soft_self_test(verbose: ::core::ffi::c_int) -> ::core::ffi::c_int;
+}
+/// \brief          The SHA-512 context structure.
+///
+///                 The structure is used both for SHA-384 and for SHA-512
+///                 checksum calculations. The choice between these two is
+///                 made in the call to mbedtls_sha512_starts().
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct mbedtls_sha512_soft_context {
+    ///< The number of Bytes processed.
+    pub private_total: [u64; 2usize],
+    ///< The intermediate digest state.
+    pub private_state: [u64; 8usize],
+    ///< The data block being processed.
+    pub private_buffer: [::core::ffi::c_uchar; 128usize],
+    ///< Determines which function to use:
+    ///0: Use SHA-512, or 1: Use SHA-384.
+    pub private_is384: ::core::ffi::c_int,
+}
+impl Default for mbedtls_sha512_soft_context {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+unsafe extern "C" {
+    /// \brief          This function initializes a SHA-512 context.
+    ///
+    /// \param ctx      The SHA-512 context to initialize. This must
+    ///                 not be \c NULL.
+    pub fn mbedtls_sha512_soft_init(ctx: *mut mbedtls_sha512_soft_context);
+}
+unsafe extern "C" {
+    /// \brief          This function clears a SHA-512 context.
+    ///
+    /// \param ctx      The SHA-512 context to clear. This may be \c NULL,
+    ///                 in which case this function does nothing. If it
+    ///                 is not \c NULL, it must point to an initialized
+    ///                 SHA-512 context.
+    pub fn mbedtls_sha512_soft_free(ctx: *mut mbedtls_sha512_soft_context);
+}
+unsafe extern "C" {
+    /// \brief          This function clones the state of a SHA-512 context.
+    ///
+    /// \param dst      The destination context. This must be initialized.
+    /// \param src      The context to clone. This must be initialized.
+    pub fn mbedtls_sha512_soft_clone(
+        dst: *mut mbedtls_sha512_soft_context,
+        src: *const mbedtls_sha512_soft_context,
+    );
+}
+unsafe extern "C" {
+    /// \brief          This function starts a SHA-384 or SHA-512 checksum
+    ///                 calculation.
+    ///
+    /// \param ctx      The SHA-512 context to use. This must be initialized.
+    /// \param is384    Determines which function to use. This must be
+    ///                 either \c 0 for SHA-512, or \c 1 for SHA-384.
+    ///
+    /// \note           is384 must be defined accordingly to the enabled
+    ///                 MBEDTLS_SHA384_C/MBEDTLS_SHA512_C symbols otherwise the
+    ///                 function will return #MBEDTLS_ERR_SHA512_BAD_INPUT_DATA.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         A negative error code on failure.
+    pub fn mbedtls_sha512_soft_starts(
+        ctx: *mut mbedtls_sha512_soft_context,
+        is384: ::core::ffi::c_int,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          This function feeds an input buffer into an ongoing
+    ///                 SHA-512 checksum calculation.
+    ///
+    /// \param ctx      The SHA-512 context. This must be initialized
+    ///                 and have a hash operation started.
+    /// \param input    The buffer holding the input data. This must
+    ///                 be a readable buffer of length \p ilen Bytes.
+    /// \param ilen     The length of the input data in Bytes.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         A negative error code on failure.
+    pub fn mbedtls_sha512_soft_update(
+        ctx: *mut mbedtls_sha512_soft_context,
+        input: *const ::core::ffi::c_uchar,
+        ilen: usize,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          This function finishes the SHA-512 operation, and writes
+    ///                 the result to the output buffer.
+    ///
+    /// \param ctx      The SHA-512 context. This must be initialized
+    ///                 and have a hash operation started.
+    /// \param output   The SHA-384 or SHA-512 checksum result.
+    ///                 This must be a writable buffer of length \c 64 bytes
+    ///                 for SHA-512, \c 48 bytes for SHA-384.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         A negative error code on failure.
+    pub fn mbedtls_sha512_soft_finish(
+        ctx: *mut mbedtls_sha512_soft_context,
+        output: *mut ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          This function processes a single data block within
+    ///                 the ongoing SHA-512 computation.
+    ///                 This function is for internal use only.
+    ///
+    /// \param ctx      The SHA-512 context. This must be initialized.
+    /// \param data     The buffer holding one block of data. This
+    ///                 must be a readable buffer of length \c 128 Bytes.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         A negative error code on failure.
+    pub fn mbedtls_internal_sha512_soft_process(
+        ctx: *mut mbedtls_sha512_soft_context,
+        data: *const ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          This function calculates the SHA-512 or SHA-384
+    ///                 checksum of a buffer.
+    ///
+    ///                 The function allocates the context, performs the
+    ///                 calculation, and frees the context.
+    ///
+    ///                 The SHA-512 result is calculated as
+    ///                 output = SHA-512(input buffer).
+    ///
+    /// \param input    The buffer holding the input data. This must be
+    ///                 a readable buffer of length \p ilen Bytes.
+    /// \param ilen     The length of the input data in Bytes.
+    /// \param output   The SHA-384 or SHA-512 checksum result.
+    ///                 This must be a writable buffer of length \c 64 bytes
+    ///                 for SHA-512, \c 48 bytes for SHA-384.
+    /// \param is384    Determines which function to use. This must be either
+    ///                 \c 0 for SHA-512, or \c 1 for SHA-384.
+    ///
+    /// \note           is384 must be defined accordingly with the supported
+    ///                 symbols in the config file. If:
+    ///                 - is384 is 0, but \c MBEDTLS_SHA384_C is not defined, or
+    ///                 - is384 is 1, but \c MBEDTLS_SHA512_C is not defined
+    ///                 then the function will return
+    ///                 #MBEDTLS_ERR_SHA512_BAD_INPUT_DATA.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         A negative error code on failure.
+    pub fn mbedtls_sha512_soft(
+        input: *const ::core::ffi::c_uchar,
+        ilen: usize,
+        output: *mut ::core::ffi::c_uchar,
+        is384: ::core::ffi::c_int,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          The SHA-384 checkup routine.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         \c 1 on failure.
+    pub fn mbedtls_sha384_soft_self_test(verbose: ::core::ffi::c_int) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          The SHA-512 checkup routine.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         \c 1 on failure.
+    pub fn mbedtls_sha512_soft_self_test(verbose: ::core::ffi::c_int) -> ::core::ffi::c_int;
+}
+/// \brief The AES context-type definition.
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct mbedtls_aes_soft_context {
+    ///< The number of rounds.
+    pub private_nr: ::core::ffi::c_int,
+    ///< The offset in array elements to AES
+    ///round keys in the buffer.
+    pub private_rk_offset: usize,
+    ///< Unaligned data buffer. This buffer can
+    ///hold 32 extra Bytes, which can be used for
+    ///one of the following purposes:
+    ///<ul><li>Alignment if VIA padlock is
+    ///used.</li>
+    ///<li>Simplifying key expansion in the 256-bit
+    ///case by generating an extra round key.
+    ///</li></ul>
+    pub private_buf: [u32; 68usize],
+}
+impl Default for mbedtls_aes_soft_context {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+/// \brief The AES XTS context-type definition.
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct mbedtls_aes_soft_xts_context {
+    pub private_crypt: mbedtls_aes_soft_context,
+    pub private_tweak: mbedtls_aes_soft_context,
+}
+impl Default for mbedtls_aes_soft_xts_context {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+unsafe extern "C" {
+    /// \brief          This function initializes the specified AES context.
+    ///
+    ///                 It must be the first API called before using
+    ///                 the context.
+    ///
+    /// \param ctx      The AES context to initialize. This must not be \c NULL.
+    pub fn mbedtls_aes_soft_init(ctx: *mut mbedtls_aes_soft_context);
+}
+unsafe extern "C" {
+    /// \brief          This function releases and clears the specified AES context.
+    ///
+    /// \param ctx      The AES context to clear.
+    ///                 If this is \c NULL, this function does nothing.
+    ///                 Otherwise, the context must have been at least initialized.
+    pub fn mbedtls_aes_soft_free(ctx: *mut mbedtls_aes_soft_context);
+}
+unsafe extern "C" {
+    /// \brief          This function initializes the specified AES XTS context.
+    ///
+    ///                 It must be the first API called before using
+    ///                 the context.
+    ///
+    /// \param ctx      The AES XTS context to initialize. This must not be \c NULL.
+    pub fn mbedtls_aes_soft_xts_init(ctx: *mut mbedtls_aes_soft_xts_context);
+}
+unsafe extern "C" {
+    /// \brief          This function releases and clears the specified AES XTS context.
+    ///
+    /// \param ctx      The AES XTS context to clear.
+    ///                 If this is \c NULL, this function does nothing.
+    ///                 Otherwise, the context must have been at least initialized.
+    pub fn mbedtls_aes_soft_xts_free(ctx: *mut mbedtls_aes_soft_xts_context);
+}
+unsafe extern "C" {
+    /// \brief          This function sets the encryption key.
+    ///
+    /// \param ctx      The AES context to which the key should be bound.
+    ///                 It must be initialized.
+    /// \param key      The encryption key.
+    ///                 This must be a readable buffer of size \p keybits bits.
+    /// \param keybits  The size of data passed in bits. Valid options are:
+    ///                 <ul><li>128 bits</li>
+    ///                 <li>192 bits</li>
+    ///                 <li>256 bits</li></ul>
+    ///
+    /// \return         \c 0 on success.
+    /// \return         #MBEDTLS_ERR_AES_INVALID_KEY_LENGTH on failure.
+    pub fn mbedtls_aes_soft_setkey_enc(
+        ctx: *mut mbedtls_aes_soft_context,
+        key: *const ::core::ffi::c_uchar,
+        keybits: ::core::ffi::c_uint,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          This function sets the decryption key.
+    ///
+    /// \param ctx      The AES context to which the key should be bound.
+    ///                 It must be initialized.
+    /// \param key      The decryption key.
+    ///                 This must be a readable buffer of size \p keybits bits.
+    /// \param keybits  The size of data passed. Valid options are:
+    ///                 <ul><li>128 bits</li>
+    ///                 <li>192 bits</li>
+    ///                 <li>256 bits</li></ul>
+    ///
+    /// \return         \c 0 on success.
+    /// \return         #MBEDTLS_ERR_AES_INVALID_KEY_LENGTH on failure.
+    pub fn mbedtls_aes_soft_setkey_dec(
+        ctx: *mut mbedtls_aes_soft_context,
+        key: *const ::core::ffi::c_uchar,
+        keybits: ::core::ffi::c_uint,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          This function prepares an XTS context for encryption and
+    ///                 sets the encryption key.
+    ///
+    /// \param ctx      The AES XTS context to which the key should be bound.
+    ///                 It must be initialized.
+    /// \param key      The encryption key. This is comprised of the XTS key1
+    ///                 concatenated with the XTS key2.
+    ///                 This must be a readable buffer of size \p keybits bits.
+    /// \param keybits  The size of \p key passed in bits. Valid options are:
+    ///                 <ul><li>256 bits (each of key1 and key2 is a 128-bit key)</li>
+    ///                 <li>512 bits (each of key1 and key2 is a 256-bit key)</li></ul>
+    ///
+    /// \return         \c 0 on success.
+    /// \return         #MBEDTLS_ERR_AES_INVALID_KEY_LENGTH on failure.
+    pub fn mbedtls_aes_soft_xts_setkey_enc(
+        ctx: *mut mbedtls_aes_soft_xts_context,
+        key: *const ::core::ffi::c_uchar,
+        keybits: ::core::ffi::c_uint,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          This function prepares an XTS context for decryption and
+    ///                 sets the decryption key.
+    ///
+    /// \param ctx      The AES XTS context to which the key should be bound.
+    ///                 It must be initialized.
+    /// \param key      The decryption key. This is comprised of the XTS key1
+    ///                 concatenated with the XTS key2.
+    ///                 This must be a readable buffer of size \p keybits bits.
+    /// \param keybits  The size of \p key passed in bits. Valid options are:
+    ///                 <ul><li>256 bits (each of key1 and key2 is a 128-bit key)</li>
+    ///                 <li>512 bits (each of key1 and key2 is a 256-bit key)</li></ul>
+    ///
+    /// \return         \c 0 on success.
+    /// \return         #MBEDTLS_ERR_AES_INVALID_KEY_LENGTH on failure.
+    pub fn mbedtls_aes_soft_xts_setkey_dec(
+        ctx: *mut mbedtls_aes_soft_xts_context,
+        key: *const ::core::ffi::c_uchar,
+        keybits: ::core::ffi::c_uint,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief          This function performs an AES single-block encryption or
+    ///                 decryption operation.
+    ///
+    ///                 It performs the operation defined in the \p mode parameter
+    ///                 (encrypt or decrypt), on the input data buffer defined in
+    ///                 the \p input parameter.
+    ///
+    ///                 mbedtls_aes_init(), and either mbedtls_aes_setkey_enc() or
+    ///                 mbedtls_aes_setkey_dec() must be called before the first
+    ///                 call to this API with the same context.
+    ///
+    /// \param ctx      The AES context to use for encryption or decryption.
+    ///                 It must be initialized and bound to a key.
+    /// \param mode     The AES operation: #MBEDTLS_AES_ENCRYPT or
+    ///                 #MBEDTLS_AES_DECRYPT.
+    /// \param input    The buffer holding the input data.
+    ///                 It must be readable and at least \c 16 Bytes long.
+    /// \param output   The buffer where the output data will be written.
+    ///                 It must be writeable and at least \c 16 Bytes long.
+    ///
+    /// \return         \c 0 on success.
+    pub fn mbedtls_aes_soft_crypt_ecb(
+        ctx: *mut mbedtls_aes_soft_context,
+        mode: ::core::ffi::c_int,
+        input: *const ::core::ffi::c_uchar,
+        output: *mut ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief  This function performs an AES-CBC encryption or decryption operation
+    ///         on full blocks.
+    ///
+    ///         It performs the operation defined in the \p mode
+    ///         parameter (encrypt/decrypt), on the input data buffer defined in
+    ///         the \p input parameter.
+    ///
+    ///         It can be called as many times as needed, until all the input
+    ///         data is processed. mbedtls_aes_init(), and either
+    ///         mbedtls_aes_setkey_enc() or mbedtls_aes_setkey_dec() must be called
+    ///         before the first call to this API with the same context.
+    ///
+    /// \note   This function operates on full blocks, that is, the input size
+    ///         must be a multiple of the AES block size of \c 16 Bytes.
+    ///
+    /// \note   Upon exit, the content of the IV is updated so that you can
+    ///         call the same function again on the next
+    ///         block(s) of data and get the same result as if it was
+    ///         encrypted in one call. This allows a "streaming" usage.
+    ///         If you need to retain the contents of the IV, you should
+    ///         either save it manually or use the cipher module instead.
+    ///
+    ///
+    /// \param ctx      The AES context to use for encryption or decryption.
+    ///                 It must be initialized and bound to a key.
+    /// \param mode     The AES operation: #MBEDTLS_AES_ENCRYPT or
+    ///                 #MBEDTLS_AES_DECRYPT.
+    /// \param length   The length of the input data in Bytes. This must be a
+    ///                 multiple of the block size (\c 16 Bytes).
+    /// \param iv       Initialization vector (updated after use).
+    ///                 It must be a readable and writeable buffer of \c 16 Bytes.
+    /// \param input    The buffer holding the input data.
+    ///                 It must be readable and of size \p length Bytes.
+    /// \param output   The buffer holding the output data.
+    ///                 It must be writeable and of size \p length Bytes.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         #MBEDTLS_ERR_AES_INVALID_INPUT_LENGTH
+    ///                 on failure.
+    pub fn mbedtls_aes_soft_crypt_cbc(
+        ctx: *mut mbedtls_aes_soft_context,
+        mode: ::core::ffi::c_int,
+        length: usize,
+        iv: *mut ::core::ffi::c_uchar,
+        input: *const ::core::ffi::c_uchar,
+        output: *mut ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief      This function performs an AES-XTS encryption or decryption
+    ///             operation for an entire XTS data unit.
+    ///
+    ///             AES-XTS encrypts or decrypts blocks based on their location as
+    ///             defined by a data unit number. The data unit number must be
+    ///             provided by \p data_unit.
+    ///
+    ///             NIST SP 800-38E limits the maximum size of a data unit to 2^20
+    ///             AES blocks. If the data unit is larger than this, this function
+    ///             returns #MBEDTLS_ERR_AES_INVALID_INPUT_LENGTH.
+    ///
+    /// \param ctx          The AES XTS context to use for AES XTS operations.
+    ///                     It must be initialized and bound to a key.
+    /// \param mode         The AES operation: #MBEDTLS_AES_ENCRYPT or
+    ///                     #MBEDTLS_AES_DECRYPT.
+    /// \param length       The length of a data unit in Bytes. This can be any
+    ///                     length between 16 bytes and 2^24 bytes inclusive
+    ///                     (between 1 and 2^20 block cipher blocks).
+    /// \param data_unit    The address of the data unit encoded as an array of 16
+    ///                     bytes in little-endian format. For disk encryption, this
+    ///                     is typically the index of the block device sector that
+    ///                     contains the data.
+    /// \param input        The buffer holding the input data (which is an entire
+    ///                     data unit). This function reads \p length Bytes from \p
+    ///                     input.
+    /// \param output       The buffer holding the output data (which is an entire
+    ///                     data unit). This function writes \p length Bytes to \p
+    ///                     output.
+    ///
+    /// \return             \c 0 on success.
+    /// \return             #MBEDTLS_ERR_AES_INVALID_INPUT_LENGTH if \p length is
+    ///                     smaller than an AES block in size (16 Bytes) or if \p
+    ///                     length is larger than 2^20 blocks (16 MiB).
+    pub fn mbedtls_aes_soft_crypt_xts(
+        ctx: *mut mbedtls_aes_soft_xts_context,
+        mode: ::core::ffi::c_int,
+        length: usize,
+        data_unit: *const ::core::ffi::c_uchar,
+        input: *const ::core::ffi::c_uchar,
+        output: *mut ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief This function performs an AES-CFB128 encryption or decryption
+    ///        operation.
+    ///
+    ///        It performs the operation defined in the \p mode
+    ///        parameter (encrypt or decrypt), on the input data buffer
+    ///        defined in the \p input parameter.
+    ///
+    ///        For CFB, you must set up the context with mbedtls_aes_setkey_enc(),
+    ///        regardless of whether you are performing an encryption or decryption
+    ///        operation, that is, regardless of the \p mode parameter. This is
+    ///        because CFB mode uses the same key schedule for encryption and
+    ///        decryption.
+    ///
+    /// \note  Upon exit, the content of the IV is updated so that you can
+    ///        call the same function again on the next
+    ///        block(s) of data and get the same result as if it was
+    ///        encrypted in one call. This allows a "streaming" usage.
+    ///        If you need to retain the contents of the
+    ///        IV, you must either save it manually or use the cipher
+    ///        module instead.
+    ///
+    ///
+    /// \param ctx      The AES context to use for encryption or decryption.
+    ///                 It must be initialized and bound to a key.
+    /// \param mode     The AES operation: #MBEDTLS_AES_ENCRYPT or
+    ///                 #MBEDTLS_AES_DECRYPT.
+    /// \param length   The length of the input data in Bytes.
+    /// \param iv_off   The offset in IV (updated after use).
+    ///                 It must point to a valid \c size_t.
+    /// \param iv       The initialization vector (updated after use).
+    ///                 It must be a readable and writeable buffer of \c 16 Bytes.
+    /// \param input    The buffer holding the input data.
+    ///                 It must be readable and of size \p length Bytes.
+    /// \param output   The buffer holding the output data.
+    ///                 It must be writeable and of size \p length Bytes.
+    ///
+    /// \return         \c 0 on success.
+    pub fn mbedtls_aes_soft_crypt_cfb128(
+        ctx: *mut mbedtls_aes_soft_context,
+        mode: ::core::ffi::c_int,
+        length: usize,
+        iv_off: *mut usize,
+        iv: *mut ::core::ffi::c_uchar,
+        input: *const ::core::ffi::c_uchar,
+        output: *mut ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief This function performs an AES-CFB8 encryption or decryption
+    ///        operation.
+    ///
+    ///        It performs the operation defined in the \p mode
+    ///        parameter (encrypt/decrypt), on the input data buffer defined
+    ///        in the \p input parameter.
+    ///
+    ///        Due to the nature of CFB, you must use the same key schedule for
+    ///        both encryption and decryption operations. Therefore, you must
+    ///        use the context initialized with mbedtls_aes_setkey_enc() for
+    ///        both #MBEDTLS_AES_ENCRYPT and #MBEDTLS_AES_DECRYPT.
+    ///
+    /// \note  Upon exit, the content of the IV is updated so that you can
+    ///        call the same function again on the next
+    ///        block(s) of data and get the same result as if it was
+    ///        encrypted in one call. This allows a "streaming" usage.
+    ///        If you need to retain the contents of the
+    ///        IV, you should either save it manually or use the cipher
+    ///        module instead.
+    ///
+    ///
+    /// \param ctx      The AES context to use for encryption or decryption.
+    ///                 It must be initialized and bound to a key.
+    /// \param mode     The AES operation: #MBEDTLS_AES_ENCRYPT or
+    ///                 #MBEDTLS_AES_DECRYPT
+    /// \param length   The length of the input data.
+    /// \param iv       The initialization vector (updated after use).
+    ///                 It must be a readable and writeable buffer of \c 16 Bytes.
+    /// \param input    The buffer holding the input data.
+    ///                 It must be readable and of size \p length Bytes.
+    /// \param output   The buffer holding the output data.
+    ///                 It must be writeable and of size \p length Bytes.
+    ///
+    /// \return         \c 0 on success.
+    pub fn mbedtls_aes_soft_crypt_cfb8(
+        ctx: *mut mbedtls_aes_soft_context,
+        mode: ::core::ffi::c_int,
+        length: usize,
+        iv: *mut ::core::ffi::c_uchar,
+        input: *const ::core::ffi::c_uchar,
+        output: *mut ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief       This function performs an AES-OFB (Output Feedback Mode)
+    ///              encryption or decryption operation.
+    ///
+    ///              For OFB, you must set up the context with
+    ///              mbedtls_aes_setkey_enc(), regardless of whether you are
+    ///              performing an encryption or decryption operation. This is
+    ///              because OFB mode uses the same key schedule for encryption and
+    ///              decryption.
+    ///
+    ///              The OFB operation is identical for encryption or decryption,
+    ///              therefore no operation mode needs to be specified.
+    ///
+    /// \note        Upon exit, the content of iv, the Initialisation Vector, is
+    ///              updated so that you can call the same function again on the next
+    ///              block(s) of data and get the same result as if it was encrypted
+    ///              in one call. This allows a "streaming" usage, by initialising
+    ///              iv_off to 0 before the first call, and preserving its value
+    ///              between calls.
+    ///
+    ///              For non-streaming use, the iv should be initialised on each call
+    ///              to a unique value, and iv_off set to 0 on each call.
+    ///
+    ///              If you need to retain the contents of the initialisation vector,
+    ///              you must either save it manually or use the cipher module
+    ///              instead.
+    ///
+    /// \warning     For the OFB mode, the initialisation vector must be unique
+    ///              every encryption operation. Reuse of an initialisation vector
+    ///              will compromise security.
+    ///
+    /// \param ctx      The AES context to use for encryption or decryption.
+    ///                 It must be initialized and bound to a key.
+    /// \param length   The length of the input data.
+    /// \param iv_off   The offset in IV (updated after use).
+    ///                 It must point to a valid \c size_t.
+    /// \param iv       The initialization vector (updated after use).
+    ///                 It must be a readable and writeable buffer of \c 16 Bytes.
+    /// \param input    The buffer holding the input data.
+    ///                 It must be readable and of size \p length Bytes.
+    /// \param output   The buffer holding the output data.
+    ///                 It must be writeable and of size \p length Bytes.
+    ///
+    /// \return         \c 0 on success.
+    pub fn mbedtls_aes_soft_crypt_ofb(
+        ctx: *mut mbedtls_aes_soft_context,
+        length: usize,
+        iv_off: *mut usize,
+        iv: *mut ::core::ffi::c_uchar,
+        input: *const ::core::ffi::c_uchar,
+        output: *mut ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief      This function performs an AES-CTR encryption or decryption
+    ///             operation.
+    ///
+    ///             Due to the nature of CTR, you must use the same key schedule
+    ///             for both encryption and decryption operations. Therefore, you
+    ///             must use the context initialized with mbedtls_aes_setkey_enc()
+    ///             for both #MBEDTLS_AES_ENCRYPT and #MBEDTLS_AES_DECRYPT.
+    ///
+    /// \warning    You must never reuse a nonce value with the same key. Doing so
+    ///             would void the encryption for the two messages encrypted with
+    ///             the same nonce and key.
+    ///
+    ///             There are two common strategies for managing nonces with CTR:
+    ///
+    ///             1. You can handle everything as a single message processed over
+    ///             successive calls to this function. In that case, you want to
+    ///             set \p nonce_counter and \p nc_off to 0 for the first call, and
+    ///             then preserve the values of \p nonce_counter, \p nc_off and \p
+    ///             stream_block across calls to this function as they will be
+    ///             updated by this function.
+    ///
+    ///             With this strategy, you must not encrypt more than 2**128
+    ///             blocks of data with the same key.
+    ///
+    ///             2. You can encrypt separate messages by dividing the \p
+    ///             nonce_counter buffer in two areas: the first one used for a
+    ///             per-message nonce, handled by yourself, and the second one
+    ///             updated by this function internally.
+    ///
+    ///             For example, you might reserve the first 12 bytes for the
+    ///             per-message nonce, and the last 4 bytes for internal use. In that
+    ///             case, before calling this function on a new message you need to
+    ///             set the first 12 bytes of \p nonce_counter to your chosen nonce
+    ///             value, the last 4 to 0, and \p nc_off to 0 (which will cause \p
+    ///             stream_block to be ignored). That way, you can encrypt at most
+    ///             2**96 messages of up to 2**32 blocks each with the same key.
+    ///
+    ///             The per-message nonce (or information sufficient to reconstruct
+    ///             it) needs to be communicated with the ciphertext and must be unique.
+    ///             The recommended way to ensure uniqueness is to use a message
+    ///             counter. An alternative is to generate random nonces, but this
+    ///             limits the number of messages that can be securely encrypted:
+    ///             for example, with 96-bit random nonces, you should not encrypt
+    ///             more than 2**32 messages with the same key.
+    ///
+    ///             Note that for both strategies, sizes are measured in blocks and
+    ///             that an AES block is 16 bytes.
+    ///
+    /// \warning    Upon return, \p stream_block contains sensitive data. Its
+    ///             content must not be written to insecure storage and should be
+    ///             securely discarded as soon as it's no longer needed.
+    ///
+    /// \param ctx              The AES context to use for encryption or decryption.
+    ///                         It must be initialized and bound to a key.
+    /// \param length           The length of the input data.
+    /// \param nc_off           The offset in the current \p stream_block, for
+    ///                         resuming within the current cipher stream. The
+    ///                         offset pointer should be 0 at the start of a stream.
+    ///                         It must point to a valid \c size_t.
+    /// \param nonce_counter    The 128-bit nonce and counter.
+    ///                         It must be a readable-writeable buffer of \c 16 Bytes.
+    /// \param stream_block     The saved stream block for resuming. This is
+    ///                         overwritten by the function.
+    ///                         It must be a readable-writeable buffer of \c 16 Bytes.
+    /// \param input            The buffer holding the input data.
+    ///                         It must be readable and of size \p length Bytes.
+    /// \param output           The buffer holding the output data.
+    ///                         It must be writeable and of size \p length Bytes.
+    ///
+    /// \return                 \c 0 on success.
+    pub fn mbedtls_aes_soft_crypt_ctr(
+        ctx: *mut mbedtls_aes_soft_context,
+        length: usize,
+        nc_off: *mut usize,
+        nonce_counter: *mut ::core::ffi::c_uchar,
+        stream_block: *mut ::core::ffi::c_uchar,
+        input: *const ::core::ffi::c_uchar,
+        output: *mut ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           Internal AES block encryption function. This is only
+    ///                  exposed to allow overriding it using
+    ///                  \c MBEDTLS_AES_ENCRYPT_ALT.
+    ///
+    /// \param ctx       The AES context to use for encryption.
+    /// \param input     The plaintext block.
+    /// \param output    The output (ciphertext) block.
+    ///
+    /// \return          \c 0 on success.
+    pub fn mbedtls_internal_aes_soft_encrypt(
+        ctx: *mut mbedtls_aes_soft_context,
+        input: *const ::core::ffi::c_uchar,
+        output: *mut ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    /// \brief           Internal AES block decryption function. This is only
+    ///                  exposed to allow overriding it using see
+    ///                  \c MBEDTLS_AES_DECRYPT_ALT.
+    ///
+    /// \param ctx       The AES context to use for decryption.
+    /// \param input     The ciphertext block.
+    /// \param output    The output (plaintext) block.
+    ///
+    /// \return          \c 0 on success.
+    pub fn mbedtls_internal_aes_soft_decrypt(
+        ctx: *mut mbedtls_aes_soft_context,
+        input: *const ::core::ffi::c_uchar,
+        output: *mut ::core::ffi::c_uchar,
+    ) -> ::core::ffi::c_int;
+}
+unsafe extern "C" {
+    #[must_use]
+    /// \brief          Checkup routine.
+    ///
+    /// \return         \c 0 on success.
+    /// \return         \c 1 on failure.
+    pub fn mbedtls_aes_soft_self_test(verbose: ::core::ffi::c_int) -> ::core::ffi::c_int;
+}

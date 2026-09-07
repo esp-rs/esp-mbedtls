@@ -17,7 +17,7 @@ impl<T: Deref> MbedtlsSha384 for T where T::Target: MbedtlsSha384 {}
 ///   the behavior of MbedTLS. The caller MUST call this hook BEFORE
 ///   any MbedTLS functions that use SHA-512 or SHA-384, and ensure that the
 ///   `sha512` or `sha384` implementation is valid for the duration of its use.
-#[cfg(not(feature = "nohook-sha512"))]
+#[cfg(all(feature = "alg-sha512", not(feature = "nohook-sha512")))]
 pub unsafe fn hook_sha512(sha512: Option<&'static (dyn MbedtlsSha512 + Send + Sync)>) {
     critical_section::with(|cs| {
         #[allow(clippy::if_same_then_else)]
@@ -38,7 +38,7 @@ pub unsafe fn hook_sha512(sha512: Option<&'static (dyn MbedtlsSha512 + Send + Sy
 ///   the behavior of MbedTLS. The caller MUST call this hook BEFORE
 ///   any MbedTLS functions that use SHA-384, and ensure that the
 ///   `sha384` implementation is valid for the duration of its use.
-#[cfg(not(feature = "nohook-sha512"))]
+#[cfg(all(feature = "alg-sha512", not(feature = "nohook-sha512")))]
 pub unsafe fn hook_sha384(sha384: Option<&'static (dyn MbedtlsSha384 + Send + Sync)>) {
     critical_section::with(|cs| {
         #[allow(clippy::if_same_then_else)]
@@ -52,7 +52,10 @@ pub unsafe fn hook_sha384(sha384: Option<&'static (dyn MbedtlsSha384 + Send + Sy
     });
 }
 
-#[cfg(not(feature = "nohook-sha512"))]
+#[cfg(all(feature = "alg-sha512", not(feature = "nohook-sha512")))]
+pub use alt::{SoftSha384, SoftSha512};
+
+#[cfg(all(feature = "alg-sha512", not(feature = "nohook-sha512")))]
 mod alt {
     use core::cell::Cell;
     use core::ffi::{c_int, c_uchar};
@@ -61,41 +64,65 @@ mod alt {
 
     use crate::hook::digest::{
         digest_clone, digest_finish, digest_free, digest_init, digest_starts, digest_update,
-        MbedtlsDigest, RustCryptoDigest,
+        soft_digest, MbedtlsDigest,
     };
     use crate::hook::{RawWorkArea, WorkAreaMemory};
-    use crate::mbedtls_sha512_context;
+    use crate::{
+        mbedtls_sha512_context, mbedtls_sha512_soft_clone, mbedtls_sha512_soft_context,
+        mbedtls_sha512_soft_finish, mbedtls_sha512_soft_free, mbedtls_sha512_soft_init,
+        mbedtls_sha512_soft_starts, mbedtls_sha512_soft_update,
+    };
 
     use super::{MbedtlsSha384, MbedtlsSha512};
 
-    type RustCryptoSha512 = RustCryptoDigest<sha2::Sha512>;
-    type RustCryptoSha384 = RustCryptoDigest<sha2::Sha384>;
+    soft_digest! {
+        /// The MbedTLS software SHA-512 implementation; the fallback when no
+        /// custom implementation is hooked
+        SoftSha512: mbedtls_sha512_soft_context, output_size = 64,
+        init = mbedtls_sha512_soft_init,
+        free = mbedtls_sha512_soft_free,
+        clone = mbedtls_sha512_soft_clone,
+        starts = |ctx| unsafe { mbedtls_sha512_soft_starts(ctx, 0) },
+        update = mbedtls_sha512_soft_update,
+        finish = mbedtls_sha512_soft_finish,
+    }
 
-    impl MbedtlsSha512 for RustCryptoSha512 {}
-    impl MbedtlsSha384 for RustCryptoSha384 {}
+    soft_digest! {
+        /// The MbedTLS software SHA-384 implementation; the fallback when no
+        /// custom implementation is hooked
+        SoftSha384: mbedtls_sha512_soft_context, output_size = 48,
+        init = mbedtls_sha512_soft_init,
+        free = mbedtls_sha512_soft_free,
+        clone = mbedtls_sha512_soft_clone,
+        starts = |ctx| unsafe { mbedtls_sha512_soft_starts(ctx, 1) },
+        update = mbedtls_sha512_soft_update,
+        finish = mbedtls_sha512_soft_finish,
+    }
+
+    impl MbedtlsSha512 for SoftSha512 {}
+    impl MbedtlsSha384 for SoftSha384 {}
 
     // The work area must be able to host the fallback's state at *any* runtime
     // offset (up to 15 bytes of emplacement waste at under-aligned opaque storage — see `sha256.rs` for the
     // full rationale).
     // `core::assert!`, not the crate `assert!` (whose `defmt` variant is not const-callable)
     const _: () = core::assert!(
-        core::mem::size_of::<Option<sha2::Sha512>>() + 16
+        core::mem::size_of::<mbedtls_sha512_soft_context>() + 16
             <= crate::MBEDTLS_SHA512_ALT_WORK_AREA_SIZE as usize,
-        "The RustCrypto SHA-512 state does not fit the SHA-512 hook work area"
+        "The MbedTLS software SHA-512 context does not fit the SHA-512 hook work area"
     );
     const _: () = core::assert!(
-        core::mem::size_of::<Option<sha2::Sha384>>() + 16
-            <= crate::MBEDTLS_SHA512_ALT_WORK_AREA_SIZE as usize,
-        "The RustCrypto SHA-384 state does not fit the SHA-512 hook work area"
+        core::mem::align_of::<mbedtls_sha512_soft_context>() <= 16,
+        "The MbedTLS software SHA-512 context is over-aligned for the work area"
     );
 
     pub(crate) static SHA512: Mutex<Cell<Option<&(dyn MbedtlsSha512 + Send + Sync)>>> =
         Mutex::new(Cell::new(None));
-    static SHA512_RUST_CRYPTO: RustCryptoSha512 = RustCryptoSha512::new();
+    static SHA512_SOFT: SoftSha512 = SoftSha512::new();
 
     pub(crate) static SHA384: Mutex<Cell<Option<&(dyn MbedtlsSha384 + Send + Sync)>>> =
         Mutex::new(Cell::new(None));
-    static SHA384_RUST_CRYPTO: RustCryptoSha384 = RustCryptoSha384::new();
+    static SHA384_SOFT: SoftSha384 = SoftSha384::new();
 
     /// Read `is384` via raw field projection — `ctx` may be under-aligned
     /// (see `RawWorkArea`), so no reference to the struct may be formed; the
@@ -116,12 +143,12 @@ mod alt {
             if let Some(sha) = critical_section::with(|cs| SHA384.borrow(cs).get()) {
                 sha
             } else {
-                &SHA384_RUST_CRYPTO
+                &SHA384_SOFT
             }
         } else if let Some(sha) = critical_section::with(|cs| SHA512.borrow(cs).get()) {
             sha
         } else {
-            &SHA512_RUST_CRYPTO
+            &SHA512_SOFT
         }
     }
 

@@ -1,6 +1,6 @@
 //! Example of a client connection to a server, using the blocking API.
 //!
-//! This example connects to `https://httpbin.org/ip` and then to `https://certauth.cryptomix.com/json/` (mTLS)
+//! This example connects to `https://httpbin.org/ip` and then to `https://client.badssl.com/` (mTLS)
 //! and performs a simple HTTPS 1.0 GET request to each.
 
 use std::net::{TcpStream, ToSocketAddrs};
@@ -33,7 +33,7 @@ fn main() {
 
     for (index, (server_name_cstr, server_path, mtls)) in [
         (c"httpbin.org", "/ip", false),
-        (c"certauth.cryptomix.com", "/json/", true),
+        (c"client.badssl.com", "/", true),
     ]
     .into_iter()
     .enumerate()

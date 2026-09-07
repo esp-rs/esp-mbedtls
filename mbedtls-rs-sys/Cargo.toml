@@ -289,13 +289,6 @@ platform-zeroize-alt = []
 defmt = { workspace = true, optional = true }
 log = { workspace = true, default-features = false, optional = true }
 enumset = { workspace = true, default-features = false }
-# For hooking
-digest = { workspace = true, default-features = false }
-sha1 = { workspace = true, default-features = false }
-# For some reason, `soft` results in enormous slowdowns on xtensa and riscv32
-sha2 = { workspace = true, default-features = false, features = ["force-soft-compact"] }
-aes = { workspace = true, default-features = false }
-cipher = { workspace = true, default-features = false }
 time = { workspace = true, default-features = false, optional = true }
 critical-section = { workspace = true }
 

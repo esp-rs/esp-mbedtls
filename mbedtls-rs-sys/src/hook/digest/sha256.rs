@@ -17,7 +17,7 @@ impl<T: Deref> MbedtlsSha224 for T where T::Target: MbedtlsSha224 {}
 ///   the behavior of MbedTLS. The caller MUST call this hook BEFORE
 ///   any MbedTLS functions that use SHA-256 or SHA-224, and ensure that the
 ///   `sha256` or `sha224` implementation is valid for the duration of its use.
-#[cfg(not(feature = "nohook-sha256"))]
+#[cfg(all(feature = "alg-sha256", not(feature = "nohook-sha256")))]
 pub unsafe fn hook_sha256(sha256: Option<&'static (dyn MbedtlsSha256 + Send + Sync)>) {
     critical_section::with(|cs| {
         #[allow(clippy::if_same_then_else)]
@@ -38,7 +38,7 @@ pub unsafe fn hook_sha256(sha256: Option<&'static (dyn MbedtlsSha256 + Send + Sy
 ///   the behavior of MbedTLS. The caller MUST call this hook BEFORE
 ///   any MbedTLS functions that use SHA-224, and ensure that the
 ///   `sha224` implementation is valid for the duration of its use.
-#[cfg(not(feature = "nohook-sha256"))]
+#[cfg(all(feature = "alg-sha256", not(feature = "nohook-sha256")))]
 pub unsafe fn hook_sha224(sha224: Option<&'static (dyn MbedtlsSha224 + Send + Sync)>) {
     critical_section::with(|cs| {
         #[allow(clippy::if_same_then_else)]
@@ -52,7 +52,10 @@ pub unsafe fn hook_sha224(sha224: Option<&'static (dyn MbedtlsSha224 + Send + Sy
     });
 }
 
-#[cfg(not(feature = "nohook-sha256"))]
+#[cfg(all(feature = "alg-sha256", not(feature = "nohook-sha256")))]
+pub use alt::{SoftSha224, SoftSha256};
+
+#[cfg(all(feature = "alg-sha256", not(feature = "nohook-sha256")))]
 mod alt {
     use core::cell::Cell;
     use core::ffi::{c_int, c_uchar};
@@ -61,18 +64,43 @@ mod alt {
 
     use crate::hook::digest::{
         digest_clone, digest_finish, digest_free, digest_init, digest_starts, digest_update,
-        MbedtlsDigest, RustCryptoDigest,
+        soft_digest, MbedtlsDigest,
     };
     use crate::hook::{RawWorkArea, WorkAreaMemory};
-    use crate::mbedtls_sha256_context;
+    use crate::{
+        mbedtls_sha256_context, mbedtls_sha256_soft_clone, mbedtls_sha256_soft_context,
+        mbedtls_sha256_soft_finish, mbedtls_sha256_soft_free, mbedtls_sha256_soft_init,
+        mbedtls_sha256_soft_starts, mbedtls_sha256_soft_update,
+    };
 
     use super::{MbedtlsSha224, MbedtlsSha256};
 
-    type RustCryptoSha256 = RustCryptoDigest<sha2::Sha256>;
-    type RustCryptoSha224 = RustCryptoDigest<sha2::Sha224>;
+    soft_digest! {
+        /// The MbedTLS software SHA-256 implementation; the fallback when no
+        /// custom implementation is hooked
+        SoftSha256: mbedtls_sha256_soft_context, output_size = 32,
+        init = mbedtls_sha256_soft_init,
+        free = mbedtls_sha256_soft_free,
+        clone = mbedtls_sha256_soft_clone,
+        starts = |ctx| unsafe { mbedtls_sha256_soft_starts(ctx, 0) },
+        update = mbedtls_sha256_soft_update,
+        finish = mbedtls_sha256_soft_finish,
+    }
 
-    impl MbedtlsSha256 for RustCryptoSha256 {}
-    impl MbedtlsSha224 for RustCryptoSha224 {}
+    soft_digest! {
+        /// The MbedTLS software SHA-224 implementation; the fallback when no
+        /// custom implementation is hooked
+        SoftSha224: mbedtls_sha256_soft_context, output_size = 28,
+        init = mbedtls_sha256_soft_init,
+        free = mbedtls_sha256_soft_free,
+        clone = mbedtls_sha256_soft_clone,
+        starts = |ctx| unsafe { mbedtls_sha256_soft_starts(ctx, 1) },
+        update = mbedtls_sha256_soft_update,
+        finish = mbedtls_sha256_soft_finish,
+    }
+
+    impl MbedtlsSha256 for SoftSha256 {}
+    impl MbedtlsSha224 for SoftSha224 {}
 
     // The work area must be able to host the fallback's state at *any* runtime
     // offset: opaque external storage may under-align the context (see the
@@ -83,23 +111,22 @@ mod alt {
     // `WorkArea::cast_mut_maybe`.
     // `core::assert!`, not the crate `assert!` (whose `defmt` variant is not const-callable)
     const _: () = core::assert!(
-        core::mem::size_of::<Option<sha2::Sha256>>() + 16
+        core::mem::size_of::<mbedtls_sha256_soft_context>() + 16
             <= crate::MBEDTLS_SHA256_ALT_WORK_AREA_SIZE as usize,
-        "The RustCrypto SHA-256 state does not fit the SHA-256 hook work area"
+        "The MbedTLS software SHA-256 context does not fit the SHA-256 hook work area"
     );
     const _: () = core::assert!(
-        core::mem::size_of::<Option<sha2::Sha224>>() + 16
-            <= crate::MBEDTLS_SHA256_ALT_WORK_AREA_SIZE as usize,
-        "The RustCrypto SHA-224 state does not fit the SHA-256 hook work area"
+        core::mem::align_of::<mbedtls_sha256_soft_context>() <= 16,
+        "The MbedTLS software SHA-256 context is over-aligned for the work area"
     );
 
     pub(crate) static SHA256: Mutex<Cell<Option<&(dyn MbedtlsSha256 + Send + Sync)>>> =
         Mutex::new(Cell::new(None));
-    static SHA256_RUST_CRYPTO: RustCryptoSha256 = RustCryptoSha256::new();
+    static SHA256_SOFT: SoftSha256 = SoftSha256::new();
 
     pub(crate) static SHA224: Mutex<Cell<Option<&(dyn MbedtlsSha224 + Send + Sync)>>> =
         Mutex::new(Cell::new(None));
-    static SHA224_RUST_CRYPTO: RustCryptoSha224 = RustCryptoSha224::new();
+    static SHA224_SOFT: SoftSha224 = SoftSha224::new();
 
     /// Read `is224` via raw field projection — `ctx` may be under-aligned
     /// (see `RawWorkArea`), so no reference to the struct may be formed; the
@@ -120,12 +147,12 @@ mod alt {
             if let Some(sha) = critical_section::with(|cs| SHA224.borrow(cs).get()) {
                 sha
             } else {
-                &SHA224_RUST_CRYPTO
+                &SHA224_SOFT
             }
         } else if let Some(sha) = critical_section::with(|cs| SHA256.borrow(cs).get()) {
             sha
         } else {
-            &SHA256_RUST_CRYPTO
+            &SHA256_SOFT
         }
     }
 

@@ -21,7 +21,12 @@
 //! safely by construction: it hooks exactly the algorithms whose queues are
 //! being serviced, and the returned guard cannot outlive them.
 
-#[cfg(all(feature = "esp-hal", not(feature = "esp32c2")))]
+#[cfg(all(
+    feature = "esp-hal",
+    not(feature = "esp32c2"),
+    feature = "alg-aes",
+    not(feature = "nohook-aes")
+))]
 pub mod aes;
 #[cfg(feature = "esp-hal")]
 pub mod digest;
@@ -75,7 +80,12 @@ pub static SHA512: digest::EspSha512 = digest::EspSha512::new();
     not(any(feature = "esp32c2", feature = "nohook-exp-mod"))
 ))]
 pub static EXP_MOD: exp_mod::EspExpMod = exp_mod::EspExpMod::new();
-#[cfg(all(feature = "esp-hal", not(feature = "esp32c2")))]
+#[cfg(all(
+    feature = "esp-hal",
+    not(feature = "esp32c2"),
+    feature = "alg-aes",
+    not(feature = "nohook-aes")
+))]
 pub static AES: aes::EspAes = aes::EspAes::new();
 #[cfg(all(
     any(
@@ -425,20 +435,21 @@ impl EspHooks {
     unsafe fn apply(&self) {
         #[cfg(not(feature = "esp32"))]
         if self.sha {
-            #[cfg(not(feature = "nohook-sha1"))]
+            #[cfg(all(feature = "alg-sha1", not(feature = "nohook-sha1")))]
             unsafe {
                 crate::hook::digest::hook_sha1(Some(&SHA1));
             }
-            #[cfg(not(feature = "nohook-sha256"))]
+            #[cfg(all(feature = "alg-sha256", not(feature = "nohook-sha256")))]
             unsafe {
                 crate::hook::digest::hook_sha224(Some(&SHA224));
             }
-            #[cfg(not(feature = "nohook-sha256"))]
+            #[cfg(all(feature = "alg-sha256", not(feature = "nohook-sha256")))]
             unsafe {
                 crate::hook::digest::hook_sha256(Some(&SHA256));
             }
             #[cfg(all(
                 any(feature = "esp32s2", feature = "esp32s3"),
+                feature = "alg-sha512",
                 not(feature = "nohook-sha512")
             ))]
             unsafe {
@@ -446,6 +457,7 @@ impl EspHooks {
             }
             #[cfg(all(
                 any(feature = "esp32s2", feature = "esp32s3"),
+                feature = "alg-sha512",
                 not(feature = "nohook-sha512")
             ))]
             unsafe {
@@ -500,20 +512,21 @@ impl EspHooks {
     unsafe fn unapply(&self) {
         #[cfg(not(feature = "esp32"))]
         if self.sha {
-            #[cfg(not(feature = "nohook-sha1"))]
+            #[cfg(all(feature = "alg-sha1", not(feature = "nohook-sha1")))]
             unsafe {
                 crate::hook::digest::hook_sha1(None);
             }
-            #[cfg(not(feature = "nohook-sha256"))]
+            #[cfg(all(feature = "alg-sha256", not(feature = "nohook-sha256")))]
             unsafe {
                 crate::hook::digest::hook_sha224(None);
             }
-            #[cfg(not(feature = "nohook-sha256"))]
+            #[cfg(all(feature = "alg-sha256", not(feature = "nohook-sha256")))]
             unsafe {
                 crate::hook::digest::hook_sha256(None);
             }
             #[cfg(all(
                 any(feature = "esp32s2", feature = "esp32s3"),
+                feature = "alg-sha512",
                 not(feature = "nohook-sha512")
             ))]
             unsafe {
@@ -521,6 +534,7 @@ impl EspHooks {
             }
             #[cfg(all(
                 any(feature = "esp32s2", feature = "esp32s3"),
+                feature = "alg-sha512",
                 not(feature = "nohook-sha512")
             ))]
             unsafe {

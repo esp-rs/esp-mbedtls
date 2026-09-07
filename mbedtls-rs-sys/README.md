@@ -28,7 +28,7 @@ For other MCU baremetal targets as well as for STD platforms, the MbedTLS C libr
 
 Note that for the latter, you DO need to have the GCC cross-compiler flavor for your MCU pre-installed and on your $PATH, while with `clang` _ANY_ `clang` instance would do, as `clang` is natively a cross-compiler. `clang` is anyway always necessary during on-the-fly compilation for the Rust bindings' generation, so that's why it is used by default for compiling the MbedTLS C library as well.
 
-The on-the-fly compilation process also needs `cmake` and `ninja` pre-installed (for now).
+The on-the-fly compilation process also needs `cmake` (3.19 or newer) and `ninja` pre-installed (for now).
 
 ESP-IDF is also supported and in that case `mbedtls-rs-sys` becomes just an alias for `esp-idf-sys` and uses the MbedTLS library which is built-in inside ESP-IDF.
 
@@ -75,7 +75,9 @@ In essence Hooking relies on the "_ALT" functionality in MbedTLS and specificall
   - In case the unthinkable happens and the size is not large enough, it must be extended with a PR, or the Rust accel needs to manage its own storage and use the sequence of bytes in `mbedtls_sha1_context` as a pointer of sorts
   - How the Rust HW accel implementation uses the sequence of bytes is up to the implementation, but the expectation is that it would emplace its own Rust type(s) in there, following the rules of Rust for proper memory allgnment; the `WorkArea` type provided by `mbedtls-rs-sys` provides helpers for that
 - There is a dyn-compatible trait for each hook (algorithm to be HW accelerated) provided by `mbedtls-rs-sys` that the Rust developer needs to implement. For e.g. SHA-1, the trait is called `MbedtlsSha1`. User is expected to call e.g. `hook_sha1(&'static dyn MbedtlsSha1)` with their own implementation early in their program initialization code
-  - If `hook_XXX` is not called for a particular hook algorithm, MbedTLS would function just fine but would fallback to either its own software implementation of the algorithm, or to a `RustCrypto` based one provided out of the box. Sadly, for most hooks it is just not possible to fallback to the MbedTLS original C software impl, as it is **completely erased** from the source code when the "_ALT" macro functionality is used
+  - If `hook_XXX` is not called for a particular hook algorithm, MbedTLS would function just fine and would fallback to its own software implementation of the algorithm
+    - For hooks that replace a whole module (`MBEDTLS_SHA1_ALT`, `MBEDTLS_SHA256_ALT`, `MBEDTLS_SHA512_ALT`, `MBEDTLS_AES_ALT`) the "_ALT" macro functionality normally **completely erases** the original C software impl from the build. `mbedtls-rs-sys` keeps it by compiling those modules' source files with the "_ALT" switch off and every public symbol (context types included) renamed via `-D` macros to `mbedtls_*_soft_*`
+    - Hardware implementations can reuse the software fallback as an escape hatch (e.g. `SoftAesState`, used by the ESP backend for key sizes the AES peripheral does not support)
 
 Finally, when hooking stateless algorithms that do their job with a single function call (like `mbedtls_mpi_mod_exp`), there is no notion of a "work area" as the crypto algorithm does not really have an externally-observable state, in that it finishes all its operation in one go.
 

@@ -14,6 +14,10 @@ const CA_BUNDLE: &CStr = match CStr::from_bytes_with_nul(
 const CERT: &[u8] = include_bytes!("certs/cert.der");
 const KEY: &[u8] = include_bytes!("certs/key.der");
 
+// The client certificate `client.badssl.com` requires (see `certs/README.md`)
+const CLIENT_CERT: &[u8] = include_bytes!("certs/badssl-client-cert.der");
+const CLIENT_KEY: &[u8] = include_bytes!("certs/badssl-client-key.der");
+
 pub fn client_conf<'a>(mtls: bool, server_name: Option<&'a CStr>) -> ClientSessionConfig<'a> {
     let mut conf = ClientSessionConfig {
         ca_chain: Some(Certificate::new(X509::PEM(CA_BUNDLE)).unwrap()),
@@ -23,8 +27,8 @@ pub fn client_conf<'a>(mtls: bool, server_name: Option<&'a CStr>) -> ClientSessi
 
     if mtls {
         conf.creds = Some(Credentials {
-            certificate: Certificate::new_no_copy(CERT).unwrap(),
-            private_key: mbedtls_rs::PrivateKey::new(X509::DER(KEY), None).unwrap(),
+            certificate: Certificate::new_no_copy(CLIENT_CERT).unwrap(),
+            private_key: mbedtls_rs::PrivateKey::new(X509::DER(CLIENT_KEY), None).unwrap(),
         });
     }
 

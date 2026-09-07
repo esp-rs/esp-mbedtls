@@ -86,6 +86,7 @@ pub const ALWAYS_ON_TWEAKS: &[(&str, bool)] = &[
     ("DEPRECATED_REMOVED", true),
     ("PLATFORM_MEMORY", true),
     ("AES_ROM_TABLES", true),
+    ("AES_FEWER_TABLES", true),
     ("NO_PLATFORM_ENTROPY", true),
     ("PSA_CRYPTO_EXTERNAL_RNG", true),
 ];

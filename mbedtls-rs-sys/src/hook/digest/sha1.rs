@@ -16,7 +16,7 @@ impl<T: Deref> MbedtlsSha1 for T where T::Target: MbedtlsSha1 {}
 ///   the behavior of MbedTLS. The caller MUST call this hook BEFORE
 ///   any MbedTLS functions that use SHA-1, and ensure that the
 ///   `sha1` implementation is valid for the duration of its use.
-#[cfg(not(feature = "nohook-sha1"))]
+#[cfg(all(feature = "alg-sha1", not(feature = "nohook-sha1")))]
 pub unsafe fn hook_sha1(sha1: Option<&'static (dyn MbedtlsSha1 + Send + Sync)>) {
     critical_section::with(|cs| {
         #[allow(clippy::if_same_then_else)]
@@ -30,7 +30,10 @@ pub unsafe fn hook_sha1(sha1: Option<&'static (dyn MbedtlsSha1 + Send + Sync)>) 
     });
 }
 
-#[cfg(not(feature = "nohook-sha1"))]
+#[cfg(all(feature = "alg-sha1", not(feature = "nohook-sha1")))]
+pub use alt::SoftSha1;
+
+#[cfg(all(feature = "alg-sha1", not(feature = "nohook-sha1")))]
 mod alt {
     use core::cell::Cell;
     use core::ffi::{c_int, c_uchar};
@@ -39,16 +42,30 @@ mod alt {
 
     use crate::hook::digest::{
         digest_clone, digest_finish, digest_free, digest_init, digest_starts, digest_update,
-        MbedtlsDigest, RustCryptoDigest,
+        soft_digest, MbedtlsDigest,
     };
     use crate::hook::{RawWorkArea, WorkAreaMemory};
-    use crate::mbedtls_sha1_context;
+    use crate::{
+        mbedtls_sha1_context, mbedtls_sha1_soft_clone, mbedtls_sha1_soft_context,
+        mbedtls_sha1_soft_finish, mbedtls_sha1_soft_free, mbedtls_sha1_soft_init,
+        mbedtls_sha1_soft_starts, mbedtls_sha1_soft_update,
+    };
 
     use super::MbedtlsSha1;
 
-    type RustCryptoSha1 = RustCryptoDigest<sha1::Sha1>;
+    soft_digest! {
+        /// The MbedTLS software SHA-1 implementation; the fallback when no
+        /// custom implementation is hooked
+        SoftSha1: mbedtls_sha1_soft_context, output_size = 20,
+        init = mbedtls_sha1_soft_init,
+        free = mbedtls_sha1_soft_free,
+        clone = mbedtls_sha1_soft_clone,
+        starts = |ctx| unsafe { mbedtls_sha1_soft_starts(ctx) },
+        update = mbedtls_sha1_soft_update,
+        finish = mbedtls_sha1_soft_finish,
+    }
 
-    impl MbedtlsSha1 for RustCryptoSha1 {}
+    impl MbedtlsSha1 for SoftSha1 {}
 
     // The work area must be able to host the fallback's state at *any* runtime
     // offset (up to 15 bytes of emplacement waste at under-aligned opaque
@@ -56,21 +73,25 @@ mod alt {
     // full rationale).
     // `core::assert!`, not the crate `assert!` (whose `defmt` variant is not const-callable)
     const _: () = core::assert!(
-        core::mem::size_of::<Option<sha1::Sha1>>() + 16
+        core::mem::size_of::<mbedtls_sha1_soft_context>() + 16
             <= crate::MBEDTLS_SHA1_ALT_WORK_AREA_SIZE as usize,
-        "The RustCrypto SHA-1 state does not fit the SHA-1 hook work area"
+        "The MbedTLS software SHA-1 context does not fit the SHA-1 hook work area"
+    );
+    const _: () = core::assert!(
+        core::mem::align_of::<mbedtls_sha1_soft_context>() <= 16,
+        "The MbedTLS software SHA-1 context is over-aligned for the work area"
     );
 
     pub(crate) static SHA1: Mutex<Cell<Option<&(dyn MbedtlsSha1 + Send + Sync)>>> =
         Mutex::new(Cell::new(None));
-    pub(crate) static SHA1_RUST_CRYPTO: RustCryptoSha1 = RustCryptoSha1::new();
+    static SHA1_SOFT: SoftSha1 = SoftSha1::new();
 
     #[inline(always)]
     fn algo<'a>() -> &'a dyn MbedtlsDigest {
         if let Some(sha1) = critical_section::with(|cs| SHA1.borrow(cs).get()) {
             sha1
         } else {
-            &SHA1_RUST_CRYPTO
+            &SHA1_SOFT
         }
     }
 

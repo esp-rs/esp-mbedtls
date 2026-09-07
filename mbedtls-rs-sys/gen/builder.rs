@@ -59,26 +59,19 @@ impl Hook {
     /// costing up to `align_of - 1` bytes (bounded by 16, the max alignment
     /// the `WorkArea` casts support) of offset. Compile-time asserts in
     /// `src/hook/{digest/*,aes}.rs` enforce this bound for the built-in
-    /// RustCrypto fallback states.
+    /// software fallback states (the MbedTLS `mbedtls_*_soft_context`
+    /// structs, see [`SoftFallback`]), which are comfortably smaller than
+    /// these sizes; the headroom is for hardware backends' states.
     fn work_area_size(self) -> Option<usize> {
         match self {
             Self::Sha1 => Some(208),
             Self::Sha256 => Some(208),
             Self::Sha512 => Some(304),
-            // Must fit the largest hook state; the worst case is the RustCrypto
-            // fallback's fixsliced AES-256 key schedule plus the enum
-            // discriminant and alignment slack. The fixsliced representation is
-            // word-sized, so it needs 480 bytes on 32-bit targets but 960 bytes
-            // on 64-bit ones (where the runtime-dispatched AES-NI/soft state is
-            // a union of both). Compile-time-asserted against the bound state
-            // types in `src/hook/aes.rs`.
-            Self::Aes => Some(
-                if std::env::var("CARGO_CFG_TARGET_POINTER_WIDTH").as_deref() == Ok("64") {
-                    1024
-                } else {
-                    512
-                },
-            ),
+            // The largest built-in state is the software fallback's
+            // `mbedtls_aes_soft_context` (288 bytes on 64-bit targets) wrapped
+            // in an `Option` plus a direction flag; the ESP backend's state is
+            // a superset of that.
+            Self::Aes => Some(512),
             Self::ExpMod => None,
             Self::EcpMul => None,
             Self::EcpVerify => None,
@@ -141,8 +134,109 @@ impl Hook {
         }
     }
 
+    /// The software fallback of a whole-module `_ALT` hook: the MbedTLS
+    /// source file whose built-in implementation is compiled (in addition to
+    /// being replaced) under `*_soft` symbol names.
+    ///
+    /// Hooks the Espressif fork already provides a `*_soft` rename for at the
+    /// source level (`ExpMod`, `EcpMul`, `EcpVerify`) need nothing here.
+    const fn soft_fallback(self) -> Option<SoftFallback> {
+        match self {
+            Self::Sha1 => Some(SoftFallback {
+                source: "sha1.c",
+                header: "mbedtls/sha1.h",
+                tokens: &["sha1"],
+                symbols: &[
+                    "mbedtls_sha1_context",
+                    "mbedtls_sha1_init",
+                    "mbedtls_sha1_free",
+                    "mbedtls_sha1_clone",
+                    "mbedtls_sha1_starts",
+                    "mbedtls_sha1_update",
+                    "mbedtls_sha1_finish",
+                    "mbedtls_sha1",
+                    "mbedtls_internal_sha1_process",
+                    "mbedtls_sha1_self_test",
+                ],
+            }),
+            Self::Sha256 => Some(SoftFallback {
+                source: "sha256.c",
+                header: "mbedtls/sha256.h",
+                tokens: &["sha256", "sha224"],
+                symbols: &[
+                    "mbedtls_sha256_context",
+                    "mbedtls_sha256_init",
+                    "mbedtls_sha256_free",
+                    "mbedtls_sha256_clone",
+                    "mbedtls_sha256_starts",
+                    "mbedtls_sha256_update",
+                    "mbedtls_sha256_finish",
+                    "mbedtls_sha256",
+                    "mbedtls_internal_sha256_process",
+                    "mbedtls_sha256_self_test",
+                    "mbedtls_sha224_self_test",
+                ],
+            }),
+            Self::Sha512 => Some(SoftFallback {
+                source: "sha512.c",
+                header: "mbedtls/sha512.h",
+                tokens: &["sha512", "sha384"],
+                symbols: &[
+                    "mbedtls_sha512_context",
+                    "mbedtls_sha512_init",
+                    "mbedtls_sha512_free",
+                    "mbedtls_sha512_clone",
+                    "mbedtls_sha512_starts",
+                    "mbedtls_sha512_update",
+                    "mbedtls_sha512_finish",
+                    "mbedtls_sha512",
+                    "mbedtls_internal_sha512_process",
+                    "mbedtls_sha512_self_test",
+                    "mbedtls_sha384_self_test",
+                ],
+            }),
+            Self::Aes => Some(SoftFallback {
+                source: "aes.c",
+                header: "mbedtls/aes.h",
+                tokens: &["aes"],
+                symbols: &[
+                    "mbedtls_aes_context",
+                    "mbedtls_aes_xts_context",
+                    "mbedtls_aes_init",
+                    "mbedtls_aes_free",
+                    "mbedtls_aes_xts_init",
+                    "mbedtls_aes_xts_free",
+                    "mbedtls_aes_setkey_enc",
+                    "mbedtls_aes_setkey_dec",
+                    "mbedtls_aes_xts_setkey_enc",
+                    "mbedtls_aes_xts_setkey_dec",
+                    "mbedtls_internal_aes_encrypt",
+                    "mbedtls_internal_aes_decrypt",
+                    "mbedtls_aes_crypt_ecb",
+                    "mbedtls_aes_crypt_cbc",
+                    "mbedtls_aes_crypt_xts",
+                    "mbedtls_aes_crypt_cfb128",
+                    "mbedtls_aes_crypt_cfb8",
+                    "mbedtls_aes_crypt_ofb",
+                    "mbedtls_aes_crypt_ctr",
+                    "mbedtls_aes_self_test",
+                ],
+            }),
+            Self::ExpMod | Self::EcpMul | Self::EcpVerify | Self::Timer | Self::WallClock => None,
+        }
+    }
+
     fn apply_to_config(self, config: &mut MbedtlsUserConfig) {
-        config.set(self.config_ident(), true);
+        if self.soft_fallback().is_some() {
+            // Whole-module `_ALT`: on for the library, off for the one
+            // translation unit that compiles the software fallback.
+            config.set(
+                self.config_ident(),
+                Value::unless_defined(SOFT_FALLBACK_TU_GUARD),
+            );
+        } else {
+            config.set(self.config_ident(), true);
+        }
 
         if let Some(extra_idents) = self.extra_options() {
             for entries in extra_idents {
@@ -162,6 +256,210 @@ impl Hook {
             let size_ident = format!("{}_WORK_AREA_SIZE", self.config_ident());
             config.set(&size_ident, work_area_size.to_string());
         }
+    }
+}
+
+/// The macro that marks a translation unit as compiling a software fallback:
+/// the user config leaves the whole-module `_ALT` switches undefined for it
+/// (see [`Hook::apply_to_config`]), so the MbedTLS source compiles its
+/// built-in implementation and context struct rather than nothing.
+const SOFT_FALLBACK_TU_GUARD: &str = "MBEDTLS_RS_SOFT_FALLBACK_TU";
+
+/// Basename of the generated CMake snippet (see [`SoftFallback::cmake_snippet`]).
+const SOFT_FALLBACK_CMAKE: &str = "mbedtls_rs_sys_soft_fallback.cmake";
+
+/// Basename of the generated bindgen-only header (see [`SoftFallback::bindgen_header`]).
+const SOFT_FALLBACK_HEADER: &str = "mbedtls_rs_sys_soft_fallback.h";
+
+/// How a whole-module `_ALT` hook keeps MbedTLS's own software implementation
+/// available as the fallback for when no hardware implementation is hooked.
+///
+/// A whole-module `_ALT` (`MBEDTLS_SHA256_ALT`, `MBEDTLS_AES_ALT`, ...)
+/// replaces both the context struct and every function of the module, and
+/// compiles the built-in implementation out entirely. To keep it, the
+/// module's source file is compiled a second time (see
+/// [`SoftFallback::cmake_snippet`]) with the `_ALT` switch off (via
+/// [`SOFT_FALLBACK_TU_GUARD`]) and with every public symbol of the module -
+/// the context type(s) included - renamed through `-D` macros, so that the
+/// object exports e.g. `mbedtls_sha256_soft_init(mbedtls_sha256_soft_context *)`
+/// next to the Rust-provided `mbedtls_sha256_init(mbedtls_sha256_context *)`.
+/// The Rust fallback emplaces the (plain-old-data) soft context in the hook
+/// work area and forwards to the `*_soft` functions.
+///
+/// This generalizes the `*_soft` rename the Espressif fork does at the
+/// source level for `mbedtls_mpi_exp_mod` and the ECP hooks, without
+/// patching the fork: the per-source treatment is injected into the fork's
+/// CMake build through `CMAKE_PROJECT_INCLUDE`.
+///
+/// The rename is mechanical: `_soft` is inserted after the first occurrence
+/// of one of the module's name `tokens` (`mbedtls_sha256_init` ->
+/// `mbedtls_sha256_soft_init`, `mbedtls_internal_aes_encrypt` ->
+/// `mbedtls_internal_aes_soft_encrypt`). A symbol missing from `symbols`
+/// cannot fail silently: it would be defined by both the soft object and the
+/// Rust hook and the link fails with a duplicate definition.
+pub struct SoftFallback {
+    /// The module's source file in `mbedtls/library/`
+    source: &'static str,
+    /// The module's public header, as included from `include.h`
+    header: &'static str,
+    /// The module name tokens after which `_soft` is inserted
+    tokens: &'static [&'static str],
+    /// Every public symbol (functions and types) of the module
+    symbols: &'static [&'static str],
+}
+
+impl SoftFallback {
+    /// The `*_soft` name of a module symbol
+    fn soft_name(&self, symbol: &str) -> String {
+        for token in self.tokens {
+            if let Some(pos) = symbol.find(token) {
+                let (head, tail) = symbol.split_at(pos + token.len());
+                return format!("{head}_soft{tail}");
+            }
+        }
+
+        panic!(
+            "BUG: symbol {symbol} does not contain any of the module tokens {:?}",
+            self.tokens
+        );
+    }
+
+    /// The `-D` rename definitions (`sym=sym_soft`) for the module
+    fn renames(&self) -> impl Iterator<Item = String> + '_ {
+        self.symbols
+            .iter()
+            .map(|symbol| format!("{symbol}={}", self.soft_name(symbol)))
+    }
+
+    /// The name of the wrapper source that compiles the module a second time
+    /// as the software fallback.
+    fn wrapper_source(&self) -> String {
+        self.source.replace(".c", "_soft.c")
+    }
+
+    /// Writes the wrapper sources of the software fallbacks of `hooks` to
+    /// `dir`, and returns the CMake snippet that adds them to the build.
+    ///
+    /// The module's source file is compiled twice. The regular compilation
+    /// (with the `_ALT` switch on) yields what MbedTLS keeps outside of the
+    /// `_ALT` guard: the one-shot convenience function and the self-test,
+    /// both implemented on top of the (hooked) module API. The wrapper source
+    /// (a one-line `#include` of the module's source file) is compiled with
+    /// the [`SOFT_FALLBACK_TU_GUARD`] defined and the symbols renamed, and
+    /// yields the complete built-in implementation as `*_soft`.
+    ///
+    /// The snippet is injected into the MbedTLS CMake build with
+    /// `CMAKE_PROJECT_INCLUDE` (CMake >= 3.15), which runs it right after the
+    /// top-level `project()` call. The `library/` directory (and its targets)
+    /// is added later, so the edits are deferred to the end of the top-level
+    /// directory's processing with `cmake_language(DEFER CALL ...)` (CMake >=
+    /// 3.19). The wrapper's per-source `COMPILE_DEFINITIONS` are appended to
+    /// the target-wide ones, so it sees the same user config and include
+    /// directories as the rest of the library.
+    fn cmake_snippet(hooks: EnumSet<Hook>, mbedtls_path: &Path, dir: &Path) -> Result<String> {
+        std::fs::create_dir_all(dir)?;
+
+        let cmake_path = |path: &Path| path.display().to_string().replace('\\', "/");
+
+        let library_dir = mbedtls_path.join("library");
+
+        let mut out = String::new();
+
+        out.push_str("# Generated by mbedtls-rs-sys. Do not edit manually.\n");
+        out.push_str(
+            "# Compiles the built-in implementations of the hooked (`_ALT`) modules a\n\
+             # second time, under `*_soft` symbol names; see `SoftFallback` in\n\
+             # `gen/builder.rs`.\n",
+        );
+        out.push_str("function(mbedtls_rs_sys_soft_fallback)\n");
+        out.push_str("  set(CRYPTO \"${MBEDTLS_TARGET_PREFIX}mbedcrypto\")\n");
+        out.push_str(
+            "  if(NOT TARGET \"${CRYPTO}\")\n    \
+                 message(FATAL_ERROR \"mbedtls-rs-sys: no `${CRYPTO}` target to add the software fallbacks to\")\n  \
+             endif()\n",
+        );
+
+        for hook in hooks {
+            let Some(soft) = hook.soft_fallback() else {
+                continue;
+            };
+
+            let wrapper = dir.join(soft.wrapper_source());
+            std::fs::write(
+                &wrapper,
+                format!(
+                    "// Generated by mbedtls-rs-sys. Do not edit manually.\n\
+                     // The software fallback of the hooked (`_ALT`) module; see `SoftFallback` in\n\
+                     // `gen/builder.rs`. Compiled with `{SOFT_FALLBACK_TU_GUARD}` and the symbol renames.\n\
+                     #include \"{}\"\n",
+                    cmake_path(&library_dir.join(soft.source))
+                ),
+            )?;
+
+            let definitions = core::iter::once(SOFT_FALLBACK_TU_GUARD.to_string())
+                .chain(soft.renames())
+                .collect::<Vec<_>>()
+                .join(";");
+
+            out.push_str(&format!(
+                "  target_sources(\"${{CRYPTO}}\" PRIVATE \"{wrapper}\")\n  \
+                 set_source_files_properties(\"{wrapper}\" TARGET_DIRECTORY \"${{CRYPTO}}\"\n    \
+                 PROPERTIES COMPILE_DEFINITIONS \"{definitions}\")\n",
+                wrapper = cmake_path(&wrapper),
+            ));
+        }
+
+        out.push_str("endfunction()\n");
+        out.push_str("cmake_language(DEFER CALL mbedtls_rs_sys_soft_fallback)\n");
+
+        Ok(out)
+    }
+
+    /// The bindgen-only header declaring the `*_soft` symbols of `hooks`.
+    ///
+    /// Included at the end of `gen/include/include.h`. For each module it
+    /// re-includes the module's public header a second time with the `_ALT`
+    /// switch (and the header's include guard) undefined and the symbols
+    /// renamed, so that `bindgen` emits the software context struct - with
+    /// the exact layout the library was compiled with - and the `*_soft`
+    /// function declarations, next to the `_ALT` ones. This header is never
+    /// seen by the C build.
+    fn bindgen_header(hooks: EnumSet<Hook>) -> String {
+        let mut out = String::new();
+
+        out.push_str("// Generated by mbedtls-rs-sys. Do not edit manually.\n");
+        out.push_str(
+            "// bindgen-only: declares the `*_soft` software fallbacks of the hooked\n\
+             // (`_ALT`) modules; see `SoftFallback` in `gen/builder.rs`.\n",
+        );
+
+        for hook in hooks {
+            let Some(soft) = hook.soft_fallback() else {
+                continue;
+            };
+
+            let alt = format!("MBEDTLS_{}", hook.config_ident());
+            let guard = soft
+                .header
+                .trim_start_matches("mbedtls/")
+                .trim_end_matches(".h")
+                .to_uppercase();
+            let guard = format!("MBEDTLS_{guard}_H");
+
+            out.push_str(&format!(
+                "\n#if defined({alt})\n#undef {alt}\n#undef {guard}\n"
+            ));
+            for symbol in soft.symbols {
+                out.push_str(&format!("#define {symbol} {}\n", soft.soft_name(symbol)));
+            }
+            out.push_str(&format!("#include \"{}\"\n", soft.header));
+            for symbol in soft.symbols {
+                out.push_str(&format!("#undef {symbol}\n"));
+            }
+            out.push_str(&format!("#define {alt}\n#endif\n"));
+        }
+
+        out
     }
 }
 
@@ -434,10 +732,25 @@ impl MbedtlsBuilder {
         user_config.write_to_path(&user_config_path)?;
 
         let hook_header_dir = self.crate_root_path.join("gen").join("hook");
+        let mbedtls_path = self.crate_root_path.join("mbedtls");
 
         let target_dir = out_path.join("mbedtls").join("build");
         std::fs::create_dir_all(&target_dir)?;
         let target_include_dir = target_dir.join("include");
+        std::fs::create_dir_all(&target_include_dir)?;
+
+        // The software fallbacks of the whole-module `_ALT` hooks: a CMake
+        // snippet for the C build and a header for `bindgen` (which finds it
+        // through `target_include_dir`, see `gen/include/include.h`).
+        let soft_fallback_cmake_path = out_path.join(SOFT_FALLBACK_CMAKE);
+        std::fs::write(
+            &soft_fallback_cmake_path,
+            SoftFallback::cmake_snippet(self.hooks, &mbedtls_path, &out_path.join("soft"))?,
+        )?;
+        std::fs::write(
+            target_include_dir.join(SOFT_FALLBACK_HEADER),
+            SoftFallback::bindgen_header(self.hooks),
+        )?;
 
         let target_lib_dir = out_path.join("mbedtls").join("lib");
         let lib_dir = copy_path.unwrap_or(&target_lib_dir);
@@ -457,6 +770,7 @@ impl MbedtlsBuilder {
             // Clang will complain about some documentation formatting in mbedtls
             .define("MBEDTLS_FATAL_WARNINGS", "OFF")
             .define("MBEDTLS_USER_CONFIG_FILE", user_config_path)
+            .define("CMAKE_PROJECT_INCLUDE", soft_fallback_cmake_path)
             .cflag(format!("-I{}", hook_header_dir.display()))
             .profile("MinSizeRel");
 
