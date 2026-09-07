@@ -35,6 +35,8 @@ where
     /// `read`/`write`/handshake loops, which would otherwise only see an opaque
     /// MbedTLS code.
     last_io_err: Option<ErrorKind>,
+    /// Platform yield hook invoked between restartable-ECC retry slices.
+    yield_fn: fn(),
     /// Reference to the active Tls instance
     _tls_ref: TlsReference<'a>,
 }
@@ -52,10 +54,42 @@ where
     ///
     /// # Returns
     /// - A `Session` instance or a `TlsError` on failure.
+    ///
+    /// The stream is consumed, and is dropped alongside the error if creation
+    /// fails. A caller that wants to keep the stream across a failed creation
+    /// can pass `&mut stream` instead — `Read` and `Write` are implemented for
+    /// `&mut T`, and on failure the borrow ends with the returned error,
+    /// leaving the stream usable.
     pub fn new(
         tls: TlsReference<'a>,
         stream: T,
         config: &SessionConfig<'a>,
+    ) -> Result<Self, SessionError> {
+        Self::new_with_yield(tls, stream, config, || {})
+    }
+
+    /// Create a session for a TLS stream with a platform yield hook.
+    ///
+    /// `yield_fn` is invoked between the bounded slices of an in-progress restartable
+    /// elliptic-curve operation, so platforms with a scheduler can give up the rest of their
+    /// time slice (e.g. `std::thread::yield_now`) instead of re-entering Mbed TLS immediately.
+    /// Mbed TLS only reports an in-progress operation when it is built with restartable ECP
+    /// (the `ecp-restartable` feature, or `CONFIG_MBEDTLS_ECP_RESTARTABLE` on ESP-IDF);
+    /// otherwise the hook is never invoked.
+    ///
+    /// # Arguments
+    /// - `tls_ref` - A reference to the active `Tls` instance.
+    /// - `stream` - The stream for the connection.
+    /// - `config` - The session configuration.
+    /// - `yield_fn` - The platform yield hook.
+    ///
+    /// # Returns
+    /// - A `Session` instance or a `TlsError` on failure.
+    pub fn new_with_yield(
+        tls: TlsReference<'a>,
+        stream: T,
+        config: &SessionConfig<'a>,
+        yield_fn: fn(),
     ) -> Result<Self, SessionError> {
         Ok(Self {
             stream,
@@ -63,6 +97,7 @@ where
             connected: false,
             eof: false,
             last_io_err: None,
+            yield_fn,
             _tls_ref: tls,
         })
     }
@@ -305,7 +340,9 @@ where
         Ok(())
     }
 
-    /// Helper function to call MbedTLS functions with BIO callbacks set
+    /// Helper function to call MbedTLS functions with BIO callbacks set.
+    /// In-progress ECC operations are retried until completion, invoking the
+    /// session's yield hook between retries.
     fn call_mbedtls<F>(&mut self, mut f: F) -> c_int
     where
         F: FnMut(&mut mbedtls_ssl_context) -> c_int,
@@ -324,7 +361,20 @@ where
             );
         }
 
-        let result = f(&mut self.state.ssl_context);
+        // Re-enter a restartable ECC operation in progress until it completes,
+        // invoking the platform yield hook between the bounded slices; only the
+        // async session turns it into a cooperative `Poll::Pending`. Mbed TLS only
+        // reports an in-progress result when built with restartable ECP (the
+        // `ecp-restartable` feature, or `CONFIG_MBEDTLS_ECP_RESTARTABLE` on ESP-IDF),
+        // so the loop is a no-op otherwise.
+        let result = loop {
+            let result = f(&mut self.state.ssl_context);
+            if result == MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS {
+                (self.yield_fn)();
+                continue;
+            }
+            break result;
+        };
 
         // Remove the callbacks so that we get a warning from MbedTLS in case
         // it needs to invoke them when we don't anticipate so (for bugs detection)

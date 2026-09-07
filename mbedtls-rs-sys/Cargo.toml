@@ -76,6 +76,12 @@ use-gcc = []
 # https://github.com/riscv-collab/riscv-gnu-toolchain
 force-esp-riscv-gcc = ["use-gcc"]
 
+# Enable restartable elliptic-curve operations. This changes Mbed TLS context
+# layouts, so builds with this feature cannot use the generic prebuilts. Mbed TLS's check_config
+# requires at least one elliptic curve when ECP is compiled, so consumers must enable at least one
+# `curve-*` feature alongside this one.
+ecp-restartable = ["alg-ecp"]
+
 # Disable all or some hooks; this would preclude hooking custom HW-accelerated algos
 nohook = [
     "nohook-sha1",

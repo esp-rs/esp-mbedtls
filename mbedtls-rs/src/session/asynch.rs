@@ -62,6 +62,12 @@ where
     ///
     /// # Returns
     /// - A `Session` instance or a `TlsError` on failure.
+    ///
+    /// The stream is consumed, and is dropped alongside the error if creation
+    /// fails. A caller that wants to keep the stream across a failed creation
+    /// can pass `&mut stream` instead — `Read` and `Write` are implemented for
+    /// `&mut T`, and on failure the borrow ends with the returned error,
+    /// leaving the stream usable.
     pub fn new(
         tls: TlsReference<'a>,
         stream: T,
@@ -979,6 +985,11 @@ where
             // it needs to invoke them when we don't anticipate so (for bugs detection)
             unsafe {
                 mbedtls_ssl_set_bio(ssl_context, core::ptr::null_mut(), None, None, None);
+            }
+
+            if result == MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS {
+                io_ctx.ctx.waker().wake_by_ref();
+                return Poll::Pending;
             }
 
             Poll::Ready(result)
