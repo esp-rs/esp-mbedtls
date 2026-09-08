@@ -1,0 +1,188 @@
+# Firmware size report for every pull request.
+#
+# The examples are built twice for every MCU, at the pull request's merge commit and at
+# the tip of the base branch, and the ELFs are measured with `elfsize`. The `report` job
+# then renders the measurements of all examples and MCUs as one report, so that the same
+# change can be compared across chips. The report goes to the job summary and is uploaded
+# as an artifact, from where the `Size comment` workflow (size-comment.yml) posts it as a
+# pull request comment. On pushes to `main` only the sizes of the pushed commit are reported.
+#
+# Both builds run in the same checkout directory on purpose: panic-location strings embed
+# absolute source paths, so building the base in a second directory with a different path
+# length shifts `.rodata` by kilobytes.
+#
+# The examples link the committed prebuilt MbedTLS libraries, same as in `ci.yml`, so a
+# change to the C configuration in `mbedtls-rs-sys` shows up in the report once its
+# libraries are regenerated and committed.
+name: Size
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# A new push to a pull request supersedes the size run already in flight for it
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  CARGO_TERM_COLOR: always
+  # Growth above this many percent is marked in the report and annotated on the run
+  SIZE_WARN_PERCENT: "0.2"
+  # The examples measured, from `examples/esp`
+  SIZE_EXAMPLES: client server crypto_self_test time_verification
+
+jobs:
+  size:
+    name: Size
+    runs-on: ubuntu-latest
+    permissions: read-all
+    strategy:
+      fail-fast: false
+      matrix:
+        # [family, chip (= examples feature), target]; one chip per architecture
+        mcu:
+          - [esp, esp32, xtensa-esp32-none-elf]
+          - [esp, esp32s3, xtensa-esp32s3-none-elf]
+          - [esp, esp32c3, riscv32imc-unknown-none-elf]
+          - [esp, esp32c6, riscv32imac-unknown-none-elf]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The base commit is checked out below
+          fetch-depth: 0
+
+      - name: mbedtls init
+        run: git submodule update --init --recursive
+
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          target: x86_64-unknown-linux-gnu
+          toolchain: nightly
+          components: rust-src
+
+      # Installed before the Xtensa toolchain below makes itself the default
+      - name: Install elfsize
+        run: cargo install elfsize
+
+      - name: Install MCU target
+        if: startsWith(matrix.mcu[2], 'riscv32')
+        run: rustup target add ${{ matrix.mcu[2] }}
+
+      - name: Install Rust for Xtensa
+        if: startsWith(matrix.mcu[2], 'xtensa-')
+        uses: esp-rs/xtensa-toolchain@v1.6
+        with:
+          default: true
+          ldproxy: true
+
+      - name: Detect host target triple
+        run: |
+          export HOST_TARGET=$(rustup show | grep "Default host" | sed -e 's/.* //')
+          echo "HOST_TARGET=$HOST_TARGET" >> $GITHUB_ENV
+
+      - name: Install espup
+        run: |
+          curl -LO https://github.com/esp-rs/espup/releases/latest/download/espup-${{ env.HOST_TARGET }}.zip
+          unzip -o espup-${{ env.HOST_TARGET }}.zip -d "$HOME/.cargo/bin"
+          chmod +x "$HOME/.cargo/bin/espup"*
+          echo "ESPUP_EXPORT_FILE=$HOME/exports" >> $GITHUB_ENV
+
+      - name: Install espup toolchains (xtensa and riscv)
+        run: |
+          source "$HOME/.cargo/env"
+          "$HOME/.cargo/bin/espup" install -e -r
+          source "$HOME/exports"
+          echo "${LIBCLANG_PATH}/../bin:$PATH" >> "$GITHUB_PATH"
+          echo "LIBCLANG_PATH=${LIBCLANG_PATH}" >> "$GITHUB_ENV"
+          echo "CLANG_PATH=${CLANG_PATH}" >> "$GITHUB_ENV"
+
+      - name: Build - Head
+        run: |
+          cd examples/${{ matrix.mcu[0] }}
+          export WIFI_SSID=ssid; export WIFI_PASS=pass
+          cargo build --release --no-default-features --features ${{ matrix.mcu[1] }} --target ${{ matrix.mcu[2] }} -Zbuild-std=core,alloc,panic_abort --bins
+          for example in $SIZE_EXAMPLES; do
+            cp target/${{ matrix.mcu[2] }}/release/$example "$RUNNER_TEMP/head-$example.elf"
+          done
+
+      - name: Check out the base commit
+        if: github.event_name == 'pull_request'
+        run: |
+          git checkout --detach ${{ github.event.pull_request.base.sha }}
+          git submodule update --init --recursive
+
+      - name: Build - Base
+        if: github.event_name == 'pull_request'
+        run: |
+          cd examples/${{ matrix.mcu[0] }}
+          export WIFI_SSID=ssid; export WIFI_PASS=pass
+          cargo build --release --no-default-features --features ${{ matrix.mcu[1] }} --target ${{ matrix.mcu[2] }} -Zbuild-std=core,alloc,panic_abort --bins
+          for example in $SIZE_EXAMPLES; do
+            cp target/${{ matrix.mcu[2] }}/release/$example "$RUNNER_TEMP/base-$example.elf"
+          done
+
+      - name: Measure
+        run: |
+          mkdir -p size
+          # Named example-first so that the chips of one example end up next to each other
+          for example in $SIZE_EXAMPLES; do
+            label="$example on ${{ matrix.mcu[1] }}"
+            out="size/$example-${{ matrix.mcu[1] }}.json"
+            if [ -f "$RUNNER_TEMP/base-$example.elf" ]; then
+              elfsize measure --label "$label" --output "$out" "$RUNNER_TEMP/base-$example.elf" "$RUNNER_TEMP/head-$example.elf"
+            else
+              elfsize measure --label "$label" --output "$out" "$RUNNER_TEMP/head-$example.elf"
+            fi
+          done
+          # This MCU alone, for the job summary; the annotations are left to the `report` job
+          elfsize report --warn "$SIZE_WARN_PERCENT" size/*.json | grep -v '^::' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the measurement
+        uses: actions/upload-artifact@v4
+        with:
+          name: size-${{ matrix.mcu[1] }}
+          path: size/
+          retention-days: 7
+
+  report:
+    name: Report
+    runs-on: ubuntu-latest
+    needs: size
+    permissions: read-all
+
+    steps:
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Install elfsize
+        run: cargo install elfsize
+
+      - name: Download the measurements
+        uses: actions/download-artifact@v4
+        with:
+          pattern: size-*
+          path: size
+          merge-multiple: true
+
+      - name: Report
+        run: |
+          elfsize report --warn "$SIZE_WARN_PERCENT" size/*.json > "$RUNNER_TEMP/report.txt"
+          # Printed as-is so that the runner picks up the `::warning::` annotations;
+          # the artifact and summary get the markdown alone
+          cat "$RUNNER_TEMP/report.txt"
+          mkdir -p report
+          grep -v '^::' "$RUNNER_TEMP/report.txt" > report/size-report.md
+          cat report/size-report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the report
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: size-report
+          path: report/
+          retention-days: 7
