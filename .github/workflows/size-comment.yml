@@ -1,0 +1,85 @@
+# Posts the size report produced by the `Size` workflow (size.yml) as a pull request
+# comment, updating it on every push.
+#
+# Separate from `size.yml` on purpose: that workflow runs the pull request's code with a
+# read-only token, so it cannot comment on pull requests from forks. This one runs on
+# `workflow_run` in the base repository with a write token, and neither checks out nor
+# runs anything from the pull request. The report is taken from the artifact and only
+# ever ends up inside the comment body.
+name: Size comment
+
+on:
+  workflow_run:
+    workflows: [Size]
+    types: [completed]
+
+jobs:
+  comment:
+    name: Comment
+    if: github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      pull-requests: write
+
+    steps:
+      - name: Find the pull request
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          # Look the pull request up by the commit the reports were built from, rather
+          # than trusting anything in the artifacts. Nothing is found when the pull
+          # request got another push meanwhile; that run will report instead.
+          pr=$(gh api "repos/$GITHUB_REPOSITORY/commits/$HEAD_SHA/pulls" \
+            --jq "[.[] | select(.head.sha == \"$HEAD_SHA\")][0] | \"\(.number) \(.base.sha)\"")
+          if [ -z "$pr" ] || [ "$pr" = "null null" ]; then
+            echo "No open pull request has $HEAD_SHA as its head; nothing to comment on"
+            exit 0
+          fi
+          echo "number=${pr% *}" >> "$GITHUB_OUTPUT"
+          echo "base=${pr#* }" >> "$GITHUB_OUTPUT"
+
+      - name: Download the size report
+        if: steps.pr.outputs.number
+        uses: actions/download-artifact@v4
+        with:
+          name: size-report
+          path: report
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compose the comment
+        if: steps.pr.outputs.number
+        env:
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          BASE_SHA: ${{ steps.pr.outputs.base }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+        run: |
+          {
+            echo "## Size report"
+            echo "<!-- size-report -->"
+            echo
+            echo "Firmware size at ${HEAD_SHA:0:7} compared to the base branch at ${BASE_SHA:0:7}."
+            echo "[Workflow run]($RUN_URL)"
+            echo
+            cat report/size-report.md
+          } > comment.md
+          cat comment.md
+
+      - name: Post or update the comment
+        if: steps.pr.outputs.number
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ steps.pr.outputs.number }}
+        run: |
+          id=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate \
+            --jq '[.[] | select(.user.login == "github-actions[bot]") | select(.body | contains("<!-- size-report -->"))][0].id')
+          if [ -n "$id" ] && [ "$id" != "null" ]; then
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$id" -F body=@comment.md > /dev/null
+            echo "Updated comment $id on #$PR"
+          else
+            gh api -X POST "repos/$GITHUB_REPOSITORY/issues/$PR/comments" -F body=@comment.md > /dev/null
+            echo "Commented on #$PR"
+          fi
