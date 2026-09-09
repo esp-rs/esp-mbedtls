@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * (Breaking) Add an optional `max_version` to `ClientSessionConfig`; capping at TLS 1.2 is what lets a restartable client yield, as Mbed TLS 3.6's TLS 1.3 handshake crypto is not restartable
 * Add `Session::new_with_yield` to the blocking session: a platform yield hook (e.g. `std::thread::yield_now`) invoked between restartable-ECC retry slices
 * (Breaking) Add an optional ordered key-exchange group allowlist (`key_exchange_groups`, `TlsGroup`) to `ClientSessionConfig`
+* Add `Session::tls_version` (blocking and async): the TLS protocol version negotiated during the handshake, `None` until a `connect()` succeeds (#167)
 
 ## [0.2.0] - 2026-08-20
 * (Breaking) Enforce the short-enums policy across all of clang, GCC and bindgen (#168)

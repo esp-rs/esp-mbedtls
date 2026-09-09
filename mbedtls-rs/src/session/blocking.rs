@@ -6,7 +6,7 @@ use crate::sys::*;
 
 use super::{
     check_saved_session_server_name, SavedSession, ServerName, SessionConfig, SessionError,
-    SessionState, TlsReference,
+    SessionState, TlsReference, TlsVersion,
 };
 
 /// Re-export of the `embedded-io` crate so that users don't have to explicitly depend on it
@@ -223,6 +223,25 @@ where
                 Some(CStr::from_ptr(ptr))
             }
         }
+    }
+
+    /// Get the TLS protocol version negotiated during the handshake.
+    ///
+    /// Returns `None` before a successful `connect()`, and after `close()`.
+    ///
+    /// Use this to confirm which protocol version is actually in use - in
+    /// particular when a peer is only known to behave correctly on a specific
+    /// version, in combination with capping `max_version`.
+    pub fn tls_version(&self) -> Option<TlsVersion> {
+        // Gated on `connected`: MbedTLS seeds this field with the configured maximum
+        // version at setup and on every session reset, so on its own it reports a
+        // version the peers have not actually agreed on yet.
+        //
+        // The field is read directly rather than through `mbedtls_ssl_get_version_number`,
+        // which is a `static inline` and therefore not exposed by bindgen.
+        self.connected
+            .then(|| TlsVersion::from_mbed_tls_version(self.state.ssl_context.private_tls_version))
+            .flatten()
     }
 
     /// Read unencrypted data from the TLS connection

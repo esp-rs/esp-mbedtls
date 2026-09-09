@@ -227,7 +227,7 @@ impl<'d> Drop for Tls<'d> {
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct TlsReference<'a>(PhantomData<&'a ()>);
 
-/// The minimum TLS version that will be supported by a particular `Session` instance
+/// A TLS protocol version
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum TlsVersion {
@@ -242,6 +242,19 @@ impl TlsVersion {
         match self {
             TlsVersion::Tls1_2 => mbedtls_ssl_protocol_version_MBEDTLS_SSL_VERSION_TLS1_2,
             TlsVersion::Tls1_3 => mbedtls_ssl_protocol_version_MBEDTLS_SSL_VERSION_TLS1_3,
+        }
+    }
+
+    /// `None` for `MBEDTLS_SSL_VERSION_UNKNOWN` and for any version this crate does not model
+    fn from_mbed_tls_version(version: mbedtls_ssl_protocol_version) -> Option<Self> {
+        // Not a `match`: the generated constants are lower-case, which reads like a
+        // catch-all binding in pattern position and warns under `non_upper_case_globals`.
+        if version == mbedtls_ssl_protocol_version_MBEDTLS_SSL_VERSION_TLS1_2 {
+            Some(TlsVersion::Tls1_2)
+        } else if version == mbedtls_ssl_protocol_version_MBEDTLS_SSL_VERSION_TLS1_3 {
+            Some(TlsVersion::Tls1_3)
+        } else {
+            None
         }
     }
 }
