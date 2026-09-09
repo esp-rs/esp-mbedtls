@@ -5,6 +5,16 @@
 #
 # If no rebuild occurs, the examples are built against the latest libraries present in the main branch.
 #
+# Alongside the `clang` builds, the host, one bare-metal ARM target and every MCU target are
+# built a second time with `use-gcc`, which compiles the MbedTLS C sources with GCC. The two are
+# not variations of one code path: which compiler binary is invoked, which `-m*`/`--target` flags
+# it gets, and where the sysroot handed to `bindgen` comes from are each derived separately in
+# `mbedtls-rs-sys/gen/builder.rs`, and the GCC half of that has no other coverage. The `-espidf`
+# targets are left out, as there `esp-idf-sys` compiles MbedTLS and the choice does not apply.
+# `force-generate-bindings` accompanies `use-gcc` wherever prebuilt libraries exist for the
+# target, since those would otherwise short-circuit the build script before it reaches a
+# compiler at all.
+#
 # The libraries are pushed on either of these conditions:
 # 1. The PR is labelled with `rebuild-libs`.
 #    Then libraries will be forcefully rebuilt and then pushed onto the PR branch.
@@ -76,6 +86,11 @@ jobs:
       - name: Build
         run: cargo build
 
+      # No prebuilt libraries are committed for the host target, so this always compiles
+      # MbedTLS from source -- with the system GCC rather than `clang`.
+      - name: Build - GCC
+        run: cargo build --features use-gcc
+
       - name: Test
         run: cargo test
 
@@ -87,6 +102,24 @@ jobs:
       # default feature set, so it needs its own invocation.
       - name: Test - ESP exp_mod routing
         run: cargo test -p mbedtls-rs-sys --features _route-test --test exp_mod_route
+
+      # The one GCC cross-toolchain that comes from the distro rather than from espup, so it
+      # fits in this job. It also covers the short-enum ABI, which `bindgen` has to be told
+      # about separately from the C compiler and which applies to `-eabi`/`-eabihf` targets
+      # only. `newlib` is packaged apart from the compiler on Debian/Ubuntu, and MbedTLS does
+      # not compile without its headers.
+      - name: Setup | ARM bare-metal GCC toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib
+
+      - name: Setup | Rust no-std Thumbv7 target
+        run: rustup target add thumbv7em-none-eabi
+
+      # `force-generate-bindings` bypasses the committed `thumbv7em-none-eabi` prebuilts, which
+      # would otherwise leave nothing for GCC to compile.
+      - name: Build - GCC (bare-metal ARM)
+        run: cargo build --target thumbv7em-none-eabi --features use-gcc,force-generate-bindings
 
       - name: Fmt Check - STD Examples
         run: cd examples/std; cargo fmt -- --check
@@ -291,6 +324,14 @@ jobs:
           echo "${LIBCLANG_PATH}/../bin:$PATH" >> "$GITHUB_PATH"
           echo "LIBCLANG_PATH=${LIBCLANG_PATH}" >> "$GITHUB_ENV"
           echo "CLANG_PATH=${CLANG_PATH}" >> "$GITHUB_ENV"
+
+      # Uses the Espressif cross-toolchains espup installed above: `xtensa-esp32*-elf-gcc` for
+      # the Xtensa chips, `riscv32-esp-elf-gcc` for the RISC-V ones. The latter is what
+      # `force-esp-riscv-gcc` selects, in place of the "official" `riscv32-unknown-elf-gcc`
+      # that is not installed here; on the Xtensa entries the flag only implies `use-gcc`, as
+      # there the compiler follows from the target triple, so one invocation covers both.
+      - name: Build - GCC
+        run: cargo build --features ${{ matrix.mcu[1] }},force-esp-riscv-gcc,force-generate-bindings --target ${{ matrix.mcu[2] }} -Zbuild-std=core,alloc,panic_abort
 
       - name: Clippy - Examples
         run: export WIFI_SSID=ssid; export WIFI_PASS=pass; cd examples/${{ matrix.mcu[0] }}; cargo clippy --no-default-features --features ${{ matrix.mcu[1] }} --target ${{ matrix.mcu[2] }} -Zbuild-std=core,alloc,panic_abort -- -D warnings
