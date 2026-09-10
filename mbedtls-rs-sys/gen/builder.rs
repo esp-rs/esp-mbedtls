@@ -736,6 +736,14 @@ impl MbedtlsBuilder {
 
         let target_dir = out_path.join("mbedtls").join("build");
         std::fs::create_dir_all(&target_dir)?;
+
+        // Configure from scratch. CMake cannot reuse a build tree whose compiler
+        // changed: it deletes the cache mid-configure and re-runs, and options
+        // the project set on the first pass do not reliably survive that reset.
+        // This build script re-runs only when `gen/` or the submodule changed
+        // (see `track`), so the ordinary Rust edit loop never pays for the
+        // rebuild. `cmake-rs` configures in `<out_dir>/build`.
+        let _ = std::fs::remove_dir_all(target_dir.join("build"));
         let target_include_dir = target_dir.join("include");
         std::fs::create_dir_all(&target_include_dir)?;
 
