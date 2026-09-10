@@ -63,6 +63,10 @@ For that reason, `mbedtls-rs-sys` provides the so called Hooking mechanism, curr
 - The ECP scalar multiplication (`R = m * P`) and public-key (point-on-curve) check, through which all ECDH / ECDSA / ECJPAKE (and generic SPAKE2+-style protocol) math funnels (`hook_ecp_mul`, `hook_ecp_verify`)
 - The MPI (bignum) modular exponentiation used by RSA and DHM (`hook_exp_mod`)
 
+Ready-made hook implementations live in `hook::backend`:
+- `esp` (`esp32*` features): the ESP32XX SHA, RSA, AES and ECC accelerators, via `esp-hal`
+- `embassy` (`embassy-crypto` feature): whatever [`embassy-crypto`](https://github.com/embassy-rs/embassy/tree/main/embassy-crypto) drivers the firmware registers, for SHA-1/224/256/384/512, AES-128/256 and the P-256/P-384 scalar multiplication
+
 Besides the hardware-acceleration hooks above, two further hooks supply platform facilities that MbedTLS cannot obtain by itself on a baremetal target:
 - A monotonic timer, for DTLS retransmission timeouts (`hook_timer`, behind the `hook-timer` feature)
 - A wall clock, for X.509 certificate time validation (`hook_wall_clock`, behind the `hook-wall-clock` feature, which enables `hook-timer` too)
