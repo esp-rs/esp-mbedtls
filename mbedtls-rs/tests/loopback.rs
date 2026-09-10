@@ -76,6 +76,22 @@ fn server_config() -> SessionConfig<'static> {
     }))
 }
 
+/// A completed handshake must report a version, and a client cap must be exactly
+/// what gets negotiated - the loopback server offers every version the client can
+/// ask for. Called on each end, so both peers are held to the same expectation.
+fn assert_negotiated_version(version: Option<TlsVersion>, maximum_version: Option<TlsVersion>) {
+    assert!(
+        version.is_some(),
+        "no version reported after a successful handshake"
+    );
+    if maximum_version.is_some() {
+        assert_eq!(
+            version, maximum_version,
+            "the negotiated version does not match the client's cap"
+        );
+    }
+}
+
 #[derive(Debug, Default)]
 struct AsyncDirection {
     bytes: RefCell<VecDeque<u8>>,
@@ -241,11 +257,24 @@ fn run_async_loopback(
     .unwrap();
     let mut server = AsyncSession::new(tls_reference, server_stream, &server_config()).unwrap();
 
+    assert_eq!(
+        client.tls_version(),
+        None,
+        "a version was reported before the handshake"
+    );
+
     let handshake_wake = Arc::new(CountingWake(AtomicUsize::new(0)));
     let (client_result, server_result) =
         drive_pair(client.connect(), server.connect(), handshake_wake.clone());
     client_result.unwrap();
     server_result.unwrap();
+
+    assert_eq!(
+        client.tls_version(),
+        server.tls_version(),
+        "peers disagree on the negotiated version"
+    );
+    assert_negotiated_version(client.tls_version(), maximum_version);
 
     let echo_wake = Arc::new(CountingWake(AtomicUsize::new(0)));
     let client_echo = async {
@@ -382,6 +411,10 @@ fn run_blocking_loopback(
             let mut session =
                 BlockingSession::new(tls_reference, server_stream, &server_config()).unwrap();
             session.connect().unwrap();
+            // The discriminating end: the server is never capped, so its seeded
+            // version is the MbedTLS default maximum. Reporting the client's lower
+            // cap here means a genuinely negotiated version is being read.
+            assert_negotiated_version(session.tls_version(), maximum_version);
             let mut received = [0; PAYLOAD.len()];
             blocking_read_exact(&mut session, &mut received);
             assert_eq!(received, PAYLOAD);
@@ -397,7 +430,13 @@ fn run_blocking_loopback(
                 None => BlockingSession::new(tls_reference, client_stream, &config),
             }
             .unwrap();
+            assert_eq!(
+                session.tls_version(),
+                None,
+                "a version was reported before the handshake"
+            );
             session.connect().unwrap();
+            assert_negotiated_version(session.tls_version(), maximum_version);
             blocking_write_all(&mut session, PAYLOAD);
             let mut echoed = [0; PAYLOAD.len()];
             blocking_read_exact(&mut session, &mut echoed);
@@ -475,6 +514,23 @@ fn async_construction_failure_leaves_borrowed_stream_usable() {
         drive_pair(client.connect(), server.connect(), handshake_wake);
     client_result.unwrap();
     server_result.unwrap();
+}
+
+/// The cap paths of the runners above otherwise only run under `ecp-restartable`,
+/// so pin the cap-to-negotiated-version mapping unconditionally on both flavours.
+#[test]
+fn loopback_negotiated_version_honours_the_client_cap() {
+    let _serial = SERIAL.lock().unwrap_or_else(|error| error.into_inner());
+    let mut rng = StdRng;
+    // SAFETY: `rng` is declared before `tls`, and every session and `tls` are
+    // dropped in this scope before the borrowed RNG can go out of scope.
+    let tls = unsafe { Tls::new_local_borrows(&mut rng) }.unwrap();
+
+    // `run_*_loopback` asserts the negotiated version against the cap it is given.
+    run_async_loopback(tls.reference(), Some(TlsVersion::Tls1_2));
+    run_async_loopback(tls.reference(), Some(TlsVersion::Tls1_3));
+    run_blocking_loopback(tls.reference(), Some(TlsVersion::Tls1_2), None);
+    run_blocking_loopback(tls.reference(), Some(TlsVersion::Tls1_3), None);
 }
 
 #[test]
